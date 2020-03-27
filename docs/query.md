@@ -407,15 +407,15 @@ query1 = g.V("user").shuffle().batch(512).alias('a')          \
           .values(func)
  
 def func(x):
-    """
+  """
     input: {'a':Nodes, 'b':Nodes, 'c':Edges, 'd':Nodes}
-    """
-    src_ids = x['a'].ids
-    src_attrs = x['a'].int_attrs
-    neg_attrs = x['b'].int_attrs
-    weight = x['c'].weights
-    ...
-    return src_ids, src_attrs, neg_attrs, weight
+  """
+  src_ids = x['a'].ids
+  src_attrs = x['a'].int_attrs
+  neg_attrs = x['b'].int_attrs
+  weight = x['c'].weights
+  ...
+  return src_ids, src_attrs, neg_attrs, weight
 
 while True:
   try:

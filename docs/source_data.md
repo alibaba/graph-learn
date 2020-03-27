@@ -224,7 +224,7 @@ gl.Decoder(labeled=True, attr_type={your_attr_types}, attr_delimiter={you_delimi
 
 ## Example
 
-Two node data file and one edge data file are the source files.
+The source files include 2 node files and 1 edge file.
 
 Content of the first node file.
 

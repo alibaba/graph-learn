@@ -1,20 +1,28 @@
-# Graph Object
-`Graph` is a unit that organizes the raw data to enable the process of high-level operations. Only one unique `Graph` object can exist in a **GL** job. It is able to support all kinds of graphs, including homogeneous graphs, heterogeneous graphs with different types of nodes or edges, and graphs with properties attached on nodes or edges.
+# Graph Object Introduction
+`Graph` is a unit that organizes the raw data to enable the process of high-level operations. 
+
+Only one unique `Graph` object can exist in a **GL** job. 
+
+It is able to support all kinds of graphs, including homogeneous graphs, heterogeneous graphs with different types of nodes or edges, and graphs with properties attached on nodes or edges.
+
 We ofter rich APIs to extract information about the graph.
 
 Usually three steps are essential to create a graph object:
+
 • Declare a `Graph` object
+
 • Describe its topology
+
 • Initialize data
 
-## 1. Declare the Graph object
+# Declare the Graph object
 The declaration of a Graph object is simple, as listed below. All subsequent operations are performed based on `g`.
 ```python
 import graphlearn as gl
 g = gl.Graph()
 ```
 
-## 2. Describe the topology
+# Describe the topology
 Graph topology describes the relationship between edges and nodes in the graph. The topology here refers to the relationship of meta information of the graph, not data records.
 
 For example, for a homogeneous graph that represents "item-item" relationship, its topology is shown in Figure 1.
@@ -36,12 +44,17 @@ The "similar-to" edge represents the association relationship between "item" and
 <p align=center>Figure 2: An example of "user-item-item" bipartite graph</p>
 </p>
 
-The types and connections of those nodes and edges are the basic primitives of the heterogeneous graph, which need to be perceived by users and is treated as the inputs of operators in **GL**. **GL** users can express their business semantics based on the defined graph topology, such as sampling some items that similar to the ones that some users brought. Therefore, **GL** will perform sampling actions on the path of "user--buy-->item--similar_to-->item".
+The types and connections of those nodes and edges are the basic primitives of the heterogeneous graph, which need to be perceived by users and is treated as the inputs of operators in **GL**. 
 
-In practice, the number of edges in the graph is much larger than the nodes. Moreover, nodes usually are embedded with rich attribute information. To save memory, we separate the storage of edges and vertices in graph object.
+**GL** users can express their business semantics based on the defined graph topology, such as sampling some items that similar to the ones that some users brought. Therefore, **GL** will perform sampling actions on the path of "user--buy-->item--similar_to-->item".
 
-### 2.1 Add node data source
-`Graph` provides `node()` API for adding node data sources. `node()` function returns the Graph object itself, which allows user to call `node()` multiple times to add multiple node data sources. 
+In practice, the number of edges in the graph is much larger than the nodes. Moreover, nodes usually are embedded with rich attribute information. To save memory, we separate the storage of edges and nodes in graph object.
+
+### Add node data source
+`Graph` provides `node()` API for adding node data sources. 
+
+`node()` function returns the `Graph` object itself, which allows user to call `node()` multiple times to add multiple node data sources. 
+
 The `node` API is as follows:  
 ```python
 def node(source, node_type, decoder):
@@ -61,9 +74,14 @@ g = g.node(source="user_path", node_type="user", decoder=gl.Decoder(attr_types=[
      .node(source="item_path", node_type="item", decoder=gl.Decoder(attr_types=["int", "float"]))
 ```
 
-### 2.2 Add edge data source
-`Graph` provides `edge()` API for adding edge data sources. `edge()` returns a Graph object itself, which means that you can call `edge()` multiple times to add multiple edge data sources.
+### Add edge data source
+`Graph` provides `edge()` API for adding edge data sources. 
+
+`edge()` returns a Graph object itself, which means that you can call `edge()` multiple times to add multiple edge data sources.
+
+
 By adding the edge data sources, the edge types, as well as the relationship between source and destination nodes, are well annotated. A large graph is created with both edge data sources and node data sources.
+
 The API is as follows: 
 ```python
 def edge(source, edge_type, decoder):
@@ -90,8 +108,13 @@ g.edge(source="buy_path", edge_type=("user", "item", "buy"), decoder=buy_decoder
  .edge(source="similar_to_path", edge_type=("item", "item", "similar-to"), decoder=similar_to_decoder)
 ```
 
-# 3. Initialize data
-After adding the node data sources and edge data sources to Graph, we finish the description of topology and data source format of our graph. Calling the `init()` interface can finalize the declared `Graph` object as `g`. The operations, such as query and sampling, can be applied on `g` once it is initialized.
+# Initialize data
+After adding the node data sources and edge data sources to Graph, we finish the description of topology and data source format of our graph. 
+
+Calling the `init()` interface can finalize the declared `Graph` object as `g`. 
+
+The operations, such as query and sampling, can be applied on `g` once it is initialized.
+
 The graph initialization interface is as follows:
 ```python
 def init(cluster="", job_name="", task_index=0, **kwargs)
