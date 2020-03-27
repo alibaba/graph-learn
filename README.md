@@ -1,4 +1,4 @@
-![GL](doc/images/graph-learn.png)
+![GL](docs/images/graph-learn.png)
 
 # Introduction
 
@@ -13,19 +13,19 @@ Based on **GL**, developers are able to implement a kind of **GNNs** algorithms,
 
 # Documents
 
-* [Installation](doc/install.md)
+* [Installation](docs/install.md)
 
-* [Quick Start](doc/quick_start.md)
+* [Quick Start](docs/quick_start.md)
 
-* [Conception and API](doc/concept_api.md)
+* [Conception and API](docs/concept_api.md)
 
-* [System Config](doc/system_config.md)
+* [System Config](docs/system_config.md)
 
-* [Distribution](doc/distribution.md)
+* [Distribution](docs/distribution.md)
 
-* [Extend](doc/extend.md)
+* [Extend](docs/extend.md)
 
-* [Model Examples](doc/model_examples.md)
+* [Model Examples](docs/model_examples.md)
 
 
 # Paper

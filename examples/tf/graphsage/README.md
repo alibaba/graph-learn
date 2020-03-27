@@ -75,7 +75,7 @@ GraphSAGE is a general inductive framework that efficiently generates node embed
 
 5. Distributed training with k8s.
 
-    see [trian with k8s](../../../doc/k8s.md)
+    see [trian with k8s](../../../docs/k8s.md)
 
 ## Datasets and performance
 ### supervised model
