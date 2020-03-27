@@ -1,0 +1,26 @@
+apiVersion: "kubeflow.org/v1"
+kind: "TFJob"
+metadata:
+  name: "tf-graphsage"
+spec:
+  tfReplicaSpecs:
+    Worker:
+      replicas: 1
+      template:
+        metadata:
+          creationTimestamp: null
+        spec:
+          containers:
+          - args:
+            - python
+            - train_supervised.py
+            image: registry.cn-zhangjiakou.aliyuncs.com/pai-image/graph-learn:v0.1
+            name: tensorflow
+            ports:
+            - containerPort: 2222
+              name: tfjob-port
+            resources:
+              limits:
+                nvidia.com/gpu: 1
+            workingDir: /workspace/graph-learn/examples/tf/graphsage/
+
