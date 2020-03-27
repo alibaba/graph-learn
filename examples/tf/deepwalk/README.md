@@ -11,11 +11,19 @@ to train node embeddings.
 
 ## How to run
 1. Prepare data
-   * enter data dir and `python blogcatelog.py` to generate data.
+    ```shell script
+    cd ../../data/
+    python blogcatelog.py
+    ```
 2. Train
-   * `python train.py` to train and save embeddings.
+    ```shell script
+    python train.py
+    ```
 3. Evaluate
-   * enter eval dir and `python blogcatelog_eval.py`
+    ```shell script
+    cd ../../eval/
+    python blogcatelog_eval.py
+    ```
    to train classfier and get F1 score.
 
 

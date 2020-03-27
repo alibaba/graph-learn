@@ -12,11 +12,21 @@ embedding (node embedding and context embedding in the paper)
 
 ## How to run
 1. Prepare data
-   * enter data dir and `python arxiv.py` to generate data.
+    ```shell script
+    cd ../../data/
+    python arxiv.py
+    ```
 2. Train
-   * `python train.py` to train and save embeddings using node2vec.
+   ```shell script
+    python train.py
+    ``` 
+  
+   to train and save embeddings using node2vec.
 3. Evaluate
-   * enter eval dir and `python link_prediction_eval.py`
+    ```shell script
+    cd ../../eval/
+    python link_prediction_eval.py
+    ```
 
 ## Dataset and performance
 

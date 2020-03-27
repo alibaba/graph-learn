@@ -9,13 +9,20 @@ low-dimensional embeddings of the entities. In knowledge graphs, a tuple is in t
 
 ## How to run
 1. Prepare Data
-    - enter data dir and `python fb15k_237.py`
+    ```shell script
+    cd ../../data/
+    python fb15k_237.py
+    ```
 
 2. Train
-    - `python train.py`
+    ```shell script
+    python train.py
+    ```
 
 3. Evaluate
-    - enter eval dir and `python eval.py`
+    ```shell script
+    python eval.py
+    ```
 
 ## Datasets and performance
 FB15k-237 is a leakage-free version of FB15k, which is usually adopted as one of the benchmark datasets in literature.

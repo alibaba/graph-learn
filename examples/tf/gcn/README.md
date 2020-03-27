@@ -16,7 +16,10 @@ of EgoGraph and for original GCN, we use a sparse format of EgoGraph (we use spa
 
 ## How to run
 1. Prepare data
-- enter data dir `python cora.py`
+    ```shell script
+    cd ../../data/
+    python cora.py
+    ```
 
 2. Train and evalute
     ```shell

@@ -11,20 +11,27 @@ GraphSAGE is a general inductive framework that efficiently generates node embed
 - Feed ecoded embeddings to loss funciton and training.
 
 ## How to run
-1. Prepare Data
-
-    - python data/cora/preprocess.py
-
+1. Prepare data
+    - cora for supervised model.
+    ```shell script
+    cd ../../data/
+    python cora.py
+    ```
+   - ppi for unsupervised model.
+    ```shell script
+    cd ../../data/
+    python ppi.py
+    ```
 2. Training
 
-    - supervised: python train_supervised.py
-    - unsupervised: python train_unsupervised.py
+    - supervised: `python train_supervised.py`
+    - unsupervised: `python train_unsupervised.py`
 
 3. Evaluation on ppi dataset
-    - enter data dir and `python ppi.py` to generate ppi data.
-    - `python train_unsupervised.py` to train and save embeddings.
-    - enter eval dir to train and evaluate using
-    `python ppi_eval.py`
+    ```shell script
+    cd ../../eval/
+    python ppi_eval.py
+    ```
 
 4. Distributed training with TensorFlow.
 

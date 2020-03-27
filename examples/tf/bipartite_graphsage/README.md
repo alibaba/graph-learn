@@ -7,7 +7,12 @@ that Bipartite GraphSage uses different encoders for source and destination node
 
 ## How to run
 1. Prepare data
-    - enter data dir and `python u2i.py`
+    - 
+    ```shell script
+    cd ../../data/
+    python u2i.py
+    ```
 
 2. Train
-    - `python train_unsupervised.py` to train and save embeddings.
+    
+    `python train_unsupervised.py` to train and save embeddings.
