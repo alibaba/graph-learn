@@ -64,6 +64,6 @@ You can download our docker image to execute **GL** projects.
 docker pull registry.cn-zhangjiakou.aliyuncs.com/pai-image/graph-learn:v0.1
 ```
 
-You can also refer to our Dockerfile to build your own image. Please checkout this [document](docker_file.md).
+You can also refer to our Dockerfile to build your own image. Please checkout this [document](../docker_image/README.md).
 
 [Home](../README.md)
