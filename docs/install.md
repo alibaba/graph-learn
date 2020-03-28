@@ -60,8 +60,14 @@ source env.sh
 # Docker image
 
 You can download our docker image to execute **GL** projects.
+
+CPU version:
 ```
-docker pull registry.cn-zhangjiakou.aliyuncs.com/pai-image/graph-learn:v0.1
+docker pull registry.cn-zhangjiakou.aliyuncs.com/pai-image/graph-learn:v0.1-cpu
+```
+GPU version:
+```
+docker pull registry.cn-zhangjiakou.aliyuncs.com/pai-image/graph-learn:v0.1-gpu
 ```
 
 You can also refer to our Dockerfile to build your own image. Please checkout this [document](../docker_image/README.md).

@@ -14,7 +14,7 @@ spec:
           - args:
             - python
             - train_supervised.py
-            image: registry.cn-zhangjiakou.aliyuncs.com/pai-image/graph-learn:v0.1
+            image: registry.cn-zhangjiakou.aliyuncs.com/pai-image/graph-learn:v0.1-gpu
             name: tensorflow
             ports:
             - containerPort: 2222

@@ -1,4 +1,3 @@
-# Mirror image: registry.cn-shanghai.aliyuncs.com/pai-kubeflow/nogfw:tensorflow-1.13.0rc2-gpu
 FROM tensorflow/tensorflow:1.13.0rc2-gpu
 USER root
 
