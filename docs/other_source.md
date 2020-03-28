@@ -1,7 +1,7 @@
 # Introduction
 
 Data source plays an important role in **GL**, through which **GL** loads the raw data to build graph and sync states among distributed servers.
-Data source is implemented by a kind of **file system**.
+The data source is implemented by a kind of **file system**.
 Currently, GL has implemented the file system interface to operate local files.
 When running distributedly, a distributed file system is needed.
 **GL** supports to be launched by [KubeFlow](dist_config.md) and all servers access the file system by mounting **NFS** to local.
@@ -39,7 +39,7 @@ A `Record` contains several columns described by **Schema**.
 Each column value may be in type of `Int32`, `Int64`, `Float`, `Double` or `String`.
 
 The raw graph data will be placed in **StructuredAccessFile**s, **GL** will load it and build graph index.
-Refer [HERE](source_data.md) for more supported raw data format.
+Refer [HERE](source_data.md) for more supported raw data formats.
 
 The **GetRecordCount()** interface in file system should return the size in records for a **StructuredAccessFile**.
 

@@ -7,7 +7,7 @@ as an example to show details.
 
 In the [Model Programming](model_programming.md) tutorial, we have 
 introduced some fundamental concepts of **GL**, such as `EgoGraph` and `EgoTensor`.
-we highly recommend you to go through it before continuing.
+We highly recommend you to go through it before continuing.
 
 ## How to build a learning based model
 
@@ -18,9 +18,9 @@ Generally, you need to implement the following four steps
     We have abstracted four basic functions including `sample_seed`, `positive_sample`,
     `negative_sample` and `receptive_fn`. `sample_seed` used to generate seed `Nodes` or
     `Edges`(a batch of nodes or edges), and then `positve_sample` take
-    it as input to generate positive sample `Edges`. The `negative_sample` function samples
-    negative `Nodes` or `Edges` for unsupervised models. GNNs needs to aggregate
-    neighbors information of nodes(edges) to update nodes(edges) embeddings, so we provide  `receptive_fn` to sample neighbors. The seed `Nodes`/`Edges` and sampled neighbors are organized as
+    them as input to generate positive sample `Edges`. The `negative_sample` function samples
+    negative `Nodes` or `Edges` for unsupervised models. GNNs need to aggregate
+    neighbors' information of nodes(edges) to update nodes(edges) embeddings, so we provide  `receptive_fn` to sample neighbors. The seed `Nodes`/`Edges` and sampled neighbors are organized as
     `EgoGraph`.
 
 
@@ -28,30 +28,30 @@ Generally, you need to implement the following four steps
 
    **GL** models ard built on top of deep learning framework such as TensorFlow. So sampled
    EgoGraphs needs to be converted into tensor format `EgoTensor`. We wrapped `EgoFlow` for this
-   conversion. `EgoFlow` also generate an iterator used for batch training and pipeline.
+   conversion. `EgoFlow` also generates an iterator used for batch training and pipeline.
   
 - Define encoders: Use `EgoGraph` encoders and feature encoders to encode `EgoTensor`.
 
     After getting `EgoTensor`,
-    we need to define the transformation routine from raw data to embeddings. For GNNs
-    model, this step is to aggregate neighbors and combing it with self nodes/edges.
+    we need to define the transformation routine from raw data to embeddings. For GNN
+    models, this step is to aggregate neighbors and combing it with self nodes/edges.
     
 - Define loss function and training: Feed encoded embeddings to loss function and training.
 
-    **GL** has built-in serveral common loss functions and optimizers, and you can also
-    choose your own one. Local and distributed training is supported as well.
+    **GL** has built-in several common loss functions and optimizers, and you can also
+    customize yours. Local and distributed training is supported as well.
 
 We will detail these four steps and show you how to implement a GCN model.
 
 ### Sampling
 
-we use the Cora dataset as an example, and we have provided a transform script `cora.py` 
+We use the Cora dataset as an example, and we have provided a transform script `cora.py` 
 to transform text files to **GL** specific format. After running this script, 
 you will get five files: 
 node_table, edge_table_with_self_loop, train_table, val_table and test_table, respectively. 
-The first two files record the nodes and edges, and the last three files indicates nodes' roles.
+The first two files record the nodes and edges, and the last three files indicate nodes' roles.
 
-The following code will load this graph into memory:
+The following code will load this graph into the machine memory:
 
 ```python
 g = gl.Graph()\
@@ -113,7 +113,7 @@ class GCN(gl.LearningBasedModel):
 ```
 
 The first two functions are used to provide seed nodes for training.
-`_receptive_fn` is used to form `EgoGraph`, its parameter `nodes` are a batch 
+`_receptive_fn` is used to form `EgoGraph`, and its parameter `nodes` are a batch 
 of seed nodes returned from `_sample_seed` function.
  `outV` returns seed nodes' one-hop neighbor. 
  We can perform sampling using different sampling strategies, 
@@ -128,7 +128,7 @@ of seed nodes returned from `_sample_seed` function.
 The `EgoGraph` are returned in NumPy format, 
 to use it in a deep learning framework backend such as TensorFlow, 
 we provide a transformation routine to convert these data into 
-the corresponding tensor format. We call the transform routine 
+the corresponding tensor format. We call this transformation routine 
 `EgoFlow` and it is defined in the `build` function:
 
 ```python
@@ -205,7 +205,7 @@ class GCN(gl.LearningBasedModel):
 ```
 
 The `loss` and `iterator` will be used in the following training process. We wrapped
-some TensorFlow loss functions and optimizers for convenience. Local and distribtued 
+some TensorFlow loss functions and optimizers for convenience. Local and distributed 
 training is also provided by trainers like `LocalTFTrainer`.
 
 ```python

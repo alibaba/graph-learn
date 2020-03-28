@@ -1,8 +1,8 @@
 # Operator introduction
 
-In **GL**, **operator** is the basic executable unit.
+In **GL**, an **operator** is a basic executable unit.
 The system function is represented by the operators.
-For example, graph sampler is a kind of operator.
+For example, a graph sampler is a kind of operator.
 Operators can be **extended** according to requirements.
 Usually, we just focus on the local implementation when customizing an operator.
 The system framework will help run it distributedly.
@@ -10,7 +10,8 @@ The system framework will help run it distributedly.
 # Programming interface
 
 To customize an **operator**, class [**Operator**](../graphlearn/core/operator/operator.h) should be inherited.
-And then override the next virtual function.
+And then override the following virtual function.
+
 ```c++
 virtual Status Process(const OpRequest* req, OpResponse* res) = 0;
 ```
@@ -92,7 +93,7 @@ make clean
 make test
 ```
 
-Usually, writting c++ test is the fast way to check errors.
+Usually, writting a C++ test is the fast way to check errors.
 After that, you can make the python package and install it.
 
 ```

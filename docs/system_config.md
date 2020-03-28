@@ -12,7 +12,7 @@ gl.other_models...
 
 * Set default neighbor id. Default is ```0```.
 
-When neighbor count is less than sampling count, fill with default id.
+When the neighbor count is less than sampling count, fill with a default id.
 
 ```python
 gl.set_default_neighbor_id(nbr_id)
@@ -20,7 +20,7 @@ gl.set_default_neighbor_id(nbr_id)
 
 * Set default int attribute value. Default is ```0```.
 
-Fill with default attribute value for the not found nodes or edges when looking up.
+Fill with the default attribute value for not found nodes or edges when looking up.
 
 ```python
 gl.set_default_int_attribute(value)
@@ -28,7 +28,7 @@ gl.set_default_int_attribute(value)
 
 * Set default float attribute value. Default is ```0.0```.
 
-Fill with default attribute value for the not found nodes or edges when looking up.
+Fill with the default attribute value for not found nodes or edges when looking up.
 
 ```python
 gl.set_default_float_attribute(value)
@@ -36,7 +36,7 @@ gl.set_default_float_attribute(value)
 
 * Set default string attribute value. Default is ```''```.
 
-Fill with default attribute value for the not found nodes or edges when looking up.
+Fill with the default attribute value for not found nodes or edges when looking up.
 
 ```python
 gl.set_default_string_attribute(value)
