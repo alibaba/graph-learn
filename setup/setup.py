@@ -42,8 +42,8 @@ include_dirs.append(ROOT_PATH + '/third_party/protobuf/build/include')
 
 library_dirs.append(ROOT_PATH + '/built/lib')
 
-GXXGTEQ52 = os.popen("expr `g++ -dumpversion` '>=' 5.2").read()[0]
-if GXXGTEQ52 == '0':
+GXXGTEQ5 = os.popen("expr `g++ -dumpversion | cut -f1 -d.` \>= 5").read()[0]
+if GXXGTEQ5 == '0':
   extra_compile_args.append('-D_GLIBCXX_USE_CXX11_ABI=0')
 
 extra_compile_args.append('-D__USE_XOPEN2K8')

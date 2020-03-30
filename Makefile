@@ -89,13 +89,13 @@ else
 endif
 
 PROFILING := CLOSE
-GXXVERSIONGTEQ52 := $(shell expr `g++ -dumpversion` '>=' 5.2)
+GXXVERSIONGTEQ5 := $(shell expr `g++ -dumpversion | cut -f1 -d.` \>= 5)
 CXX := g++
 CXXFLAGS := $(MODEFLAGS) -std=c++11 -fPIC -pthread -mavx -msse4.2 -msse4.1 \
             -D$(PROFILING)_PROFILING \
             -I. -I$(ROOT) -I$(BUILT_DIR) -I$(PROTOBUF_INCLUDE) -I$(GLOG_INCLUDE) \
             -I$(GRPC_INCLUDE)
-ifeq "$(GXXVERSIONGTEQ52)" "0"
+ifeq "$(GXXVERSIONGTEQ5)" "0"
 	CXXFLAGS += -D_GLIBCXX_USE_CXX11_ABI=0
 endif
 
