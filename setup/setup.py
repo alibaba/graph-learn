@@ -17,6 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import numpy
 import os, sys
 from setuptools import setup, Extension, find_packages
 import shlex
@@ -39,6 +40,7 @@ include_dirs.append(ROOT_PATH + '/built')
 include_dirs.append(ROOT_PATH + '/third_party/pybind11/pybind11/include')
 include_dirs.append(ROOT_PATH + '/third_party/glog/build')
 include_dirs.append(ROOT_PATH + '/third_party/protobuf/build/include')
+include_dirs.append(numpy.get_include())
 
 library_dirs.append(ROOT_PATH + '/built/lib')
 

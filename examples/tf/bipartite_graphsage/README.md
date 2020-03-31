@@ -7,7 +7,6 @@ that Bipartite GraphSage uses different encoders for source and destination node
 
 ## How to run
 1. Prepare data
-    - 
     ```shell script
     cd ../../data/
     python u2i.py
