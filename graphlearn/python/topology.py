@@ -66,8 +66,8 @@ class Topology(object):
     if not edge_info:
       warnings.warn("edge_type {} not exists in the graph."
                     .format(edge_type))
-    print("edge_type:" + k + ", src_type:" + v.src_type + \
-          ", dst_type:" + v.dst_type + "\n")
+    print("edge_type:" + edge_type + ", src_type:" + edge_info.src_type + \
+          ", dst_type:" + edge_info.dst_type + "\n")
 
 
 class EdgeInfo(object):
