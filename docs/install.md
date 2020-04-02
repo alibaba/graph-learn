@@ -1,6 +1,6 @@
 # Install from pip
 
-We build the wheel package with```g++ 5.4.0``` on ```Ubuntu 16.04```.
+We build the wheel package with```g++ 5.4.0``` and ```python 2.7``` on ```Ubuntu 16.04```.
 Just download and install it if it matches your environment.
 Otherwise, please refer to the section 'build from source'.
 
