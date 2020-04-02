@@ -37,9 +37,7 @@ flags.DEFINE_string("ps_hosts", "", "ps hosts")
 flags.DEFINE_string("worker_hosts", "", "worker hosts")
 flags.DEFINE_string("tracker", '/mnt/data/nfs/graph-learn/distributed/','tracker dir')
 
-# clean old tracker.
-rm_tracker = "rm -rf " + FLAGS.tracker
-os.system(rm_tracker)
+# Note: tracker dir should be cleaned up before training.
 # graphlearn settings
 graph_cluster = {"client_count": 2, "tracker": FLAGS.tracker, "server_count": 2}
 

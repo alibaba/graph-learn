@@ -45,7 +45,9 @@ GraphSAGE is a general inductive framework that efficiently generates node embed
     are co-placed with the workers and parameter-servers. To start
     Graph-learn service, a distributed file systme like NFS is needed, you
     should pass this path through the flags `--tracker`(default is
-    '/mnt/data/nfs/graph-learn/distributed/').
+    '/mnt/data/nfs/graph-learn/distributed/'). 
+    
+    **Note**: tracker should be clean and you may need to clean up it before start training.
 
     To run a distributed example, firstly you should prepare data,
     run with `python cora.py` to generate local data on each machine,

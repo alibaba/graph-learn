@@ -23,8 +23,9 @@ import graphlearn as gl
 
 from trans_e import TransE
 
-os.system("rm -rf ../../data/syncer")
-
+TRACKER_PATH  = './tracker/'
+os.system('mkdir -p %s' % TRACKER_PATH)
+os.system('rm -rf %s*' % TRACKER_PATH)
 
 def load_graph():
   g = gl.Graph()\
@@ -76,7 +77,7 @@ def main():
             'emb_save_dir': './'}
 
   g = load_graph()
-  g.init(server_id=0, server_count=1, tracker='../../data/')
+  g.init(server_id=0, server_count=1, tracker=TRACKER_PATH)
 
   e_embs, r_embs = train(config, g)
   print('begin dump embedding', config['emb_save_dir'])

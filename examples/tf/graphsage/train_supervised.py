@@ -22,7 +22,9 @@ import graphlearn as gl
 
 from graph_sage import GraphSage
 
-os.system("rm -rf ../../data/syncer/")
+TRACKER_PATH  = './tracker/'
+os.system('mkdir -p %s' % TRACKER_PATH)
+os.system('rm -rf %s*' % TRACKER_PATH)
 
 
 def load_graph(config):
@@ -91,7 +93,7 @@ def main():
             'edge_type': 'relation'}
 
   g = load_graph(config)
-  g.init(server_id=0, server_count=1, tracker='../../data/')
+  g.init(server_id=0, server_count=1, tracker=TRACKER_PATH)
   train(config, g)
 
 
