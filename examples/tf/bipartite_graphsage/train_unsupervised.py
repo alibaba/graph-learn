@@ -24,8 +24,9 @@ import tensorflow as tf
 
 from bipartite_graph_sage import BipartiteGraphSage
 
-os.system("rm -rf ../../data/syncer")
-
+TRACKER_PATH  = './tracker/'
+os.system('mkdir -p %s' % TRACKER_PATH)
+os.system('rm -rf %s*' % TRACKER_PATH)
 
 def train(config, graph):
   def model_fn():
@@ -97,7 +98,7 @@ def main():
             'ps_hosts': None}
 
   g = load_graph(config)
-  g.init(server_id=0, server_count=1, tracker='../../data/')
+  g.init(server_id=0, server_count=1, tracker=TRACKER_PATH)
   train(config, g)
 
 if __name__ == "__main__":
