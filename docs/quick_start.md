@@ -125,8 +125,8 @@ of seed nodes returned from `_sample_seed` function.
 
 ### Graph flow
 
-The `EgoGraph` are returned in NumPy format, 
-to use it in a deep learning framework backend such as TensorFlow, 
+The `EgoGraph` are returned in NumPy format. 
+To use it in a deep learning framework backend such as TensorFlow, 
 we provide a transformation routine to convert these data into 
 the corresponding tensor format. We call this transformation routine 
 `EgoFlow` and it is defined in the `build` function:
@@ -225,7 +225,7 @@ def main():
 ```
 
 Here we have provided a general idea on how to build a GCN model from scratch. 
-For the full code please check the examples/GCN folder.
+For the full code, please check the examples/GCN folder.
 
 We also implement common model examples including GCN, 
 GAT, GraphSage, DeepWalk, LINE, TransE, Bipartite GraphSage, sample-based GCN and GAT.
