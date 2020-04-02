@@ -1,5 +1,8 @@
 ![GL](docs/images/graph-learn.png)
 
+[![graph-learn CI](https://github.com/alibaba/graph-learn/workflows/graph-learn%20CI/badge.svg)](https://github.com/alibaba/graph-learn/actions)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/alibaba/graph-learn/blob/master/LICENSE)
+
 # Introduction
 
 **Graph-Learn(GL)** is a framework designed to simplify the application of graph neural networks(**GNNs**).
