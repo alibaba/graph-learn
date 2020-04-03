@@ -58,6 +58,8 @@ The developers of **GL** are from several teams at Alibaba, including Computing 
 New Retail Intelligence Engine - Data Analytics And Intelligence Lab, and Security Department - Data and Algorithms team.
 Thanks to the ones who provide helps and suggestions to open source.
 
+Please email graph-learn@list.alibaba-inc.com if any questions. 
+
 **Welcome to contribution!**
 
 **GL** refers to the following projects. Thanks to the authors and contributors.
