@@ -44,7 +44,7 @@ As returned values of **VertexQuery**. The field lists are: `ids`, `type`, `shap
 
 All of them are **NumPy** object or list. 
 
-**`SparseNodes`** is a subclass of `Nodes`, additional fields are: `dense_shape`, `offsets`.
+**`SparseNodes`** is a subclass of `Nodes`, additional fields are: `dense_shape`, `offsets`, `indices`.
 
 ## Edges
 
@@ -53,7 +53,7 @@ As returned values of **EdgeQuery**. The field lists are: `src_ids`, `dst_ids`, 
 
 All of them are **NumPy** object or list. 
 
-**`SparseEdges`** is a subclass of `Edges`, additional fields are: `dense_shape`, `offsets`.
+**`SparseEdges`** is a subclass of `Edges`, additional fields are: `dense_shape`, `offsets`, `indices`.
 
 
 # Source
@@ -111,6 +111,8 @@ for i in range(3):
 
 Traverse **Graph** from a batch of edges. The edges can be assigned with given **IDs**, or generated from the loaded **Graph**.
 
+**Notes:** Getting the `int_attrs`, `float_attrs`, `string_attrs`, `weights`, `labels` from the returned `Edges` of `E(edge_type, feed=...)` with given `src_ids`, `dst_ids` is not supported for now.
+
 ```python
 def E(Graph, edge_type, feed=None):
 """
@@ -126,11 +128,24 @@ feed (None | numpy.ndarray | types.GeneratorType | `Edges` object):
 **Examples**
 
 ```python
+# OK
 res = g.E("buy", feed=(np.array([0, 2, 8]), np.array([0, 2, 8])).emit(lambda e: e.src_ids)
+
+# Failed. Not support for getting attrs of Edges with given src_ids, dst_ids.
+res = g.E("buy", feed=(np.array([0, 2, 8]), np.array([0, 2, 8])).emit(lambda e: e.int_attrs)
 # res: [0, 2, 8]
 
-edges = gl.Edges(...)
-res = g.V("user", feed=edges).emit(lambda e: e.weights)
+# OK
+edges = gl.Edges(src_ids, src_type, dst_ids, dst_type, edge_type)
+res = g.E("buy", feed=edges).emit(lambda e: e.src_ids)
+
+# Failed. Not support for getting attrs of Edges with given src_ids, dst_ids.
+edges = gl.Edges(src_ids, src_type, dst_ids, dst_type, edge_type)
+res = g.E("buy", feed=edges).emit(lambda e: e.int_attrs)
+
+# OK. Edges are with given src_ids, dst_ids, edge_ids.
+edges = gl.Edges(src_ids, src_type, dst_ids, dst_type, edge_ids, edge_type)
+res = g.E("buy", feed=edges).emit(lambda e: e.int_attrs)
 ```
 
 ```python
@@ -143,7 +158,7 @@ while True:
     break
 
 # Traverse edges with shuffle from graph until all the edges are visited.
-gen = g.E("buy").batch(3).shuffle(traverse=True).values(lambda e: (e.dst_ids, e.weights))
+gen = g.E("buy").batch(3).shuffle(traverse=True).values(lambda e: (e.dst_ids, e.int_attrs))
 while True:
   try:
     print("next round: ", g.run(gen))
@@ -151,7 +166,7 @@ while True:
     break
 
 # Traverse edges randomly from graph, which will not be OutOfRange.
-gen = g.V("user").batch(3).shuffle().values(lambda e: (e.dst_ids, e.weights))
+gen = g.V("user").batch(3).shuffle().values(lambda e: (e.dst_ids, e.float_attrs))
 for i in range(3):
     print("next round: ", g.run(gen))
 ``` 
