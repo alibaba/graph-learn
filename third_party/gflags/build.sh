@@ -1,0 +1,4 @@
+mkdir -p build
+cd build
+cmake -D CMAKE_BUILD_TYPE=Release -D GFLAGS_BUILD_SHARED_LIBS=ON -D GFLAGS_BUILD_STATIC_LIBS=ON -D GFLAGS_BUILD_TESTING=ON ../gflags
+make -j48

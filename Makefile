@@ -80,6 +80,15 @@ gtest:
 	@if [ ! -d "${GTEST_DIR}/build" ]; then cd "${GTEST_DIR}"; ./build.sh; fi
 	@echo "gtest done"
 
+GFLAGS_DIR := $(THIRD_PARTY_DIR)/gflags
+GFLAGS_LIB := $(GFLAGS_DIR)/build/lib
+
+gflags:
+	@echo "prepare gflags library"
+	@if [ ! -d "${GFLAGS_DIR}/build" ]; then cd "${GFLAGS_DIR}"; ./build.sh; fi
+	@echo "gflags done"
+
+
 # compling flags
 DEBUG ?= 0
 ifeq ($(DEBUG), 1)
@@ -105,8 +114,8 @@ so:protobuf grpc glog gtest proto common platform service core
 	@mkdir -p $(LIB_DIR)
 	@mkdir -p $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) -shared $(PROTO_OBJ) $(COMMON_OBJ) $(PLATFORM_OBJ) $(SERVICE_OBJ) $(CORE_OBJ) \
-		-L$(ROOT) -L$(GLOG_LIB) -L$(PROTOBUF_LIB) -L$(GRPC_LIB) \
-		-lglog -lprotobuf -lgrpc++ -lgrpc -lgpr -lupb \
+		-L$(ROOT) -L$(GLOG_LIB) -L$(PROTOBUF_LIB) -L$(GRPC_LIB) -L$(GFLAGS_LIB)\
+		-lglog -lprotobuf -lgrpc++ -lgrpc -lgpr -lupb -lgflags\
 		-o $(LIB_DIR)/libgraphlearn_shared.so
 
 ####################################### proto begin ########################################

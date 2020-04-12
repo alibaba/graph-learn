@@ -17,3 +17,6 @@
 	path = third_party/grpc/grpc
 	url = https://github.com/grpc/grpc.git
 	branch = v1.26.x
+[submodule "third_party/gflags/gflags"]
+	path = third_party/gflags/gflags
+	url = https://github.com/gflags/gflags
