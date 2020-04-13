@@ -90,7 +90,7 @@ class FeatureTensor(object):
     return self._indices
 
 
-class HopTenor(object):
+class HopTensor(object):
   """Tensor of 1 hop neighbors' Nodes and Edges.
 
   Args:
@@ -166,7 +166,7 @@ class EgoTensor(object):
             self._spec.hops_spec[i].sparse)
       else:
         edge_tensor = None
-      nbr_tensor_list.append(HopTenor(node_tensor, edge_tensor))
+      nbr_tensor_list.append(HopTensor(node_tensor, edge_tensor))
 
     return src_tensor, nbr_tensor_list
 
