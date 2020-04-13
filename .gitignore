@@ -3,3 +3,5 @@ build/
 graphlearn/proto/service.pb*
 graphlearn/proto/service.grpc*
 graphlearn.egg-info/
+graphlearn/python/lib
+dist/
