@@ -82,7 +82,6 @@ gtest:
 
 GFLAGS_DIR := $(THIRD_PARTY_DIR)/gflags
 GFLAGS_LIB := $(GFLAGS_DIR)/build/lib
-
 gflags:
 	@echo "prepare gflags library"
 	@if [ ! -d "${GFLAGS_DIR}/build" ]; then cd "${GFLAGS_DIR}"; ./build.sh; fi
