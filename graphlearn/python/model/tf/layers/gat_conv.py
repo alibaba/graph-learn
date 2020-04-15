@@ -78,8 +78,10 @@ class GATConv(BaseConv):
       neigh_vecs = tf.reduce_sum(neigh_vecs, axis=1)
     else:  # full neighbor GAT
       self_vecs_extend = tf.gather(self_vecs, segment_ids)
-      coefficients = tf.nn.softmax(tf.nn.leaky_relu(self._attn_fc(
+      coefficients = tf.math.exp(tf.nn.leaky_relu(self._attn_fc(
           tf.concat([self_vecs_extend, neigh_vecs], axis=-1))))
+      seg_sum = tf.gather(tf.segment_sum(coefficients, segment_ids), segment_ids)
+      coefficients = coefficients / seg_sum
       coefficients = tf.nn.dropout(coefficients, 1 - self._attn_drop)
       neigh_vecs = tf.multiply(coefficients, neigh_vecs)
       neigh_vecs = tf.segment_sum(neigh_vecs, segment_ids)
