@@ -89,7 +89,7 @@ def main():
             'hops_num': 2,
             'neighs_num': None, #[5, 2],
             'full_graph_mode': True,
-            'learning_algo': 'adamW',
+            'learning_algo': 'adam',
             'learning_rate': 0.005,
             'weight_decay': 0.0005,
             'epoch': 200,

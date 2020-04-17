@@ -125,23 +125,15 @@ class GraphSage(gl.LearningBasedModel):
     depth = self.hops_num
     feature_encoders = [gl.encoders.IdentityEncoder()] * (depth + 1)
     conv_layers = []
-    # for input layer
-    conv_layers.append(gl.layers.GraphSageConv(0,
-                                               self.features_num,
-                                               self.hidden_dim,
-                                               self.output_dim))
-    # for hidden layer
-    for i in range(1, depth - 1):
-      conv_layers.append(gl.layers.GraphSageConv(i,
-                                                 self.hidden_dim,
-                                                 self.hidden_dim,
-                                                 self.agg_type))
-    # for output layer
-    conv_layers.append(gl.layers.GraphSageConv(depth - 1,
-                                               self.hidden_dim,
-                                               self.output_dim,
-                                               self.agg_type,
-                                               act=None))
+    for i in range(depth):
+        input_dim = self.features_num if i == 0 else self.hidden_dim
+        output_dim = self.output_dim if i == depth - 1 else self.hidden_dim
+        act = None if (i == depth - 1 and depth != 1) else tf.nn.relu
+        conv_layers.append(gl.layers.GraphSageConv(i,
+                                                   input_dim,
+                                                   output_dim,
+                                                   self.agg_type,
+                                                   act))
 
     encoder = gl.encoders.EgoGraphEncoder(feature_encoders,
                                           conv_layers,
