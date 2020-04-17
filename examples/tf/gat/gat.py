@@ -130,22 +130,15 @@ class GAT(gl.LearningBasedModel):
     depth = self.hops_num
     feature_encoders = [gl.encoders.IdentityEncoder()] * (depth + 1)
     conv_layers = []
-    # for input layer
-    conv_layers.append(gl.layers.MultiHeadGATConv(self.hidden_dim,
-                                                  self.num_heads[0],
-                                                  attn_drop=self.attn_drop))
-    # for hidden layer
-    for i in range(1, depth - 1):
-      conv_layers.append(gl.layers.MultiHeadGATConv(self.hidden_dim,
-                                                    self.num_heads[i],
-                                                    attn_drop=self.attn_drop))
-    # for output layer
-    conv_layers.append(gl.layers.MultiHeadGATConv(self.output_dim,
-                                                  self.num_heads[-1],
-                                                  attn_drop=self.attn_drop,
-                                                  concat=False,
-                                                  act=None))
-
+    for i in range(depth):
+        dim = self.output_dim if i == depth - 1 else self.hidden_dim
+        concat = False if (i == depth - 1 and depth != 1) else True
+        act = None if (i == depth - 1 and depth != 1) else tf.nn.relu
+        conv_layers.append(gl.layers.MultiHeadGATConv(dim,
+                                                      self.num_heads[i],
+                                                      attn_drop=self.attn_drop,
+                                                      concat=concat,
+                                                      act=act))
     if self.neighs_num:
       encoder = gl.encoders.EgoGraphEncoder(feature_encoders,
                                             conv_layers,
