@@ -8,6 +8,6 @@
 
 Note that, the "server" and "client" are just logic roles in **GL**. In fact, they can also be placed in the same machine.
 
-We provide a distributed GraphSAGE example using 2 clients and 2 servers that co-place with 2 TF-worker and 2 TF-parameter-server. Please refer to the [Distributed training with TensorFlow](graphsage.md) or [K8S example](k8s.md) for details.
+We provide a distributed GraphSAGE example using 2 clients and 2 servers that co-place with 2 TF-worker and 2 TF-parameter-server. Please refer to the [Distributed training with TensorFlow](../examples/tf/graphsage/README.md) or [K8S example](k8s.md) for details.
 
 [Home](../README.md)
