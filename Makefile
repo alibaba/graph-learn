@@ -33,6 +33,8 @@ cleanall:
 	@rm -rf ${PYBIND_DIR}/pybind11/
 	@rm -rf ${GTEST_DIR}/build/
 	@rm -rf ${GTEST_DIR}/googletest/
+	@rm -rf ${GFLAGS_DIR}/build/
+	@rm -rf ${GFLAGS_DIR}/gflags/
 
 # protobuf
 PROTOBUF_DIR := $(THIRD_PARTY_DIR)/protobuf
@@ -108,7 +110,7 @@ ifeq "$(GXXVERSIONGTEQ5)" "0"
 endif
 
 # c++ so
-so:protobuf grpc glog gtest proto common platform service core
+so:protobuf grpc gflags glog gtest proto common platform service core
 	@mkdir -p $(INCLUDE_DIR)
 	@mkdir -p $(LIB_DIR)
 	@mkdir -p $(BIN_DIR)
