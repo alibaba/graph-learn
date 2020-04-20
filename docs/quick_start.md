@@ -162,13 +162,10 @@ class GCN(gl.LearningBasedModel):
     depth = self.hops_num
     feature_encoders = [gl.encoders.IdentityEncoder()] * (depth + 1)
     conv_layers = []
-    # for input layer
-    conv_layers.append(gl.layers.GCNConv(self.hidden_dim))
-    # for hidden layer
-    for i in range(1, depth - 1):
-      conv_layers.append(gl.layers.GCNConv(self.hidden_dim))
-    # for output layer
-    conv_layers.append(gl.layers.GCNConv(self.output_dim, act=None))
+    for i in range(depth):
+      dim = self.output_dim if i == depth - 1 else self.hidden_dim
+      act = None if (i == depth - 1 and depth != 1) else tf.nn.relu
+      conv_layers.append(gl.layers.GCNConv(dim, act))
     encoder = gl.encoders.SparseEgoGraphEncoder(feature_encoders,
                                                   conv_layers)
     return {"src": encoder, "edge": None, "dst": None}
