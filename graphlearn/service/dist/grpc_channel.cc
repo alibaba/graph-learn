@@ -86,9 +86,13 @@ Status GrpcChannel::CallStop(const StopRequestPb* req, StopResponsePb* res) {
 }
 
 void GrpcChannel::NewChannel(const std::string& endpoint) {
-  channel_ = ::grpc::CreateChannel(
+  grpc::ChannelArguments args;
+  args.SetMaxSendMessageSize(-1);
+  args.SetMaxReceiveMessageSize(-1);
+  channel_ = ::grpc::CreateCustomChannel(
       endpoint,
-      ::grpc::InsecureChannelCredentials());
+      ::grpc::InsecureChannelCredentials(),
+      args);
   stub_ = GraphLearn::NewStub(channel_);
 }
 
