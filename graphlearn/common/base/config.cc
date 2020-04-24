@@ -17,6 +17,7 @@ limitations under the License.
 
 #include <algorithm>
 #include <cstring>
+#include <limits>
 #include "graphlearn/common/base/log.h"
 
 namespace graphlearn {
@@ -65,7 +66,7 @@ DEFINE_INT32_GLOBAL_FLAG(RetryTimes, 10)
 DEFINE_INT32_GLOBAL_FLAG(InMemoryQueueSize, 10240)
 DEFINE_INT32_GLOBAL_FLAG(DataInitBatchSize, 10240)
 DEFINE_INT32_GLOBAL_FLAG(ShuffleBufferSize, 10240)
-DEFINE_INT32_GLOBAL_FLAG(RpcMessageMaxSize, 16 * 1024 * 1024)
+DEFINE_INT32_GLOBAL_FLAG(RpcMessageMaxSize, std::numeric_limits<int32_t>::max())
 DEFINE_INT32_GLOBAL_FLAG(InterThreadNum, 32)
 DEFINE_INT32_GLOBAL_FLAG(IntraThreadNum, 32)
 DEFINE_INT32_GLOBAL_FLAG(PartitionMode, 1)
