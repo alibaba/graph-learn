@@ -15,6 +15,7 @@ limitations under the License.
 
 #include <unistd.h>
 #include <memory>
+#include "graphlearn/common/base/log.h"
 #include "graphlearn/common/base/errors.h"
 #include "graphlearn/include/config.h"
 #include "graphlearn/proto/service.pb.h"
@@ -26,7 +27,11 @@ namespace graphlearn {
 
 class GrpcClientImpl : public ClientImpl {
 public:
-  explicit GrpcClientImpl(int32_t server_id) {
+  GrpcClientImpl(int32_t server_id, bool server_own) : server_own_(server_own) {
+    if (!server_own_) {
+      InitGoogleLogging();
+    }
+
     manager_ = ChannelManager::GetInstance();
     manager_->SetCapacity(GLOBAL_FLAG(ServerCount));
 
@@ -38,6 +43,9 @@ public:
   }
 
   virtual ~GrpcClientImpl() {
+    if (!server_own_) {
+      UninitGoogleLogging();
+    }
   }
 
   Status RunOp(const OpRequest* request,
@@ -80,10 +88,11 @@ public:
 private:
   ChannelManager* manager_;
   GrpcChannel*    channel_;
+  bool            server_own_;
 };
 
-ClientImpl* NewRpcClientImpl(int32_t server_id) {
-  return new GrpcClientImpl(server_id);
+ClientImpl* NewRpcClientImpl(int32_t server_id, bool server_own) {
+  return new GrpcClientImpl(server_id, server_own);
 }
 
 }  // namespace graphlearn

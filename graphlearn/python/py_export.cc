@@ -186,7 +186,8 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
   m.def("rpc_client",
         &NewRpcClient,
         py::return_value_policy::take_ownership,
-        py::arg("server_id") = -1);
+        py::arg("server_id") = -1,
+        py::arg("server_own") = false);
 
   py::class_<SamplingRequest>(m, "SamplingRequest")
     .def(py::init<>());
