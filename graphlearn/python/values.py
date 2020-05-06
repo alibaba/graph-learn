@@ -20,7 +20,10 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
+from graphlearn import pywrap_graphlearn as pywrap
 from graphlearn.python.decoder import Decoder
+import graphlearn.python.utils as utils
+from graphlearn.python.errors import raise_exception_on_not_ok_status
 
 
 class Values(object):
@@ -204,9 +207,9 @@ class SparseBase(object):
 
 
 class Nodes(Values):
-  """ As returned object of `get_next` api of `node_sampler` and `negative_sampler`,
-  as returned object of `get_nodes` of `Graph` or as in-memory object
-  for constructing graph.
+  """ As returned object of `get_next` api of `node_sampler` and
+  `negative_sampler`, as returned object of `get_nodes` of `Graph`
+  or as in-memory object for constructing graph.
   """
 
   def __init__(self,
@@ -261,6 +264,39 @@ class Nodes(Values):
   def type(self, node_type):  # pylint: disable=redefined-builtin
     self._type = node_type
 
+  def _agg(self, func, segment_ids, num_segments):
+    req = pywrap.new_agg_nodes_req(
+        self._type, utils.strategy2op(func, "Aggregator"))
+    pywrap.set_agg_nodes_req(req, self._ids.flatten(),
+                             np.array(segment_ids, dtype=np.int32),
+                             num_segments)
+    res = pywrap.new_agg_nodes_res()
+    raise_exception_on_not_ok_status(
+        self.graph.get_client().agg_nodes(req, res))
+    agged = pywrap.get_node_agg_res(res)
+    pywrap.del_agg_nodes_res(res)
+    pywrap.del_agg_nodes_req(req)
+    return agged
+
+  def embedding_agg(self, func="sum"):
+    """
+    Get aggregated embedding of fixed size of neighbors of batch seed nodes.
+    The shape of neighbors embeddings is
+    `[batch_size, num_neighbors, float_attr_num]`, after aggregation on axis=1,
+    the shape is `[batch_size, float_attr_num]`.
+
+    Args:
+      func ("sum" | "mean" | "min" | "max" | "prod"):
+        the built-in aggregate functions.
+    """
+    if not len(self.shape) == 2:
+      raise ValueError("embedding_agg is for Nodes with 2 dimension,"
+                       "and the default aggregated dimension is axis=1")
+    segment_ids = \
+        [i for i in range(self.shape[0]) for _ in range(self.shape[1])]
+    agged =  self._agg(func, segment_ids, self.shape[0])
+    return np.reshape(agged,
+                      (self.shape[0], self._get_decoder().float_attr_num))
 
 class SparseNodes(Nodes, SparseBase):
   """ SparseNodes is the returned value of full neighbor sampler which
@@ -329,6 +365,23 @@ class SparseNodes(Nodes, SparseBase):
       return nodes
     else:
       raise StopIteration
+
+  def embedding_agg(self, func="sum"):
+    """
+    Get aggregated embeddings of full neighbors of batch seed nodes.
+    The shape of neighbors embeddings is `[total_num_nbrs, float_attr_num]`.
+    After aggregation, the shape is `[redcued_num_nbrs, float_attr_num]`.
+
+    Args:
+      func ("sum" | "mean" | "min" | "max" | "prod"):
+        the built-in aggregate functions.
+    """
+    float_attr_num = self._get_decoder().float_attr_num
+    batch_size = len(self.offsets)
+    segment_ids = \
+        [i for i in range(batch_size) for _ in range(self.offsets[i])]
+    agged = self._agg(func, segment_ids, batch_size)
+    return np.reshape(agged, (batch_size, float_attr_num))
 
 
 class Edges(Values):

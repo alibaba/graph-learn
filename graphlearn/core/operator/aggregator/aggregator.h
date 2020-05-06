@@ -20,8 +20,9 @@ limitations under the License.
 #include <vector>
 #include "graphlearn/core/operator/operator.h"
 #include "graphlearn/core/operator/operator_factory.h"
-#include "graphlearn/include/aggregation_request.h"
+#include "graphlearn/include/aggregating_request.h"
 #include "graphlearn/include/status.h"
+#include "graphlearn/include/client.h"
 
 namespace graphlearn {
 namespace op {
@@ -31,30 +32,39 @@ public:
   virtual ~Aggregator() {}
 
   Status Process(const OpRequest* req, OpResponse* res) override {
-    const AggregateNodesRequest* request =
-      static_cast<const AggregateNodesRequest*>(req);
-    AggregateNodesResponse* response =
-      static_cast<AggregateNodesResponse*>(res);
+    const AggregatingRequest* request =
+      static_cast<const AggregatingRequest*>(req);
+    AggregatingResponse* response =
+      static_cast<AggregatingResponse*>(res);
     return this->Aggregate(request, response);
   }
 
   Status Call(int32_t remote_id,
               const OpRequest* req,
               OpResponse* res) override {
-    // interface for remote call, now just use local instead.
-    return Process(req, res);
+    const AggregatingRequest* request =
+      static_cast<const AggregatingRequest*>(req);
+    AggregatingResponse* response =
+      static_cast<AggregatingResponse*>(res);
+    std::unique_ptr<Client> client(NewRpcClient(remote_id));
+    return client->Aggregating(request, response);
   }
 
-protected:
-  virtual Status Aggregate(const AggregateNodesRequest* req,
-                           AggregateNodesResponse* res);
+public:
+  virtual Status Aggregate(const AggregatingRequest* req,
+                           AggregatingResponse* res);
 
-  virtual void InitFunc(std::vector<float>* value,
-                        int32_t size);
-  virtual void AggFunc(std::vector<float>* left,
-                       const std::vector<float>& right);
-  virtual void FinalFunc(std::vector<float>* values,
-                         int32_t total);
+  virtual void InitFunc(float* value,
+                        int32_t dim);
+  virtual void AggFunc(float* left,
+                       const float* right,
+                       int32_t size,
+                       const int32_t* segments = nullptr,
+                       int32_t num_segments = 0);
+  virtual void FinalFunc(float* values,
+                         int32_t size,
+                         const int32_t* segments,
+                         int32_t num_segments);
 };
 
 }  // namespace op

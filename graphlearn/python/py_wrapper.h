@@ -33,7 +33,7 @@ limitations under the License.
 #include "graphlearn/common/base/log.h"
 #include "graphlearn/common/threading/sync/cond.h"
 #include "graphlearn/include/sampling_request.h"
-#include "graphlearn/include/graph_request.h"
+#include "graphlearn/include/aggregating_request.h"
 #include "graphlearn/platform/env.h"
 
 namespace py = pybind11;
@@ -58,9 +58,6 @@ const std::unordered_map<int, ::graphlearn::DataType> type_map{
   {NPY_DOUBLE, ::graphlearn::kDouble}};
 
 // Here we implement new and delete req and res and info.
-// Note that python side should call these methods to get
-// req or res object, and must call delete res before
-// delete req because of limitation of erpc fast_path.
 ::graphlearn::SamplingRequest* new_nbr_req(
   const std::string& edge_type,
   const std::string& strategy,
@@ -338,7 +335,8 @@ PyObject* get_node_node_id_res(::graphlearn::GetNodesResponse* res) {
   return obj;
 }
 
-::graphlearn::LookupNodesRequest* new_lookup_nodes_req(const std::string& node_type) {
+::graphlearn::LookupNodesRequest* new_lookup_nodes_req(
+    const std::string& node_type) {
   return new ::graphlearn::LookupNodesRequest(node_type);
 }
 
@@ -399,6 +397,55 @@ PyObject* get_node_float_attr_res(
 PyObject* get_node_string_attr_res(
   ::graphlearn::LookupNodesResponse* res) {
   return get_string_attr_res(res);
+}
+
+::graphlearn::AggregatingRequest* new_agg_nodes_req(
+    const std::string& node_type,
+    const std::string& strategy) {
+  return new ::graphlearn::AggregatingRequest(node_type, strategy);
+}
+
+void del_agg_nodes_req(::graphlearn::AggregatingRequest* req) {
+  delete req;
+  req = NULL;
+}
+
+void set_agg_nodes_req(::graphlearn::AggregatingRequest* req,
+                       PyObject* node_ids,
+                       PyObject* segment_ids,
+                       int32_t num_segments) {
+  PyArrayObject* nodes = reinterpret_cast<PyArrayObject*>(node_ids);
+  npy_intp num_ids = PyArray_Size(node_ids);
+  PyArrayObject* segs = reinterpret_cast<PyArrayObject*>(segment_ids);
+  req->Set(reinterpret_cast<int64_t*>(PyArray_DATA(nodes)),
+           reinterpret_cast<int32_t*>(PyArray_DATA(segs)),
+           num_ids,
+           num_segments);
+}
+
+::graphlearn::AggregatingResponse* new_agg_nodes_res() {
+  return new ::graphlearn::AggregatingResponse();
+}
+
+void del_agg_nodes_res(::graphlearn::AggregatingResponse* res) {
+  delete res;
+  res = NULL;
+}
+
+PyObject* get_node_agg_res(::graphlearn::AggregatingResponse* res) {
+  int32_t attr_num = res->EmbeddingDim();
+  if (attr_num <= 0) {
+    Py_RETURN_NONE;
+  }
+  npy_intp shape[1];
+  int32_t batch_size = res->NumSegments();
+  shape[0] = batch_size * attr_num;
+  PyArray_Descr* descr = PyArray_DescrFromType(NPY_FLOAT32);
+  PyObject* obj = PyArray_Zeros(1, shape, descr, 0);
+  PyArrayObject* np_array = reinterpret_cast<PyArrayObject*>(obj);
+  memcpy(PyArray_DATA(np_array), res->Embeddings(),
+         batch_size * attr_num *FLOAT32_BYTES);
+  return obj;
 }
 
 #endif // GRAPHLEARN_PYTHON_PY_WRAPPER_H_

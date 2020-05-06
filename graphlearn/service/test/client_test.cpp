@@ -108,6 +108,126 @@ void TestLookupNodes(Client* client) {
   }
 }
 
+void TestSumAggregateNodes(Client* client) {
+  AggregatingRequest req("movie", "SumAggregator");
+  int64_t ids[10] = {0,  1, 2,  3, 4, 5,  6, 7, 8, 9};
+  int32_t segment_ids[10] = {0, 1, 1, 2, 2, 2, 3, 3, 3, 3};
+  int32_t num_segments = 4;
+  req.Set(ids, segment_ids, 10, 4);
+
+  AggregatingResponse res;
+  Status s = client->Aggregating(&req, &res);
+  std::cout << "SumAggregateNodes: " << s.ToString() << std::endl;
+
+  int32_t size = res.NumSegments();
+
+  if (res.EmbeddingDim() > 0) {
+    int32_t float_num = res.EmbeddingDim();
+    const float* floats = res.Embeddings();
+    std::cout << "floats: ";
+    for (int32_t i = 0; i < size * float_num; ++i) {
+      std::cout << floats[i] << ' ';
+    }
+    std::cout << std::endl;
+  }
+}
+
+void TestMeanAggregateNodes(Client* client) {
+  AggregatingRequest req("movie", "MeanAggregator");
+  int64_t ids[10] = {0,  1, 2,  3, 4, 5,  6, 7, 8, 9};
+  int32_t segment_ids[10] = {0, 1, 1, 2, 2, 2, 3, 3, 3, 3};
+  int32_t num_segments = 4;
+  req.Set(ids, segment_ids, 10, 4);
+
+  AggregatingResponse res;
+  Status s = client->Aggregating(&req, &res);
+  std::cout << "MeanAggregateNodes: " << s.ToString() << std::endl;
+
+  int32_t size = res.NumSegments();
+
+  if (res.EmbeddingDim() > 0) {
+    int32_t float_num = res.EmbeddingDim();
+    const float* floats = res.Embeddings();
+    std::cout << "floats: ";
+    for (int32_t i = 0; i < size * float_num; ++i) {
+      std::cout << floats[i] << ' ';
+    }
+    std::cout << std::endl;
+  }
+}
+
+void TestMaxAggregateNodes(Client* client) {
+  AggregatingRequest req("movie", "MaxAggregator");
+  int64_t ids[10] = {0,  1, 2,  3, 4, 5,  6, 7, 8, 9};
+  int32_t segment_ids[10] = {0, 1, 1, 2, 2, 2, 3, 3, 3, 3};
+  int32_t num_segments = 4;
+  req.Set(ids, segment_ids, 10, 4);
+
+  AggregatingResponse res;
+  Status s = client->Aggregating(&req, &res);
+  std::cout << "MaxAggregateNodes: " << s.ToString() << std::endl;
+
+  int32_t size = res.NumSegments();
+
+  if (res.EmbeddingDim() > 0) {
+    int32_t float_num = res.EmbeddingDim();
+    const float* floats = res.Embeddings();
+    std::cout << "floats: ";
+    for (int32_t i = 0; i < size * float_num; ++i) {
+      std::cout << floats[i] << ' ';
+    }
+    std::cout << std::endl;
+  }
+}
+
+void TestMinAggregateNodes(Client* client) {
+  AggregatingRequest req("movie", "MinAggregator");
+  int64_t ids[10] = {0,  1, 2,  3, 4, 5,  6, 7, 8, 9};
+  int32_t segment_ids[10] = {0, 1, 1, 2, 2, 2, 3, 3, 3, 3};
+  int32_t num_segments = 4;
+  req.Set(ids, segment_ids, 10, 4);
+
+  AggregatingResponse res;
+  Status s = client->Aggregating(&req, &res);
+  std::cout << "MinAggregateNodes: " << s.ToString() << std::endl;
+
+  int32_t size = res.NumSegments();
+
+  if (res.EmbeddingDim() > 0) {
+    int32_t float_num = res.EmbeddingDim();
+    const float* floats = res.Embeddings();
+    std::cout << "floats: ";
+    for (int32_t i = 0; i < size * float_num; ++i) {
+      std::cout << floats[i] << ' ';
+    }
+    std::cout << std::endl;
+  }
+}
+
+void TestProdAggregateNodes(Client* client) {
+  AggregatingRequest req("movie", "ProdAggregator");
+  int64_t ids[10] = {0,  1, 2,  3, 4, 5,  6, 7, 8, 9};
+  int32_t segment_ids[10] = {0, 1, 1, 2, 2, 2, 3, 3, 3, 3};
+  int32_t num_segments = 4;
+  req.Set(ids, segment_ids, 10, 4);
+
+  AggregatingResponse res;
+  Status s = client->Aggregating(&req, &res);
+  std::cout << "ProdAggregateNodes: " << s.ToString() << std::endl;
+
+  int32_t size = res.NumSegments();
+
+  if (res.EmbeddingDim() > 0) {
+    int32_t float_num = res.EmbeddingDim();
+    const float* floats = res.Embeddings();
+    std::cout << "floats: ";
+    for (int32_t i = 0; i < size * float_num; ++i) {
+      std::cout << floats[i] << ' ';
+    }
+    std::cout << std::endl;
+  }
+}
+
 void TestRandomSampleNeighbors(Client* client) {
   SamplingRequest req("click", "RandomSampler", 3);
   int64_t ids[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
@@ -180,6 +300,11 @@ int main(int argc, char** argv) {
   TestGetEdges(client);
   TestGetNodes(client);
   TestLookupNodes(client);
+  TestSumAggregateNodes(client);
+  TestMeanAggregateNodes(client);
+  TestMaxAggregateNodes(client);
+  TestMinAggregateNodes(client);
+  TestProdAggregateNodes(client);
   TestRandomSampleNeighbors(client);
   TestFullSampleNeighbors(client);
 

@@ -18,7 +18,7 @@ limitations under the License.
 #include "graphlearn/common/base/errors.h"
 #include "graphlearn/common/base/log.h"
 #include "graphlearn/core/graph/graph_store.h"
-#include "graphlearn/include/aggregation_request.h"
+#include "graphlearn/include/aggregating_request.h"
 #include "graphlearn/core/io/element_value.h"
 #include "graphlearn/core/operator/operator_factory.h"
 #include "graphlearn/include/config.h"
@@ -240,131 +240,123 @@ TEST_F(AggregationOpTest, Aggregator) {
     ids.push_back(i);
   }
   int32_t num_segments = 5;
-  std::vector<int32_t> segments;
+  std::vector<int32_t> segment_ids;
   for (int32_t j = 0; j < num_segments; ++j) {
-    segments.push_back(j);
+    for (int32_t i = 0; i < j; ++i) {
+      segment_ids.push_back(j);
+    }
   }
 
   {
-    AggregateNodesRequest* req = new AggregateNodesRequest("movie", "SumAggregator");
-    AggregateNodesResponse* res = new AggregateNodesResponse();
-    req->Set(ids.data(), id_size, segments.data(), num_segments);
+    AggregatingRequest* req = new AggregatingRequest("movie", "SumAggregator");
+    AggregatingResponse* res = new AggregatingResponse();
+    req->Set(ids.data(), segment_ids.data(), id_size, num_segments);
 
     Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
     EXPECT_TRUE(op != nullptr);
 
     Status s = op->Process(req, res);
     EXPECT_TRUE(s.ok());
-    EXPECT_EQ(res->Size(), num_segments);
-    EXPECT_EQ(res->Format(), int(kAttributed));
-    EXPECT_EQ(res->IntAttrNum(), 1);
-    EXPECT_EQ(res->FloatAttrNum(), 1);
-    EXPECT_EQ(res->StringAttrNum(), 1);
+    EXPECT_EQ(res->NumSegments(), num_segments);
+    EXPECT_EQ(res->EmbeddingDim(), 1);
 
-    const float* floats = res->FloatAttrs();
-    int32_t reduced_float_attrs[5] = {0, 0, 3, 12, 30};
-    for (int32_t i = 0; i < res->Size(); ++i) {
-      EXPECT_FLOAT_EQ(floats[i], reduced_float_attrs[i]);
+    const float* embs = res->Embeddings();
+    int32_t reduced_emb[5] = {0, 0, 3, 12, 30};
+    for (int32_t i = 0; i < res->NumSegments(); ++i) {
+      EXPECT_FLOAT_EQ(embs[i], reduced_emb[i]);
+    }
+
+    const int32_t* segments = res->Segments();
+    for (int32_t i = 0; i < res->NumSegments(); ++i) {
+      EXPECT_FLOAT_EQ(segments[i], i);
     }
     delete res;
     delete req;
   }
 
   {
-    AggregateNodesRequest* req = new AggregateNodesRequest("movie", "MeanAggregator");
-    AggregateNodesResponse* res = new AggregateNodesResponse();
-    req->Set(ids.data(), id_size, segments.data(), num_segments);
+    AggregatingRequest* req = new AggregatingRequest("movie", "MeanAggregator");
+    AggregatingResponse* res = new AggregatingResponse();
+    req->Set(ids.data(), segment_ids.data(), id_size, num_segments);
 
     Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
     EXPECT_TRUE(op != nullptr);
 
     Status s = op->Process(req, res);
     EXPECT_TRUE(s.ok());
-    EXPECT_EQ(res->Size(), num_segments);
-    EXPECT_EQ(res->Format(), int(kAttributed));
-    EXPECT_EQ(res->IntAttrNum(), 1);
-    EXPECT_EQ(res->FloatAttrNum(), 1);
-    EXPECT_EQ(res->StringAttrNum(), 1);
+    EXPECT_EQ(res->NumSegments(), num_segments);
+    EXPECT_EQ(res->EmbeddingDim(), 1);
 
-    const float* floats = res->FloatAttrs();
-    double reduced_float_attrs[5] = {0.0, 0.0, 3.0 / 2, 12.0 / 3 , 30.0 / 4};
-    for (int32_t i = 0; i < res->Size(); ++i) {
-      EXPECT_FLOAT_EQ(floats[i], reduced_float_attrs[i]);
+    const float* embs = res->Embeddings();
+    double reduced_emb[5] = {0.0, 0.0, 3.0 / 2, 12.0 / 3 , 30.0 / 4};
+    for (int32_t i = 0; i < res->NumSegments(); ++i) {
+      EXPECT_FLOAT_EQ(embs[i], reduced_emb[i]);
     }
     delete res;
     delete req;
   }
 
   {
-    AggregateNodesRequest* req = new AggregateNodesRequest("movie", "MinAggregator");
-    AggregateNodesResponse* res = new AggregateNodesResponse();
-    req->Set(ids.data(), id_size, segments.data(), num_segments);
+    AggregatingRequest* req = new AggregatingRequest("movie", "MinAggregator");
+    AggregatingResponse* res = new AggregatingResponse();
+    req->Set(ids.data(), segment_ids.data(), id_size, num_segments);
 
     Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
     EXPECT_TRUE(op != nullptr);
 
     Status s = op->Process(req, res);
     EXPECT_TRUE(s.ok());
-    EXPECT_EQ(res->Size(), num_segments);
-    EXPECT_EQ(res->Format(), int(kAttributed));
-    EXPECT_EQ(res->IntAttrNum(), 1);
-    EXPECT_EQ(res->FloatAttrNum(), 1);
-    EXPECT_EQ(res->StringAttrNum(), 1);
+    EXPECT_EQ(res->NumSegments(), num_segments);
+    EXPECT_EQ(res->EmbeddingDim(), 1);
 
-    const float* floats = res->FloatAttrs();
-    int32_t reduced_float_attrs[5] = {0, 0, 1, 3, 6 };
-    for (int32_t i = 0; i < res->Size(); ++i) {
-      EXPECT_FLOAT_EQ(floats[i], reduced_float_attrs[i]);
+    const float* embs = res->Embeddings();
+    int32_t reduced_emb[5] = {0, 0, 1, 3, 6 };
+    for (int32_t i = 0; i < res->NumSegments(); ++i) {
+      EXPECT_FLOAT_EQ(embs[i], reduced_emb[i]);
     }
     delete res;
     delete req;
   }
 
   {
-    AggregateNodesRequest* req = new AggregateNodesRequest("movie", "MaxAggregator");
-    AggregateNodesResponse* res = new AggregateNodesResponse();
-    req->Set(ids.data(), id_size, segments.data(), num_segments);
+    AggregatingRequest* req = new AggregatingRequest("movie", "MaxAggregator");
+    AggregatingResponse* res = new AggregatingResponse();
+    req->Set(ids.data(), segment_ids.data(), id_size, num_segments);
 
     Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
     EXPECT_TRUE(op != nullptr);
 
     Status s = op->Process(req, res);
     EXPECT_TRUE(s.ok());
-    EXPECT_EQ(res->Size(), num_segments);
-    EXPECT_EQ(res->Format(), int(kAttributed));
-    EXPECT_EQ(res->IntAttrNum(), 1);
-    EXPECT_EQ(res->FloatAttrNum(), 1);
-    EXPECT_EQ(res->StringAttrNum(), 1);
+    EXPECT_EQ(res->NumSegments(), num_segments);
+    EXPECT_EQ(res->EmbeddingDim(), 1);
 
-    const float* floats = res->FloatAttrs();
-    int32_t reduced_float_attrs[5] = {0, 0, 2, 5, 9};
-    for (int32_t i = 0; i < res->Size(); ++i) {
-      EXPECT_FLOAT_EQ(floats[i], reduced_float_attrs[i]);
+    const float* embs = res->Embeddings();
+    int32_t reduced_emb[5] = {0, 0, 2, 5, 9};
+    for (int32_t i = 0; i < res->NumSegments(); ++i) {
+      EXPECT_FLOAT_EQ(embs[i], reduced_emb[i]);
     }
     delete res;
     delete req;
   }
 
   {
-    AggregateNodesRequest* req = new AggregateNodesRequest("movie", "ProdAggregator");
-    AggregateNodesResponse* res = new AggregateNodesResponse();
-    req->Set(ids.data(), id_size, segments.data(), num_segments);
+    AggregatingRequest* req = new AggregatingRequest("movie", "ProdAggregator");
+    AggregatingResponse* res = new AggregatingResponse();
+    req->Set(ids.data(), segment_ids.data(), id_size, num_segments);
 
     Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
     EXPECT_TRUE(op != nullptr);
 
     Status s = op->Process(req, res);
     EXPECT_TRUE(s.ok());
-    EXPECT_EQ(res->Size(), num_segments);
-    EXPECT_EQ(res->Format(), int(kAttributed));
-    EXPECT_EQ(res->IntAttrNum(), 1);
-    EXPECT_EQ(res->FloatAttrNum(), 1);
-    EXPECT_EQ(res->StringAttrNum(), 1);
+    EXPECT_EQ(res->NumSegments(), num_segments);
+    EXPECT_EQ(res->EmbeddingDim(), 1);
 
-    const float* floats = res->FloatAttrs();
-    int32_t reduced_float_attrs[5] = {0, 0, 2, 60, 3024};
-    for (int32_t i = 0; i < res->Size(); ++i) {
-      EXPECT_FLOAT_EQ(floats[i], reduced_float_attrs[i]);
+    const float* embs = res->Embeddings();
+    int32_t reduced_emb[5] = {0, 0, 2, 60, 3024};
+    for (int32_t i = 0; i < res->NumSegments(); ++i) {
+      EXPECT_FLOAT_EQ(embs[i], reduced_emb[i]);
     }
     delete res;
     delete req;

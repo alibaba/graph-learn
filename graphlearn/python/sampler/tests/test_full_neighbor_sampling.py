@@ -44,6 +44,11 @@ class FullNeighborSamplingTestCase(SamplingTestCase):
           utils.fixed_dst_ids(ids[index], self._node2_range), node.ids)
       index += 1
 
+  def test_1hop_with_agg(self):
+    ids = self._seed_node2_ids
+    res = self.g.V(self._node2_type, feed=ids).outV(self._edge2_type).sample().by("full").emit()
+    print(res[1].embedding_agg(func="sum"))
+
   def test_1hop_using_gremlin(self):
     """ Full neighbor sample with gremlin-like api.
     """

@@ -22,10 +22,13 @@ class SumAggregator : public Aggregator {
 public:
   virtual ~SumAggregator() {}
 
-  void AggFunc(std::vector<float>* left,
-               const std::vector<float>& right) override {
-    for (int32_t i = 0; i < left->size(); ++i) {
-      left->at(i) = left->at(i) + right[i];
+  void AggFunc(float* left,
+               const float* right,
+               int32_t size,
+               const int32_t* segments,
+               int32_t num_segments) override {
+    for (int32_t i = 0; i < size; ++i) {
+      left[i] = left[i] + right[i];
     }
   }
 };

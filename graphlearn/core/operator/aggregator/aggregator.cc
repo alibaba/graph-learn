@@ -22,57 +22,66 @@ limitations under the License.
 namespace graphlearn {
 namespace op {
 
-Status Aggregator::Aggregate(const AggregateNodesRequest* req,
-                             AggregateNodesResponse* res) {
-  Noder* node = graph_store_->GetNoder(req->NodeType());
+Status Aggregator::Aggregate(const AggregatingRequest* req,
+                             AggregatingResponse* res) {
+  Noder* node = graph_store_->GetNoder(req->Type());
   ::graphlearn::io::NodeStorage* storage = node->GetLocalStorage();
   const ::graphlearn::io::SideInfo* info = storage->GetSideInfo();
-  res->SetSideInfo(info, req->NumSegments());
 
-  // default values
-  float default_weight = 0.0;
-  int32_t default_label = -1;
+  int32_t dim = info->f_num;
+  res->SetEmbeddingDim(dim);
+  int32_t num_segments = req->NumSegments();
+  res->SetNumSegments(num_segments);
+  res->SetName(req->Name());
 
   // Initialize float attributes.
   // Aggregator only takes effect on float attributes.
-  // Weight, label, int attribute and string attribute will be the
-  // default value.
-  ::graphlearn::io::Attribute attr =
-    *(::graphlearn::io::Attribute::Default(info));
+  float* emb = new float[dim]();
 
   int64_t node_id = 0;
-  int32_t segment = 0;
-  AggregateNodesRequest* request = const_cast<AggregateNodesRequest*>(req);
-  while (request->NextSegment(&segment)) {
-    this->InitFunc(&attr.f_attrs, info->f_num);
-    for (int32_t i = 0; i < segment; ++i) {
-      if (!request->NextId(&node_id)) {
-        LOG(WARNING) << "Aggregation: wrong size of segments.";
-      }
+  int32_t segment_id = 0;
+  int32_t segment_size = 0;
+  AggregatingRequest* request = const_cast<AggregatingRequest*>(req);
+  for (int32_t idx = 0; idx < num_segments; idx++) {
+    segment_size = 0;
+    this->InitFunc(emb, dim);
+    while (!req->SegmentEnd(idx)) {
+      request->Next(&node_id, &segment_id);
+      segment_size++;
       this->AggFunc(
-        &attr.f_attrs, storage->GetAttribute(node_id)->f_attrs);
+        emb, storage->GetAttribute(node_id)->f_attrs.data(), dim);
     }
-
-    res->AppendWeight(default_weight);
-    res->AppendLabel(default_label);
-
-    this->FinalFunc(&attr.f_attrs, segment);
-    res->AppendAttribute(&attr);
+    this->FinalFunc(emb, dim, &segment_size, 1);
+    res->AppendEmbedding(emb);
+    res->AppendSegment(segment_size);
   }
   return Status::OK();
 }
 
-void Aggregator::InitFunc(std::vector<float>* value, int32_t size) {
-  value->assign(size, 0.0);
+void Aggregator::InitFunc(float* value, int32_t size) {
+  for (int32_t i = 0; i < size; ++i) {
+    value[i] = 0.0;
+  }
 }
 
-void Aggregator::AggFunc(std::vector<float>* left,
-                         const std::vector<float>& right) {
+void Aggregator::AggFunc(float* left,
+                         const float* right,
+                         int32_t size,
+                         const int32_t* segments,
+                         int32_t num_segments) {
 }
 
-void Aggregator::FinalFunc(std::vector<float>* values, int32_t total) {
-  if (total == 0) {
-    values->assign(values->size(), GLOBAL_FLAG(DefaultFloatAttribute));
+void Aggregator::FinalFunc(float* values,
+                           int32_t size,
+                           const int32_t* segments,
+                           int32_t num_segments) {
+  int32_t dim = size / num_segments;
+  for (int32_t idx = 0; idx < num_segments; ++idx) {
+    if (segments[idx] == 0) {
+      for (int32_t i = 0; i < dim; ++i) {
+        values[idx * dim + i] = GLOBAL_FLAG(DefaultFloatAttribute);
+      }
+    }
   }
 }
 

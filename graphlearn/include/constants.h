@@ -41,6 +41,9 @@ extern const char* kFloatAttrKey;
 extern const char* kStringAttrKey;
 extern const char* kSideInfo;
 extern const char* kDirection;
+extern const char* kSegmentIds;
+extern const char* kNumSegments;
+extern const char* kSegments;
 
 namespace io {
 
