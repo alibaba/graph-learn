@@ -16,6 +16,7 @@ limitations under the License.
 #include <memory>
 #include <vector>
 #include "graphlearn/core/operator/sampler/alias_method.h"
+#include "graphlearn/core/operator/sampler/padder/padder.h"
 #include "graphlearn/core/operator/sampler/sampler.h"
 #include "graphlearn/include/config.h"
 
@@ -37,13 +38,14 @@ public:
     res->InitDegrees(batch_size);
     res->InitEdgeIds(batch_size * count);
 
-    const std::string& edge_type = req->EdgeType();
+    const std::string& edge_type = req->Type();
     Graph* graph = graph_store_->GetGraph(edge_type);
     auto storage = graph->GetLocalStorage();
 
-    std::unique_ptr<int32_t[]> indices(new int32_t[count]);
+    std::vector<int32_t> indices(count);
 
     const int64_t* src_ids = req->GetSrcIds();
+    Status s;
     for (int32_t i = 0; i < batch_size; ++i) {
       int64_t src_id = src_ids[i];
       auto neighbor_ids = storage->GetNeighbors(src_id);
@@ -51,16 +53,15 @@ public:
         res->FillWith(GLOBAL_FLAG(DefaultNeighborId), -1);
       } else {
         auto edge_ids = storage->GetOutEdges(src_id);
-        SampleFrom(neighbor_ids, storage, count, indices.get());
-
-        for (int32_t j = 0; j < count; ++j) {
-          int32_t idx = indices[j];
-          res->AppendNeighborId((*neighbor_ids)[idx]);
-          res->AppendEdgeId((*edge_ids)[idx]);
+        SampleFrom(neighbor_ids, storage, count, indices.data());
+        auto padder = GetPadder(*neighbor_ids, *edge_ids, indices);
+        s = padder->Pad(res, count, count);
+        if (!s.ok()) {
+          return s;
         }
       }
     }
-    return Status::OK();
+    return s;
   }
 
 private:

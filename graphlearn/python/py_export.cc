@@ -35,6 +35,7 @@ using graphlearn::io::Direction;
 using graphlearn::DataType;
 using graphlearn::NodeFrom;
 using graphlearn::PartitionMode;
+using graphlearn::PaddingMode;
 
 using graphlearn::Server;
 using graphlearn::Status;
@@ -64,6 +65,7 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
 
   // global flag settings.
   m.def("set_default_neighbor_id", &graphlearn::SetGlobalFlagDefaultNeighborId);
+  m.def("set_padding_mode", &graphlearn::SetGlobalFlagPaddingMode);
   m.def("set_default_int_attr", &graphlearn::SetGlobalFlagDefaultIntAttribute);
   m.def("set_default_float_attr",
         &graphlearn::SetGlobalFlagDefaultFloatAttribute);
@@ -126,6 +128,10 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
   py::enum_<PartitionMode>(m, "PartitionMode")
     .value("NO_PARTITION", PartitionMode::kNoPartition)
     .value("BY_SOURCE_ID", PartitionMode::kByHash);
+
+  py::enum_<PaddingMode>(m, "PaddingMode")
+    .value("REPLICATE", PaddingMode::kReplicate)
+    .value("CIRCULAR", PaddingMode::kCircular);
 
   py::enum_<Direction>(m, "Direction")
     .value("ORIGIN", Direction::kOrigin)
@@ -270,7 +276,7 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
   m.def("new_nbr_req",
         &new_nbr_req,
         py::return_value_policy::reference,
-        py::arg("edge_type"),
+        py::arg("type"),
         py::arg("strategy"),
         py::arg("neighbor_count"));
 

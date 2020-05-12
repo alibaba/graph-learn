@@ -36,7 +36,7 @@ public:
     res->InitEdgeIds(batch_size * count);
     res->InitNeighborIds(batch_size * count);
 
-    const std::string& edge_type = req->EdgeType();
+    const std::string& edge_type = req->Type();
     Graph* graph = graph_store_->GetGraph(edge_type);
     auto storage = graph->GetLocalStorage();
 

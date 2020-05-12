@@ -22,6 +22,7 @@ limitations under the License.
 #include "graphlearn/include/graph_request.h"
 #include "graphlearn/platform/env.h"
 #include "gtest/gtest.h"
+#include "graphlearn/include/config.h"
 
 using namespace graphlearn;  // NOLINT [build/namespaces]
 using namespace graphlearn::op;  // NOLINT [build/namespaces]
@@ -29,22 +30,39 @@ using namespace graphlearn::op;  // NOLINT [build/namespaces]
 class SamplerTest : public ::testing::Test {
 protected:
   void SetUp() override {
-    ::graphlearn::io::SideInfo info;
-    info.format = ::graphlearn::io::kWeighted;
-    info.type = "u-i";
-    info.src_type = "user";
-    info.dst_type = "item";
-    std::unique_ptr<UpdateEdgesRequest> req(new UpdateEdgesRequest(&info, 5));
-    std::unique_ptr<UpdateEdgesResponse> res(new UpdateEdgesResponse);
+    ::graphlearn::io::SideInfo info_edge;
+    info_edge.format = ::graphlearn::io::kWeighted;
+    info_edge.type = "u-i";
+    info_edge.src_type = "user";
+    info_edge.dst_type = "item";
+    std::unique_ptr<UpdateEdgesRequest> req_edge(new UpdateEdgesRequest(&info_edge, 5));
+    std::unique_ptr<UpdateEdgesResponse> res_edge(new UpdateEdgesResponse);
 
-    ::graphlearn::io::EdgeValue value;
+    ::graphlearn::io::EdgeValue value_edge;
     for (int32_t i = 0; i < 5; ++i) {
-      GenEdgeValue(&value, i);
-      req->Append(&value);
+      GenEdgeValue(&value_edge, i);
+      req_edge->Append(&value_edge);
     }
+
+    ::graphlearn::io::SideInfo info_node;
+    info_node.format = ::graphlearn::io::kWeighted;
+    info_node.type = "user";
+    std::unique_ptr<UpdateNodesRequest> req_node(new UpdateNodesRequest(&info_node, 5));
+    std::unique_ptr<UpdateNodesResponse> res_node(new UpdateNodesResponse);
+
+    ::graphlearn::io::NodeValue value_node;
+    for (int32_t i = 0; i < 5; ++i) {
+      GenNodeValue(&value_node, i);
+      req_node->Append(&value_node);
+    }
+
     graph_store_ = new GraphStore(Env::Default());
     Graph* graph = graph_store_->GetGraph("u-i");
-    graph->UpdateEdges(req.get(), res.get());
+    Noder* noder = graph_store_->GetNoder("user");
+    graph->UpdateEdges(req_edge.get(), res_edge.get());
+    noder->UpdateNodes(req_node.get(), res_node.get());
+    graph->Build();
+    noder->Build();
   }
 
   void TearDown() override {
@@ -54,9 +72,16 @@ protected:
   void GenEdgeValue(::graphlearn::io::EdgeValue* value, int32_t index) {
     ::graphlearn::io::IdType src_ids[5] = {0, 0, 0, 1, 1};
     ::graphlearn::io::IdType dst_ids[5] = {10, 20, 30, 11, 21};
-    float weights[5] = {1.0, 0.8, 0.5, 1.2, 0.88};
+    float weights[5] = {0.8, 1.0, 0.5, 0.88, 1.2};
     value->src_id = src_ids[index];
     value->dst_id = dst_ids[index];
+    value->weight = weights[index];
+  }
+
+  void GenNodeValue(::graphlearn::io::NodeValue* value, int32_t index) {
+    ::graphlearn::io::IdType node_ids[5] = {0, 1, 2, 3, 4};
+    float weights[5] = {0.8, 1.0, 0.5, 0.88, 1.2};
+    value->id = node_ids[index];
     value->weight = weights[index];
   }
 
@@ -101,6 +126,46 @@ TEST_F(SamplerTest, Random) {
   delete req;
 }
 
+TEST_F(SamplerTest, RandomWithoutReplacement) {
+  int32_t nbr_count = 3;
+  SamplingRequest* req = new SamplingRequest(
+      "u-i", "RandomWithoutReplacementSampler", nbr_count);
+  SamplingResponse* res = new SamplingResponse();
+
+  // 1 has neighbors {11, 21}, 2 has no neighbors
+  int32_t batch_size = 2;
+  int64_t ids[2] = {1, 2};
+  req->Set(ids, batch_size);
+
+  OperatorFactory::GetInstance().Set(graph_store_);
+  Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
+  EXPECT_TRUE(op != nullptr);
+
+  Status s = op->Process(req, res);
+  EXPECT_TRUE(s.ok());
+
+  EXPECT_EQ(res->BatchSize(), batch_size);
+  EXPECT_EQ(res->NeighborCount(), nbr_count);
+  EXPECT_EQ(res->IsSparse(), false);
+
+  std::unordered_set<int64_t> nbr_set({11, 21});
+  const int64_t* neighbor_ids = res->GetNeighborIds();
+  // check neighbors of 1
+  for (int32_t i = 0; i < 2; ++i) {
+    EXPECT_TRUE(nbr_set.find(neighbor_ids[i]) != nbr_set.end());
+    nbr_set.erase(nbr_set.find(neighbor_ids[i]));
+  }
+  EXPECT_TRUE(neighbor_ids[2] == GLOBAL_FLAG(DefaultNeighborId));
+
+  // check neighbors of 2, fill with default id
+  for (int32_t i = nbr_count; i < batch_size * nbr_count; ++i) {
+    EXPECT_TRUE(neighbor_ids[i] == 0);
+  }
+
+  delete res;
+  delete req;
+}
+
 TEST_F(SamplerTest, Topk) {
   int32_t nbr_count = 2;
   SamplingRequest* req = new SamplingRequest("u-i", "TopkSampler", nbr_count);
@@ -123,7 +188,7 @@ TEST_F(SamplerTest, Topk) {
   EXPECT_EQ(res->IsSparse(), false);
 
   // expected results will be ordered by edge_weight
-  int64_t result[4] = {10, 20, 11, 21};
+  int64_t result[4] = {20, 10, 21, 11};
   const int64_t* neighbor_ids = res->GetNeighborIds();
   for (int32_t i = 0; i < batch_size * nbr_count; ++i) {
     EXPECT_EQ(neighbor_ids[i], result[i]);
@@ -244,6 +309,41 @@ TEST_F(SamplerTest, Full) {
   std::unordered_set<int64_t> nbr_set_1({11, 21});
   for (int32_t i = 3; i < 5; ++i) {
     EXPECT_TRUE(nbr_set_1.find(neighbor_ids[i]) != nbr_set_1.end());
+  }
+
+  delete res;
+  delete req;
+}
+
+TEST_F(SamplerTest, NodeWeightNegative) {
+  int32_t nbr_count = 2;
+  SamplingRequest* req = new SamplingRequest("user", "NodeWeightNegativeSampler", nbr_count);
+  SamplingResponse* res = new SamplingResponse();
+
+  int32_t batch_size = 2;
+  int64_t ids[2] = {0, 1};
+  req->Set(ids, batch_size);
+
+  OperatorFactory::GetInstance().Set(graph_store_);
+  Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
+  EXPECT_TRUE(op != nullptr);
+
+  Status s = op->Process(req, res);
+  EXPECT_TRUE(s.ok());
+
+  EXPECT_EQ(res->BatchSize(), batch_size);
+  EXPECT_EQ(res->NeighborCount(), nbr_count);
+  EXPECT_EQ(res->IsSparse(), false);
+
+  const int64_t* neighbor_ids = res->GetNeighborIds();
+
+  // res should not be in neg_set
+  std::unordered_set<int64_t> neg_set({0, 1});
+  // res should be in pos_set
+  std::unordered_set<int64_t> pos_set({2, 3, 4});
+  for (int32_t i = 0; i < batch_size * nbr_count; ++i) {
+    EXPECT_TRUE(neg_set.find(neighbor_ids[i]) == neg_set.end());
+    EXPECT_TRUE(pos_set.find(neighbor_ids[i]) != pos_set.end());
   }
 
   delete res;

@@ -24,7 +24,7 @@ namespace graphlearn {
 class SamplingRequest : public OpRequest {
 public:
   SamplingRequest();
-  SamplingRequest(const std::string& edge_type,
+  SamplingRequest(const std::string& type,
                   const std::string& strategy,
                   int32_t neighbor_count);
   ~SamplingRequest() = default;
@@ -35,7 +35,7 @@ public:
 
   void Set(const int64_t* src_ids, int32_t batch_size);
 
-  const std::string& EdgeType() const;
+  const std::string& Type() const;
   const std::string& Strategy() const;
   int32_t BatchSize() const;
   int32_t NeighborCount() const { return neighbor_count_; }

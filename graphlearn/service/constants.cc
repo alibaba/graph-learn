@@ -21,6 +21,7 @@ const char* kPartitionKey = "pt";
 const char* kOpName = "op";
 const char* kNodeType = "nt";
 const char* kEdgeType = "et";
+const char* kType = "tp";
 const char* kSrcType = "st";
 const char* kDstType = "dt";
 const char* kSrcIds = "sid";

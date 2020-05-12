@@ -59,12 +59,12 @@ const std::unordered_map<int, ::graphlearn::DataType> type_map{
 
 // Here we implement new and delete req and res and info.
 ::graphlearn::SamplingRequest* new_nbr_req(
-  const std::string& edge_type,
+  const std::string& type,
   const std::string& strategy,
   int32_t neighbor_count
   ) {
   return new ::graphlearn::SamplingRequest(
-    edge_type, strategy, neighbor_count);
+    type, strategy, neighbor_count);
 }
 
 void del_nbr_req(::graphlearn::SamplingRequest* req) {

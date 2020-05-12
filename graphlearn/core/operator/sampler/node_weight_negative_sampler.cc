@@ -25,9 +25,9 @@ namespace {
 const int32_t kRetryTimes = 3;
 }  // anonymous space
 
-class InDegreeNegativeSampler : public Sampler {
+class NodeWeightNegativeSampler : public Sampler {
 public:
-  virtual ~InDegreeNegativeSampler() {}
+  virtual ~NodeWeightNegativeSampler() {}
 
   Status Sample(const SamplingRequest* req,
                 SamplingResponse* res) override {
@@ -41,30 +41,27 @@ public:
     res->InitNeighborIds(batch_size * count);
 
     const int64_t* src_ids = req->GetSrcIds();
-    const std::string& edge_type = req->Type();
-    Graph* graph = graph_store_->GetGraph(edge_type);
-    auto storage = graph->GetLocalStorage();
+    const std::string& node_type = req->Type();
+    Noder* noder = graph_store_->GetNoder(node_type);
+    auto storage = noder->GetLocalStorage();
 
-    AliasMethod* am = CreateAM(edge_type, storage);
+    AliasMethod* am = CreateAM(node_type, storage);
     SampleAndFill(storage, src_ids, batch_size, count, am, res);
 
     return Status::OK();
   }
 
 protected:
-  virtual void SampleAndFill(::graphlearn::io::GraphStorage* storage,
+  virtual void SampleAndFill(::graphlearn::io::NodeStorage* storage,
                              const int64_t* src_ids,
                              int32_t batch_size,
                              int32_t n,
                              AliasMethod* am,
                              SamplingResponse* res) {
     std::unique_ptr<int32_t[]> indices(new int32_t[n]);
-    auto dst_ids = storage->GetAllDstIds();
+    auto ids = storage->GetIds();
+    std::unordered_set<int64_t> sets(src_ids, src_ids + batch_size);
     for (int32_t i = 0; i < batch_size; ++i) {
-      int64_t src_id = src_ids[i];
-      auto nbr_ids = storage->GetNeighbors(src_id);
-      std::unordered_set<int64_t> sets(nbr_ids->begin(), nbr_ids->end());
-
       int32_t count = 0;
       int32_t cursor = 0;
       int32_t retry_times = kRetryTimes + 1;
@@ -81,7 +78,7 @@ protected:
           }
         }
 
-        int64_t item = dst_ids->at(indices[cursor++]);
+        int64_t item = ids->at(indices[cursor++]);
         if (sets.find(item) == sets.end()) {
           res->AppendNeighborId(item);
           ++count;
@@ -92,7 +89,7 @@ protected:
 
 private:
   AliasMethod* CreateAM(const std::string& type,
-                        ::graphlearn::io::GraphStorage* storage) {
+                        ::graphlearn::io::NodeStorage* storage) {
     AliasMethodFactory* factory = AliasMethodFactory::GetInstance();
     factory->Lock();
     AliasMethod* am = factory->Get(type);
@@ -101,8 +98,8 @@ private:
       return am;
     }
 
-    auto in_degrees = storage->GetAllInDegrees();
-    std::vector<float> probs(in_degrees->begin(), in_degrees->end());
+    auto weights = storage->GetWeights();
+    std::vector<float> probs(weights->begin(), weights->end());
     am = new AliasMethod(&probs);
     factory->Put(type, am);
     factory->Unlock();
@@ -110,31 +107,7 @@ private:
   }
 };
 
-class SoftInDegreeNegativeSampler : public InDegreeNegativeSampler {
-public:
-  virtual ~SoftInDegreeNegativeSampler() = default;
-
-protected:
-  void SampleAndFill(::graphlearn::io::GraphStorage* storage,
-                     const int64_t* src_ids,
-                     int32_t batch_size,
-                     int32_t count,
-                     AliasMethod* am,
-                     SamplingResponse* res) override {
-    std::unique_ptr<int32_t[]> indices(new int32_t[count]);
-    auto dst_ids = storage->GetAllDstIds();
-    for (int32_t i = 0; i < batch_size; ++i) {
-      am->Sample(count, indices.get());
-      for (int32_t j = 0; j < count; ++j) {
-        int32_t idx = indices[j];
-        res->AppendNeighborId((*dst_ids)[idx]);
-      }
-    }
-  }
-};
-
-REGISTER_OPERATOR("InDegreeNegativeSampler", InDegreeNegativeSampler);
-REGISTER_OPERATOR("SoftInDegreeNegativeSampler", SoftInDegreeNegativeSampler);
+REGISTER_OPERATOR("NodeWeightNegativeSampler", NodeWeightNegativeSampler);
 
 }  // namespace op
 }  // namespace graphlearn

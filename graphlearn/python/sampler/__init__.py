@@ -20,9 +20,10 @@ from graphlearn.python.sampler.edge_sampler import RandomEdgeSampler, \
   ByOrderEdgeSampler, ShuffleEdgeSampler
 from graphlearn.python.sampler.neighbor_sampler import RandomNeighborSampler, \
   EdgeWeightNeighborSampler, TopkNeighborSampler, \
-  InDegreeNeighborSampler, FullNeighborSampler
+  InDegreeNeighborSampler, FullNeighborSampler, \
+  RandomWithoutReplacementNeighborSampler
 from graphlearn.python.sampler.negative_sampler import RandomNegativeSampler, \
-  InDegreeNegativeSampler
+  InDegreeNegativeSampler, NodeWeightNegativeSampler
 
 __all__ = [
     "RandomNodeSampler",
@@ -32,9 +33,11 @@ __all__ = [
     "ByOrderEdgeSampler",
     "ShuffleEdgeSampler",
     "RandomNeighborSampler",
+    "RandomWithoutReplacementNeighborSampler",
     "EdgeWeightNeighborSampler",
     "InDegreeNeighborSampler",
     "FullNeighborSampler",
     "RandomNegativeSampler",
     "InDegreeNegativeSampler",
+    "NodeWeightNegativeSampler"
 ]

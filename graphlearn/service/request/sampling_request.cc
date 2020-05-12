@@ -29,7 +29,7 @@ SamplingRequest::SamplingRequest()
       src_ids_(nullptr) {
 }
 
-SamplingRequest::SamplingRequest(const std::string& edge_type,
+SamplingRequest::SamplingRequest(const std::string& type,
                                  const std::string& strategy,
                                  int32_t neighbor_count)
     : OpRequest(),
@@ -37,8 +37,8 @@ SamplingRequest::SamplingRequest(const std::string& edge_type,
       src_ids_(nullptr) {
   params_.reserve(4);
 
-  ADD_TENSOR(params_, kEdgeType, kString, 1);
-  params_[kEdgeType].AddString(edge_type);
+  ADD_TENSOR(params_, kType, kString, 1);
+  params_[kType].AddString(type);
 
   ADD_TENSOR(params_, kPartitionKey, kString, 1);
   params_[kPartitionKey].AddString(kSrcIds);
@@ -55,7 +55,7 @@ SamplingRequest::SamplingRequest(const std::string& edge_type,
 
 OpRequest* SamplingRequest::Clone() const {
   SamplingRequest* req = new SamplingRequest(
-    EdgeType(), Strategy(), neighbor_count_);
+    Type(), Strategy(), neighbor_count_);
   return req;
 }
 
@@ -81,8 +81,8 @@ int32_t SamplingRequest::BatchSize() const {
   return src_ids_->Size();
 }
 
-const std::string& SamplingRequest::EdgeType() const {
-  return params_.at(kEdgeType).GetString(0);
+const std::string& SamplingRequest::Type() const {
+  return params_.at(kType).GetString(0);
 }
 
 const std::string& SamplingRequest::Strategy() const {
@@ -243,6 +243,7 @@ const int32_t* SamplingResponse::GetDegrees() const {
   REGISTER_REQUEST(Type##Sampler, SamplingRequest, SamplingResponse)
 
 REGISTER_SAMPING_REQUEST(Random)
+REGISTER_SAMPING_REQUEST(RandomWithoutReplacement)
 REGISTER_SAMPING_REQUEST(Topk)
 REGISTER_SAMPING_REQUEST(EdgeWeight)
 REGISTER_SAMPING_REQUEST(InDegree)
@@ -250,6 +251,7 @@ REGISTER_SAMPING_REQUEST(Full)
 REGISTER_SAMPING_REQUEST(RandomNegative)
 REGISTER_SAMPING_REQUEST(InDegreeNegative)
 REGISTER_SAMPING_REQUEST(SoftInDegreeNegative)
+REGISTER_SAMPING_REQUEST(NodeWeightNegative)
 
 #undef REGISTER_SAMPING_REQUEST
 

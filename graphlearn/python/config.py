@@ -26,6 +26,10 @@ def set_default_neighbor_id(nbr_id):
   pywrap.set_default_neighbor_id(nbr_id)
 
 
+def set_padding_mode(mode):
+  pywrap.set_padding_mode(mode)
+
+
 def set_default_int_attribute(value=0):
   """ Set default global int attribute.
   """

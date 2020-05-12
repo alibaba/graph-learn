@@ -18,14 +18,11 @@ limitations under the License.
 
 #include <vector>
 #include <string>
+#include "graphlearn/core/graph/storage/node_storage.h"
 #include "graphlearn/include/graph_request.h"
 #include "graphlearn/include/status.h"
 
 namespace graphlearn {
-
-namespace io {
-class NodeStorage;
-}  // namespace io
 
 class Noder {
 public:
