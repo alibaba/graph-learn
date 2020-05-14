@@ -31,7 +31,7 @@ def gen_files():
         s = 'src_id:int64\tdst_id:int64\tweight:float\n'
         f.write(s)
         for i in range(u_count):
-            for j in range(100, 100 + i_count, 2):
+            for j in range(100, 100 + i_count):
                 s = '%d\t%d\t%f\n' % (i, j, (i + j) * 0.1)
                 f.write(s)
 gen_files()

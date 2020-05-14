@@ -18,6 +18,7 @@ limitations under the License.
 
 #include "graphlearn/include/graph_request.h"
 #include "graphlearn/include/sampling_request.h"
+#include "graphlearn/include/aggregating_request.h"
 #include "graphlearn/include/status.h"
 
 namespace graphlearn {
@@ -40,6 +41,7 @@ public:
   DECLARE_METHOD(LookupNodes);
   DECLARE_METHOD(GetTopology);
   DECLARE_METHOD(Sampling);
+  DECLARE_METHOD(Aggregating);
 
 #undef DECLARE_METHOD
 

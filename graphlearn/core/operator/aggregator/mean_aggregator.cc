@@ -23,22 +23,39 @@ class MeanAggregator : public Aggregator {
 public:
   virtual ~MeanAggregator() {}
 
-  void AggFunc(std::vector<float>* left,
-               const std::vector<float>& right) override {
-    for (int32_t i = 0; i < left->size(); ++i) {
-      left->at(i) += right[i];
+  void AggFunc(float* left,
+               const float* right,
+               int32_t size,
+               const int32_t* segments,
+               int32_t num_segments) override {
+    if (segments != nullptr) {
+      int32_t dim = size / num_segments;
+      for (int32_t i = 0; i < num_segments; ++i) {
+        for (int32_t j = 0; j < dim; ++j) {
+          left[i * dim + j] += right[i * dim + j] * segments[i];
+        }
+      }
+    } else {
+      for (int32_t i = 0; i < size; ++i) {
+        left[i] = left[i] + right[i];
+      }
     }
   }
 
-  void FinalFunc(std::vector<float>* values,
-                 int32_t total) override {
-    int32_t size = values->size();
-    if (total == 0) {
-      values->assign(values->size(),
-                     GLOBAL_FLAG(DefaultFloatAttribute));
-    } else {
-      for (int32_t i = 0; i < size; ++i) {
-        values->at(i) = values->at(i) / total;
+  void FinalFunc(float* values,
+                 int32_t size,
+                 const int32_t* segments,
+                 int32_t num_segments) override {
+    int32_t dim = size / num_segments;
+    for (int32_t idx = 0; idx < num_segments; ++idx) {
+      if (segments[idx] == 0) {
+        for (int32_t i = 0; i < dim; ++i) {
+          values[idx * dim + i] = GLOBAL_FLAG(DefaultFloatAttribute);
+        }
+      } else {
+        for (int32_t i = 0; i < dim; ++i) {
+          values[idx * dim + i] = values[idx * dim + i] / segments[idx];
+        }
       }
     }
   }

@@ -48,6 +48,7 @@ DEFINE_METHOD(GetNodes);
 DEFINE_METHOD(LookupNodes);
 DEFINE_METHOD(GetTopology);
 DEFINE_METHOD(Sampling);
+DEFINE_METHOD(Aggregating);
 
 #undef DEFINE_METHOD
 

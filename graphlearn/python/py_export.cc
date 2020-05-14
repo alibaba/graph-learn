@@ -53,12 +53,14 @@ using graphlearn::LookupNodesRequest;
 using graphlearn::LookupNodesResponse;
 using graphlearn::LookupEdgesRequest;
 using graphlearn::LookupEdgesResponse;
+using graphlearn::AggregatingRequest;
+using graphlearn::AggregatingResponse;
 using graphlearn::GetTopologyRequest;
 using graphlearn::GetTopologyResponse;
 
 
 PYBIND11_MODULE(pywrap_graphlearn, m) {
-  m.doc() = "Python interface for Sampling Store.";
+  m.doc() = "Python interface for graph-learn.";
 
   // global flag settings.
   m.def("set_default_neighbor_id", &graphlearn::SetGlobalFlagDefaultNeighborId);
@@ -206,6 +208,10 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
     .def(py::init<>());
   py::class_<LookupNodesResponse>(m, "LookupNodesResponse")
     .def(py::init<>());
+  py::class_<AggregatingRequest>(m, "AggregatingRequest")
+    .def(py::init<>());
+  py::class_<AggregatingResponse>(m, "AggregatingResponse")
+    .def(py::init<>());
 
   // Client methods.
   py::class_<Client>(m, "Client")
@@ -246,6 +252,14 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
         [](Client & self, LookupNodesRequest* req,
           LookupNodesResponse* res) {
           Status s = self.LookupNodes(req, res);
+          return s;
+        },
+        py::arg("request"),
+        py::arg("response"))
+    .def("agg_nodes",
+        [](Client & self, AggregatingRequest* req,
+          AggregatingResponse* res) {
+          Status s = self.Aggregating(req, res);
           return s;
         },
         py::arg("request"),
@@ -508,6 +522,43 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
           ImportNumpy();
           return py::reinterpret_steal<py::object>(
             get_node_string_attr_res(res));
+        },
+        py::return_value_policy::reference);
+
+  m.def("new_agg_nodes_req",
+      &new_agg_nodes_req,
+      py::return_value_policy::reference,
+      py::arg("node_type"),
+      py::arg("strategy"));
+
+  m.def("del_agg_nodes_req",
+        [](AggregatingRequest* req) {
+          del_agg_nodes_req(req);
+        });
+
+  m.def("set_agg_nodes_req",
+      [](AggregatingRequest* req,
+        py::object node_ids,
+        py::object segement_ids,
+        int32_t num_segments) {
+        ImportNumpy();
+        set_agg_nodes_req(req, node_ids.ptr(), segement_ids.ptr(), num_segments);
+      });
+
+  m.def("new_agg_nodes_res",
+        &new_agg_nodes_res,
+        py::return_value_policy::reference);
+
+  m.def("del_agg_nodes_res",
+        [](AggregatingResponse* res) {
+          del_agg_nodes_res(res);
+        });
+
+  m.def("get_node_agg_res",
+        [](AggregatingResponse* res) {
+          ImportNumpy();
+          return py::reinterpret_steal<py::object>(
+            get_node_agg_res(res));
         },
         py::return_value_policy::reference);
 

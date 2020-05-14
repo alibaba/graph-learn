@@ -23,14 +23,19 @@ class MaxAggregator : public Aggregator {
 public:
   virtual ~MaxAggregator() {}
 
-  void InitFunc(std::vector<float>* value, int32_t size) override {
-    value->assign(size, FLT_MIN_10_EXP);
+  void InitFunc(float* value, int32_t size) {
+    for (int32_t i = 0; i < size; ++i) {
+      value[i] = FLT_MIN_10_EXP;
+    }
   }
 
-  void AggFunc(std::vector<float>* left,
-               const std::vector<float>& right) override {
-    for (int32_t i = 0; i < left->size(); ++i) {
-      left->at(i) = std::max(left->at(i), right[i]);
+  void AggFunc(float* left,
+               const float* right,
+               int32_t size,
+               const int32_t* segments,
+               int32_t num_segments) override {
+    for (int32_t i = 0; i < size; ++i) {
+      left[i] = std::max(left[i], right[i]);
     }
   }
 };

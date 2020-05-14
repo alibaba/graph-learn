@@ -23,14 +23,19 @@ class MinAggregator : public Aggregator {
 public:
   virtual ~MinAggregator() {}
 
-  void InitFunc(std::vector<float>* value, int32_t size) override {
-    value->assign(size, FLT_MAX);
+  void InitFunc(float* value, int32_t size) {
+    for (int32_t i = 0; i < size; ++i) {
+      value[i] = FLT_MAX;
+    }
   }
 
-  void AggFunc(std::vector<float>* left,
-               const std::vector<float>& right) override {
-    for (int32_t i = 0; i < left->size(); ++i) {
-      left->at(i) = std::min(left->at(i), right[i]);
+  void AggFunc(float* left,
+               const float* right,
+               int32_t size,
+               const int32_t* segments,
+               int32_t num_segments) override {
+    for (int32_t i = 0; i < size; ++i) {
+      left[i] = std::min(left[i], right[i]);
     }
   }
 };

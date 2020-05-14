@@ -40,5 +40,8 @@ const char* kFloatAttrKey = "fa";
 const char* kStringAttrKey = "sa";
 const char* kSideInfo = "si";
 const char* kDirection = "dir";
+const char* kSegmentIds = "segi";
+const char* kNumSegments = "ns";
+const char* kSegments = "sm";
 
 }  // namespace graphlearn

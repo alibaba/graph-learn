@@ -70,7 +70,10 @@ def main(argv):
 
     print("Random sample...")
     s = g.neighbor_sampler("buy", expand_factor=2, strategy="random")
-    print(s.get(np.array([0, 1, 2])).layer_nodes(1).ids)
+    nodes = s.get(np.array([0, 1, 2])).layer_nodes(1)
+    print(nodes.ids)
+    print(nodes.float_attrs)
+    print(nodes.embedding_agg(func="mean"))
     print("Random Sample Done...")
 
     print("Full sample...")
@@ -78,6 +81,7 @@ def main(argv):
     nodes = s.get(np.array([0, 1, 2])).layer_nodes(1)
     print(nodes.ids)
     print(nodes.offsets)
+    print(nodes.embedding_agg())
     print("Full Sample Done...")
 
     print("InDegree neg sample...")
