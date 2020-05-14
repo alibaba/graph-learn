@@ -34,7 +34,7 @@ class EgoFlow(object):
   Args:
     sample_seed: the function that generate Nodes or Edges used as seed.
     positive_sample: the function used when performing positive sample.
-    receptive_fn: teh function used when performing neighbor sample.
+    receptive_fn: the function used when performing neighbor sample.
     src_ego_spec: Ego spec for the source node.
     dst_ego_spec: Ego spec for the destination node.
     edge_ego_spec: Ego spec for the edge.
@@ -208,7 +208,7 @@ class EgoFlow(object):
               # negative_sample returns Nodes
               neg_node = self._negative_sample(pos_edge)
               neg_dst_recept = self._receptive_fn(neg_node)
-             
+
         egographs_tuple = tuple()
         pos_src_flatten_egograph = \
           pos_src_recept.flatten(spec = self._src_ego_spec)
