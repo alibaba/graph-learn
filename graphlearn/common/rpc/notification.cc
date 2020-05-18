@@ -123,9 +123,6 @@ void RpcNotificationImpl::Init(const std::string& req_type,
     rpc_times_.resize(size, 0);
     initialized = true;
     begin_time_ = GetTimeStampInUs();
-    LOG(INFO) << "RpcNotification:Start"
-              << "\treq_type:" << req_type_
-              << "\tsize:" << size;
   }
 }
 
@@ -146,10 +143,6 @@ void RpcNotificationImpl::SetCallback(RpcNotification::Callback cb) {
 }
 
 void RpcNotificationImpl::Notify(int32_t remote_id) {
-  LOG(INFO) << "RpcNotification:Notify"
-            << "\treq_type:" << req_type_
-            << "\tremote_id:" << remote_id
-            << "\ttotal:" << total_tasks_.load();
   std::unordered_map<int32_t, int32_t>::const_iterator it;
   {
     LockType::ReaderLocker _(lock);
@@ -165,8 +158,6 @@ void RpcNotificationImpl::Notify(int32_t remote_id) {
   rpc_times_[index] = (GetTimeStampInUs() - begin_time_) / 1000;
   int32_t finished = finished_tasks_.fetch_add(1);
   if (finished + 1 >= total_tasks_.load()) {
-    LOG(INFO) << "RpcNotification:Done"
-              << "\treq_type:" << req_type_;
     if (cb_ != nullptr) {
       cb_(req_type_, Status::OK());
     }
