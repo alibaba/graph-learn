@@ -147,7 +147,10 @@ public:
   explicit Generator(DataStorage* storage) : storage_(storage) {
     ids_ = storage_->GetIds();
   }
-  virtual ~Generator() = default;
+  virtual ~Generator() {
+    delete storage_;
+    storage_ = NULL;
+  };
   virtual bool Next(::graphlearn::io::IdType* ret) = 0;
   virtual void Reset() {}
 

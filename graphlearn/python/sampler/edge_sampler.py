@@ -79,6 +79,10 @@ class EdgeSampler(object):
     src_ids = pywrap.get_edge_src_id_res(res)
     dst_ids = pywrap.get_edge_dst_id_res(res)
     edge_ids = pywrap.get_edge_edge_id_res(res)
+
+    pywrap.del_get_edge_res(res)
+    pywrap.del_get_edge_req(req)
+
     edges = self._graph.get_edges(self._edge_type,
                                   src_ids,
                                   dst_ids)

@@ -70,7 +70,7 @@ public:
       RunInParallel(req->Name(), res, req_shards, res_shards, status_shards);
 
       int32_t shard_id = 0;
-      Status* s = new Status();
+      Status* s = nullptr;
       while (status_shards->Next(&shard_id, &s)) {
         if (!s->ok()) {
           return *s;
