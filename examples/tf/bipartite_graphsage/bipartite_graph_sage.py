@@ -101,11 +101,11 @@ class BipartiteGraphSage(gl.LearningBasedModel):
     i_hops_spec = [] # i-u-i-u-i...
     for i in range(self.hops_num):
       if (i % 2) == 0:
-        u_hops_spec.append(i_hop_spec)
-        i_hops_spec.append(u_hop_spec)
-      else:
         u_hops_spec.append(u_hop_spec)
         i_hops_spec.append(i_hop_spec)
+      else:
+        u_hops_spec.append(i_hop_spec)
+        i_hops_spec.append(u_hop_spec)
 
     self.u_ego_spec = gl.EgoSpec(u_spec, hops_spec=u_hops_spec)
     self.i_ego_spec = gl.EgoSpec(i_spec, hops_spec=i_hops_spec)
@@ -125,7 +125,7 @@ class BipartiteGraphSage(gl.LearningBasedModel):
   def _positive_sample(self, t):
     if isinstance(t, gl.Nodes):
       # faked edge used to save embedding.
-      return gl.Edges(t.ids, t.type, t.ids, t.type, 'fake', graph=self.graph) 
+      return gl.Edges(t.ids, t.type, t.ids, t.type, 'fake', graph=self.graph)
     else:
       return t
 
