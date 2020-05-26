@@ -33,15 +33,15 @@ namespace {
 
 class State {
 public:
-  State() : cursor_(0) {
+  State() : cursor_(0), epoch_(0) {
   }
 
   void Inc() {
     ++cursor_;
   }
 
-  void Inc(int32_t step_size) {
-    cursor_ += step_size;
+  void Inc(int32_t delta) {
+    cursor_ += delta;
   }
 
   int32_t Now() {
@@ -50,6 +50,14 @@ public:
 
   void Reset() {
     cursor_ = 0;
+  }
+
+  int32_t Epoch() {
+    return epoch_;
+  }
+
+  void IncEpoch() {
+    ++epoch_;
   }
 
   void Save() {
@@ -62,6 +70,7 @@ public:
 
 private:
   int32_t cursor_;
+  int32_t epoch_;
 };
 
 typedef std::shared_ptr<State> StatePtr;
@@ -153,6 +162,9 @@ public:
   };
   virtual bool Next(::graphlearn::io::IdType* ret) = 0;
   virtual void Reset() {}
+  virtual int32_t Epoch() {
+    return 0;
+  }
 
 protected:
   DataStorage*  storage_;
@@ -200,6 +212,11 @@ public:
 
   void Reset() override {
     state_->Reset();
+    state_->IncEpoch();
+  }
+
+  int32_t Epoch() override {
+    return state_->Epoch();
   }
 
 private:
@@ -277,6 +294,11 @@ public:
 
   void Reset() override {
     state_->Reset();
+    state_->IncEpoch();
+  }
+
+  int32_t Epoch() override {
+    return state_->Epoch();
   }
 
 private:
@@ -351,6 +373,11 @@ private:
     ::graphlearn::io::IdType id = 0;
     int32_t expect_size = request->BatchSize();
     response->Init(expect_size);
+
+    if (request->Epoch() < generator->Epoch()) {
+      return error::OutOfRange("No more nodes exist.");
+    }
+
     for (int32_t i = 0; i < expect_size; ++i) {
       if (generator->Next(&id)) {
         response->Append(id);
@@ -366,6 +393,7 @@ private:
       generator->Reset();
       return error::OutOfRange("No more nodes exist.");
     }
+    return Status::OK();
   }
 };
 

@@ -64,8 +64,7 @@ class SamplingTestCase(unittest.TestCase):
       .edge(source=edge3_path,
             edge_type=(self._node2_type, self._node2_type, self._edge3_type),
             decoder=self._edge3_decoder, directed=False)
-    self.__class__.g.init(server_id=0, server_count=1,
-                          tracker=utils.TRACKER_PATH)
+    self.__class__.g.init(tracker=utils.TRACKER_PATH)
 
   @classmethod
   def setUpClass(cls):
@@ -79,7 +78,7 @@ class SamplingTestCase(unittest.TestCase):
 
   @classmethod
   def tearDownClass(cls):
-    pass
+    cls.g.close()
 
   def setUp(self):
     """ prepare the data and the decoder.

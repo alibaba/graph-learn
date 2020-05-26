@@ -50,17 +50,21 @@ public:
 
     FileSystem* fs = NULL;
     Status s = env_->GetFileSystem(current_->path, &fs);
-    RETURN_IF_NOT_OK(s)
+    LOG_RETURN_IF_NOT_OK(s)
 
     uint64_t file_size = 0;
     s = fs->GetRecordCount(current_->path, &file_size);
-    RETURN_IF_NOT_OK(s)
+    LOG_RETURN_IF_NOT_OK(s)
 
     DataSlicer slicer(env_->GetServerId() * thread_num_ + thread_id_,
                       env_->GetServerCount() * thread_num_,
                       file_size);
     offset_ = slicer.LocalStart();
     end_ = offset_ + slicer.LocalSize();
+    LOG(INFO) << "thread id:" << thread_id_
+              << ", thread num:" << thread_num_
+              << ", offset:" << offset_
+              << ", end:" << end_;
 
     s = fs->NewStructuredAccessFile(current_->path, offset_, &reader_);
     RETURN_IF_NOT_OK(s)

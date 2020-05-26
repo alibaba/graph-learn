@@ -30,8 +30,6 @@ public:
   ~SamplingRequest() = default;
 
   OpRequest* Clone() const override;
-  void SerializeTo(void* request) override;
-  bool ParseFrom(const void* request) override;
 
   void Set(const int64_t* src_ids, int32_t batch_size);
 
@@ -40,6 +38,9 @@ public:
   int32_t BatchSize() const;
   int32_t NeighborCount() const { return neighbor_count_; }
   const int64_t* GetSrcIds() const;
+
+protected:
+  void SetMembers() override;
 
 private:
   int32_t neighbor_count_;
@@ -55,8 +56,8 @@ public:
     return new SamplingResponse;
   }
 
+  void Swap(OpResponse& right) override;
   void SerializeTo(void* response) override;
-  bool ParseFrom(const void* response) override;
   void Stitch(ShardsPtr<OpResponse> shards) override;
 
   void InitNeighborIds(int32_t count);
@@ -79,6 +80,9 @@ public:
   const int64_t* GetNeighborIds() const;
   const int64_t* GetEdgeIds() const;
   const int32_t* GetDegrees() const;
+
+protected:
+  void SetMembers() override;
 
 private:
   int32_t neighbor_count_;

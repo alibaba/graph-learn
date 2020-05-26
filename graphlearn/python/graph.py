@@ -18,6 +18,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import atexit
 import json
 import warnings
@@ -28,6 +29,7 @@ from graphlearn.python.decoder import Decoder
 from graphlearn.python.errors import raise_exception_on_not_ok_status
 from graphlearn.python.query import VertexQuery, EdgeQuery, QueryEngine
 from graphlearn.python.server import Server
+from graphlearn.python.state import State
 from graphlearn.python.topology import Topology
 from graphlearn.python.values import \
     Nodes, Edges, SparseNodes, SparseEdges, Values
@@ -71,13 +73,8 @@ class Graph(object):
     self._server = None
     self._client = None
 
-    def stop():
-      if self._client and self._deploy_mode == 1:
-        self._client.stop()
-      if self._server:
-        self._server.stop()
-
-    atexit.register(stop)
+    self.node_state = State()
+    self.edge_state = State()
 
   def node(self,
            source,
@@ -94,6 +91,7 @@ class Graph(object):
     if not isinstance(decoder, Decoder):
       raise ValueError('decoder must be an instance of `Decoder`, got {}'
                        .format(type(decoder)))
+
     self._node_decoders[node_type] = decoder
     node_source = self._construct_node_source(source, node_type, decoder)
     self._node_sources.append(node_source)
@@ -160,63 +158,87 @@ class Graph(object):
         self._edge_sources.append(edge_source_reverse)
     return self
 
-  def init(self, cluster="", job_name="", task_index=0, **kwargs):
+  def init(self, task_index=0, task_count=1,
+           cluster="", job_name="", **kwargs):
     """ Initialize the graph with creating graph server instance with
     given cluster env info.
 
     Args:
+      task_index (int): Current task index in in_memory mode or current
+        server or client index in independent mode.
+      task_count (int): Total task count in in_memory mode.
       cluster (dict | josn str): Empty dict or string when Graph runs with
         local mode. Otherwise, cluster includes server_count, client_count
-        and traker.
+        and tracker.
         server_count (int): count of servers.
         client_count (int): count of clients.
-        traker (str): traker path.
+        tracker (str): tracker path.
       job_name (str): `client` or `server`, default empty means Graph runs
         with local mode.
-      task_index (int): index of current server of client.
     """
-    tracker = ""
+    # In memory mode, local or distribute.
     if not cluster:
-      self._deploy_mode = 0
+      assert job_name == "", "Initialize local server with empty `cluster`."
+      server_count = task_count
+      tracker = kwargs.get("tracker", 'root://graphlearn')
+      if server_count == 1:
+        assert task_index == 0, "Local mode, task_index=0, task_count=1"
+        self._deploy_mode = 0 # Local in_memory mode.
+      else:
+        assert isinstance(server_count, int)
+        assert isinstance(task_index, int)
+        assert server_count > task_index
+        self._deploy_mode = 2 # Distribute in_memory mode.
+        pywrap.set_server_count(server_count)
+        pywrap.set_client_count(server_count)
+        pywrap.set_tracker(tracker)
+        pywrap.set_client_id(task_index)
       pywrap.set_deploy_mode(self._deploy_mode)
       self._client = pywrap.in_memory_client()
-      task_index = 0
-      server_count = 1
-    else:
-      self._deploy_mode = 1
-      pywrap.set_deploy_mode(self._deploy_mode)
+    else: # Distribute independent mode.
+      assert job_name in ("client", "server")
       if isinstance(cluster, dict):
         cluster_spec = cluster
       elif isinstance(cluster, str):
         cluster_spec = json.loads(cluster)
+      else:
+        raise ValueError("cluster must be dict or json string.")
       server_count = cluster_spec.get("server_count")
       client_count = cluster_spec.get("client_count")
+      tracker = cluster_spec.get("tracker", 'root://graphlearn')
       if not server_count or not client_count:
         raise ValueError("cluster is composed of server_count,"
                          "worker_count and tracker")
-      tracker = cluster_spec.get("tracker")
-
+      self._deploy_mode = 1
+      pywrap.set_deploy_mode(self._deploy_mode)
       pywrap.set_server_count(server_count)
       pywrap.set_client_count(client_count)
-      if tracker:
-        pywrap.set_tracker(tracker)
+
+    os.system('mkdir -p {}'.format(tracker))
 
     if job_name == "client":
+      pywrap.set_tracker(tracker)
       pywrap.set_client_id(task_index)
       self._client = pywrap.rpc_client()
       self._server = None
     else:
       if job_name == "server":
         self._client = None
-      if not tracker and kwargs.get("tracker"):
-        tracker = kwargs["tracker"]
-      if tracker:
-        self._server = Server(task_index, server_count, tracker)
-      else:
-        self._server = Server(task_index, server_count)
+      self._server = Server(task_index, server_count, tracker)
       self._server.start()
       self._server.init(self._edge_sources, self._node_sources)
     return self
+
+  def close(self):
+    self.wait_for_close()
+
+  def wait_for_close(self):
+    if self._client:
+      self._client.stop()
+      self._client = None
+    if self._server:
+      self._server.stop()
+      self._server = None
 
   def V(self, t, feed=None, node_from=pywrap.NodeFrom.NODE):  # pylint: disable=invalid-name
     """ Entry of Gremlin-like query. Start from node.
@@ -590,24 +612,25 @@ class Graph(object):
     pywrap.set_lookup_nodes_req(req, ids)
 
     res = pywrap.new_lookup_nodes_res()
-    raise_exception_on_not_ok_status(self._client.lookup_nodes(req, res))
-
-    decoder = self.get_node_decoder(node_type)
-    weights = pywrap.get_node_weights_res(res) \
-      if decoder.weighted else None
-    labels = pywrap.get_node_labels_res(res) \
-      if decoder.labeled else None
-    int_attrs = pywrap.get_node_int_attr_res(res) \
-      if decoder.attributed else None
-    float_attrs = pywrap.get_node_float_attr_res(res) \
-      if decoder.attributed else None
-    string_attrs = pywrap.get_node_string_attr_res(res) \
-      if decoder.attributed else None
-    int_attrs, float_attrs, string_attrs = \
-      decoder.format_attrs(int_attrs, float_attrs, string_attrs)
+    status = self._client.lookup_nodes(req, res)
+    if status.ok():
+      decoder = self.get_node_decoder(node_type)
+      weights = pywrap.get_node_weights_res(res) \
+        if decoder.weighted else None
+      labels = pywrap.get_node_labels_res(res) \
+        if decoder.labeled else None
+      int_attrs = pywrap.get_node_int_attr_res(res) \
+        if decoder.attributed else None
+      float_attrs = pywrap.get_node_float_attr_res(res) \
+        if decoder.attributed else None
+      string_attrs = pywrap.get_node_string_attr_res(res) \
+        if decoder.attributed else None
+      int_attrs, float_attrs, string_attrs = \
+        decoder.format_attrs(int_attrs, float_attrs, string_attrs)
 
     pywrap.del_lookup_nodes_res(res)
     pywrap.del_lookup_nodes_req(req)
+    raise_exception_on_not_ok_status(status)
 
     return Values(int_attrs=int_attrs,
                   float_attrs=float_attrs, string_attrs=string_attrs,
@@ -626,24 +649,25 @@ class Graph(object):
     pywrap.set_lookup_edges_req(req, src_ids, edge_ids)
 
     res = pywrap.new_lookup_edges_res()
-    raise_exception_on_not_ok_status(self._client.lookup_edges(req, res))
-
-    decoder = self.get_edge_decoder(edge_type)
-    weights = pywrap.get_edge_weights_res(res) \
-      if decoder.weighted else None
-    labels = pywrap.get_edge_labels_res(res) \
-      if decoder.labeled else None
-    int_attrs = pywrap.get_edge_int_attr_res(res) \
-      if decoder.attributed else None
-    float_attrs = pywrap.get_edge_float_attr_res(res) \
-      if decoder.attributed else None
-    string_attrs = pywrap.get_edge_string_attr_res(res) \
-      if decoder.attributed else None
-    int_attrs, float_attrs, string_attrs = \
-      decoder.format_attrs(int_attrs, float_attrs, string_attrs)
+    status = self._client.lookup_edges(req, res)
+    if status.ok():
+      decoder = self.get_edge_decoder(edge_type)
+      weights = pywrap.get_edge_weights_res(res) \
+        if decoder.weighted else None
+      labels = pywrap.get_edge_labels_res(res) \
+        if decoder.labeled else None
+      int_attrs = pywrap.get_edge_int_attr_res(res) \
+        if decoder.attributed else None
+      float_attrs = pywrap.get_edge_float_attr_res(res) \
+        if decoder.attributed else None
+      string_attrs = pywrap.get_edge_string_attr_res(res) \
+        if decoder.attributed else None
+      int_attrs, float_attrs, string_attrs = \
+        decoder.format_attrs(int_attrs, float_attrs, string_attrs)
 
     pywrap.del_lookup_edges_res(res)
     pywrap.del_lookup_edges_req(req)
+    raise_exception_on_not_ok_status(status)
 
     return Values(int_attrs=int_attrs,
                   float_attrs=float_attrs, string_attrs=string_attrs,

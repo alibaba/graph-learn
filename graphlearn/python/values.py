@@ -271,11 +271,12 @@ class Nodes(Values):
                              np.array(segment_ids, dtype=np.int32),
                              num_segments)
     res = pywrap.new_agg_nodes_res()
-    raise_exception_on_not_ok_status(
-        self.graph.get_client().agg_nodes(req, res))
-    agged = pywrap.get_node_agg_res(res)
+    status = self.graph.get_client().agg_nodes(req, res)
+    if status.ok():
+      agged = pywrap.get_node_agg_res(res)
     pywrap.del_agg_nodes_res(res)
     pywrap.del_agg_nodes_req(req)
+    raise_exception_on_not_ok_status(status)
     return agged
 
   def embedding_agg(self, func="sum"):

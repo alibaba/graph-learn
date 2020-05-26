@@ -320,6 +320,7 @@ test:so gtest
 	$(CXX) $(CXXFLAGS) graphlearn/service/test/tensor_unittest.cpp -o built/bin/tensor_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/service/test/client_test.cpp -o built/bin/client_test $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/service/test/server_test.cpp -o built/bin/server_test $(TEST_FLAG)
+	$(CXX) $(CXXFLAGS) graphlearn/service/test/dist_in_memory_test.cpp -o built/bin/dist_in_memory_test $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/service/request/test/graph_request_unittest.cpp -o built/bin/graph_request_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/service/request/test/aggregating_request_unittest.cpp -o built/bin/aggregating_request_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/service/dist/test/naming_engine_unittest.cpp -o built/bin/naming_engine_unittest $(TEST_FLAG)

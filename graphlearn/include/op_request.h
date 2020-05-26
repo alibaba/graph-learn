@@ -49,6 +49,15 @@ public:
 
   ShardsPtr<OpRequest> Partition() const override;
 
+protected:
+  // All parameters and values come from params_ and tensors_.
+  // To simplify usage, we may need some private members pointing to
+  // the elements of params_ and tensors_, such as
+  // ``` src_ids_ = &(params_[kNeighborCount]); ```
+  // ``` SetMembers() ``` is designed for this. Requests inheriting from
+  // ``` OpRequest ``` should implement their own ``` SetMembers() ```.
+  virtual void SetMembers() {}
+
 public:
   std::unordered_map<std::string, Tensor> params_;
   std::unordered_map<std::string, Tensor> tensors_;
@@ -70,10 +79,19 @@ public:
   bool ParseFrom(const void* response) override;
 
   void Stitch(ShardsPtr<OpResponse> shards) override;
-  void Swap(OpResponse& right);
+  virtual void Swap(OpResponse& right);
 
   void SetSparseFlag() { is_sparse_ = true; }
   bool IsSparse() const { return is_sparse_; }
+
+protected:
+  // All parameters and values come from params_ and tensors_.
+  // To simplify usage, we may need some private members pointing to
+  // the elements of params_ and tensors_, such as
+  // ``` src_ids_ = &(params_[kNeighborCount]); ```
+  // ``` SetMembers() ``` is designed for this. Responses inheriting from
+  // ``` OpResponse ``` should implement their own ``` SetMembers() ```.
+  virtual void SetMembers() {}
 
 public:
   int32_t batch_size_;

@@ -23,4 +23,20 @@ python $HERE/test.py \
 sleep 1
 python $HERE/test.py \
   --cluster="{\"client_count\": 2, \"tracker\": \"$HERE/tracker\", \"server_count\": 2}" \
-  --job_name="client" --task_index=1 &
+  --job_name="client" --task_index=1
+
+# test iterate with server cout < client cout.
+sleep 5
+rm -rf $HERE/tracker
+mkdir -p $HERE/tracker
+python $HERE/test_iterate.py \
+  --cluster="{\"client_count\": 2, \"tracker\": \"$HERE/tracker\", \"server_count\": 1}" \
+  --job_name="server" --task_index=0 &
+sleep 1
+python $HERE/test_iterate.py \
+  --cluster="{\"client_count\": 2, \"tracker\": \"$HERE/tracker\", \"server_count\": 1}" \
+  --job_name="client" --task_index=0 &
+sleep 1
+python $HERE/test_iterate.py \
+  --cluster="{\"client_count\": 2, \"tracker\": \"$HERE/tracker\", \"server_count\": 1}" \
+  --job_name="client" --task_index=1

@@ -29,7 +29,8 @@ GetEdgesRequest::GetEdgesRequest() : OpRequest() {
 
 GetEdgesRequest::GetEdgesRequest(const std::string& edge_type,
                                  const std::string& strategy,
-                                 int32_t batch_size)
+                                 int32_t batch_size,
+                                 int32_t epoch)
     : OpRequest() {
   ADD_TENSOR(params_, kOpName, kString, 1);
   params_[kOpName].AddString("GetEdges");
@@ -40,6 +41,9 @@ GetEdgesRequest::GetEdgesRequest(const std::string& edge_type,
 
   ADD_TENSOR(params_, kBatchSize, kInt32, 1);
   params_[kBatchSize].AddInt32(batch_size);
+
+  ADD_TENSOR(params_, kSideInfo, kInt32, 1);
+  params_[kSideInfo].AddInt32(epoch);
 }
 
 const std::string& GetEdgesRequest::EdgeType() const {
@@ -54,16 +58,24 @@ int32_t GetEdgesRequest::BatchSize() const {
   return params_.at(kBatchSize).GetInt32(0);
 }
 
+int32_t GetEdgesRequest::Epoch() const {
+  return params_.at(kSideInfo).GetInt32(0);
+}
+
 GetEdgesResponse::GetEdgesResponse() : OpResponse() {}
 
-bool GetEdgesResponse::ParseFrom(const void* response) {
-  if (!OpResponse::ParseFrom(response)) {
-    return false;
-  }
+void GetEdgesResponse::SetMembers() {
   src_ids_ = &(tensors_[kSrcIds]);
   dst_ids_ = &(tensors_[kDstIds]);
   edge_ids_ = &(tensors_[kEdgeIds]);
-  return true;
+}
+
+void GetEdgesResponse::Swap(OpResponse& right) {
+  OpResponse::Swap(right);
+  GetEdgesResponse& res = static_cast<GetEdgesResponse&>(right);
+  std::swap(src_ids_, res.src_ids_);
+  std::swap(dst_ids_, res.dst_ids_);
+  std::swap(edge_ids_, res.edge_ids_);
 }
 
 void GetEdgesResponse::Init(int32_t batch_size) {
@@ -102,7 +114,8 @@ GetNodesRequest::GetNodesRequest() : OpRequest() {
 GetNodesRequest::GetNodesRequest(const std::string& type,
                                  const std::string& strategy,
                                  NodeFrom node_from,
-                                 int32_t batch_size)
+                                 int32_t batch_size,
+                                 int32_t epoch)
     : OpRequest() {
   ADD_TENSOR(params_, kOpName, kString, 1);
   params_[kOpName].AddString("GetNodes");
@@ -111,9 +124,10 @@ GetNodesRequest::GetNodesRequest(const std::string& type,
   params_[kNodeType].AddString(type);
   params_[kNodeType].AddString(strategy);
 
-  ADD_TENSOR(params_, kSideInfo, kInt32, 2);
+  ADD_TENSOR(params_, kSideInfo, kInt32, 3);
   params_[kSideInfo].AddInt32(node_from);
   params_[kSideInfo].AddInt32(batch_size);
+  params_[kSideInfo].AddInt32(epoch);
 }
 
 const std::string& GetNodesRequest::Type() const {
@@ -132,14 +146,21 @@ int32_t GetNodesRequest::BatchSize() const {
   return params_.at(kSideInfo).GetInt32(1);
 }
 
-GetNodesResponse::GetNodesResponse() : OpResponse() {}
+int32_t GetNodesRequest::Epoch() const {
+  return params_.at(kSideInfo).GetInt32(2);
+}
 
-bool GetNodesResponse::ParseFrom(const void* response) {
-  if (!OpResponse::ParseFrom(response)) {
-    return false;
-  }
+GetNodesResponse::GetNodesResponse() : OpResponse() {
+}
+
+void GetNodesResponse::SetMembers() {
   node_ids_ = &(tensors_[kNodeIds]);
-  return true;
+}
+
+void GetNodesResponse::Swap(OpResponse& right) {
+  OpResponse::Swap(right);
+  GetNodesResponse& res = static_cast<GetNodesResponse&>(right);
+  std::swap(node_ids_, res.node_ids_);
 }
 
 void GetNodesResponse::Init(int32_t batch_size) {
@@ -183,13 +204,9 @@ OpRequest* LookupEdgesRequest::Clone() const {
   return req;
 }
 
-bool LookupEdgesRequest::ParseFrom(const void* request) {
-  if (!OpRequest::ParseFrom(request)) {
-    return false;
-  }
+void LookupEdgesRequest::SetMembers() {
   edge_ids_ = &(tensors_[kEdgeIds]);
   src_ids_ = &(tensors_[kSrcIds]);
-  return true;
 }
 
 void LookupEdgesRequest::Set(const int64_t* edge_ids, const int64_t* src_ids,
@@ -240,12 +257,8 @@ OpRequest* LookupNodesRequest::Clone() const {
   return new LookupNodesRequest(NodeType());
 }
 
-bool LookupNodesRequest::ParseFrom(const void* request) {
-  if (!OpRequest::ParseFrom(request)) {
-    return false;
-  }
+void LookupNodesRequest::SetMembers() {
   node_ids_ = &(tensors_[kNodeIds]);
-  return true;
 }
 
 void LookupNodesRequest::Set(const int64_t* node_ids, int32_t batch_size) {
@@ -280,11 +293,19 @@ LookupResponse::~LookupResponse() {
   }
 }
 
-bool LookupResponse::ParseFrom(const void* response) {
-  if (!OpResponse::ParseFrom(response)) {
-    return false;
-  }
+void LookupResponse::Swap(OpResponse& right) {
+  OpResponse::Swap(right);
+  LookupResponse& res = static_cast<LookupResponse&>(right);
+  std::swap(info_, res.info_);
+  std::swap(infos_, res.infos_);
+  std::swap(weights_, res.weights_);
+  std::swap(labels_, res.labels_);
+  std::swap(i_attrs_, res.i_attrs_);
+  std::swap(f_attrs_, res.f_attrs_);
+  std::swap(s_attrs_, res.s_attrs_);
+}
 
+void LookupResponse::SetMembers() {
   infos_ = &(params_[kSideInfo]);
 
   info_ = new io::SideInfo();
@@ -308,7 +329,6 @@ bool LookupResponse::ParseFrom(const void* response) {
   if (info_->s_num > 0) {
     s_attrs_ = &(tensors_[kStringAttrKey]);
   }
-  return true;
 }
 
 void LookupResponse::SetSideInfo(const io::SideInfo* info, int32_t batch_size) {

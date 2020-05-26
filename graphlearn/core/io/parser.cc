@@ -45,6 +45,9 @@ Status ParseAttribute(
     ::graphlearn::strings::Split(input, delimiter);
 
   if (attrs.size() != types.size()) {
+    LOG(ERROR) << "The count of attributes does not match your decoder"
+               << ", expect:" << types.size()
+               << ", actual:" << attrs.size();
     return error::InvalidArgument("Unexpected attribute count");
   }
 

@@ -149,6 +149,7 @@ bool OpRequest::ParseFrom(const void* request) {
 
   shardable_ = pb->shardable();
   is_parse_from_ = true;
+  this->SetMembers();
   return true;
 }
 
@@ -212,6 +213,7 @@ bool OpResponse::ParseFrom(const void* response) {
   batch_size_ = params_[kBatchSize].GetInt32(0);
   is_sparse_ = params_[kBatchSize].GetInt32(1) != 0;
   is_parse_from_ = true;
+  this->SetMembers();
   return true;
 }
 
@@ -226,6 +228,7 @@ void OpResponse::Swap(OpResponse& right) {
 void OpResponse::Stitch(ShardsPtr<OpResponse> shards) {
   auto stitcher = GetStitcher(this);
   stitcher->Stitch(shards, this);
+  this->SetMembers();
 }
 
 void RequestFactory::Register(const std::string& name,

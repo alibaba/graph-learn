@@ -31,7 +31,7 @@ class EdgeIterateUsingGremlinTestCase(EdgeTestCase):
     decoder = gl.Decoder(weighted=True)
     g = gl.Graph() \
       .edge(source=file_path, edge_type=self.edge_tuple_, decoder=decoder)
-    g.init(server_id=0, server_count=1, tracker=utils.TRACKER_PATH)
+    g.init(tracker=utils.TRACKER_PATH)
 
     batch_size = 4
     query = g.E('first').batch(batch_size).values()
@@ -60,6 +60,8 @@ class EdgeIterateUsingGremlinTestCase(EdgeTestCase):
       utils.check_edge_weights(edges)
       utils.check_subset(edges.src_ids, src_ids)
       utils.check_subset(edges.dst_ids, dst_ids)
+
+    g.close()
 
 
 if __name__ == "__main__":

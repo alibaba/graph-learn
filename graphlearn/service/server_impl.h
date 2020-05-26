@@ -28,6 +28,7 @@ class Executor;
 class GraphStore;
 class InMemoryService;
 class DistributeService;
+class Coordinator;
 
 class ServerImpl {
 public:
@@ -55,6 +56,7 @@ private:
 
   InMemoryService*   in_memory_service_;
   DistributeService* dist_service_;
+  Coordinator*       coordinator_;
 };
 
 }  // namespace graphlearn

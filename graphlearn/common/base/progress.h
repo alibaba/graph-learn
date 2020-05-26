@@ -24,13 +24,13 @@ limitations under the License.
 #include "graphlearn/common/threading/sync/lock.h"
 
 #define PROGRESSING(key)                   \
-  static ::graphlearn::profiling::Progress key##_progress(#key);
+  static ::graphlearn::profiling::Progress key##_progress(#key)
 
 #define PROGRESSINGG(key, g)               \
-  static ::graphlearn::profiling::Progress key##_progress(#key, g);
+  static ::graphlearn::profiling::Progress key##_progress(#key, g)
 
 #define UPDATE_PROGRESSING(key, counter)   \
-  key##_progress.Add(counter);
+  key##_progress.Add(counter)
 
 namespace graphlearn {
 namespace profiling {

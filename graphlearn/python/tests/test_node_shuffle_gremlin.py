@@ -31,7 +31,7 @@ class NodeIterateTestCase(NodeTestCase):
     decoder = gl.Decoder(attr_types=utils.ATTR_TYPES)
     g = gl.Graph() \
       .node(source=file_path, node_type=self.node_type_, decoder=decoder)
-    g.init(server_id=0, server_count=1, tracker=utils.TRACKER_PATH)
+    g.init(tracker=utils.TRACKER_PATH)
 
     batch_size = 4
     sampler = g.V('user').batch(batch_size).shuffle(traverse=True).values()
@@ -46,6 +46,8 @@ class NodeIterateTestCase(NodeTestCase):
         break
     ids = range(self.value_range_[0][0], self.value_range_[0][1])
     utils.check_sorted_equal(res_ids, ids)
+
+    g.close()
 
 
 if __name__ == "__main__":

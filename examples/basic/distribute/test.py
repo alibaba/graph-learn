@@ -8,6 +8,7 @@ import sys
 
 import graphlearn as gl
 import numpy as np
+import time
 
 
 def main(argv):
@@ -41,12 +42,14 @@ def main(argv):
 
   if job_name == "server":
     print("Server {} started.".format(task_index))
+    g.wait_for_close()
 
   if job_name == "client":
     print("Client {} started.".format(task_index))
 
     print("Get Edges...")
-    edges = g.E("buy").batch(2).emit()
+    edges = g.E("buy").batch(2).shuffle().emit()
+    print(edges.src_ids)
     print(edges.dst_ids)
     print(edges.weights)
     print("Get Edges Done...")
@@ -57,7 +60,7 @@ def main(argv):
     print(nodes.ids)
     print(nodes.weights)
     print("Get item Nodes...")
-    nodes = g.V("item").batch(4).emit()
+    nodes = g.V("item").batch(4).shuffle().emit()
     print(nodes.ids)
     print(nodes.int_attrs)
     print(nodes.float_attrs)
@@ -93,6 +96,8 @@ def main(argv):
     s = g.negative_sampler("user", expand_factor=3, strategy="node_weight")
     print(s.get(np.array([0, 1, 2])).ids)
     print("NodeWeight Negative Sample Done...")
+    g.close()
+    print("Client {} stopped.".format(task_index))
 
 
 if __name__ == "__main__":

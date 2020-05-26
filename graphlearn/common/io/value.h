@@ -115,7 +115,7 @@ struct Schema {
   }
 
   static DataType Translate(DataType t) {
-    static DataType TransBitmap[] = {kInt32, kInt32, kDouble, kDouble, kString};
+    static DataType TransBitmap[] = {kInt32, kInt32, kFloat, kFloat, kString};
     return t < kUnknown ? TransBitmap[t] : kUnknown;
   }
 
@@ -135,8 +135,8 @@ struct Schema {
       DataType t = Translate(types[i]);
       if (t == kInt32) {
         ss << "int,";
-      } else if (t == kDouble) {
-        ss << "double,";
+      } else if (t == kFloat) {
+        ss << "float,";
       } else if (t == kString) {
         ss << "string,";
       } else {

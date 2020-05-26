@@ -330,7 +330,8 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
         py::return_value_policy::reference,
         py::arg("edge_type"),
         py::arg("strategy"),
-        py::arg("batch_size"));
+        py::arg("batch_size"),
+        py::arg("epoch"));
 
   m.def("del_get_edge_req",
         [](GetEdgesRequest* req) {
@@ -442,7 +443,8 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
       py::arg("node_type"),
       py::arg("strategy"),
       py::arg("node_from"),
-      py::arg("batch_size"));
+      py::arg("batch_size"),
+      py::arg("epoch"));
 
   m.def("del_get_node_req",
         [](GetNodesRequest* req) {

@@ -93,6 +93,7 @@ Status Env::GetFileSystem(const std::string& file_path,
   std::string scheme = io::GetScheme(file_path);
   FileSystem* file_system = fs_registry_->Lookup(scheme);
   if (!file_system) {
+    USER_LOG("Invalid file path: " + file_path);
     LOG(ERROR) << "File system not implemented: " << file_path;
     return Status(error::NOT_FOUND, "File system not implemented");
   }

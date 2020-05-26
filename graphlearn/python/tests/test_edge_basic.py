@@ -31,13 +31,15 @@ class BasicEdgeTestCase(EdgeTestCase):
     decoder = gl.Decoder()
     g = gl.Graph() \
       .edge(source=file_path, edge_type=self.edge_tuple_, decoder=decoder)
-    g.init(server_id=0, server_count=1, tracker=utils.TRACKER_PATH)
+    g.init(tracker=utils.TRACKER_PATH)
 
     edges = g.E("first").batch(4).emit()
     utils.check_ids(edges.src_ids,
                     range(self.src_range_[0], self.src_range_[1]))
     utils.check_ids(edges.dst_ids,
                     range(self.dst_range_[0], self.dst_range_[1]))
+
+    g.close()
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@ limitations under the License.
 
 #include "graphlearn/service/client_impl.h"
 
+#include "graphlearn/include/config.h"
 #include "graphlearn/service/call.h"
 #include "graphlearn/service/local/event_queue.h"
 #include "graphlearn/service/local/in_memory_channel.h"
@@ -40,6 +41,11 @@ public:
   }
 
   Status Stop() override {
+    if (GLOBAL_FLAG(DeployMode) == 2) {
+      StatusWrapper status;
+      channel_->CallMethod(kStop, nullptr, nullptr, &status);
+      return status.s_;
+    }
     return Status::OK();
   }
 
