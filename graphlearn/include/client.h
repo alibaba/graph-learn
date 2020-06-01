@@ -51,7 +51,7 @@ public:
 private:
   explicit Client(ClientImpl* impl, bool own = true);
   friend Client* NewInMemoryClient();
-  friend Client* NewRpcClient(int32_t server_id);
+  friend Client* NewRpcClient(int32_t server_id, bool server_own);
 
 private:
   ClientImpl* impl_;
@@ -59,7 +59,7 @@ private:
 };
 
 Client* NewInMemoryClient();
-Client* NewRpcClient(int32_t server_id = -1);
+Client* NewRpcClient(int32_t server_id = -1, bool server_own = true);
 
 }  // namespace graphlearn
 

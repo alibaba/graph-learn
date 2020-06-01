@@ -34,7 +34,7 @@ protected:
 };
 
 ClientImpl* NewInMemoryClientImpl();
-ClientImpl* NewRpcClientImpl(int32_t server_id);
+ClientImpl* NewRpcClientImpl(int32_t server_id, bool server_own = true);
 
 }  // namespace graphlearn
 
