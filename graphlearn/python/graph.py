@@ -509,7 +509,7 @@ class Graph(object):
                                       strategy=strategy)
 
   def negative_sampler(self,
-                       edge_type,
+                       object_type,
                        expand_factor,
                        strategy="random"):
     """Sampler for sample negative dst nodes of the given src nodes
@@ -529,7 +529,7 @@ class Graph(object):
     """
     sampler = strategy2op(strategy, "NegativeSampler")
     return getattr(samplers, sampler)(self,
-                                      edge_type,
+                                      object_type,
                                       expand_factor,
                                       strategy=strategy)
 

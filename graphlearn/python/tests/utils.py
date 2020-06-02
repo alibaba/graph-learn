@@ -235,7 +235,7 @@ def check_fixed_edge_dst_ids(edges, dst_range,
 
 def check_topk_edge_ids(edges, expected_src_ids,
                         dst_range, expand_factor=2,
-                        default_dst_id=0):
+                        default_dst_id=0, padding_mode="replicate"):
   src_ids = edges.src_ids.reshape(-1)
   dst_ids = edges.dst_ids.reshape(-1)
   assert set(list(src_ids)) == set(list(expected_src_ids))
@@ -246,9 +246,16 @@ def check_topk_edge_ids(edges, expected_src_ids,
     else:
       expected_part_dst_ids = fixed_dst_ids(src_id, dst_range)
       expected_part_dst_ids.sort(reverse=True)
-      expected_dst_ids.extend(
-          expected_part_dst_ids[: min(src_id % 5, expand_factor)])
-  assert set(list(dst_ids)) == set(expected_dst_ids)
+      real_count = min(src_id % 5, expand_factor)
+      if padding_mode == "replicate":
+        expected_dst_ids.extend(expected_part_dst_ids[: real_count])
+        expected_dst_ids.extend(
+            [default_dst_id for i in range(real_count, expand_factor)])
+      else:
+        for i in range(0, expand_factor, real_count):
+          expected_dst_ids.extend(expected_part_dst_ids[: real_count])
+        expected_dst_ids.extend(expected_part_dst_ids[: expand_factor % real_count])
+  npt.assert_equal(dst_ids, expected_dst_ids)
 
 
 def check_edge_weights(edges):
@@ -266,6 +273,15 @@ def check_not_exist_edge_weights(edges):
                           np.array([0.0] * total_edge) \
                               .reshape(edges.shape), decimal=5)
 
+def check_half_exist_edge_weights(edges, default_dst_id=0):
+  weights = edges.weights.reshape(-1)
+  src_ids = edges.src_ids.reshape(-1)
+  dst_ids = edges.dst_ids.reshape(-1)
+  for src_id, dst_id, weight in zip(src_ids, dst_ids, weights):
+    if default_dst_id == dst_id:
+      npt.assert_almost_equal(weight, 0.0, decimal=5)
+    else:
+      npt.assert_almost_equal(weight, 0.1 * (src_id + 0.1 * dst_id), decimal=5)
 
 def check_edge_labels(edges):
   npt.assert_equal(edges.labels, edges.src_ids)

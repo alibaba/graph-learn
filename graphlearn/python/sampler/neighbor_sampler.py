@@ -147,6 +147,8 @@ class NeighborSampler(object):
 class RandomNeighborSampler(NeighborSampler):
   pass
 
+class RandomWithoutReplacementNeighborSampler(NeighborSampler):
+  pass
 
 class EdgeWeightNeighborSampler(NeighborSampler):
   pass

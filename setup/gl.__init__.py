@@ -45,3 +45,6 @@ from graphlearn.python.model.tf.ego_flow import *
 EDGE_SRC = pywrap.NodeFrom.EDGE_SRC
 EDGE_DST = pywrap.NodeFrom.EDGE_DST
 NODE = pywrap.NodeFrom.NODE
+
+REPLICATE = pywrap.PaddingMode.REPLICATE
+CIRCULAR = pywrap.PaddingMode.CIRCULAR

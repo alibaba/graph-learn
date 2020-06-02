@@ -44,7 +44,7 @@ class SamplingTestCase(unittest.TestCase):
                                      schema=[utils.ATTRIBUTED, utils.LABELED])
     edge2_path = utils.gen_edge_data(self._node2_type, self._node1_type,
                                      self._node2_range, self._node1_range,
-                                     schema=[utils.ATTRIBUTED, utils.LABELED])
+                                     schema=[utils.ATTRIBUTED, utils.WEIGHTED])
     edge3_path = utils.gen_edge_data(self._node2_type, self._node2_type,
                                      self._node2_range, self._node2_range,
                                      schema=[utils.WEIGHTED])
@@ -73,6 +73,7 @@ class SamplingTestCase(unittest.TestCase):
     gl.set_default_int_attribute(1000)
     gl.set_default_float_attribute(999.9)
     gl.set_default_string_attribute('hehe')
+    gl.set_padding_mode(gl.REPLICATE) # default
 
     utils.prepare_env()
 
@@ -104,7 +105,7 @@ class SamplingTestCase(unittest.TestCase):
     self._edge1_decoder = gl.Decoder(attr_types=utils.ATTR_TYPES,
                                      labeled=True)
     self._edge2_decoder = gl.Decoder(attr_types=utils.ATTR_TYPES,
-                                     labeled=True)
+                                     weighted=True)
     self._edge3_decoder = gl.Decoder(weighted=True)
 
     self._seed_node1_ids = np.array([2, 7, 8])

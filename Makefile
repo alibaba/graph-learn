@@ -261,6 +261,10 @@ $(CORE_BUILT_DIR)/operator/sampler/%.o:$(CORE_DIR)/operator/sampler/%.cc $(CORE_
 	@mkdir -p $(CORE_BUILT_DIR)/operator/sampler
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+$(CORE_BUILT_DIR)/operator/sampler/padder/%.o:$(CORE_DIR)/operator/sampler/padder/%.cc $(CORE_H)
+	@mkdir -p $(CORE_BUILT_DIR)/operator/sampler/padder
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 $(CORE_BUILT_DIR)/operator/aggregator/%.o:$(CORE_DIR)/operator/aggregator/%.cc $(CORE_H)
 	@mkdir -p $(CORE_BUILT_DIR)/operator/aggregator
 	$(CXX) $(CXXFLAGS) -c $< -o $@

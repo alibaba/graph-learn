@@ -237,7 +237,40 @@ void TestRandomSampleNeighbors(Client* client) {
   Status s = client->Sampling(&req, &res);
   std::cout << "SampleNeighbors: " << s.ToString() << std::endl;
 
-  // std::cout << ": " << res.TotalNeighborCount() << std::endl;
+  const int64_t* nbrs = res.GetNeighborIds();
+  int32_t size = res.TotalNeighborCount();
+  std::cout << "TotalNeighborCount: " << size << std::endl;
+  for (int32_t i = 0; i < size; ++i) {
+    std::cout << nbrs[i] << std::endl;
+  }
+}
+
+void TestRandomWithoutReplacementSampleNeighbors(Client* client) {
+  SamplingRequest req("click", "RandomWithoutReplacementSampler", 3);
+  int64_t ids[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  req.Set(ids, 10);
+
+  SamplingResponse res;
+  Status s = client->Sampling(&req, &res);
+  std::cout << "RandomWithoutReplacementSampleNeighbors: " << s.ToString() << std::endl;
+
+  const int64_t* nbrs = res.GetNeighborIds();
+  int32_t size = res.TotalNeighborCount();
+  std::cout << "TotalNeighborCount: " << size << std::endl;
+  for (int32_t i = 0; i < size; ++i) {
+    std::cout << nbrs[i] << std::endl;
+  }
+}
+
+void TestTopkSampleNeighbors(Client* client) {
+  SamplingRequest req("click", "TopkSampler", 3);
+  int64_t ids[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  req.Set(ids, 10);
+
+  SamplingResponse res;
+  Status s = client->Sampling(&req, &res);
+  std::cout << "SampleTopkNeighbors: " << s.ToString() << std::endl;
+
   const int64_t* nbrs = res.GetNeighborIds();
   int32_t size = res.TotalNeighborCount();
   std::cout << "TotalNeighborCount: " << size << std::endl;
@@ -255,7 +288,6 @@ void TestFullSampleNeighbors(Client* client) {
   Status s = client->Sampling(&req, &res);
   std::cout << "FullSampleNeighbors: " << s.ToString() << std::endl;
 
-  // std::cout << ": " << res.TotalNeighborCount() << std::endl;
   const int64_t* nbrs = res.GetNeighborIds();
   int32_t size = res.TotalNeighborCount();
   std::cout << "TotalNeighborCount: " << size << std::endl;
@@ -269,6 +301,23 @@ void TestFullSampleNeighbors(Client* client) {
     std::cout << degrees[i] << std::endl;
   }
 
+}
+
+void TestNodeWeightNegativeSample(Client* client) {
+  SamplingRequest req("user", "NodeWeightNegativeSampler", 3);
+  int64_t ids[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  req.Set(ids, 10);
+
+  SamplingResponse res;
+  Status s = client->Sampling(&req, &res);
+  std::cout << "NodeWeightNegativeSample: " << s.ToString() << std::endl;
+
+  const int64_t* nbrs = res.GetNeighborIds();
+  int32_t size = res.TotalNeighborCount();
+  std::cout << "TotalNeighborCount: " << size << std::endl;
+  for (int32_t i = 0; i < size; ++i) {
+    std::cout << nbrs[i] << std::endl;
+  }
 }
 
 
@@ -306,7 +355,10 @@ int main(int argc, char** argv) {
   TestMinAggregateNodes(client);
   TestProdAggregateNodes(client);
   TestRandomSampleNeighbors(client);
+  TestRandomWithoutReplacementSampleNeighbors(client);
+  TestTopkSampleNeighbors(client);
   TestFullSampleNeighbors(client);
+  TestNodeWeightNegativeSample(client);
 
   Status s = client->Stop();
   std::cout << client_id << " in " << client_count << " client stop " << s.ToString() << std::endl;

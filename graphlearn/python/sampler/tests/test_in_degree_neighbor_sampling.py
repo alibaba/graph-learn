@@ -131,7 +131,7 @@ class InDegreeNeighborSamplingTestCase(SamplingTestCase):
                           edge_type=self._edge2_type)
     utils.check_edge_shape(edges, ids.size * expand_factor[1])
     utils.check_edge_attrs(edges)
-    utils.check_edge_labels(edges)
+    utils.check_edge_weights(edges)
 
     utils.check_equal(nodes.ids, edges.dst_ids)
     utils.check_node_ids(nodes, self._node1_ids)

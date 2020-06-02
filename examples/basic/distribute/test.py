@@ -89,6 +89,11 @@ def main(argv):
     print(s.get(np.array([0, 1, 2])).ids)
     print("InDegree Negative Sample Done...")
 
+    print("NodeWeight neg sample...")
+    s = g.negative_sampler("user", expand_factor=3, strategy="node_weight")
+    print(s.get(np.array([0, 1, 2])).ids)
+    print("NodeWeight Negative Sample Done...")
+
 
 if __name__ == "__main__":
   main(sys.argv[1:])

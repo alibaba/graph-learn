@@ -22,6 +22,7 @@ extern const char* kPartitionKey;
 extern const char* kOpName;
 extern const char* kNodeType;
 extern const char* kEdgeType;
+extern const char* kType;
 extern const char* kSrcType;
 extern const char* kDstType;
 extern const char* kSrcIds;
@@ -73,6 +74,11 @@ enum DataType {
 enum PartitionMode {
   kNoPartition = 0,
   kByHash = 1
+};
+
+enum PaddingMode {
+  kReplicate = 0,
+  kCircular = 1
 };
 
 enum NodeFrom {

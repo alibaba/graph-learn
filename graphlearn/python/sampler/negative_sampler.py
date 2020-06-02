@@ -30,29 +30,38 @@ class NegativeSampler(object):
 
   def __init__(self,
                graph,
-               edge_type,
+               object_type,
                expand_factor,
                strategy="random"):
     """ Create a Base NegativeSampler instance.
 
     Args:
       graph (`Graph` object): The graph which sample from.
-      edge_type (string): Sample negative nodes of the source node with
-        specified edge_type.
+      object_type (string): Sample negative nodes of the source node with
+        specified edge_type or node_type.
       expand_factor: An integer, how many negative ids will be sampled
         for each given id.
       strategy (string): "random", "in_degree" are supported.
     """
     self._graph = graph
-    self._edge_type = edge_type
+    self._object_type = object_type
     self._expand_factor = expand_factor
     self._strategy = strategy
     self._client = self._graph.get_client()
-    self._node_decoders = self._graph.get_node_decoders()
 
-    topology = self._graph.get_topology()
-    self._src_type, self._dst_type = \
-      topology.get_src_type(edge_type), topology.get_dst_type(edge_type)
+    if object_type in self._graph.get_node_decoders():
+      self._dst_type = object_type
+    elif object_type in self._graph.get_edge_decoders():
+      topology = self._graph.get_topology()
+      self._dst_type = topology.get_dst_type(object_type)
+    else:
+      raise ValueError("node or edeg tyep {} is not in the graph"
+                       .format(object_type))
+
+    self._check()
+
+  def _check(self):
+    pass
 
   def get(self, ids):
     """ Get batched samples.
@@ -84,7 +93,7 @@ class NegativeSampler(object):
 
   def _make_req(self, ids):
     sampler = strategy2op(self._strategy, "NegativeSampler")
-    req = pywrap.new_nbr_req(self._edge_type, sampler, self._expand_factor)
+    req = pywrap.new_nbr_req(self._object_type, sampler, self._expand_factor)
     pywrap.set_nbr_req(req, ids)
     return req
 
@@ -95,3 +104,11 @@ class RandomNegativeSampler(NegativeSampler):
 
 class InDegreeNegativeSampler(NegativeSampler):
   pass
+
+
+class NodeWeightNegativeSampler(NegativeSampler):
+  def _check(self):
+    assert self._object_type in self._graph.get_node_decoders(), \
+           "{} is not type of node.".format(self._object_type)
+    assert self._graph.get_node_decoder(self._object_type).weighted, \
+           "node {} is not WEIGHTED.".format(self._object_type)

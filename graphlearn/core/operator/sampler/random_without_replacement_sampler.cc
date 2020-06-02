@@ -13,7 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include <vector>
+#include <cmath>
+#include <random>
+#include <numeric>
+#include <algorithm>
 #include "graphlearn/core/operator/sampler/padder/padder.h"
 #include "graphlearn/core/operator/sampler/sampler.h"
 #include "graphlearn/include/config.h"
@@ -21,9 +24,9 @@ limitations under the License.
 namespace graphlearn {
 namespace op {
 
-class TopkSampler : public Sampler {
+class RandomWithoutReplacementSampler : public Sampler {
 public:
-  virtual ~TopkSampler() {}
+  virtual ~RandomWithoutReplacementSampler() {}
 
   Status Sample(const SamplingRequest* req,
                 SamplingResponse* res) override {
@@ -40,17 +43,25 @@ public:
     Graph* graph = graph_store_->GetGraph(edge_type);
     auto storage = graph->GetLocalStorage();
 
-    Status s;
     const int64_t* src_ids = req->GetSrcIds();
+    Status s;
     for (int32_t i = 0; i < batch_size; ++i) {
       int64_t src_id = src_ids[i];
       auto neighbor_ids = storage->GetNeighbors(src_id);
       if (neighbor_ids == nullptr) {
         res->FillWith(GLOBAL_FLAG(DefaultNeighborId), -1);
       } else {
+        thread_local static std::random_device rd;
+        thread_local static std::mt19937 engine(rd());
+
         int32_t neighbor_size = neighbor_ids->size();
         auto edge_ids = storage->GetOutEdges(src_id);
-        auto padder = GetPadder(*neighbor_ids, *edge_ids);
+
+        std::vector<int32_t> indices(neighbor_size);
+        std::iota(indices.begin(), indices.end(), 0);
+        std::shuffle(indices.begin(), indices.end(), engine);
+
+        auto padder = GetPadder(*neighbor_ids, *edge_ids, indices);
         s = padder->Pad(res, count, neighbor_size);
         if (!s.ok()) {
           return s;
@@ -61,7 +72,8 @@ public:
   }
 };
 
-REGISTER_OPERATOR("TopkSampler", TopkSampler);
+REGISTER_OPERATOR(
+    "RandomWithoutReplacementSampler", RandomWithoutReplacementSampler);
 
 }  // namespace op
 }  // namespace graphlearn

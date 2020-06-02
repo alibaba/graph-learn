@@ -16,6 +16,7 @@ limitations under the License.
 #include <vector>
 #include "graphlearn/common/base/errors.h"
 #include "graphlearn/common/base/log.h"
+#include "graphlearn/core/operator/sampler/padder/padder.h"
 #include "graphlearn/core/operator/sampler/sampler.h"
 
 namespace graphlearn {
@@ -34,7 +35,7 @@ public:
     res->SetNeighborCount(0);
     res->InitDegrees(batch_size);
 
-    const std::string& edge_type = req->EdgeType();
+    const std::string& edge_type = req->Type();
     Graph* graph = graph_store_->GetGraph(edge_type);
     auto storage = graph->GetLocalStorage();
 
@@ -60,18 +61,21 @@ public:
     res->InitNeighborIds(sum_degree);
     res->InitEdgeIds(sum_degree);
 
+    Status s;
     for (int32_t i = 0; i < batch_size; ++i) {
       int64_t src_id = src_ids[i];
       auto neighbor_ids = storage->GetNeighbors(src_id);
       auto edge_ids = storage->GetOutEdges(src_id);
       if (neighbor_ids) {
-        for (int32_t j = 0; j < neighbor_ids->size(); ++j) {
-          res->AppendNeighborId((*neighbor_ids)[j]);
-          res->AppendEdgeId((*edge_ids)[j]);
+        int32_t neighbor_size = neighbor_ids->size();
+        auto padder = GetPadder(*neighbor_ids, *edge_ids);
+        s = padder->Pad(res, neighbor_size, neighbor_size);
+        if (!s.ok()) {
+          return s;
         }
       }
     }
-    return Status::OK();
+    return s;
   }
 };
 

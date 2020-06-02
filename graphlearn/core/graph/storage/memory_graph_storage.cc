@@ -17,6 +17,7 @@ limitations under the License.
 #include <functional>
 #include <mutex>  // NOLINT [build/c++11]
 
+#include "graphlearn/common/threading/sync/lock.h"
 #include "graphlearn/core/graph/storage/edge_storage.h"
 #include "graphlearn/core/graph/storage/graph_storage.h"
 #include "graphlearn/include/config.h"
@@ -93,7 +94,8 @@ public:
   }
 
   void Build() override {
-    // TODO
+    Resize(); // resize vectors;
+    Sort(); // sort edges by edge weight;
   }
 
   void SetSideInfo(const SideInfo* info) override {
@@ -179,6 +181,64 @@ public:
   const IdList* GetAllDstIds() const override {
     return &dst_id_list_;
   }
+
+private:
+  void Resize() {
+    ScopedLocker<std::mutex> _(&mtx_);
+    src_id_list_.shrink_to_fit();
+    dst_id_list_.shrink_to_fit();
+    src_degree_list_.shrink_to_fit();
+    dst_degree_list_.shrink_to_fit();
+    adj_matrix_.shrink_to_fit();
+    adj_edge_matrix_.shrink_to_fit();
+  }
+
+  template <typename A, typename B, typename C>
+  void zip3(const std::vector<A> &a,
+            const std::vector<B> &b,
+            const std::vector<C> &c,
+            std::vector<std::pair<std::pair<A, B>, C>>* zipped) {
+    for (size_t i = 0; i < a.size(); ++i) {
+      zipped->push_back(std::make_pair(std::make_pair(a[i], b[i]), c[i]));
+    }
+  }
+
+  template <typename A, typename B, typename C>
+  void unzip3(const std::vector<std::pair<std::pair<A, B>, C>> &zipped,
+              std::vector<A>* a,
+              std::vector<B>* b,
+              std::vector<C>* c) {
+    for (size_t i = 0; i < a->size(); i++) {
+        (*a)[i] = zipped[i].first.first;
+        (*b)[i] = zipped[i].first.second;
+        (*c)[i] = zipped[i].second;
+    }
+  }
+
+  void Sort() {
+    ScopedLocker<std::mutex> _(&mtx_);
+    if (GetSideInfo()->IsWeighted()) {
+      for (auto& it: src_id_index_) {
+        auto& dst_ids = adj_matrix_[it.second];
+        auto& edge_ids = adj_edge_matrix_[it.second];
+
+        std::vector<float> weights;
+        for (auto edge_id: edge_ids) {
+          weights.push_back(GetEdgeWeight(edge_id));
+        }
+
+        std::vector<std::pair<std::pair<IdType, IdType>, float>> zipped;
+        zip3(dst_ids, edge_ids, weights, &zipped);
+        std::sort(std::begin(zipped), std::end(zipped),
+            [&](const std::pair<std::pair<IdType, IdType>, float>& a,
+                const std::pair<std::pair<IdType, IdType>, float>& b) {
+                return a.second > b.second;
+            });
+        unzip3(zipped, &dst_ids, &edge_ids, &weights);
+      }
+    }
+  }
+
 
 private:
   std::mutex   mtx_;
