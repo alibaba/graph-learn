@@ -9,7 +9,7 @@ SETUP_DIR := $(ROOT)/setup
 PYTHON_DIR := $(ROOT)/graphlearn
 PYTHON_LIB := $(PYTHON_DIR)/python/lib
 
-all: so
+default: so
 
 clean:
 	@rm -rf $(BUILT_DIR)
@@ -82,6 +82,7 @@ gtest:
 	@if [ ! -d "${GTEST_DIR}/build" ]; then cd "${GTEST_DIR}"; ./build.sh; fi
 	@echo "gtest done"
 
+# gflags
 GFLAGS_DIR := $(THIRD_PARTY_DIR)/gflags
 GFLAGS_LIB := $(GFLAGS_DIR)/build/lib
 gflags:
@@ -99,15 +100,14 @@ else
 endif
 
 PROFILING := CLOSE
-GXXVERSIONGTEQ5 := $(shell expr `g++ -dumpversion | cut -f1 -d.` \>= 5)
 CXX := g++
-CXXFLAGS := $(MODEFLAGS) -std=c++11 -fPIC -pthread -mavx -msse4.2 -msse4.1 \
-            -D$(PROFILING)_PROFILING \
-            -I. -I$(ROOT) -I$(BUILT_DIR) -I$(PROTOBUF_INCLUDE) -I$(GLOG_INCLUDE) \
+CXXFLAGS := $(MODEFLAGS) -std=c++11 -fPIC    \
+            -pthread -mavx -msse4.2 -msse4.1 \
+            -D$(PROFILING)_PROFILING         \
+            -I. -I$(ROOT) -I$(BUILT_DIR)     \
+            -I$(PROTOBUF_INCLUDE)            \
+            -I$(GLOG_INCLUDE)                \
             -I$(GRPC_INCLUDE)
-ifeq "$(GXXVERSIONGTEQ5)" "0"
-	CXXFLAGS += -D_GLIBCXX_USE_CXX11_ABI=0
-endif
 
 # c++ so
 so:protobuf grpc gflags glog gtest proto common platform service core
@@ -115,8 +115,8 @@ so:protobuf grpc gflags glog gtest proto common platform service core
 	@mkdir -p $(LIB_DIR)
 	@mkdir -p $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) -shared $(PROTO_OBJ) $(COMMON_OBJ) $(PLATFORM_OBJ) $(SERVICE_OBJ) $(CORE_OBJ) \
-		-L$(ROOT) -L$(GLOG_LIB) -L$(PROTOBUF_LIB) -L$(GRPC_LIB) -L$(GFLAGS_LIB)\
-		-lglog -lprotobuf -lgrpc++ -lgrpc -lgpr -lupb -lgflags\
+		-L$(ROOT) -L$(GLOG_LIB) -L$(PROTOBUF_LIB) -L$(GRPC_LIB) -L$(GFLAGS_LIB) \
+		-lglog -lprotobuf -lgflags -lgrpc++ -lgrpc \
 		-o $(LIB_DIR)/libgraphlearn_shared.so
 
 ####################################### proto begin ########################################
@@ -290,7 +290,7 @@ $(CORE_BUILT_DIR)/runner/%.o:$(CORE_DIR)/runner/%.cc $(CORE_H)
 core:$(CORE_OBJ)
 ####################################### core done ########################################
 
-TEST_FLAG := -I$(GTEST_INCLUDE) -L$(GTEST_LIB) -L$(LIB_DIR) -L$(GRPC_LIB) -L/lib64 -lgraphlearn_shared -lgtest -lgtest_main -lstdc++ -lgrpc++ -lgrpc -lgpr -lupb
+TEST_FLAG := -I$(GTEST_INCLUDE) -L$(GTEST_LIB) -L$(LIB_DIR) -L$(GRPC_LIB) -L/lib64 -lgraphlearn_shared -lgtest -lgtest_main -lstdc++
 
 test:so gtest
 	$(CXX) $(CXXFLAGS) graphlearn/common/base/test/closure_unittest.cpp -o built/bin/closure_unittest $(TEST_FLAG)
@@ -333,18 +333,6 @@ python: so pybind
 	@rm -rf graphlearn.egg-info
 	@mkdir -p $(PYTHON_LIB)
 	@cp $(SETUP_DIR)/gl.__init__.py $(PYTHON_DIR)/__init__.py
-	@cp $(THIRD_PARTY_DIR)/grpc/build/lib/libgrpc++.so.1.26.0 $(PYTHON_LIB)/libgrpc++.so.1.26.0
-	@cp $(THIRD_PARTY_DIR)/grpc/build/lib/libgrpc.so.9.0.0 $(PYTHON_LIB)/libgrpc.so.9.0.0
-	@cp $(THIRD_PARTY_DIR)/grpc/build/lib/libgpr.so.9.0.0 $(PYTHON_LIB)/libgpr.so.9.0.0
-	@cp $(THIRD_PARTY_DIR)/grpc/build/lib/libupb.so.9.0.0 $(PYTHON_LIB)/libupb.so.9.0.0
-	@if [ ! -f "$(PYTHON_LIB)/libgrpc++.so" ]; then ln -s $(PYTHON_LIB)/libgrpc++.so.1.26.0 $(PYTHON_LIB)/libgrpc++.so; fi
-	@if [ ! -f "$(PYTHON_LIB)/libgrpc++.so.1" ]; then ln -s $(PYTHON_LIB)/libgrpc++.so.1.26.0 $(PYTHON_LIB)/libgrpc++.so.1; fi
-	@if [ ! -f "$(PYTHON_LIB)/libgrpc.so" ]; then ln -s $(PYTHON_LIB)/libgrpc.so.9.0.0 $(PYTHON_LIB)/libgrpc.so; fi
-	@if [ ! -f "$(PYTHON_LIB)/libgrpc.so.9" ]; then ln -s $(PYTHON_LIB)/libgrpc.so.9.0.0 $(PYTHON_LIB)/libgrpc.so.9; fi
-	@if [ ! -f "$(PYTHON_LIB)/libgpr.so" ]; then ln -s $(PYTHON_LIB)/libgpr.so.9.0.0 $(PYTHON_LIB)/libgpr.so; fi
-	@if [ ! -f "$(PYTHON_LIB)/libgpr.so.9" ]; then ln -s $(PYTHON_LIB)/libgpr.so.9.0.0 $(PYTHON_LIB)/libgpr.so.9; fi
-	@if [ ! -f "${PYTHON_LIB}/libupb.so" ]; then ln -s $(PYTHON_LIB)/libupb.so.9.0.0 $(PYTHON_LIB)/libupb.so; fi
-	@if [ ! -f "${PYTHON_LIB}/libupb.so.9" ]; then ln -s $(PYTHON_LIB)/libupb.so.9.0.0 $(PYTHON_LIB)/libupb.so.9; fi
 	@cp $(LIB_DIR)/libgraphlearn_shared.so $(PYTHON_LIB)
 	python $(SETUP_DIR)/setup.py bdist_wheel
 	@mkdir -p $(BIN_DIR)/ge_data/data
