@@ -44,12 +44,8 @@ include_dirs.append(numpy.get_include())
 
 library_dirs.append(ROOT_PATH + '/built/lib')
 
-GXXGTEQ5 = os.popen("expr `g++ -dumpversion | cut -f1 -d.` \>= 5").read()[0]
-if GXXGTEQ5 == '0':
-  extra_compile_args.append('-D_GLIBCXX_USE_CXX11_ABI=0')
-
 extra_compile_args.append('-D__USE_XOPEN2K8')
-extra_compile_args.append('-std=gnu++11')
+extra_compile_args.append('-std=c++11')
 extra_compile_args.append('-fvisibility=hidden')
 extra_link_args.append('-Wl,-rpath=$ORIGIN/python/lib/')
 
