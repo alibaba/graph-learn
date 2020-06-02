@@ -84,6 +84,12 @@ class DeepWalk(gl.LearningBasedModel):
                     dst_ids, self.node_type,
                     self.edge_type, graph=self.graph)
 
+  def _positive_sample_save(self, t):
+    # fake edge for saving node embeddings.
+    return gl.Edges(t.ids, self.node_type,
+                    t.ids, self.node_type,
+                    self.edge_type, graph=self.graph)
+
   def _negative_sample(self, t):
     return self.graph.V(self.node_type, feed=t.src_nodes)\
       .outNeg(self.edge_type)\
@@ -137,8 +143,12 @@ class DeepWalk(gl.LearningBasedModel):
 
 
   def node_embedding(self, type):
-    iterator = self.ego_flow.iterator
-    ego_tensor = self.ego_flow.pos_src_ego_tensor
+    node_ego_flow = gl.EgoFlow(self._sample_seed,
+                               self._positive_sample_save,
+                               self._receptive_fn,
+                               self.ego_spec)
+    iterator = node_ego_flow.iterator
+    ego_tensor = node_ego_flow.pos_src_ego_tensor
     src_emb = self.encoders['src'].encode(ego_tensor)
-    src_ids = self.pos_src_ego_tensor.src.ids
+    src_ids = node_ego_flow.pos_src_ego_tensor.src.ids
     return src_ids, src_emb, iterator
