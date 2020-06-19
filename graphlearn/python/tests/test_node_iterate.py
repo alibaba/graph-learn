@@ -31,7 +31,7 @@ class NodeIterateTestCase(NodeTestCase):
     decoder = gl.Decoder(attr_types=utils.ATTR_TYPES)
     g = gl.Graph() \
       .node(source=file_path, node_type=self.node_type_, decoder=decoder)
-    g.init(server_id=0, server_count=1, tracker=utils.TRACKER_PATH)
+    g.init(tracker=utils.TRACKER_PATH)
 
     batch_size = 4
     sampler = g.node_sampler('user',
@@ -55,6 +55,8 @@ class NodeIterateTestCase(NodeTestCase):
       nodes = sampler.get()
       utils.check_node_attrs(nodes)
       utils.check_subset(nodes.ids, ids)
+
+    g.close()
 
 
 if __name__ == "__main__":

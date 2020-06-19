@@ -34,8 +34,7 @@ class NodeQueryWeightTestCase(NodeQueryTestCase):
       .node(source=file_path,
             node_type=self.node_type_,
             decoder=decoder)
-    self.__class__.g.init(server_id=0, server_count=1,
-                          tracker=utils.TRACKER_PATH)
+    self.__class__.g.init(tracker=utils.TRACKER_PATH)
 
   def test_query_exist(self):
     nodes = self.g.get_nodes(node_type=self.node_type_,

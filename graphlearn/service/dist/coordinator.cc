@@ -187,10 +187,10 @@ Status Coordinator::Sink(const std::string& sub_dir,
   while (retry < GLOBAL_FLAG(RetryTimes)) {
     s = fs_->CreateDir(tracker_ + sub_dir);
     if (s.ok() || error::IsAlreadyExists(s)) {
-      LOG(INFO) << "Coordinator sink " << sub_dir;
+      LOG(INFO) << "Coordinator sink " << tracker_ << sub_dir;
       break;
     } else {
-      LOG(WARNING) << "Coordinator sink " << sub_dir
+      LOG(WARNING) << "Coordinator sink " << tracker_ << sub_dir
                    << " failed, try " << retry;
     }
     sleep(1 << retry);
@@ -206,7 +206,7 @@ Status Coordinator::Sink(const std::string& sub_dir,
       s = ret->Close();
       break;
     } else {
-      LOG(WARNING) << "Coordinator sink " << sub_dir << file_name
+      LOG(WARNING) << "Coordinator sink " << file_name
                    << " failed, try " << retry;
     }
     sleep(1 << retry);

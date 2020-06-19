@@ -31,11 +31,13 @@ class WeightedLabeledNodeTestCase(NodeTestCase):
     decoder = gl.Decoder(weighted=True, labeled=True)
     g = gl.Graph() \
       .node(source=file_path, node_type=self.node_type_, decoder=decoder)
-    g.init(server_id=0, server_count=1, tracker=utils.TRACKER_PATH)
+    g.init(tracker=utils.TRACKER_PATH)
 
     nodes = g.get_nodes(node_type=self.node_type_, ids=self.ids_)
     self.check_weights(nodes)
     self.check_labels(nodes)
+
+    g.close()
 
 
 if __name__ == "__main__":

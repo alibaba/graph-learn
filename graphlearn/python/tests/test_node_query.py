@@ -43,7 +43,7 @@ class NodeQueryTestCase(unittest.TestCase):
 
   @classmethod
   def tearDownClass(cls):
-    pass
+    cls.g.close()
 
   def setUp(self):
     self.node_type_ = 'user'

@@ -23,6 +23,7 @@ limitations under the License.
 #include "graphlearn/core/graph/graph_store.h"
 #include "graphlearn/include/config.h"
 #include "graphlearn/platform/env.h"
+#include "graphlearn/service/dist/coordinator.h"
 #include "graphlearn/service/dist/service.h"
 #include "graphlearn/service/executor.h"
 #include "graphlearn/service/local/in_memory_service.h"
@@ -37,7 +38,8 @@ ServerImpl::ServerImpl(int32_t server_id,
       executor_(nullptr),
       graph_store_(nullptr),
       in_memory_service_(nullptr),
-      dist_service_(nullptr) {
+      dist_service_(nullptr),
+      coordinator_(nullptr) {
   InitGoogleLogging();
   SetGlobalFlagServerId(server_id);
   SetGlobalFlagServerCount(server_count);
@@ -51,36 +53,54 @@ ServerImpl::~ServerImpl() {
   delete in_memory_service_;
   delete executor_;
   delete graph_store_;
+  delete coordinator_;
 
   UninitGoogleLogging();
 }
 
 void ServerImpl::Start() {
+  LOG(INFO) << "Server starts with mode:" << GLOBAL_FLAG(DeployMode)
+            << ", server_id:" << server_id_
+            << ", server_count:" << server_count_;
+
   if (GLOBAL_FLAG(DeployMode) >= 1) {
+    coordinator_ = new Coordinator(server_id_, server_count_, env_);
     RegisterInMemoryService();
     RegisterDistributeService();
   } else {
     RegisterInMemoryService();
   }
+  LOG(INFO) << "Server started.";
   USER_LOG("Server started.");
 }
 
 void ServerImpl::Init(const std::vector<io::EdgeSource>& edges,
                       const std::vector<io::NodeSource>& nodes) {
   if (graph_store_) {
-    graph_store_->Load(edges, nodes);
+    Status s = graph_store_->Load(edges, nodes);
+    if (!s.ok()) {
+      USER_LOG("Server load data failed and exit now.");
+      USER_LOG(s.ToString());
+      LOG(FATAL) << "Server load data failed: " << s.ToString();
+      ::exit(-1);
+    }
     graph_store_->Build();
   }
+
   if (in_memory_service_) {
     in_memory_service_->Init();
   }
+
   if (dist_service_) {
     Status s = dist_service_->Init();
     if (!s.ok()) {
-      LOG(FATAL) << "Service init failed: " << s.ToString();
+      USER_LOG("Server init failed and exit now.");
+      USER_LOG(s.ToString());
+      LOG(FATAL) << "DistributeService init failed: " << s.ToString();
       ::exit(-1);
     }
   }
+  LOG(INFO) << "Data initialized.";
   USER_LOG("Data initialized.");
 }
 
@@ -91,30 +111,39 @@ void ServerImpl::Stop() {
   if (dist_service_) {
     Status s = dist_service_->Stop();
     if (!s.ok()) {
-      LOG(FATAL) << "Service stop failed: " << s.ToString();
+      USER_LOG("Server stop failed and exit now.");
+      USER_LOG(s.ToString());
+      LOG(FATAL) << "DistributeService stop failed: " << s.ToString();
       ::exit(-1);
     }
   }
+  LOG(INFO) << "Server stopped.";
   USER_LOG("Server stopped.");
 }
 
 void ServerImpl::RegisterInMemoryService() {
   if (in_memory_service_ == nullptr) {
-    in_memory_service_ = new InMemoryService(env_, executor_);
+    in_memory_service_ = new InMemoryService(env_, executor_, coordinator_);
     in_memory_service_->Start();
   }
+  LOG(INFO) << "Start InMemoryService OK.";
 }
 
 void ServerImpl::RegisterDistributeService() {
   if (dist_service_ == nullptr) {
     dist_service_ = new DistributeService(
-      server_id_, server_count_, env_, executor_);
+      server_id_, server_count_, env_, executor_, coordinator_);
     Status s = dist_service_->Start();
     if (!s.ok()) {
-      LOG(FATAL) << "Service start failed: " << s.ToString();
+      USER_LOG("Server start failed and exit now.");
+      USER_LOG(s.ToString());
+      LOG(FATAL) << "DistributeService start failed: " << s.ToString();
       ::exit(-1);
     }
   }
+  LOG(INFO) << "Start DistributeService OK"
+            << ", server_id:" << server_id_
+            << ", server_count:" << server_count_;
 }
 
 }  // namespace graphlearn

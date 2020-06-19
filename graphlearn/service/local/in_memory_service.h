@@ -23,10 +23,11 @@ namespace graphlearn {
 class Call;
 class Env;
 class Executor;
+class Coordinator;
 
 class InMemoryService {
 public:
-  InMemoryService(Env* env, Executor* executor);
+  InMemoryService(Env* env, Executor* executor, Coordinator* coord);
   ~InMemoryService();
 
   void Start();
@@ -41,6 +42,7 @@ private:
   Env*         env_;
   Executor*    executor_;
   std::thread* thread_;
+  Coordinator* coord_;
 };
 
 }  // namespace graphlearn

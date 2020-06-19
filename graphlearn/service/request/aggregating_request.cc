@@ -52,8 +52,7 @@ AggregatingRequest::AggregatingRequest(const std::string& type,
 }
 
 OpRequest* AggregatingRequest::Clone() const {
-  AggregatingRequest* req =
-      new AggregatingRequest(Type(), Strategy());
+  AggregatingRequest* req = new AggregatingRequest(Type(), Strategy());
   req->num_segments_ = num_segments_;
   return req;
 }
@@ -64,14 +63,10 @@ void AggregatingRequest::SerializeTo(void* request) {
   OpRequest::SerializeTo(request);
 }
 
-bool AggregatingRequest::ParseFrom(const void* request) {
-  if (!OpRequest::ParseFrom(request)) {
-    return false;
-  }
+void AggregatingRequest::SetMembers() {
   num_segments_ = params_[kNumSegments].GetInt32(0);
   node_ids_ = &(tensors_[kNodeIds]);
   segment_ids_ = &(tensors_[kSegmentIds]);
-  return true;
 }
 
 void AggregatingRequest::Set(const int64_t* node_ids,
@@ -80,7 +75,6 @@ void AggregatingRequest::Set(const int64_t* node_ids,
                              int32_t num_segments) {
   node_ids_->AddInt64(node_ids, node_ids + num_ids);
   segment_ids_->AddInt32(segment_ids, segment_ids + num_ids);
-
   num_segments_ = num_segments;
 }
 
@@ -121,6 +115,15 @@ AggregatingResponse::AggregatingResponse()
       segments_(nullptr) {
 }
 
+void AggregatingResponse::Swap(OpResponse& right) {
+  OpResponse::Swap(right);
+  AggregatingResponse& res = static_cast<AggregatingResponse&>(right);
+  std::swap(name_, res.name_);
+  std::swap(emb_dim_, res.emb_dim_);
+  std::swap(embs_, res.embs_);
+  std::swap(segments_, res.segments_);
+}
+
 void AggregatingResponse::SetName(const std::string& name) {
   name_ = name;
   ADD_TENSOR(params_, kOpName, kString, 1);
@@ -140,6 +143,7 @@ void AggregatingResponse::SetEmbeddingDim(int32_t dim) {
 }
 
 void AggregatingResponse::SetNumSegments(int32_t num_segments) {
+  // the number of segments is batch_size
   batch_size_ = num_segments;
 }
 
@@ -161,70 +165,54 @@ const int32_t* AggregatingResponse::Segments() const {
   return segments_->GetInt32();
 }
 
-bool AggregatingResponse::ParseFrom(const void* response) {
-  if (!OpResponse::ParseFrom(response)) {
-    return false;
-  }
-
+void AggregatingResponse::SetMembers() {
   embs_ = &(tensors_[kFloatAttrKey]);
   segments_ = &(tensors_[kSegments]);
   emb_dim_ = params_[kSideInfo].GetInt32(0);
   name_ = params_[kOpName].GetString(0);
-  return true;
 }
 
 void AggregatingResponse::Stitch(ShardsPtr<OpResponse> shards) {
   int32_t shard_id = 0;
   OpResponse* tmp = nullptr;
   shards->Next(&shard_id, &tmp);
+  AggregatingResponse* shard = static_cast<AggregatingResponse*>(tmp);
 
-  AggregatingResponse* agg_tmp = nullptr;
-  agg_tmp = static_cast<AggregatingResponse*>(tmp);
-  int32_t num_segments = agg_tmp->NumSegments();
-  int32_t emb_dim = agg_tmp->EmbeddingDim();
-  int32_t size = num_segments * emb_dim;
-  const std::string& name = agg_tmp->Name();
+  batch_size_ = shard->NumSegments();
+  int32_t emb_dim = shard->EmbeddingDim();
+  int32_t size = batch_size_ * emb_dim;
 
-  op::Operator* op = op::OperatorFactory::GetInstance().Lookup(name);
-  op::Aggregator* agg_op = static_cast<op::Aggregator*>(op);
+  ADD_TENSOR(params_, kOpName, kString, 1);
+  params_[kOpName].AddString(shard->Name());
+  ADD_TENSOR(params_, kSideInfo, kInt32, 1);
+  params_[kSideInfo].AddInt32(emb_dim);
 
   tensors_.clear();
   tensors_.reserve(2);
-
   ADD_TENSOR(tensors_, kFloatAttrKey, kFloat, size);
   tensors_[kFloatAttrKey].Resize(size);
-  embs_ = &(tensors_[kFloatAttrKey]);
-  float* embs = const_cast<float*>(embs_->GetFloat());
+  ADD_TENSOR(tensors_, kSegments, kInt32, batch_size_);
+  tensors_[kSegments].Resize(batch_size_);
 
-  ADD_TENSOR(tensors_, kSegments, kInt32, num_segments);
-  tensors_[kSegments].Resize(num_segments);
-  segments_ = &(tensors_[kSegments]);
-  int32_t* segments = const_cast<int32_t*>(segments_->GetInt32());
+  float* embs = const_cast<float*>(tensors_[kFloatAttrKey].GetFloat());
+  int32_t* segments = const_cast<int32_t*>(tensors_[kSegments].GetInt32());
 
+  op::Operator* op = op::OperatorFactory::GetInstance().Lookup(shard->Name());
+  op::Aggregator* agg_op = static_cast<op::Aggregator*>(op);
   agg_op->InitFunc(embs, size);
 
   shards->ResetNext();
   while (shards->Next(&shard_id, &tmp)) {
-    agg_tmp = static_cast<AggregatingResponse*>(tmp);
-    float* tmp_embs = const_cast<float*>(agg_tmp->Embeddings());
-    const int32_t* tmp_segments = agg_tmp->Segments();
-    agg_op->AggFunc(embs, tmp_embs, size, tmp_segments, num_segments);
-    for (int32_t i = 0; i < num_segments; ++i) {
-      segments[i] += tmp_segments[i];
+    shard = static_cast<AggregatingResponse*>(tmp);
+    float* shard_embs = const_cast<float*>(shard->Embeddings());
+    const int32_t* shard_segments = shard->Segments();
+    agg_op->AggFunc(embs, shard_embs, size, shard_segments, batch_size_);
+    for (int32_t i = 0; i < batch_size_; ++i) {
+      segments[i] += shard_segments[i];
     }
   }
-
-  agg_op->FinalFunc(embs, size, segments, num_segments);
-
-  batch_size_ = num_segments;
-
-  name_ = name;
-  ADD_TENSOR(params_, kOpName, kString, 1);
-  params_[kOpName].AddString(name_);
-
-  emb_dim_ = emb_dim;
-  ADD_TENSOR(params_, kSideInfo, kInt32, 1);
-  params_[kSideInfo].AddInt32(emb_dim_);
+  agg_op->FinalFunc(embs, size, segments, batch_size_);
+  this->SetMembers();
 }
 
 REGISTER_REQUEST(MinAggregator, AggregatingRequest, AggregatingResponse);

@@ -47,6 +47,8 @@ NamingEngine::NamingEngine()
 
   Status s = Env::Default()->GetFileSystem(tracker_, &fs_);
   if (!s.ok()) {
+    USER_LOG("Invalid tracker path and exit now.");
+    USER_LOG(tracker_);
     LOG(FATAL) << "Invalid tracker path: " << tracker_;
     ::exit(-1);
   }
@@ -55,6 +57,8 @@ NamingEngine::NamingEngine()
   if (s.ok() || error::IsAlreadyExists(s)) {
     LOG(INFO) << "Connect naming engine ok: " << tracker_;
   } else {
+    USER_LOG("Connect to tracker path failed and exit now.");
+    USER_LOG(tracker_);
     LOG(FATAL) << "Connect naming engine failed: " << tracker_;
     ::exit(-1);
   }

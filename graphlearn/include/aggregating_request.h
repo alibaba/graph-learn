@@ -30,7 +30,6 @@ public:
 
   OpRequest* Clone() const override;
   void SerializeTo(void* request) override;
-  bool ParseFrom(const void* request) override;
 
   void Set(const int64_t* node_ids,
            const int32_t* segment_ids,
@@ -43,6 +42,9 @@ public:
   int32_t NumIds() const { return node_ids_->Size(); }
   bool SegmentEnd(int32_t segment_id) const;
   int32_t NumSegments() const { return num_segments_; }
+
+protected:
+  void SetMembers() override;
 
 private:
   int32_t cursor_;
@@ -60,6 +62,8 @@ public:
     return new AggregatingResponse;
   }
 
+  void Swap(OpResponse& right) override;
+
   void SetName(const std::string& name);
   void SetEmbeddingDim(int32_t dim);
   void SetNumSegments(int32_t dim);
@@ -74,8 +78,10 @@ public:
   void AppendSegment(int32_t size);
   const int32_t* Segments() const;
 
-  bool ParseFrom(const void* response) override;
   void Stitch(ShardsPtr<OpResponse> shards) override;
+
+protected:
+  void SetMembers() override;
 
 private:
   std::string name_;

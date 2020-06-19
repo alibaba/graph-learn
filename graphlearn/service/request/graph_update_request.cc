@@ -66,11 +66,7 @@ UpdateRequest::UpdateRequest(const io::SideInfo* info, int32_t batch_size)
   }
 }
 
-bool UpdateRequest::ParseFrom(const void* request) {
-  if (!OpRequest::ParseFrom(request)) {
-    return false;
-  }
-
+void UpdateRequest::SetMembers() {
   infos_ = &(params_[kSideInfo]);
 
   info_ = new io::SideInfo();
@@ -94,7 +90,6 @@ bool UpdateRequest::ParseFrom(const void* request) {
   if (info_->s_num > 0) {
     s_attrs_ = &(tensors_[kStringAttrKey]);
   }
-  return true;
 }
 
 void UpdateRequest::Append(const io::AttributeValue* value) {
@@ -174,16 +169,13 @@ void UpdateEdgesRequest::SerializeTo(void* request) {
   pb->set_need_server_ready(false);
 }
 
-bool UpdateEdgesRequest::ParseFrom(const void* request) {
-  if (!UpdateRequest::ParseFrom(request)) {
-    return false;
-  }
+void UpdateEdgesRequest::SetMembers() {
+  UpdateRequest::SetMembers();
   info_->type = params_[kEdgeType].GetString(0);
   info_->src_type = params_[kEdgeType].GetString(1);
   info_->dst_type = params_[kEdgeType].GetString(2);
   src_ids_ = &(tensors_[kSrcIds]);
   dst_ids_ = &(tensors_[kDstIds]);
-  return true;
 }
 
 int32_t UpdateEdgesRequest::Size() const {
@@ -250,13 +242,10 @@ void UpdateNodesRequest::SerializeTo(void* request) {
   pb->set_need_server_ready(false);
 }
 
-bool UpdateNodesRequest::ParseFrom(const void* request) {
-  if (!UpdateRequest::ParseFrom(request)) {
-    return false;
-  }
+void UpdateNodesRequest::SetMembers() {
+  UpdateRequest::SetMembers();
   info_->type = params_[kNodeType].GetString(0);
   ids_ = &(tensors_[kNodeIds]);
-  return true;
 }
 
 int32_t UpdateNodesRequest::Size() const {

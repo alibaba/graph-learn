@@ -90,16 +90,23 @@ class NodeSampler(object):
     Raise:
       `graphlearn.OutOfRangeError`
     """
+    state = self._graph.node_state.get(self._type)
     req = pywrap.new_get_node_req(self._type,
                                   self._strategy,
                                   self._node_from,
-                                  self._batch_size)
-    res = pywrap.new_get_node_res()
-    raise_exception_on_not_ok_status(self._client.get_nodes(req, res))
+                                  self._batch_size,
+                                  state)
 
-    ids = pywrap.get_node_node_id_res(res)
+    res = pywrap.new_get_node_res()
+    status = self._client.get_nodes(req, res)
+    if not status.ok():
+      self._graph.edge_state.inc(self._type)
+    else:
+      ids = pywrap.get_node_node_id_res(res)
+
     pywrap.del_get_node_res(res)
     pywrap.del_get_node_req(req)
+    raise_exception_on_not_ok_status(status)
 
     nodes = self._graph.get_nodes(self._node_type, ids)
     return nodes

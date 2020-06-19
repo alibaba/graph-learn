@@ -31,7 +31,7 @@ class NodeFromGraphIterateTestCase(EdgeTestCase):
     decoder = gl.Decoder(attr_types=utils.ATTR_TYPES)
     g = gl.Graph() \
       .edge(source=file_path, edge_type=self.edge_tuple_, decoder=decoder)
-    g.init(server_id=0, server_count=1, tracker=utils.TRACKER_PATH)
+    g.init(tracker=utils.TRACKER_PATH)
 
     batch_size = 4
     sampler = g.node_sampler('first',
@@ -77,6 +77,8 @@ class NodeFromGraphIterateTestCase(EdgeTestCase):
     for i in range(max_iter):
       nodes = sampler.get()
       utils.check_subset(nodes.ids, ids)
+
+    g.close()
 
 
 if __name__ == "__main__":

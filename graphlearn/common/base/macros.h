@@ -25,11 +25,21 @@ limitations under the License.
 
 #define BREAK_IF_NOT_OK(s)                  \
   if (!s.ok()) {                            \
+    break;                                  \
+  }
+
+#define LOG_BREAK_IF_NOT_OK(s)              \
+  if (!s.ok()) {                            \
     LOG(ERROR) << s.ToString();             \
     break;                                  \
   }
 
 #define RETURN_IF_NOT_OK(s)                 \
+  if (!s.ok()) {                            \
+    return s;                               \
+  }
+
+#define LOG_RETURN_IF_NOT_OK(s)             \
   if (!s.ok()) {                            \
     LOG(ERROR) << s.ToString();             \
     return s;                               \

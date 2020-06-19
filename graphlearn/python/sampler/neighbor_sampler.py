@@ -101,13 +101,14 @@ class NeighborSampler(object):
     for i in xrange(len(self._meta_path)):
       req = self._make_req(i, src_ids)
       res = pywrap.new_nbr_res()
-      raise_exception_on_not_ok_status(self._client.sample_neighbor(req, res))
-
-      nbr_ids = pywrap.get_nbr_res_nbr_ids(res)
-      edge_ids = pywrap.get_nbr_res_edge_ids(res)
+      status = self._client.sample_neighbor(req, res)
+      if status.ok():
+        nbr_ids = pywrap.get_nbr_res_nbr_ids(res)
+        edge_ids = pywrap.get_nbr_res_edge_ids(res)
 
       pywrap.del_nbr_res(res)
       pywrap.del_nbr_req(req)
+      raise_exception_on_not_ok_status(status)
 
       dst_type = self._dst_types[i]
       layer_nodes = self._graph.get_nodes(dst_type,
@@ -179,16 +180,17 @@ class FullNeighborSampler(NeighborSampler):
       # req, res & call method.
       req = self._make_req(i, src_ids)
       res = pywrap.new_nbr_res()
-      raise_exception_on_not_ok_status(self._client.sample_neighbor(req, res))
+      status = self._client.sample_neighbor(req, res)
+      if status.ok():
+        src_degrees = pywrap.get_nbr_res_degrees(res)
+        dense_shape = (current_batch_size, max(src_degrees))
 
-      src_degrees = pywrap.get_nbr_res_degrees(res)
-      dense_shape = (current_batch_size, max(src_degrees))
-
-      nbr_ids = pywrap.get_nbr_res_nbr_ids(res)
-      edge_ids = pywrap.get_nbr_res_edge_ids(res)
+        nbr_ids = pywrap.get_nbr_res_nbr_ids(res)
+        edge_ids = pywrap.get_nbr_res_edge_ids(res)
 
       pywrap.del_nbr_res(res)
       pywrap.del_nbr_req(req)
+      raise_exception_on_not_ok_status(status)
 
       dst_type = self._dst_types[i]
       layer_nodes = self._graph.get_nodes(dst_type,

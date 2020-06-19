@@ -35,12 +35,13 @@ public:
   UpdateRequest(const io::SideInfo* info, int32_t batch_size);
   virtual ~UpdateRequest();
 
-  bool ParseFrom(const void* request) override;
-
   void Append(const io::AttributeValue* value);
   const io::SideInfo* GetSideInfo() const;
   int32_t Size() const;
   void Next(io::AttributeValue* value);
+
+protected:
+  void SetMembers() override;
 
 protected:
   io::SideInfo* info_;
@@ -62,11 +63,13 @@ public:
 
   OpRequest* Clone() const override;
   void SerializeTo(void* request) override;
-  bool ParseFrom(const void* request) override;
 
   int32_t Size() const;
   void Append(const io::EdgeValue* value);
   bool Next(io::EdgeValue* value);
+
+protected:
+  void SetMembers() override;
 
 private:
   Tensor* src_ids_;
@@ -92,11 +95,13 @@ public:
 
   OpRequest* Clone() const override;
   void SerializeTo(void* request) override;
-  bool ParseFrom(const void* request) override;
 
   int32_t Size() const;
   void Append(const io::NodeValue* value);
   bool Next(io::NodeValue* value);
+
+protected:
+  void SetMembers() override;
 
 private:
   Tensor* ids_;
@@ -118,12 +123,14 @@ public:
   GetEdgesRequest();
   GetEdgesRequest(const std::string& edge_type,
                   const std::string& strategy,
-                  int32_t batch_size);
+                  int32_t batch_size,
+                  int32_t epoch = 0);
   virtual ~GetEdgesRequest() = default;
 
   const std::string& EdgeType() const;
   const std::string& Strategy() const;
   int32_t BatchSize() const;
+  int32_t Epoch() const;
 };
 
 class GetEdgesResponse : public OpResponse {
@@ -135,7 +142,7 @@ public:
     return new GetEdgesResponse;
   }
 
-  bool ParseFrom(const void* response) override;
+  void Swap(OpResponse& right) override;
 
   void Init(int32_t batch_size);
   void Append(int64_t src_id, int64_t dst_id, int64_t edge_id);
@@ -143,6 +150,9 @@ public:
   const int64_t* SrcIds() const;
   const int64_t* DstIds() const;
   const int64_t* EdgeIds() const;
+
+protected:
+  void SetMembers() override;
 
 private:
   Tensor* src_ids_;
@@ -156,13 +166,15 @@ public:
   GetNodesRequest(const std::string& type,
                   const std::string& strategy,
                   NodeFrom node_from,
-                  int32_t batch_size);
+                  int32_t batch_size,
+                  int32_t epoch = 0);
   virtual ~GetNodesRequest() = default;
 
   const std::string& Type() const;
   const std::string& Strategy() const;
   NodeFrom GetNodeFrom() const;
   int32_t BatchSize() const;
+  int32_t Epoch() const;
 };
 
 class GetNodesResponse : public OpResponse {
@@ -174,12 +186,15 @@ public:
     return new GetNodesResponse;
   }
 
-  bool ParseFrom(const void* response) override;
+  void Swap(OpResponse& right) override;
 
   void Init(int32_t batch_size);
   void Append(int64_t node_id);
   int32_t Size() const { return batch_size_; }
   const int64_t* NodeIds() const;
+
+protected:
+  void SetMembers() override;
 
 private:
   Tensor* node_ids_;
@@ -193,8 +208,6 @@ public:
 
   OpRequest* Clone() const override;
 
-  bool ParseFrom(const void* request) override;
-
   void Set(const int64_t* edge_ids,
            const int64_t* src_ids,
            int32_t batch_size);
@@ -202,6 +215,9 @@ public:
   const std::string& EdgeType() const;
   int32_t Size() const;
   bool Next(int64_t* edge_id, int64_t* src_id);
+
+protected:
+  void SetMembers() override;
 
 private:
   int32_t cursor_;
@@ -217,13 +233,14 @@ public:
 
   OpRequest* Clone() const override;
 
-  bool ParseFrom(const void* request) override;
-
   void Set(const int64_t* node_ids, int32_t batch_size);
 
   const std::string& NodeType() const;
   int32_t Size() const;
   bool Next(int64_t* node_id);
+
+protected:
+  void SetMembers() override;
 
 private:
   int32_t cursor_;
@@ -235,7 +252,7 @@ public:
   LookupResponse();
   virtual ~LookupResponse();
 
-  bool ParseFrom(const void* response) override;
+  void Swap(OpResponse& right) override;
 
   void SetSideInfo(const io::SideInfo* info, int32_t batch_size);
   void AppendWeight(float weight);
@@ -252,6 +269,9 @@ public:
   const int64_t* IntAttrs() const;
   const float* FloatAttrs() const;
   const std::string* StringAttrs() const;
+
+protected:
+  void SetMembers() override;
 
 protected:
   io::SideInfo* info_;

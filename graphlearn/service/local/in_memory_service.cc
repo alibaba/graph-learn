@@ -18,13 +18,19 @@ limitations under the License.
 #include "graphlearn/common/base/log.h"
 #include "graphlearn/platform/env.h"
 #include "graphlearn/service/call.h"
+#include "graphlearn/service/dist/coordinator.h"
 #include "graphlearn/service/executor.h"
 #include "graphlearn/service/local/event_queue.h"
 
 namespace graphlearn {
 
-InMemoryService::InMemoryService(Env* env, Executor* executor)
-    : env_(env), executor_(executor), thread_(nullptr) {
+InMemoryService::InMemoryService(Env* env,
+                                 Executor* executor,
+                                 Coordinator* coord)
+    : env_(env),
+      executor_(executor),
+      thread_(nullptr),
+      coord_(coord) {
 }
 
 InMemoryService::~InMemoryService() {
@@ -59,6 +65,13 @@ void InMemoryService::Handler(Call* call) {
     s = executor_->RunOp(
       static_cast<const OpRequest*>(call->req_),
       static_cast<OpResponse*>(call->res_));
+    break;
+  case kStop:
+    if (coord_ != nullptr) {
+      s = coord_->Stop(GLOBAL_FLAG(ClientId), GLOBAL_FLAG(ClientCount));
+    } else {
+      s = Status::OK();
+    }
     break;
   case kOtherToExtend:
     // some request may not need executor_, just like some system status.

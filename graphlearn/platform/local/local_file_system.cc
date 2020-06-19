@@ -155,10 +155,9 @@ private:
         strings::FastStringTo32(items[i].c_str(), &v.n.i);
       } else if (schema_.types[i] == DataType::kInt64) {
         strings::FastStringTo64(items[i].c_str(), &v.n.l);
-      } else if (schema_.types[i] == DataType::kFloat) {
+      } else if (schema_.types[i] == DataType::kFloat ||
+          schema_.types[i] == DataType::kDouble) {
         strings::FastStringToFloat(items[i].c_str(), &v.n.f);
-      } else if (schema_.types[i] == DataType::kDouble) {
-        strings::FastStringToDouble(items[i].c_str(), &v.n.d);
       } else {
         v.s.Copy(items[i], true);
       }

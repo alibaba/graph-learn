@@ -29,11 +29,13 @@ class Coordinator;
 class NamingEngine;
 class ChannelManager;
 class GrpcServiceImpl;
+class Coordinator;
 
 class DistributeService {
 public:
   DistributeService(int32_t server_id, int32_t server_count,
-                    Env* env, Executor* executor);
+                    Env* env, Executor* executor,
+                    Coordinator* coord);
   ~DistributeService();
 
   Status Start();

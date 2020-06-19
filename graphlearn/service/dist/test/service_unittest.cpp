@@ -57,8 +57,10 @@ TEST_F(DistributeServiceTest, StartInitStop) {
   int32_t server_id = 0;
   int32_t server_count = 1;
 
+  Coordinator* coordinator = new Coordinator(server_id, server_count, env);
+
   DistributeService* service = new DistributeService(
-    server_id, server_count, env, executor);
+    server_id, server_count, env, executor, coordinator);
   Status s = service->Start();
   EXPECT_TRUE(s.ok());
   s = service->Init();
@@ -74,4 +76,5 @@ TEST_F(DistributeServiceTest, StartInitStop) {
   t->join();
   delete t;
   delete service;
+  delete coordinator;
 }

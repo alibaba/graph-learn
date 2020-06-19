@@ -31,7 +31,7 @@ class LabeledAttributedEdgeTestCase(EdgeTestCase):
     decoder = gl.Decoder(labeled=True, attr_types=utils.ATTR_TYPES)
     g = gl.Graph() \
       .edge(source=file_path, edge_type=self.edge_tuple_, decoder=decoder)
-    g.init(server_id=0, server_count=1, tracker=utils.TRACKER_PATH)
+    g.init(tracker=utils.TRACKER_PATH)
 
     edges = g.E("first").batch(self.batch_size_).emit()
     utils.check_ids(edges.src_ids,
@@ -40,6 +40,8 @@ class LabeledAttributedEdgeTestCase(EdgeTestCase):
                     range(self.dst_range_[0], self.dst_range_[1]))
     utils.check_edge_labels(edges)
     utils.check_edge_attrs(edges)
+
+    g.close()
 
 
 if __name__ == "__main__":

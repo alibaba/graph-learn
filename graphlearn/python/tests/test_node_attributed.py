@@ -31,10 +31,12 @@ class AttributedNodeTestCase(NodeTestCase):
     decoder = gl.Decoder(attr_types=utils.ATTR_TYPES)
     g = gl.Graph() \
       .node(source=file_path, node_type=self.node_type_, decoder=decoder)
-    g.init(server_id=0, server_count=1, tracker=utils.TRACKER_PATH)
+    g.init(tracker=utils.TRACKER_PATH)
 
     nodes = g.get_nodes(node_type=self.node_type_, ids=self.ids_)
     self.check_attrs(nodes)
+
+    g.close()
 
 
 if __name__ == "__main__":

@@ -272,6 +272,8 @@ TEST_F(GraphOpTest, EdgeGetter) {
       delete res;
       delete req;
     }
+
+
   }
 }
 

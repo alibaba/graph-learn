@@ -69,19 +69,24 @@ class EdgeSampler(object):
     Raise:
       `graphlearn.OutOfRangeError`
     """
+    state = self._graph.edge_state.get(self._edge_type)
     req = pywrap.new_get_edge_req(self._edge_type,
                                   self._strategy,
-                                  self._batch_size)
+                                  self._batch_size,
+                                  state)
     res = pywrap.new_get_edge_res()
 
-    raise_exception_on_not_ok_status(self._client.get_edges(req, res))
-
-    src_ids = pywrap.get_edge_src_id_res(res)
-    dst_ids = pywrap.get_edge_dst_id_res(res)
-    edge_ids = pywrap.get_edge_edge_id_res(res)
+    status = self._client.get_edges(req, res)
+    if not status.ok():
+      self._graph.edge_state.inc(self._edge_type)
+    else:
+      src_ids = pywrap.get_edge_src_id_res(res)
+      dst_ids = pywrap.get_edge_dst_id_res(res)
+      edge_ids = pywrap.get_edge_edge_id_res(res)
 
     pywrap.del_get_edge_res(res)
     pywrap.del_get_edge_req(req)
+    raise_exception_on_not_ok_status(status)
 
     edges = self._graph.get_edges(self._edge_type,
                                   src_ids,

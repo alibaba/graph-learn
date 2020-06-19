@@ -46,7 +46,11 @@ NodeLoader::~NodeLoader() {
 
 Status NodeLoader::Read(NodeValue* value) {
   Status s = reader_->Read(&record_);
-  if (!s.ok()) {
+  if (error::IsOutOfRange(s)) {
+    LOG(INFO) << "Current node file completed, " << source_->path;
+    return s;
+  } else if (!s.ok()) {
+    LOG(ERROR) << "Read node failed, " << s.ToString();
     return s;
   }
 
@@ -60,19 +64,27 @@ Status NodeLoader::Read(NodeValue* value) {
   s = ParseValue(value);
   if (error::IsInvalidArgument(s) && source_->ignore_invalid) {
     // ignore the invalid record and read next
+    LOG(WARNING) << "Invalid node data found but ignored, " << s.ToString();
     s = Read(value);
+  } else if (!s.ok()) {
+    LOG(WARNING) << "Invalid node data found, " << s.ToString();
   }
   return s;
 }
 
 Status NodeLoader::BeginNextFile() {
   Status s = reader_->BeginNextFile(&source_);
-  if (!s.ok()) {
+  if (error::IsOutOfRange(s)) {
+    LOG(INFO) << "No more node file to be read";
+    return s;
+  } else if (!s.ok()) {
+    LOG(ERROR) << "Try to read next node file failed, " << s.ToString();
     return s;
   }
 
   if (source_->id_type.empty()) {
-    LOG(ERROR) << "Id type not specified:" << source_->path;
+    LOG(ERROR) << "Node type is not assigned, " << source_->path;
+    USER_LOG("Node type is not assigned.");
     return error::InvalidArgument("Node id type must be assigned.");
   }
 
@@ -113,6 +125,11 @@ Status NodeLoader::CheckTableSchema(const std::vector<DataType>& types) {
   if (expected != (*schema_)) {
     std::string expected_info = expected.ToString();
     std::string actual_info = schema_->ToString();
+    LOG(ERROR) << "Invalid node source schema, " << source_->path
+               << ", expect:" << expected_info
+               << ", actual:" << actual_info;
+    USER_LOG("The schema of node source does not match your decoder.");
+    USER_LOG(source_->path);
     return error::InvalidArgument(
       kPattern, expected_info.c_str(), actual_info.c_str());
   } else {

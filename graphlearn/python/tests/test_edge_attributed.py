@@ -31,11 +31,13 @@ class AttributedEdgeTestCase(EdgeTestCase):
     decoder = gl.Decoder(attr_types=utils.ATTR_TYPES)
     g = gl.Graph() \
       .edge(source=file_path, edge_type=self.edge_tuple_, decoder=decoder)
-    g.init(server_id=0, server_count=1, tracker=utils.TRACKER_PATH)
+    g.init(tracker=utils.TRACKER_PATH)
 
     edges = g.get_edges(edge_type="first",
                         src_ids=self.src_ids_,
                         dst_ids=self.dst_ids_)
+
+    g.close()
 
 
 if __name__ == "__main__":

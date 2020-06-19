@@ -31,7 +31,7 @@ class EdgeShuffleTestCase(EdgeTestCase):
     decoder = gl.Decoder(weighted=True)
     g = gl.Graph() \
       .edge(source=file_path, edge_type=self.edge_tuple_, decoder=decoder)
-    g.init(server_id=0, server_count=1, tracker=utils.TRACKER_PATH)
+    g.init(tracker=utils.TRACKER_PATH)
 
     batch_size = 4
     sampler = g.E('first').batch(batch_size).shuffle(traverse=True).values()
@@ -50,6 +50,8 @@ class EdgeShuffleTestCase(EdgeTestCase):
     dst_ids = range(self.dst_range_[0], self.dst_range_[1])
     utils.check_sorted_equal(res_src, src_ids)
     utils.check_sorted_equal(res_dst, dst_ids)
+
+    g.close()
 
 
 if __name__ == "__main__":

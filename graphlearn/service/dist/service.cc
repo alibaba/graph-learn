@@ -64,13 +64,13 @@ std::string GetLocalEndpoint(int32_t port) {
 DistributeService::DistributeService(int32_t server_id,
                                      int32_t server_count,
                                      Env* env,
-                                     Executor* executor)
+                                     Executor* executor,
+                                     Coordinator* coord)
     : server_id_(server_id),
       server_count_(server_count),
       port_(0),
-      coord_(nullptr),
+      coord_(coord),
       impl_(nullptr) {
-  coord_ = new Coordinator(server_id, server_count, env);
   engine_ = NamingEngine::GetInstance();
   engine_->SetCapacity(server_count);
   manager_ = ChannelManager::GetInstance();
@@ -78,7 +78,6 @@ DistributeService::DistributeService(int32_t server_id,
 }
 
 DistributeService::~DistributeService() {
-  delete coord_;
   delete impl_;
 }
 
@@ -92,10 +91,10 @@ Status DistributeService::Start() {
 
   std::string endpoint = GetLocalEndpoint(port_);
   Status s = engine_->Update(server_id_, endpoint);
-  RETURN_IF_NOT_OK(s)
+  LOG_RETURN_IF_NOT_OK(s)
 
   s = coord_->Start();
-  RETURN_IF_NOT_OK(s)
+  LOG_RETURN_IF_NOT_OK(s)
 
   while (!coord_->IsStartup()) {
     sleep(1);

@@ -129,9 +129,10 @@ PyObject* get_nbr_res_degrees(::graphlearn::SamplingResponse* res) {
 }
 
 ::graphlearn::GetEdgesRequest* new_get_edge_req(const std::string& edge_type,
-                                              const std::string& strategy,
-                                              int32_t batch_size) {
-  return new ::graphlearn::GetEdgesRequest(edge_type, strategy, batch_size);
+                                                const std::string& strategy,
+                                                int32_t batch_size,
+                                                int32_t epoch) {
+  return new ::graphlearn::GetEdgesRequest(edge_type, strategy, batch_size, epoch);
 }
 
 void del_get_edge_req(::graphlearn::GetEdgesRequest* req) {
@@ -303,11 +304,12 @@ PyObject* get_edge_labels_res(::graphlearn::LookupEdgesResponse* res) {
 }
 
 ::graphlearn::GetNodesRequest* new_get_node_req(const std::string& type,
-                                               const std::string& strategy,
-                                               ::graphlearn::NodeFrom node_from,
-                                               int32_t batch_size) {
+                                                const std::string& strategy,
+                                                ::graphlearn::NodeFrom node_from,
+                                                int32_t batch_size,
+                                                int32_t epoch) {
   return new ::graphlearn::GetNodesRequest(
-    type, strategy, node_from, batch_size);
+    type, strategy, node_from, batch_size, epoch);
 }
 
 void del_get_node_req(::graphlearn::GetNodesRequest* req) {

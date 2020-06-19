@@ -18,6 +18,7 @@ limitations under the License.
 #include <memory>
 #include "graphlearn/common/base/errors.h"
 #include "graphlearn/common/base/log.h"
+#include "graphlearn/common/base/progress.h"
 #include "graphlearn/common/threading/sync/cond.h"
 #include "graphlearn/core/io/element_value.h"
 #include "graphlearn/core/io/edge_loader.h"
@@ -32,11 +33,27 @@ namespace graphlearn {
 
 namespace {
 
+PROGRESSING(LoadGraphEdges);
+PROGRESSING(LoadGraphNodes);
+
+struct LoadGraphEdges {
+  void Update(int32_t n) {
+    UPDATE_PROGRESSING(LoadGraphEdges, n);
+  }
+};
+
+struct LoadGraphNodes {
+  void Update(int32_t n) {
+    UPDATE_PROGRESSING(LoadGraphNodes, n);
+  }
+};
+
 template<typename Source,
          typename Loader,
          typename DataType,
          typename ReqType,
-         typename ResType>
+         typename ResType,
+         typename ProgressType>
 class Initializer {
 public:
   explicit Initializer(Env* env) : env_(env) {
@@ -60,7 +77,12 @@ public:
       loaders_[i] = new Loader(sources, env_, i, thread_num_);
       Closure<void>* task = NewClosure(
         this,
-        &Initializer<Source, Loader, DataType, ReqType, ResType>::RunInThread,
+        &Initializer<Source,
+                     Loader,
+                     DataType,
+                     ReqType,
+                     ResType,
+                     ProgressType>::RunInThread,
         loaders_[i], &(s[i]), &sv);
       env_->InterThreadPool()->AddTask(task);
     }
@@ -89,6 +111,7 @@ private:
       } else {
         break;
       }
+      progress_.Update(req->Size());
 
       if (move_to_next) {
         s = loader->BeginNextFile();
@@ -135,6 +158,7 @@ private:
   Env* env_;
   int32_t thread_num_;
   std::vector<Loader*> loaders_;
+  ProgressType progress_;
 };
 
 }  // anonymous namespace
@@ -165,16 +189,33 @@ Status GraphStore::Load(
               io::EdgeLoader,
               io::EdgeValue,
               UpdateEdgesRequest,
-              UpdateEdgesResponse> edge_initializer(env_);
-
-  RETURN_IF_ERROR(edge_initializer.Run(edges));
+              UpdateEdgesResponse,
+              LoadGraphEdges> edge_initializer(env_);
+  Status s = edge_initializer.Run(edges);
+  if (!s.ok()) {
+    LOG(ERROR) << "Load graph edges failed, " << s.ToString();
+    USER_LOG("Load graph edges failed.");
+    USER_LOG(s.ToString());
+    return s;
+  } else {
+    LOG(INFO) << "Load graph edges succeed.";
+  }
 
   Initializer<io::NodeSource,
               io::NodeLoader,
               io::NodeValue,
               UpdateNodesRequest,
-              UpdateNodesResponse> node_initializer(env_);
-  return node_initializer.Run(nodes);
+              UpdateNodesResponse,
+              LoadGraphNodes> node_initializer(env_);
+  s = node_initializer.Run(nodes);
+  if (!s.ok()) {
+    LOG(ERROR) << "Load graph nodes failed, " << s.ToString();
+    USER_LOG("Load graph nodes failed.");
+    USER_LOG(s.ToString());
+  } else {
+    LOG(INFO) << "Load graph nodes succeed.";
+  }
+  return s;
 }
 
 void GraphStore::Build() {
@@ -191,6 +232,7 @@ void GraphStore::Build() {
   while (noders_->Next(&type, &noder)) {
     noder->Build();
   }
+  LOG(INFO) << "GraphStore build OK.";
 }
 
 Graph* GraphStore::GetGraph(const std::string& edge_type) {

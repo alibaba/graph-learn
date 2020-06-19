@@ -48,7 +48,11 @@ EdgeLoader::~EdgeLoader() {
 
 Status EdgeLoader::Read(EdgeValue* value) {
   Status s = reader_->Read(&record_);
-  if (!s.ok()) {
+  if (error::IsOutOfRange(s)) {
+    LOG(INFO) << "Current edge file completed, " << source_->path;
+    return s;
+  } else if (!s.ok()) {
+    LOG(ERROR) << "Read edge failed, " << s.ToString();
     return s;
   }
 
@@ -66,21 +70,34 @@ Status EdgeLoader::Read(EdgeValue* value) {
 
   if (error::IsInvalidArgument(s) && source_->ignore_invalid) {
     // ignore the invalid record and read next
+    LOG(WARNING) << "Invalid edge data found but ignored, " << s.ToString();
     s = Read(value);
+  } else if (!s.ok()) {
+    LOG(WARNING) << "Invalid edge data found, " << s.ToString();
   }
+
   return s;
 }
 
 Status EdgeLoader::BeginNextFile() {
   Status s = reader_->BeginNextFile(&source_);
-  if (!s.ok()) {
+  if (error::IsOutOfRange(s)) {
+    LOG(INFO) << "No more edge file to be read";
+    return s;
+  } else if (!s.ok()) {
+    LOG(ERROR) << "Try to read next edge file failed, " << s.ToString();
     return s;
   }
 
   if (source_->src_id_type.empty() ||
       source_->dst_id_type.empty() ||
       source_->edge_type.empty()) {
-    return error::InvalidArgument("Node and edge type must be assigned.");
+    LOG(ERROR) << "Node or Edge types are not assigned, " << source_->path
+               << ", src_type:" << source_->src_id_type
+               << ", dst_type:" << source_->dst_id_type
+               << ", edge_type:" << source_->edge_type;
+    USER_LOG("Node or Edge types are not assigned.");
+    return error::InvalidArgument("Node and edge types must be assigned.");
   }
 
   schema_ = reader_->GetSchema();
@@ -121,6 +138,11 @@ Status EdgeLoader::CheckSchema(const std::vector<DataType>& types) {
   if (expected != (*schema_)) {
     std::string expected_info = expected.ToString();
     std::string actual_info = schema_->ToString();
+    LOG(ERROR) << "Invalid edge source schema, " << source_->path
+               << ", expect:" << expected_info
+               << ", actual:" << actual_info;
+    USER_LOG("The schema of edge source does not match your decoder.");
+    USER_LOG(source_->path);
     return error::InvalidArgument(
       kPattern, expected_info.c_str(), actual_info.c_str());
   } else {

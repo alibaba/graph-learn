@@ -59,17 +59,9 @@ OpRequest* SamplingRequest::Clone() const {
   return req;
 }
 
-void SamplingRequest::SerializeTo(void* request) {
-  OpRequest::SerializeTo(request);
-}
-
-bool SamplingRequest::ParseFrom(const void* request) {
-  if (!OpRequest::ParseFrom(request)) {
-    return false;
-  }
+void SamplingRequest::SetMembers() {
   neighbor_count_ = params_[kNeighborCount].GetInt32(0);
   src_ids_ = &(tensors_[kSrcIds]);
-  return true;
 }
 
 void SamplingRequest::Set(const int64_t* src_ids,
@@ -106,36 +98,50 @@ SamplingResponse::SamplingResponse()
       degrees_(nullptr) {
 }
 
+void SamplingResponse::Swap(OpResponse& right) {
+  OpResponse::Swap(right);
+  SamplingResponse& res = static_cast<SamplingResponse&>(right);
+  std::swap(total_neighbor_count_, res.total_neighbor_count_);
+  std::swap(neighbor_count_, res.neighbor_count_);
+  std::swap(neighbors_, res.neighbors_);
+  std::swap(edges_, res.edges_);
+  std::swap(degrees_, res.degrees_);
+}
+
 void SamplingResponse::SerializeTo(void* response) {
-  params_[kNeighborCount].AddInt32(total_neighbor_count_);
+  params_[kNeighborCount].SetInt32(1, total_neighbor_count_);
   OpResponse::SerializeTo(response);
 }
 
-bool SamplingResponse::ParseFrom(const void* response) {
-  if (!OpResponse::ParseFrom(response)) {
-    return false;
+void SamplingResponse::SetMembers() {
+  auto cnt = &(params_[kNeighborCount]);
+  if (cnt->Size() > 1) {
+    neighbor_count_ = cnt->GetInt32(0);
+    total_neighbor_count_ = cnt->GetInt32(1);
   }
-  neighbor_count_ = params_[kNeighborCount].GetInt32(0);
-  total_neighbor_count_ = params_[kNeighborCount].GetInt32(1);
+
   neighbors_ = &(tensors_[kNeighborIds]);
   edges_ = &(tensors_[kEdgeIds]);
-  degrees_ = &(tensors_[kDegreeKey]);
-  return true;
+  if (tensors_.find(kDegreeKey) != tensors_.end()) {
+    degrees_ = &(tensors_[kDegreeKey]);
+  }
 }
 
 void SamplingResponse::Stitch(ShardsPtr<OpResponse> shards) {
-  OpResponse::Stitch(shards);
-  shards->ResetNext();
-  OpResponse* tmp = nullptr;
   int32_t total_neighbor_count = 0;
+
   int32_t shard_id = 0;
+  OpResponse* tmp = nullptr;
   while (shards->Next(&shard_id, &tmp)) {
     total_neighbor_count +=
       static_cast<SamplingResponse*>(tmp)->TotalNeighborCount();
   }
-  total_neighbor_count_ = total_neighbor_count;
-  params_[kNeighborCount].Resize(2);
-  params_[kNeighborCount].SetInt32(1, total_neighbor_count_);
+
+  shards->ResetNext();
+  OpResponse::Stitch(shards);
+
+  params_[kNeighborCount].SetInt32(1, total_neighbor_count);
+  this->SetMembers();
 }
 
 void SamplingResponse::InitNeighborIds(int32_t count) {
@@ -159,7 +165,8 @@ void SamplingResponse::SetBatchSize(int32_t batch_size) {
 
 void SamplingResponse::SetNeighborCount(int32_t neighbor_count) {
   ADD_TENSOR(params_, kNeighborCount, kInt32, 2);
-  params_[kNeighborCount].AddInt32(neighbor_count);
+  params_[kNeighborCount].Resize(2);
+  params_[kNeighborCount].SetInt32(0, neighbor_count);
   neighbor_count_ = neighbor_count;
 }
 

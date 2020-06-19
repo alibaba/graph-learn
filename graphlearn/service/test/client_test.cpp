@@ -20,32 +20,51 @@ limitations under the License.
 using namespace graphlearn;
 
 void TestGetEdges(Client* client) {
-  GetEdgesRequest req("click", "by_order", 64);
-  GetEdgesResponse res;
-  Status s = client->GetEdges(&req, &res);
-  std::cout << "GetEdges: " << s.ToString() << std::endl;
+  for (int32_t epoch = 0; epoch < 3; ++epoch) {
+    for (int32_t iter = 0; iter < 100; ++iter) {
+      GetEdgesRequest req("click", "by_order", 64, epoch);
+      GetEdgesResponse res;
+      Status s = client->GetEdges(&req, &res);
+      std::cout << "GetEdges: " << s.ToString() << std::endl;
 
-  const int64_t* src_ids = res.SrcIds();
-  const int64_t* dst_ids = res.DstIds();
-  const int64_t* edge_ids = res.EdgeIds();
-  int32_t size = res.Size();
-  std::cout << "Size: " << size << std::endl;
-  for (int32_t i = 0; i < size; ++i) {
-    std::cout << src_ids[i] << ", " << dst_ids[i] << ", " << edge_ids[i] << std::endl;
+      if (!s.ok()) {
+        std::cout << "OutOfRange, epoch:" << epoch << std::endl;
+        break;
+      }
+
+      const int64_t* src_ids = res.SrcIds();
+      const int64_t* dst_ids = res.DstIds();
+      const int64_t* edge_ids = res.EdgeIds();
+      int32_t size = res.Size();
+      std::cout << "Size: " << size << std::endl;
+      if (epoch == 0 && iter == 0) {
+        for (int32_t i = 0; i < size; ++i) {
+          std::cout << src_ids[i] << ", " << dst_ids[i] << ", " << edge_ids[i] << std::endl;
+        }
+      }
+    }
   }
 }
 
 void TestGetNodes(Client* client) {
-  GetNodesRequest req("user", "by_order", NodeFrom::kNode, 64);
-  GetNodesResponse res;
-  Status s = client->GetNodes(&req, &res);
-  std::cout << "GetNodes: " << s.ToString() << std::endl;
+  for (int32_t epoch = 0; epoch < 3; ++epoch) {
+    for (int32_t iter = 0; iter < 10; ++iter) {
+      GetNodesRequest req("user", "by_order", NodeFrom::kNode, 64, epoch);
+      GetNodesResponse res;
+      Status s = client->GetNodes(&req, &res);
+      std::cout << "GetNodes: " << s.ToString() << std::endl;
 
-  const int64_t* node_ids = res.NodeIds();
-  int32_t size = res.Size();
-  std::cout << "Size: " << size << std::endl;
-  for (int32_t i = 0; i < size; ++i) {
-    std::cout << node_ids[i] << std::endl;
+      if (!s.ok()) {
+        std::cout << "OutOfRange, epoch:" << epoch << std::endl;
+        break;
+      }
+      const int64_t* node_ids = res.NodeIds();
+      int32_t size = res.Size();
+      std::cout << "Size: " << size << std::endl;
+      for (int32_t i = 0; i < size; ++i) {
+        std::cout << node_ids[i] << std::endl;
+      }
+    }
   }
 }
 
@@ -235,7 +254,7 @@ void TestRandomSampleNeighbors(Client* client) {
 
   SamplingResponse res;
   Status s = client->Sampling(&req, &res);
-  std::cout << "SampleNeighbors: " << s.ToString() << std::endl;
+  std::cout << "RandomSampleNeighbors: " << s.ToString() << std::endl;
 
   const int64_t* nbrs = res.GetNeighborIds();
   int32_t size = res.TotalNeighborCount();

@@ -36,7 +36,6 @@ public:
 
     res->SetBatchSize(batch_size);
     res->SetNeighborCount(count);
-    res->InitDegrees(batch_size);
     res->InitEdgeIds(batch_size * count);
     res->InitNeighborIds(batch_size * count);
 
