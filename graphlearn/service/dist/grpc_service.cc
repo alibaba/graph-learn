@@ -16,6 +16,7 @@ limitations under the License.
 #include "graphlearn/service/dist/grpc_service.h"
 
 #include "graphlearn/common/base/errors.h"
+#include "graphlearn/common/base/log.h"
 #include "graphlearn/include/op_request.h"
 #include "graphlearn/platform/env.h"
 #include "graphlearn/service/dist/coordinator.h"
@@ -72,6 +73,33 @@ GrpcServiceImpl::~GrpcServiceImpl() {
     const StopRequestPb* request,
     StopResponsePb* response) {
   Status s = coord_->Stop(request->client_id(), request->client_count());
+  return Transmit(s);
+}
+
+::grpc::Status GrpcServiceImpl::HandleReport(
+    ::grpc::ServerContext* context,
+    const StateRequestPb* request,
+    StateResponsePb* response) {
+  SystemState state = static_cast<SystemState>(request->state());
+  Status s;
+  switch (state) {
+  case kStarted:
+    s = coord_->SetStarted(request->id());
+    break;
+  case kInited:
+    s = coord_->SetInited(request->id());
+    break;
+  case kReady:
+    s = coord_->SetReady(request->id());
+    break;
+  case kStopped:
+    s = coord_->SetStopped(request->id(), request->count());
+    break;
+  default:
+    LOG(ERROR) << "Unsupported state: " << state;
+    s = error::Unimplemented("Unsupported state: %d", state);
+    break;
+  }
   return Transmit(s);
 }
 

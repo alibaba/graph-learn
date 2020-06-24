@@ -18,7 +18,6 @@ limitations under the License.
 #include "graphlearn/common/base/log.h"
 #include "graphlearn/common/base/errors.h"
 #include "graphlearn/include/config.h"
-#include "graphlearn/proto/service.pb.h"
 #include "graphlearn/service/client_impl.h"
 #include "graphlearn/service/dist/channel_manager.h"
 #include "graphlearn/service/dist/grpc_channel.h"
@@ -80,6 +79,19 @@ public:
       channel_->MarkBroken();
       sleep(1 << retry);
       s = channel_->CallStop(&req, &res);
+      ++retry;
+    }
+    return Status::OK();
+  }
+
+  Status Report(const StateRequestPb* req,
+                StateResponsePb* res) override {
+    Status s = channel_->CallReport(req, res);
+    int32_t retry = 1;
+    while (error::IsUnavailable(s) && retry < GLOBAL_FLAG(RetryTimes)) {
+      channel_->MarkBroken();
+      sleep(1 << retry);
+      s = channel_->CallReport(req, res);
       ++retry;
     }
     return Status::OK();

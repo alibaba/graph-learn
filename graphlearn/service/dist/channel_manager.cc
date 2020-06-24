@@ -17,6 +17,7 @@ limitations under the License.
 
 #include <unistd.h>
 #include "graphlearn/common/base/log.h"
+#include "graphlearn/common/string/string_tool.h"
 #include "graphlearn/common/threading/sync/lock.h"
 #include "graphlearn/include/config.h"
 #include "graphlearn/platform/env.h"
@@ -34,6 +35,10 @@ ChannelManager::ChannelManager() : stopped_(false) {
   channels_.resize(GLOBAL_FLAG(ServerCount), nullptr);
 
   engine_ = NamingEngine::GetInstance();
+  if (GLOBAL_FLAG(TrackerMode) == 0) {
+    LiteString s(GLOBAL_FLAG(ServerHosts));
+    engine_->Update(strings::Split(s, ","));
+  }
   balancer_ = NewRoundRobinBalancer(GLOBAL_FLAG(ServerCount));
 
   auto tp = Env::Default()->ReservedThreadPool();

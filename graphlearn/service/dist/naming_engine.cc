@@ -17,67 +17,25 @@ limitations under the License.
 
 #include <unistd.h>
 #include <memory>
-#include "graphlearn/common/base/errors.h"
+#include <sstream>
 #include "graphlearn/common/base/log.h"
 #include "graphlearn/common/base/macros.h"
-#include "graphlearn/common/string/numeric.h"
-#include "graphlearn/common/string/string_tool.h"
 #include "graphlearn/common/threading/sync/lock.h"
 #include "graphlearn/include/config.h"
-#include "graphlearn/platform/env.h"
 
 namespace graphlearn {
 
-namespace {
-const char* kDone = "done";
-}  // anonymous namespace
-
 NamingEngine* NamingEngine::GetInstance() {
-  static NamingEngine engine;
-  return &engine;
-}
-
-NamingEngine::NamingEngine()
-    : stopped_(false), size_(0), fs_(nullptr) {
-  if (strings::EndWith(GLOBAL_FLAG(Tracker), "/")) {
-    tracker_ = GLOBAL_FLAG(Tracker) + "endpoints/";
+  if (GLOBAL_FLAG(TrackerMode) == 0) {
+    static SpecNamingEngine engine;
+    return &engine;
   } else {
-    tracker_ = GLOBAL_FLAG(Tracker) + "/endpoints/";
-  }
-
-  Status s = Env::Default()->GetFileSystem(tracker_, &fs_);
-  if (!s.ok()) {
-    USER_LOG("Invalid tracker path and exit now.");
-    USER_LOG(tracker_);
-    LOG(FATAL) << "Invalid tracker path: " << tracker_;
-    ::exit(-1);
-  }
-
-  s = fs_->CreateDir(tracker_);
-  if (s.ok() || error::IsAlreadyExists(s)) {
-    LOG(INFO) << "Connect naming engine ok: " << tracker_;
-  } else {
-    USER_LOG("Connect to tracker path failed and exit now.");
-    USER_LOG(tracker_);
-    LOG(FATAL) << "Connect naming engine failed: " << tracker_;
-    ::exit(-1);
-  }
-
-  endpoints_.resize(GLOBAL_FLAG(ServerCount));
-
-  auto tp = Env::Default()->ReservedThreadPool();
-  tp->AddTask(NewClosure(this, &NamingEngine::Refresh));
-}
-
-NamingEngine::~NamingEngine() {
-  if (!stopped_) {
-    Stop();
+    static FSNamingEngine engine;
+    return &engine;
   }
 }
 
-void NamingEngine::Stop() {
-  stopped_ = true;
-  sleep(1);
+NamingEngine::NamingEngine() : size_(0) {
 }
 
 void NamingEngine::SetCapacity(int32_t capacity) {
@@ -98,71 +56,25 @@ std::string NamingEngine::Get(int32_t server_id) {
   }
 }
 
+Status NamingEngine::Update(const std::vector<std::string>& endpoints) {
+  endpoints_ = endpoints;
+  size_ = endpoints.size();
+  std::stringstream ss;
+  for (auto& endpoint: endpoints) {
+    ss << ", " << endpoint;
+  }
+  LOG(INFO) << "Update endpoints:" << ss.str();
+  return Status::OK();
+}
+
 Status NamingEngine::Update(int32_t server_id,
                             const std::string& endpoint) {
-  std::string file_name = tracker_ + std::to_string(server_id);
-  LOG(INFO) << "Update endpoint id: " << server_id
-            << ", address: " << endpoint
-            << ", filepath: " << file_name;
-
-  std::unique_ptr<WritableFile> ret;
-  Status s = fs_->NewWritableFile(file_name, &ret);
-  RETURN_IF_NOT_OK(s)
-
-  s = ret->Append(endpoint);
-  RETURN_IF_NOT_OK(s)
-
-  s = ret->Close();
-  RETURN_IF_NOT_OK(s)
-  return s;
-}
-
-void NamingEngine::Refresh() {
-  while (!stopped_) {
-    std::vector<std::string> file_names;
-    Status s = fs_->ListDir(tracker_, &file_names);
-    if (s.ok()) {
-      Parse(file_names);
-    } else {
-      LOG(WARNING) << "Refresh endpoints failed: " << s.ToString();
-    }
-    sleep(1);
+  if (server_id < endpoints_.size()) {
+    endpoints_[server_id] = endpoint;
+    LOG(INFO) << "Update endpoint: " << endpoint
+              << " for server: " << server_id;
   }
-}
-
-void NamingEngine::Parse(const std::vector<std::string>& names) {
-  char buffer[32] = {0};
-
-  int32_t count = 0;
-  std::vector<std::string> tmp(endpoints_.size(), "");
-  for (size_t i = 0; i < names.size(); ++i) {
-    int32_t id = -1;
-    if (!strings::SafeStringTo32(names[i], &id) ||
-        id < 0 || id >= tmp.size()) {
-      continue;
-    }
-
-    std::unique_ptr<ByteStreamAccessFile> ret;
-    Status s = fs_->NewByteStreamAccessFile(tracker_ + names[i], 0, &ret);
-    if (!s.ok()) {
-      LOG(WARNING) << "Invalid endpoint file: " << names[i];
-      continue;
-    }
-
-    LiteString endpoint;
-    s = ret->Read(sizeof(buffer), &endpoint, buffer);
-    if (s.ok()) {
-      tmp[id] = endpoint.ToString();
-      ++count;
-    } else {
-      LOG(WARNING) << "Invalid endpoint file: " << names[i];
-    }
-  }
-
-  ScopedLocker<std::mutex> _(&mtx_);
-  LOG(INFO) << "Refresh endpoints count: " << size_;
-  size_ = count;
-  endpoints_.swap(tmp);
+  return Status::OK();
 }
 
 }  // namespace graphlearn

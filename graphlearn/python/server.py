@@ -28,7 +28,8 @@ class Server(object):
   def __init__(self,
                server_id,
                server_count,
-               tracker='root://graphlearn_ckpt/',
+               server_host = "0.0.0.0:0",
+               tracker = "",
                **kwargs):  # pylint: disable=unused-argument
     """ Create GraphLearn server instance with given cluster env info.
 
@@ -41,7 +42,7 @@ class Server(object):
     self._server_id = server_id
     self._server_count = server_count
     self._tracker = tracker
-    self._server = pywrap.server(server_id, server_count, tracker)
+    self._server = pywrap.server(server_id, server_count, server_host, tracker)
 
   @property
   def server_id(self):

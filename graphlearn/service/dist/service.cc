@@ -63,11 +63,13 @@ std::string GetLocalEndpoint(int32_t port) {
 
 DistributeService::DistributeService(int32_t server_id,
                                      int32_t server_count,
+                                     const std::string& server_host,
                                      Env* env,
                                      Executor* executor,
                                      Coordinator* coord)
     : server_id_(server_id),
       server_count_(server_count),
+      server_host_(server_host),
       port_(0),
       coord_(coord),
       impl_(nullptr) {
@@ -89,9 +91,17 @@ Status DistributeService::Start() {
     sleep(1);
   }
 
-  std::string endpoint = GetLocalEndpoint(port_);
-  Status s = engine_->Update(server_id_, endpoint);
-  LOG_RETURN_IF_NOT_OK(s)
+  Status s;
+
+  if (GLOBAL_FLAG(TrackerMode) == 1) {
+    std::string endpoint = GetLocalEndpoint(port_);
+    s = engine_->Update(server_id_, endpoint);
+    LOG_RETURN_IF_NOT_OK(s)
+  } else {
+    // s = engine_->Update(GLOBAL_FLAG(ServerHosts));
+    // LOG_RETURN_IF_NOT_OK(s)
+    // Do nothing
+  }
 
   s = coord_->Start();
   LOG_RETURN_IF_NOT_OK(s)
@@ -103,7 +113,7 @@ Status DistributeService::Start() {
 }
 
 Status DistributeService::Init() {
-  Status s = coord_->SetReady();
+  Status s = coord_->Prepare();
   RETURN_IF_NOT_OK(s)
 
   while (!coord_->IsReady()) {
@@ -130,9 +140,15 @@ Coordinator* DistributeService::GetCoordinator() {
 void DistributeService::StartAndJoin() {
   builder_.SetMaxSendMessageSize(GLOBAL_FLAG(RpcMessageMaxSize));
   builder_.SetMaxReceiveMessageSize(GLOBAL_FLAG(RpcMessageMaxSize));
-  builder_.AddListeningPort("0.0.0.0:0",
-                            ::grpc::InsecureServerCredentials(),
-                            &port_);
+  if (GLOBAL_FLAG(TrackerMode == 0)) {
+    builder_.AddListeningPort(server_host_,
+                              ::grpc::InsecureServerCredentials(),
+                              &port_);
+  } else {
+    builder_.AddListeningPort("0.0.0.0:0",
+                              ::grpc::InsecureServerCredentials(),
+                              &port_);
+  }
   builder_.RegisterService(impl_);
 
   server_ = builder_.BuildAndStart();

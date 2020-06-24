@@ -16,10 +16,12 @@ limitations under the License.
 #ifndef GRAPHLEARN_INCLUDE_CLIENT_H_
 #define GRAPHLEARN_INCLUDE_CLIENT_H_
 
+#include "graphlearn/include/aggregating_request.h"
+#include "graphlearn/include/constants.h"
 #include "graphlearn/include/graph_request.h"
 #include "graphlearn/include/sampling_request.h"
-#include "graphlearn/include/aggregating_request.h"
 #include "graphlearn/include/status.h"
+#include "graphlearn/proto/service.pb.h"
 
 namespace graphlearn {
 
@@ -47,6 +49,7 @@ public:
 
   Status RunOp(const OpRequest* request, OpResponse* response);
   Status Stop();
+  Status Report(const StateRequestPb* request, StateResponsePb* response);
 
 private:
   explicit Client(ClientImpl* impl, bool own = true);

@@ -45,11 +45,13 @@ private:
 
   friend Server* NewServer(int32_t server_id,
                            int32_t server_count,
+                           const std::string& server_host,
                            const std::string& tracker);
 };
 
 Server* NewServer(int32_t server_id,
                   int32_t server_count,
+                  const std::string& server_host,
                   const std::string& tracker);
 
 }  // namespace graphlearn

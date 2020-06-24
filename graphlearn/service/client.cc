@@ -60,6 +60,11 @@ Status Client::Stop() {
   return impl_->Stop();
 }
 
+Status Client::Report(const StateRequestPb* request,
+                      StateResponsePb* response) {
+  return impl_->Report(request, response);
+}
+
 Client* NewInMemoryClient() {
   return new Client(NewInMemoryClientImpl());
 }
