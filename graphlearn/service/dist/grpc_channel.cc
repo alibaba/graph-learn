@@ -85,6 +85,17 @@ Status GrpcChannel::CallStop(const StopRequestPb* req, StopResponsePb* res) {
   return Transmit(s);
 }
 
+Status GrpcChannel::CallReport(const StateRequestPb* req,
+                               StateResponsePb* res) {
+  if (broken_) {
+    return error::Unavailable("Channel is broken, please retry later");
+  }
+
+  ::grpc::ClientContext ctx;
+  ::grpc::Status s = stub_->HandleReport(&ctx, *req, res);
+  return Transmit(s);
+}
+
 void GrpcChannel::NewChannel(const std::string& endpoint) {
   grpc::ChannelArguments args;
   args.SetMaxSendMessageSize(-1);

@@ -16,9 +16,10 @@ def main(argv):
 
   task_index = 0
   task_count = 1
-  tarcker = ""
+  tracker = ""
+  hosts= ""
 
-  opts, args = getopt.getopt(argv, 'c:j:t:', ['task_index=', 'task_count=', 'tracker='])
+  opts, args = getopt.getopt(argv, 'c:j:t:', ['task_index=', 'task_count=', 'tracker=', 'hosts='])
   for opt, arg in opts:
     if opt in ('-c', '--task_index'):
       task_index = int(arg)
@@ -26,8 +27,13 @@ def main(argv):
       task_count = int(arg)
     elif opt in ('-t', '--tracker'):
       tracker = arg
+    elif opt in ('-h', '--hosts'):
+      hosts = arg
     else:
       pass
+
+  mode = 0 if hosts else 1
+  gl.set_tracker_mode(mode)
 
   g = gl.Graph()
 
@@ -38,7 +44,10 @@ def main(argv):
     .edge(os.path.join(cur_path, "data/u-i"),
           edge_type=("user", "item", "buy"), decoder=gl.Decoder(weighted=True))
 
-  g.init(task_index=task_index, task_count=task_count, tracker=tracker)
+  if mode == 0:
+    g.init(task_index, hosts=hosts)
+  else:
+    g.init(task_index, task_count, tracker=tracker)
 
   print("Get Edges...")
   edges = g.E("buy").batch(2).shuffle().emit()

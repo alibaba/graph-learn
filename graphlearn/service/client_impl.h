@@ -17,8 +17,10 @@ limitations under the License.
 #define GRAPHLEARN_SERVICE_CLIENT_IMPL_H_
 
 #include <string>
+#include "graphlearn/include/constants.h"
 #include "graphlearn/include/op_request.h"
 #include "graphlearn/include/status.h"
+#include "graphlearn/proto/service.pb.h"
 
 namespace graphlearn {
 
@@ -28,6 +30,7 @@ public:
 
   virtual Status RunOp(const OpRequest* req, OpResponse* res) = 0;
   virtual Status Stop() = 0;
+  virtual Status Report(const StateRequestPb* req, StateResponsePb* res) {}
 
 protected:
   ClientImpl() {}

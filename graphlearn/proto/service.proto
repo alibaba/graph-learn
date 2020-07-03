@@ -5,6 +5,7 @@ package graphlearn;
 service GraphLearn {
   rpc HandleOp (OpRequestPb) returns (OpResponsePb) {}
   rpc HandleStop (StopRequestPb) returns (StopResponsePb) {}
+  rpc HandleReport (StateRequestPb) returns (StateResponsePb) {}
 }
 
 message TensorValue {
@@ -37,4 +38,13 @@ message StopRequestPb {
 }
 
 message StopResponsePb {
+}
+
+message StateRequestPb {
+  int32 state = 1;
+  int32 id = 2;
+  int32 count = 3;
+}
+
+message StateResponsePb {
 }

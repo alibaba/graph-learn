@@ -42,8 +42,8 @@ protected:
 };
 
 TEST_F(CoordinatorTest, StartReadyStop) {
-  Coordinator* coord_0 = new Coordinator(0, 2, Env::Default());
-  Coordinator* coord_1 = new Coordinator(1, 2, Env::Default());
+  Coordinator* coord_0 = GetCoordinator(0, 2, Env::Default());
+  Coordinator* coord_1 = GetCoordinator(1, 2, Env::Default());
 
   EXPECT_EQ(coord_0->IsMaster(), true);
   EXPECT_EQ(coord_1->IsMaster(), false);
@@ -60,6 +60,7 @@ TEST_F(CoordinatorTest, StartReadyStop) {
   EXPECT_TRUE(s.ok());
   // waiting for refresh
   sleep(2);
+
   // false, because of not all the servers have started
   EXPECT_EQ(coord_0->IsStartup(), false);
   EXPECT_EQ(coord_1->IsStartup(), false);
@@ -81,7 +82,7 @@ TEST_F(CoordinatorTest, StartReadyStop) {
   EXPECT_EQ(coord_1->IsStopped(), false);
 
   // 0 ready
-  s = coord_0->SetReady();
+  s = coord_0->Prepare();
   EXPECT_TRUE(s.ok());
   // waiting for refresh
   sleep(2);
@@ -93,7 +94,7 @@ TEST_F(CoordinatorTest, StartReadyStop) {
   EXPECT_EQ(coord_0->IsStopped(), false);
   EXPECT_EQ(coord_1->IsStopped(), false);
   // 1 ready
-  s = coord_1->SetReady();
+  s = coord_1->Prepare();
   EXPECT_TRUE(s.ok());
   // waiting for refresh
   sleep(2);

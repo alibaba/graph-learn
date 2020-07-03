@@ -17,6 +17,7 @@ limitations under the License.
 #include <fstream>
 #include <iostream>
 #include <string>
+#include "graphlearn/common/string/string_tool.h"
 #include "graphlearn/core/io/element_value.h"
 #include "graphlearn/include/server.h"
 #include "graphlearn/include/config.h"
@@ -182,23 +183,30 @@ void GenNodeTestData(const char* file_name, int32_t format) {
 }
 
 int main(int argc, char** argv) {
-  ::system("mkdir -p ./tracker");
+  // ::system("mkdir -p ./tracker");
 
   int32_t server_id = 0;
   int32_t server_count = 1;
+  std::string hosts = "127.0.0.1:8888";
   if (argc == 1) {
-  } else if (argc > 2) {
+  } else if (argc > 3) {
     server_id = argv[1][0] - '0';
     server_count = argv[2][0] - '0';
+    hosts = argv[3];
   } else {
-    std::cout << "./server_test [server_id] [server_count]" << std::endl;
-    std::cout << "e.g. ./server_test 0 2" << std::endl;
+    std::cout << "./server_test [server_id] [server_count] [hosts]" << std::endl;
+    std::cout << "e.g. ./server_test 0 2 127.0.0.1:8888,127.0.0.1:8889" << std::endl;
     return -1;
   }
 
   SetGlobalFlagDeployMode(1);
+  SetGlobalFlagTrackerMode(0);
+  SetGlobalFlagServerHosts(hosts);
 
-  Server* server = NewServer(server_id, server_count, "./tracker");
+  LiteString s(hosts);
+  std::string host = strings::Split(s, ",")[server_id];
+
+  Server* server = NewServer(server_id, server_count, host, "./tracker");
   server->Start();
   std::cout << server_id << "th in " << server_count << " server started" << std::endl;
 

@@ -34,6 +34,7 @@ class Coordinator;
 class DistributeService {
 public:
   DistributeService(int32_t server_id, int32_t server_count,
+                    const std::string& server_host,
                     Env* env, Executor* executor,
                     Coordinator* coord);
   ~DistributeService();
@@ -51,6 +52,7 @@ private:
 private:
   int32_t         server_id_;
   int32_t         server_count_;
+  std::string     server_host_;
   int32_t         port_;
   Coordinator*    coord_;
   NamingEngine*   engine_;

@@ -65,6 +65,7 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
 
   // global flag settings.
   m.def("set_default_neighbor_id", &graphlearn::SetGlobalFlagDefaultNeighborId);
+  m.def("set_tracker_mode", &graphlearn::SetGlobalFlagTrackerMode);
   m.def("set_padding_mode", &graphlearn::SetGlobalFlagPaddingMode);
   m.def("set_default_int_attr", &graphlearn::SetGlobalFlagDefaultIntAttribute);
   m.def("set_default_float_attr",
@@ -83,6 +84,7 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
   m.def("set_client_count", &graphlearn::SetGlobalFlagClientCount);
   m.def("set_server_count", &graphlearn::SetGlobalFlagServerCount);
   m.def("set_tracker", &graphlearn::SetGlobalFlagTracker);
+  m.def("set_server_hosts", &graphlearn::SetGlobalFlagServerHosts);
 
   // protobuf
   // erro code
@@ -177,6 +179,7 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
         py::return_value_policy::take_ownership,
         py::arg("server_id"),
         py::arg("server_count"),
+        py::arg("server_host"),
         py::arg("tracker"));
 
   // Server methods.

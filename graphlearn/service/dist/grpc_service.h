@@ -42,6 +42,12 @@ public:
       const StopRequestPb* request,
       StopResponsePb* response) override;
 
+  ::grpc::Status HandleReport(
+      ::grpc::ServerContext* context,
+      const StateRequestPb* request,
+      StateResponsePb* response) override;
+
+
 private:
   Env*         env_;
   Executor*    executor_;

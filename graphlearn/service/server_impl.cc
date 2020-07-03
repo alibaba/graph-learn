@@ -32,9 +32,11 @@ namespace graphlearn {
 
 ServerImpl::ServerImpl(int32_t server_id,
                        int32_t server_count,
+                       const std::string& server_host,
                        const std::string& tracker)
     : server_id_(server_id),
       server_count_(server_count),
+      server_host_(server_host),
       executor_(nullptr),
       graph_store_(nullptr),
       in_memory_service_(nullptr),
@@ -64,7 +66,7 @@ void ServerImpl::Start() {
             << ", server_count:" << server_count_;
 
   if (GLOBAL_FLAG(DeployMode) >= 1) {
-    coordinator_ = new Coordinator(server_id_, server_count_, env_);
+    coordinator_ = GetCoordinator(server_id_, server_count_, env_);
     RegisterInMemoryService();
     RegisterDistributeService();
   } else {
@@ -132,7 +134,7 @@ void ServerImpl::RegisterInMemoryService() {
 void ServerImpl::RegisterDistributeService() {
   if (dist_service_ == nullptr) {
     dist_service_ = new DistributeService(
-      server_id_, server_count_, env_, executor_, coordinator_);
+      server_id_, server_count_, server_host_, env_, executor_, coordinator_);
     Status s = dist_service_->Start();
     if (!s.ok()) {
       USER_LOG("Server start failed and exit now.");

@@ -69,7 +69,6 @@ class Graph(object):
     self._undirected_edges = []
     self._query_engine = QueryEngine(self)
 
-    self._deploy_mode = 0
     self._server = None
     self._client = None
 
@@ -168,65 +167,89 @@ class Graph(object):
         server or client index in independent mode.
       task_count (int): Total task count in in_memory mode.
       cluster (dict | josn str): Empty dict or string when Graph runs with
-        local mode. Otherwise, cluster includes server_count, client_count
-        and tracker.
+        local mode. Otherwise, cluster includes (server_count, client_count,
+        tracker) or (server, client) or (server, client_count)
         server_count (int): count of servers.
         client_count (int): count of clients.
         tracker (str): tracker path.
+        server (string): hosts of servers, split by ','.
       job_name (str): `client` or `server`, default empty means Graph runs
         with local mode.
+      kwargs:
+        tracker (string): tracker path for in-memory mode.
+        hosts (string): hosts of servers for in-memory mode.
     """
     # In memory mode, local or distribute.
-    if not cluster:
-      assert job_name == "", "Initialize local server with empty `cluster`."
-      server_count = task_count
+    if not job_name:
+      assert cluster == ""
       tracker = kwargs.get("tracker", 'root://graphlearn')
-      if server_count == 1:
-        assert task_index == 0, "Local mode, task_index=0, task_count=1"
-        self._deploy_mode = 0 # Local in_memory mode.
+      hosts = kwargs.get("hosts")
+      host = "0.0.0.0:0"
+      if hosts:
+        pywrap.set_server_hosts(hosts)
+        hosts = hosts.split(',')
+        host = hosts[task_index]
+        task_count = len(hosts)
+      assert task_index < task_count
+
+      # Local in-memory mode.
+      if task_count == 1:
+        pywrap.set_deploy_mode(0)
+      # Distribute in-memory mode.
       else:
-        assert isinstance(server_count, int)
-        assert isinstance(task_index, int)
-        assert server_count > task_index
-        self._deploy_mode = 2 # Distribute in_memory mode.
-        pywrap.set_server_count(server_count)
-        pywrap.set_client_count(server_count)
+        pywrap.set_deploy_mode(2)
+        pywrap.set_server_count(task_count)
+        pywrap.set_client_count(task_count)
         pywrap.set_tracker(tracker)
         pywrap.set_client_id(task_index)
-      pywrap.set_deploy_mode(self._deploy_mode)
+
       self._client = pywrap.in_memory_client()
-    else: # Distribute independent mode.
-      assert job_name in ("client", "server")
+      self._server = Server(task_index, task_count, host, tracker)
+      self._server.start()
+      self._server.init(self._edge_sources, self._node_sources)
+
+    # Distribute service mode.
+    else:
       if isinstance(cluster, dict):
         cluster_spec = cluster
       elif isinstance(cluster, str):
         cluster_spec = json.loads(cluster)
       else:
         raise ValueError("cluster must be dict or json string.")
-      server_count = cluster_spec.get("server_count")
-      client_count = cluster_spec.get("client_count")
+
       tracker = cluster_spec.get("tracker", 'root://graphlearn')
+      server_count = cluster_spec.get("server_count")
+      servers = cluster_spec.get("server")
+      if servers:
+        pywrap.set_server_hosts(servers)
+        servers = servers.split(',')
+        server_count = len(servers)
+
+      client_count = cluster_spec.get("client_count")
+      clients = cluster_spec.get("client")
+      if clients:
+        client_count = len(clients.split(','))
       if not server_count or not client_count:
-        raise ValueError("cluster is composed of server_count,"
-                         "worker_count and tracker")
-      self._deploy_mode = 1
-      pywrap.set_deploy_mode(self._deploy_mode)
+        raise ValueError("cluster is composed of"
+                         " (server_count, client_count, tracker)"
+                         " or (server, client) or (server, client_count)}")
       pywrap.set_server_count(server_count)
       pywrap.set_client_count(client_count)
+      pywrap.set_deploy_mode(1)
 
-    os.system('mkdir -p {}'.format(tracker))
-
-    if job_name == "client":
-      pywrap.set_tracker(tracker)
-      pywrap.set_client_id(task_index)
-      self._client = pywrap.rpc_client()
-      self._server = None
-    else:
-      if job_name == "server":
+      if job_name == "client":
+        pywrap.set_tracker(tracker)
+        pywrap.set_client_id(task_index)
+        self._client = pywrap.rpc_client()
+        self._server = None
+      elif job_name == "server":
         self._client = None
-      self._server = Server(task_index, server_count, tracker)
-      self._server.start()
-      self._server.init(self._edge_sources, self._node_sources)
+        server_host = "0.0.0.0:0" if not servers else servers[task_index]
+        self._server = Server(task_index, server_count, server_host, tracker)
+        self._server.start()
+        self._server.init(self._edge_sources, self._node_sources)
+      else:
+        raise ValueError("Only support client and server for GL.")
     return self
 
   def close(self):

@@ -17,7 +17,10 @@ limitations under the License.
 #define GRAPHLEARN_SERVICE_DIST_COORDINATOR_H_
 
 #include <cstdint>
+#include <set>
 #include <string>
+#include <unordered_map>
+#include "graphlearn/include/constants.h"
 #include "graphlearn/include/status.h"
 
 namespace graphlearn {
@@ -32,45 +35,123 @@ class Coordinator {
 public:
   /// Each server will hold a Coordinator client.
   Coordinator(int32_t server_id, int32_t server_count, Env* env);
-  ~Coordinator();
+  virtual ~Coordinator();
 
   bool IsMaster() const;
 
-  /// To tell that the current server started.
-  Status Start();
-  /// Whether all servers started.
+  /// Do tell that the current server started.
+  virtual Status Start() = 0;
+  /// Set state of started for the current server.
+  virtual Status SetStarted(int32_t server_id = -1) = 0;
+  /// Is global state of all servers started or not.
   bool IsStartup() const;
 
-  /// To tell that the current server was ready to work.
-  Status SetReady();
-  /// Whether all servers were ready.
+  /// Do tell that the current server has initialized the data.
+  virtual Status Init() = 0;
+  /// Set state of inited for the current server.
+  virtual Status SetInited(int32_t server_id = -1) = 0;
+  /// Is global state of all servers inited or not.
+  bool IsInited() const;
+
+  /// Do tell that the current server was ready to work.
+  virtual Status Prepare() = 0;
+  /// Set state of ready for the current server.
+  virtual Status SetReady(int32_t server_id = -1) = 0;
+  /// Is global state of all servers ready or not.
   bool IsReady() const;
 
-  /// To tell that the server received StopRequestPb from an user client.
-  Status Stop(int32_t client_id, int32_t client_count);
-  /// Whether all servers should stop.
+  /// Do tell that the current server received stop request from a client.
+  virtual Status Stop(int32_t client_id, int32_t client_count) = 0;
+  /// Set state of stopped for the current client.
+  virtual Status SetStopped(int32_t client_id = -1,
+                            int32_t client_count = 0) = 0;
+  /// Is global state of all clients stopped or not.
   bool IsStopped() const;
 
+protected:
+  virtual void Refresh();
+  virtual void CheckStarted() = 0;
+  virtual void CheckInited() = 0;
+  virtual void CheckReady() = 0;;
+  virtual void CheckStopped() = 0;
+
+protected:
+  int32_t     client_count_;
+  int32_t     server_id_;
+  int32_t     server_count_;
+  SystemState state_;
+};
+
+class FSCoordinator : public Coordinator {
+public:
+  FSCoordinator(int32_t server_id, int32_t server_count, Env* env);
+  ~FSCoordinator() = default;
+
+  Status Start() override;
+  Status SetStarted(int32_t server_id = -1) override;
+
+  Status Init() override;
+  Status SetInited(int32_t server_id = -1) override;
+
+  Status Prepare() override;
+  Status SetReady(int32_t server_id = -1) override;
+
+  Status Stop(int32_t client_id, int32_t client_count) override;
+  Status SetStopped(int32_t client_id = -1,
+                    int32_t client_count = 0) override;
+
 private:
-  void Refresh();
-  void CheckStarted();
-  void CheckReady();
-  void CheckStopped();
+  void Refresh() override;
+  void CheckStarted() override;
+  void CheckInited() override;
+  void CheckReady() override;
+  void CheckStopped() override;
 
   bool FileExist(const std::string& file_name);
   int32_t Counting(const std::string& sub_dir);
   Status Sink(const std::string& sub_dir, const std::string& file_name);
 
 private:
-  bool        started_;
-  bool        ready_;
-  bool        stopped_;
-  int32_t     client_count_;
-  int32_t     server_id_;
-  int32_t     server_count_;
   std::string tracker_;
   FileSystem* fs_;
 };
+
+class RPCCoordinator : public Coordinator {
+public:
+  RPCCoordinator(int32_t server_id, int32_t server_count, Env* env);
+  ~RPCCoordinator() = default;
+
+  Status Start() override;
+  Status SetStarted(int32_t server_id = -1) override;
+
+  Status Init() override;
+  Status SetInited(int32_t server_id = -1) override;
+
+  Status Prepare() override;
+  Status SetReady(int32_t server_id = -1) override;
+
+  Status Stop(int32_t client_id, int32_t client_count) override;
+  Status SetStopped(int32_t client_id = -1,
+                    int32_t client_count = 0) override;
+
+private:
+  void Refresh() override;
+  void CheckStarted() override;
+  void CheckInited() override;
+  void CheckReady() override;
+  void CheckStopped() override;
+
+  Status SetState(SystemState state, int32_t id);
+  void CheckState(SystemState state, int32_t count);
+  Status ReportState(int32_t target, SystemState state,
+                     int32_t id = -1, int32_t count = -1);
+
+private:
+  std::unordered_map<int32_t, std::set<int32_t>> state_map_;
+};
+
+Coordinator* GetCoordinator(int32_t server_id, int32_t server_count,
+                            Env* env);
 
 }  // namespace graphlearn
 

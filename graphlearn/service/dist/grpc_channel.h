@@ -38,6 +38,7 @@ public:
 
   Status CallMethod(const OpRequestPb* req, OpResponsePb* res);
   Status CallStop(const StopRequestPb* req, StopResponsePb* res);
+  Status CallReport(const StateRequestPb* req, StateResponsePb* res);
 
 private:
   void NewChannel(const std::string& endpoint);

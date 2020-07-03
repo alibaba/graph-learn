@@ -34,6 +34,7 @@ class ServerImpl {
 public:
   ServerImpl(int32_t server_id,
              int32_t server_count,
+             const std::string& server_host,
              const std::string& tracker);
   ~ServerImpl();
 
@@ -47,16 +48,17 @@ private:
   void RegisterDistributeService();
 
 private:
-  int32_t server_id_;
-  int32_t server_count_;
-  Env*    env_;
-
-  Executor*    executor_;
-  GraphStore*  graph_store_;
+  int32_t            server_id_;
+  int32_t            server_count_;
+  std::string        server_host_;
+  Env*               env_;
+  Executor*          executor_;
+  GraphStore*        graph_store_;
 
   InMemoryService*   in_memory_service_;
   DistributeService* dist_service_;
   Coordinator*       coordinator_;
+
 };
 
 }  // namespace graphlearn

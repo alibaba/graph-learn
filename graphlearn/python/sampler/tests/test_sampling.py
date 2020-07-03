@@ -78,7 +78,8 @@ class SamplingTestCase(unittest.TestCase):
 
   @classmethod
   def tearDownClass(cls):
-    cls.g.close()
+    if cls.g:
+      cls.g.close()
 
   def setUp(self):
     """ prepare the data and the decoder.

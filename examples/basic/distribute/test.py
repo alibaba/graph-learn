@@ -17,8 +17,9 @@ def main(argv):
   cluster = ""
   job_name = ""
   task_index = 0
+  mode = 0
 
-  opts, args = getopt.getopt(argv, 'c:j:t:', ['cluster=', 'job_name=', 'task_index='])
+  opts, args = getopt.getopt(argv, 'c:j:t:', ['cluster=', 'job_name=', 'task_index=', 'mode='])
   for opt, arg in opts:
     if opt in ('-c', '--cluster'):
       cluster = arg
@@ -26,8 +27,12 @@ def main(argv):
       job_name = arg
     elif opt in ('-t', '--task_index'):
       task_index = int(arg)
+    elif opt in ('-m', '--mode'):
+      mode = int(arg)
     else:
       pass
+
+  gl.set_tracker_mode(mode)
 
   g = gl.Graph()
 

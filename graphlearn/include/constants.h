@@ -46,6 +46,14 @@ extern const char* kSegmentIds;
 extern const char* kNumSegments;
 extern const char* kSegments;
 
+enum SystemState {
+  kBlank = 0,
+  kStarted = 1,
+  kInited = 2,
+  kReady = 3,
+  kStopped = 4
+};
+
 namespace io {
 
 enum DataFormat {

@@ -20,19 +20,20 @@ limitations under the License.
 #include <mutex>  // NOLINT [build/c++11]
 #include <string>
 #include <vector>
+#include "graphlearn/include/config.h"
 #include "graphlearn/include/status.h"
 
 namespace graphlearn {
 
 class FileSystem;
 
-/// A class to implement address discovering. Each server instance
+/// A class to implement address keeping. Each server instance
 /// can register its listening endpoint to NamingEngine, and also
 /// can get endpoints of the other servers.
 class NamingEngine {
 public:
   static NamingEngine* GetInstance();
-  ~NamingEngine();
+  virtual ~NamingEngine() = default;
 
   void SetCapacity(int32_t capacity);
 
@@ -43,26 +44,49 @@ public:
   /// If not found or the server was not ready, return empty string.
   std::string Get(int32_t server_id);
 
+  virtual Status Update(const std::vector<std::string>& endpoints);
+
   /// Tell the engine to update the server endpoint. This method is
   /// called by each distributed server instance to sync their endpoints.
-  Status Update(int32_t server_id, const std::string& endpoint);
+  virtual Status Update(int32_t server_id, const std::string& endpoint);
 
-  /// Stop the background refresh thread.
-  void Stop();
+  /// Stop the engine.
+  virtual void Stop() {}
 
-private:
+protected:
   NamingEngine();
 
+protected:
+  std::mutex  mtx_;
+  int32_t     size_;
+  std::vector<std::string> endpoints_;
+};
+
+class FSNamingEngine : public NamingEngine {
+public:
+  Status Update(int32_t server_id, const std::string& endpoint) override;
+  /// Stop the background refresh thread.
+  void Stop() override;
+
+public:
+  FSNamingEngine();
+  ~FSNamingEngine();
+
+private:
   void Refresh();
   void Parse(const std::vector<std::string>& names);
 
 private:
-  std::mutex  mtx_;
-  bool        stopped_;
-  int32_t     size_;
   std::string tracker_;
   FileSystem* fs_;
-  std::vector<std::string> endpoints_;
+  bool        stopped_;
+};
+
+class SpecNamingEngine : public NamingEngine {
+public:
+  SpecNamingEngine() : NamingEngine() {
+    endpoints_.resize(GLOBAL_FLAG(ServerCount));
+  }
 };
 
 }  // namespace graphlearn
