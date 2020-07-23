@@ -73,7 +73,7 @@ def sigmoid_cross_entropy_loss(src_emb,
   src_emb_exp = tf.tile(tf.expand_dims(src_emb, axis=1),
                         [1, per_sample_neg_num, 1])
   src_emb_exp = tf.reshape(src_emb_exp, [-1, emb_dim])
-  neg_logit = tf.reduce_sum(tf.multiply(src_emb_exp, neg_emb), axis=-1)
+  neg_logit = sim_function(src_emb_exp, neg_emb)
 
   true_xent = tf.nn.sigmoid_cross_entropy_with_logits(
       labels=tf.ones_like(pos_logit), logits=pos_logit)
@@ -176,5 +176,5 @@ def triplet_loss(pos_src_emb, pos_edge_emb, neg_src_emb,
     neg_d = tf.reduce_sum(tf.abs(neg_src_emb + neg_edge_emb - neg_dst_emb), axis=-1)
   if neg_num > 1:
     pos_d = tf.reshape(tf.tile(tf.expand_dims(pos_d, -1), [1, neg_num]), [-1])
-  loss = tf.reduce_mean(tf.maximum(0.0, margin + pos_d - neg_d)) 
+  loss = tf.reduce_mean(tf.maximum(0.0, margin + pos_d - neg_d))
   return [loss, None, None]
