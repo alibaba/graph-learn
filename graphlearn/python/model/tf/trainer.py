@@ -41,7 +41,7 @@ class TFTrainer(Trainer):
     super(TFTrainer, self).__init__(model_func, epoch, optimizer)
     if not self._model_func:
       raise NotImplementedError('model_func to be implemented.')
-    self.model = self._model_func()
+    self.model = None
     self.sess = None
 
   def __exit__(self, exc_type, exc_value, tracebac):
@@ -129,6 +129,7 @@ class LocalTFTrainer(TFTrainer):
     super(LocalTFTrainer, self).__init__(model_func,
                                          epoch,
                                          optimizer)
+    self.model = self._model_func()
 
   def init(self, **kwargs):
     config = tf.ConfigProto(allow_soft_placement=True)
@@ -214,6 +215,8 @@ class DistTFTrainer(TFTrainer):
                                   task_index=self.task_index,
                                   config=conf)
     self.context = self.context
+    with self.context():
+      self.model = self._model_func()
 
   def init(self, **kwargs):
     self.sess = tf.train.MonitoredTrainingSession(
