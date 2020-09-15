@@ -130,6 +130,7 @@ Status DistributeService::Stop() {
   server_->Shutdown();
   manager_->Stop();
   engine_->Stop();
+  coord_->Finallize();
   return Status::OK();
 }
 

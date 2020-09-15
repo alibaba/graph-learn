@@ -28,7 +28,7 @@ limitations under the License.
 namespace graphlearn {
 
 FSNamingEngine::FSNamingEngine()
-    : NamingEngine(), stopped_(false), fs_(nullptr) {
+    : NamingEngine(), stopping_(false), stopped_(false), fs_(nullptr) {
   if (strings::EndWith(GLOBAL_FLAG(Tracker), "/")) {
     tracker_ = GLOBAL_FLAG(Tracker) + "endpoints/";
   } else {
@@ -85,12 +85,14 @@ Status FSNamingEngine::Update(int32_t server_id,
 }
 
 void FSNamingEngine::Stop() {
-  stopped_ = true;
-  sleep(1);
+  stopping_ = true;
+  while (!stopped_) {
+    usleep(1000);
+  }
 }
 
 void FSNamingEngine::Refresh() {
-  while (!stopped_) {
+  while (!stopping_) {
     std::vector<std::string> file_names;
     Status s = fs_->ListDir(tracker_, &file_names);
     if (s.ok()) {
@@ -100,6 +102,7 @@ void FSNamingEngine::Refresh() {
     }
     sleep(1);
   }
+  stopped_ = true;
 }
 
 void FSNamingEngine::Parse(const std::vector<std::string>& names) {

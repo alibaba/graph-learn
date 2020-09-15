@@ -44,6 +44,11 @@ FSCoordinator::FSCoordinator(int32_t server_id, int32_t server_count,
   tp->AddTask(NewClosure(this, &FSCoordinator::Refresh));
 }
 
+void FSCoordinator::Finallize() {
+  auto tp = Env::Default()->ReservedThreadPool();
+  tp->WaitForIdle();
+}
+
 Status FSCoordinator::Start() {
   return Sink("start/", std::to_string(server_id_));
 }

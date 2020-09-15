@@ -79,7 +79,8 @@ private:
 private:
   std::string tracker_;
   FileSystem* fs_;
-  bool        stopped_;
+  volatile bool stopping_;
+  volatile bool stopped_;
 };
 
 class SpecNamingEngine : public NamingEngine {

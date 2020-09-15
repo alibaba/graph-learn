@@ -81,6 +81,7 @@ public:
       s = channel_->CallStop(&req, &res);
       ++retry;
     }
+    manager_->Stop();
     return Status::OK();
   }
 

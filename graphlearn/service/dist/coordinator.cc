@@ -38,6 +38,10 @@ Coordinator::~Coordinator() {
   state_ = kStopped;
 }
 
+void Coordinator::Finallize() {
+  SetStopped();
+}
+
 bool Coordinator::IsMaster() const {
   return server_id_ == 0;
 }

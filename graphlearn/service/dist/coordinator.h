@@ -37,6 +37,8 @@ public:
   Coordinator(int32_t server_id, int32_t server_count, Env* env);
   virtual ~Coordinator();
 
+  virtual void Finallize();
+
   bool IsMaster() const;
 
   /// Do tell that the current server started.
@@ -86,6 +88,8 @@ class FSCoordinator : public Coordinator {
 public:
   FSCoordinator(int32_t server_id, int32_t server_count, Env* env);
   ~FSCoordinator() = default;
+
+  void Finallize() override;
 
   Status Start() override;
   Status SetStarted(int32_t server_id = -1) override;

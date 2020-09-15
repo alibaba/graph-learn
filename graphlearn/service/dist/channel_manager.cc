@@ -65,6 +65,7 @@ void ChannelManager::SetCapacity(int32_t capacity) {
 }
 
 void ChannelManager::Stop() {
+  engine_->Stop();
   stopped_ = true;
   sleep(1);
 }
