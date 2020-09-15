@@ -52,6 +52,10 @@ def set_default_string_attribute(value=''):
   pywrap.set_default_string_attr(str(value))
 
 
+def set_timeout(time_in_second):
+  pywrap.set_timeout(time_in_second)
+
+
 def set_inmemory_queuesize(size):
   pywrap.set_inmemory_queuesize(size)
 

@@ -16,9 +16,11 @@ limitations under the License.
 #include "graphlearn/service/dist/grpc_channel.h"
 
 #include <unistd.h>
+#include <chrono>
 #include "graphlearn/common/base/errors.h"
 #include "graphlearn/common/base/log.h"
 #include "graphlearn/common/threading/sync/lock.h"
+#include "graphlearn/include/config.h"
 
 namespace graphlearn {
 
@@ -32,6 +34,12 @@ Status Transmit(const ::grpc::Status& s) {
       static_cast<error::Code>(static_cast<int>(s.error_code())),
       s.error_message());
   }
+}
+
+void SetContext(::grpc::ClientContext* ctx) {
+  auto deadline = std::chrono::system_clock::now() +
+    std::chrono::milliseconds(GLOBAL_FLAG(Timeout) * 1000);
+  ctx->set_deadline(deadline);
 }
 
 }  // anonymous namespace
@@ -71,6 +79,7 @@ Status GrpcChannel::CallMethod(const OpRequestPb* req, OpResponsePb* res) {
   }
 
   ::grpc::ClientContext ctx;
+  SetContext(&ctx);
   ::grpc::Status s = stub_->HandleOp(&ctx, *req, res);
   return Transmit(s);
 }
@@ -81,6 +90,7 @@ Status GrpcChannel::CallStop(const StopRequestPb* req, StopResponsePb* res) {
   }
 
   ::grpc::ClientContext ctx;
+  SetContext(&ctx);
   ::grpc::Status s = stub_->HandleStop(&ctx, *req, res);
   return Transmit(s);
 }
@@ -92,6 +102,7 @@ Status GrpcChannel::CallReport(const StateRequestPb* req,
   }
 
   ::grpc::ClientContext ctx;
+  SetContext(&ctx);
   ::grpc::Status s = stub_->HandleReport(&ctx, *req, res);
   return Transmit(s);
 }

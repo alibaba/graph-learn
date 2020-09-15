@@ -55,7 +55,7 @@ public:
 
     Status s = channel_->CallMethod(req.get(), res.get());
     int32_t retry = 1;
-    while (error::IsUnavailable(s) && retry < GLOBAL_FLAG(RetryTimes)) {
+    while (IsRetryable(s) && retry < GLOBAL_FLAG(RetryTimes)) {
       channel_->MarkBroken();
       sleep(1 << retry);
       s = channel_->CallMethod(req.get(), res.get());
@@ -75,7 +75,7 @@ public:
 
     Status s = channel_->CallStop(&req, &res);
     int32_t retry = 1;
-    while (error::IsUnavailable(s) && retry < GLOBAL_FLAG(RetryTimes)) {
+    while (IsRetryable(s) && retry < GLOBAL_FLAG(RetryTimes)) {
       channel_->MarkBroken();
       sleep(1 << retry);
       s = channel_->CallStop(&req, &res);
@@ -88,13 +88,18 @@ public:
                 StateResponsePb* res) override {
     Status s = channel_->CallReport(req, res);
     int32_t retry = 1;
-    while (error::IsUnavailable(s) && retry < GLOBAL_FLAG(RetryTimes)) {
+    while (IsRetryable(s) && retry < GLOBAL_FLAG(RetryTimes)) {
       channel_->MarkBroken();
       sleep(1 << retry);
       s = channel_->CallReport(req, res);
       ++retry;
     }
     return Status::OK();
+  }
+
+private:
+  bool IsRetryable(const Status& s) {
+    return error::IsUnavailable(s) || error::IsDeadlineExceeded(s);
   }
 
 private:

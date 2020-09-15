@@ -57,6 +57,10 @@ GrpcServiceImpl::~GrpcServiceImpl() {
     Status s = error::Unavailable("Not all servers ready, please retry later");
     return Transmit(s);
   }
+  if (context->IsCancelled()) {
+    Status s = error::DeadlineExceeded("Deadline exceeded or client cancelled");
+    return Transmit(s);
+  }
 
   OpRequestPtr req(factory_->NewRequest(request->name()));
   OpResponsePtr res(factory_->NewResponse(request->name()));

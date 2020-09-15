@@ -72,6 +72,7 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
         &graphlearn::SetGlobalFlagDefaultFloatAttribute);
   m.def("set_default_string_attr",
         &graphlearn::SetGlobalFlagDefaultStringAttribute);
+  m.def("set_timeout", &graphlearn::SetGlobalFlagTimeout);
   m.def("set_inmemory_queuesize", &graphlearn::SetGlobalFlagInMemoryQueueSize);
   m.def("set_inner_threadnum", &graphlearn::SetGlobalFlagInterThreadNum);
   m.def("set_inter_threadnum", &graphlearn::SetGlobalFlagInterThreadNum);
