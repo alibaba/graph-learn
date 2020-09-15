@@ -327,6 +327,7 @@ test:so gtest
 	$(CXX) $(CXXFLAGS) graphlearn/service/dist/test/coordinator_unittest.cpp -o built/bin/coordinator_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/service/dist/test/channel_manager_unittest.cpp -o built/bin/channel_manager_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/service/dist/test/service_unittest.cpp -o built/bin/service_unittest $(TEST_FLAG)
+	$(CXX) $(CXXFLAGS) graphlearn/service/dist/test/service_with_hosts_unittest.cpp -o built/bin/service_with_hosts_unittest $(TEST_FLAG)
 
 python: so pybind
 	@rm -rf build

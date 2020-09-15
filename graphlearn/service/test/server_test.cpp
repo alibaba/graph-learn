@@ -183,28 +183,32 @@ void GenNodeTestData(const char* file_name, int32_t format) {
 }
 
 int main(int argc, char** argv) {
-  // ::system("mkdir -p ./tracker");
-
   int32_t server_id = 0;
   int32_t server_count = 1;
-  std::string hosts = "127.0.0.1:8888";
-  if (argc == 1) {
-  } else if (argc > 3) {
+  std::string host;
+  if (argc > 3) {
     server_id = argv[1][0] - '0';
     server_count = argv[2][0] - '0';
-    hosts = argv[3];
+    SetGlobalFlagTrackerMode(0);
+    SetGlobalFlagServerHosts(argv[3]);
+
+    LiteString s(argv[3]);
+    host = strings::Split(s, ",")[server_id];
+  } else if (argc > 2) {
+    server_id = argv[1][0] - '0';
+    server_count = argv[2][0] - '0';
+    SetGlobalFlagTrackerMode(1);
+    ::system("mkdir -p ./tracker");
+  } else if (argc == 1) {
   } else {
     std::cout << "./server_test [server_id] [server_count] [hosts]" << std::endl;
     std::cout << "e.g. ./server_test 0 2 127.0.0.1:8888,127.0.0.1:8889" << std::endl;
+    std::cout << "or ./server_test [server_id] [server_count]" << std::endl;
+    std::cout << "e.g. ./server_test 0 2" << std::endl;
     return -1;
   }
 
   SetGlobalFlagDeployMode(1);
-  SetGlobalFlagTrackerMode(0);
-  SetGlobalFlagServerHosts(hosts);
-
-  LiteString s(hosts);
-  std::string host = strings::Split(s, ",")[server_id];
 
   Server* server = NewServer(server_id, server_count, host, "./tracker");
   server->Start();

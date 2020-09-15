@@ -51,7 +51,7 @@ void RequestToStop(Coordinator* coord) {
   coord->Stop(0, 1);
 }
 
-TEST_F(DistributeServiceTest, StartInitStopWithHosts) {
+TEST_F(DistributeServiceTest, StartInitStopWithoutHosts) {
   Env* env = Env::Default();
   Executor* executor = nullptr;  // not handle request, just set null
   int32_t server_id = 0;
@@ -61,35 +61,6 @@ TEST_F(DistributeServiceTest, StartInitStopWithHosts) {
 
   DistributeService* service = new DistributeService(
     server_id, server_count, "", env, executor, coordinator);
-  Status s = service->Start();
-  EXPECT_TRUE(s.ok());
-  s = service->Init();
-  EXPECT_TRUE(s.ok());
-
-  // here we use a thread to mock client has request to stop
-  Coordinator* coord = service->GetCoordinator();
-  std::thread* t = new std::thread(&RequestToStop, coord);
-
-  s = service->Stop();
-  EXPECT_TRUE(s.ok());
-
-  t->join();
-  delete t;
-  delete service;
-  delete coordinator;
-}
-
-TEST_F(DistributeServiceTest, StartInitStopWithoutHosts) {
-  SetGlobalFlagTrackerMode(0);
-  Env* env = Env::Default();
-  Executor* executor = nullptr;  // not handle request, just set null
-  int32_t server_id = 0;
-  int32_t server_count = 1;
-
-  Coordinator* coordinator = GetCoordinator(server_id, server_count, env);
-
-  DistributeService* service = new DistributeService(
-    server_id, server_count, "127.0.0.1::8891", env, executor, coordinator);
   Status s = service->Start();
   EXPECT_TRUE(s.ok());
   s = service->Init();

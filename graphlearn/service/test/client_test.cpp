@@ -341,21 +341,31 @@ void TestNodeWeightNegativeSample(Client* client) {
 
 
 int main(int argc, char** argv) {
-  // ::system("mkdir -p ./tracker");
-
   int32_t client_id = 0;
   int32_t client_count = 1;
   int32_t server_count = 1;
-  std::string hosts = "127.0.0.1:8888";
-  if (argc == 1) {
-  } else if (argc > 4) {
+  std::string hosts;
+  if (argc > 4) {
     client_id = argv[1][0] - '0';
     client_count = argv[2][0] - '0';
     server_count = argv[3][0] - '0';
     hosts = argv[4];
+    SetGlobalFlagTrackerMode(0);
+    SetGlobalFlagServerHosts(hosts);
+  } else if (argc > 3) {
+    client_id = argv[1][0] - '0';
+    client_count = argv[2][0] - '0';
+    server_count = argv[3][0] - '0';
+    SetGlobalFlagTrackerMode(1);
+    ::system("mkdir -p ./tracker");
+    SetGlobalFlagTracker("./tracker");
+  } else if (argc == 1) {
+
   } else {
     std::cout << "./client_test [client_id] [client_count] [server_count] [hosts]" << std::endl;
     std::cout << "e.g. ./client_test 0 2 2 127.0.0.1:8888,127.0.0.1:8889" << std::endl;
+    std::cout << "or ./client_test [client_id] [client_count] [server_count]" << std::endl;
+    std::cout << "e.g. ./client_test 0 2 2" << std::endl;
     return -1;
   }
 
@@ -363,10 +373,6 @@ int main(int argc, char** argv) {
   SetGlobalFlagClientId(client_id);
   SetGlobalFlagClientCount(client_count);
   SetGlobalFlagServerCount(server_count);
-
-  SetGlobalFlagTrackerMode(0);
-  // SetGlobalFlagTracker("./tracker");
-  SetGlobalFlagServerHosts(hosts);
 
   Client* client = NewRpcClient();
 
