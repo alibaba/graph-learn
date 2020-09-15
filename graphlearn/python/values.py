@@ -265,17 +265,17 @@ class Nodes(Values):
     self._type = node_type
 
   def _agg(self, func, segment_ids, num_segments):
-    req = pywrap.new_agg_nodes_req(
+    req = pywrap.new_aggregating_request(
         self._type, utils.strategy2op(func, "Aggregator"))
-    pywrap.set_agg_nodes_req(req, self._ids.flatten(),
-                             np.array(segment_ids, dtype=np.int32),
-                             num_segments)
-    res = pywrap.new_agg_nodes_res()
+    pywrap.set_aggregating_request(req, self._ids.flatten(),
+                                   np.array(segment_ids, dtype=np.int32),
+                                   num_segments)
+    res = pywrap.new_aggregating_response()
     status = self.graph.get_client().agg_nodes(req, res)
     if status.ok():
-      agged = pywrap.get_node_agg_res(res)
-    pywrap.del_agg_nodes_res(res)
-    pywrap.del_agg_nodes_req(req)
+      agged = pywrap.get_aggregating_nodes(res)
+    pywrap.del_op_response(res)
+    pywrap.del_op_request(req)
     raise_exception_on_not_ok_status(status)
     return agged
 

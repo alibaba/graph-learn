@@ -631,28 +631,28 @@ class Graph(object):
   def lookup_nodes(self, node_type, ids):
     """ Get all the node properties.
     """
-    req = pywrap.new_lookup_nodes_req(node_type)
-    pywrap.set_lookup_nodes_req(req, ids)
+    req = pywrap.new_lookup_nodes_request(node_type)
+    pywrap.set_lookup_nodes_request(req, ids)
 
-    res = pywrap.new_lookup_nodes_res()
+    res = pywrap.new_lookup_nodes_response()
     status = self._client.lookup_nodes(req, res)
     if status.ok():
       decoder = self.get_node_decoder(node_type)
-      weights = pywrap.get_node_weights_res(res) \
+      weights = weights = pywrap.get_node_weights(res) \
         if decoder.weighted else None
-      labels = pywrap.get_node_labels_res(res) \
+      labels = pywrap.get_node_labels(res) \
         if decoder.labeled else None
-      int_attrs = pywrap.get_node_int_attr_res(res) \
+      int_attrs = pywrap.get_node_int_attributes(res) \
         if decoder.attributed else None
-      float_attrs = pywrap.get_node_float_attr_res(res) \
+      float_attrs = pywrap.get_node_float_attributes(res) \
         if decoder.attributed else None
-      string_attrs = pywrap.get_node_string_attr_res(res) \
+      string_attrs = pywrap.get_node_string_attributes(res) \
         if decoder.attributed else None
       int_attrs, float_attrs, string_attrs = \
         decoder.format_attrs(int_attrs, float_attrs, string_attrs)
 
-    pywrap.del_lookup_nodes_res(res)
-    pywrap.del_lookup_nodes_req(req)
+    pywrap.del_op_response(res)
+    pywrap.del_op_request(req)
     raise_exception_on_not_ok_status(status)
 
     return Values(int_attrs=int_attrs,
@@ -668,28 +668,28 @@ class Graph(object):
                        "be same, got {} and {}"
                        .format(batch_size, edge_ids.flatten().size))
 
-    req = pywrap.new_lookup_edges_req(edge_type)
-    pywrap.set_lookup_edges_req(req, src_ids, edge_ids)
+    req = pywrap.new_lookup_edges_request(edge_type)
+    pywrap.set_lookup_edges_request(req, src_ids, edge_ids)
 
-    res = pywrap.new_lookup_edges_res()
+    res = pywrap.new_lookup_edges_response()
     status = self._client.lookup_edges(req, res)
     if status.ok():
       decoder = self.get_edge_decoder(edge_type)
-      weights = pywrap.get_edge_weights_res(res) \
+      weights = pywrap.get_edge_weights(res) \
         if decoder.weighted else None
-      labels = pywrap.get_edge_labels_res(res) \
+      labels = pywrap.get_edge_labels(res) \
         if decoder.labeled else None
-      int_attrs = pywrap.get_edge_int_attr_res(res) \
+      int_attrs = pywrap.get_edge_int_attributes(res) \
         if decoder.attributed else None
-      float_attrs = pywrap.get_edge_float_attr_res(res) \
+      float_attrs = pywrap.get_edge_float_attributes(res) \
         if decoder.attributed else None
-      string_attrs = pywrap.get_edge_string_attr_res(res) \
+      string_attrs = pywrap.get_edge_string_attributes(res) \
         if decoder.attributed else None
       int_attrs, float_attrs, string_attrs = \
         decoder.format_attrs(int_attrs, float_attrs, string_attrs)
 
-    pywrap.del_lookup_edges_res(res)
-    pywrap.del_lookup_edges_req(req)
+    pywrap.del_op_response(res)
+    pywrap.del_op_request(req)
     raise_exception_on_not_ok_status(status)
 
     return Values(int_attrs=int_attrs,

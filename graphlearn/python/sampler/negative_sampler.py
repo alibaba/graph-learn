@@ -79,23 +79,22 @@ class NegativeSampler(object):
     ids = ids.flatten()
 
     req = self._make_req(ids)
-    res = pywrap.new_nbr_res()
+    res = pywrap.new_sampling_response()
     status = self._client.sample_neighbor(req, res)
     if status.ok():
-      nbrs = pywrap.get_nbr_res_nbr_ids(res)
-      neg_nbrs = self._graph.get_nodes(self._dst_type,
-                                      nbrs,
-                                      shape=(ids.shape[0], self._expand_factor))
+      nbrs = pywrap.get_sampling_node_ids(res)
+      neg_nbrs = self._graph.get_nodes(
+          self._dst_type, nbrs, shape=(ids.shape[0], self._expand_factor))
 
-    pywrap.del_nbr_res(res)
-    pywrap.del_nbr_req(req)
+    pywrap.del_op_response(res)
+    pywrap.del_op_request(req)
     raise_exception_on_not_ok_status(status)
     return neg_nbrs
 
   def _make_req(self, ids):
     sampler = strategy2op(self._strategy, "NegativeSampler")
-    req = pywrap.new_nbr_req(self._object_type, sampler, self._expand_factor)
-    pywrap.set_nbr_req(req, ids)
+    req = pywrap.new_sampling_request(self._object_type, sampler, self._expand_factor)
+    pywrap.set_sampling_request(req, ids)
     return req
 
 

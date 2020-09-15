@@ -100,14 +100,14 @@ class NeighborSampler(object):
     layers = Layers()
     for i in xrange(len(self._meta_path)):
       req = self._make_req(i, src_ids)
-      res = pywrap.new_nbr_res()
+      res = pywrap.new_sampling_response()
       status = self._client.sample_neighbor(req, res)
       if status.ok():
-        nbr_ids = pywrap.get_nbr_res_nbr_ids(res)
-        edge_ids = pywrap.get_nbr_res_edge_ids(res)
+        nbr_ids = pywrap.get_sampling_node_ids(res)
+        edge_ids = pywrap.get_sampling_edge_ids(res)
 
-      pywrap.del_nbr_res(res)
-      pywrap.del_nbr_req(req)
+      pywrap.del_op_response(res)
+      pywrap.del_op_request(req)
       raise_exception_on_not_ok_status(status)
 
       dst_type = self._dst_types[i]
@@ -138,10 +138,9 @@ class NeighborSampler(object):
       raise ValueError("input too many meta_path, and can not decide each hops")
 
     sampler = strategy2op(self._strategy[index], "Sampler")
-    req = pywrap.new_nbr_req(self._meta_path[index],
-                             sampler,
-                             self._expand_factor[index])
-    pywrap.set_nbr_req(req, src_ids)
+    req = pywrap.new_sampling_request(
+        self._meta_path[index], sampler, self._expand_factor[index])
+    pywrap.set_sampling_request(req, src_ids)
     return req
 
 
@@ -179,17 +178,17 @@ class FullNeighborSampler(NeighborSampler):
     for i in xrange(len(self._meta_path)):
       # req, res & call method.
       req = self._make_req(i, src_ids)
-      res = pywrap.new_nbr_res()
+      res = pywrap.new_sampling_response()
       status = self._client.sample_neighbor(req, res)
       if status.ok():
-        src_degrees = pywrap.get_nbr_res_degrees(res)
+        src_degrees = pywrap.get_sampling_node_degrees(res)
         dense_shape = (current_batch_size, max(src_degrees))
 
-        nbr_ids = pywrap.get_nbr_res_nbr_ids(res)
-        edge_ids = pywrap.get_nbr_res_edge_ids(res)
+        nbr_ids = pywrap.get_sampling_node_ids(res)
+        edge_ids = pywrap.get_sampling_edge_ids(res)
 
-      pywrap.del_nbr_res(res)
-      pywrap.del_nbr_req(req)
+      pywrap.del_op_response(res)
+      pywrap.del_op_request(req)
       raise_exception_on_not_ok_status(status)
 
       dst_type = self._dst_types[i]

@@ -52,7 +52,8 @@ extra_link_args.append('-Wl,-rpath=$ORIGIN/python/lib/')
 
 libraries.append('graphlearn_shared')
 
-sources = [ROOT_PATH + '/graphlearn/python/py_export.cc']
+sources = [ROOT_PATH + '/graphlearn/python/py_export.cc',
+           ROOT_PATH + '/graphlearn/python/py_client.cc']
 
 graphlearn_extension = Extension(
     'pywrap_graphlearn',
