@@ -66,13 +66,13 @@ protected:
     }
     if (info_.IsAttributed()) {
       for (int32_t i = 0; i < info_.i_num; ++i) {
-        value->i_attrs.emplace_back(index + i);
+        value->attrs->Add(int64_t(index + i));
       }
       for (int32_t i = 0; i < info_.f_num; ++i) {
-        value->f_attrs.emplace_back(float(index + i));
+        value->attrs->Add(float(index + i));
       }
       for (int32_t i = 0; i < info_.s_num; ++i) {
-        value->s_attrs.emplace_back(std::to_string(index + i));
+        value->attrs->Add(std::to_string(index + i));
       }
     }
   }
@@ -113,9 +113,9 @@ TEST_F(AggregatingRequestTest, AggregateNodes) {
     res.SetEmbeddingDim(15);
     res.SetNumSegments(10);
     for (int32_t i = 0; i < 10; ++i) {
-      value.Clear();
+      value.attrs->Clear();
       GenNodeValue(&value, i);
-      res.AppendEmbedding(value.f_attrs.data());
+      res.AppendEmbedding(value.attrs->GetFloats(nullptr));
       res.AppendSegment(i);
     }
 

@@ -37,21 +37,38 @@ protected:
   void TearDown() override {
   }
 
-  void Test() {
-    NodeStorage* storage = NewMemoryNodeStorage();
+  void InternalTest(NodeStorage* storage) {
     storage->SetSideInfo(&info_);
 
     storage->Lock();
     NodeValue value;
     for (int32_t i = 0; i < 100; ++i) {
-      value.Clear();
+      value.attrs->Clear();
       GenNodeValue(&value, i);
       storage->Add(&value);
     }
     storage->Unlock();
+    storage->Build();
 
     CheckInfo(storage->GetSideInfo());
     CheckNodes(storage);
+  }
+
+  void Test() {
+    NodeStorage* storage = NewMemoryNodeStorage();
+    InternalTest(storage);
+    const std::vector<Attribute>* attrs = storage->GetAttributes();
+    if (!info_.IsAttributed()) {
+      EXPECT_EQ(attrs->size(), 0);
+    }
+    delete storage;
+  }
+
+  void Test4CompressedStorage() {
+    NodeStorage* storage = NewCompressedMemoryNodeStorage();
+    InternalTest(storage);
+    const std::vector<Attribute>* attrs = storage->GetAttributes();
+    EXPECT_EQ(attrs, nullptr);
     delete storage;
   }
 
@@ -65,13 +82,13 @@ protected:
     }
     if (info_.IsAttributed()) {
       for (int32_t i = 0; i < info_.i_num; ++i) {
-        value->i_attrs.emplace_back(node_index + i);
+        value->attrs->Add(int64_t(node_index + i));
       }
       for (int32_t i = 0; i < info_.f_num; ++i) {
-        value->f_attrs.emplace_back(float(node_index + i));
+        value->attrs->Add(float(node_index + i));
       }
       for (int32_t i = 0; i < info_.s_num; ++i) {
-        value->s_attrs.emplace_back(std::to_string(node_index + i));
+        value->attrs->Add(std::to_string(node_index + i));
       }
     }
   }
@@ -103,19 +120,19 @@ protected:
         EXPECT_FLOAT_EQ(weight, 0.0);
       }
 
-      const Attribute* attr = storage->GetAttribute(node_id);
+      Attribute attr = storage->GetAttribute(node_id);
       if (info_.IsAttributed()) {
         for (int32_t j = 0; j < info_.i_num; ++j) {
-          EXPECT_EQ(attr->i_attrs[j], IdType(node_id + j));
+          EXPECT_EQ(attr->GetInts(nullptr)[j], IdType(node_id + j));
         }
         for (int32_t j = 0; j < info_.f_num; ++j) {
-          EXPECT_EQ(attr->f_attrs[j], float(node_id + j));
+          EXPECT_EQ(attr->GetFloats(nullptr)[j], float(node_id + j));
         }
         for (int32_t j = 0; j < info_.s_num; ++j) {
-          EXPECT_EQ(attr->s_attrs[j], std::to_string(node_id + j));
+          EXPECT_EQ(attr->GetStrings(nullptr)[j], std::to_string(node_id + j));
         }
       } else {
-        EXPECT_TRUE(attr == nullptr);
+        EXPECT_TRUE(attr.get() == nullptr);
       }
     }
 
@@ -144,11 +161,6 @@ protected:
     } else {
       EXPECT_EQ(weights->size(), 0);
     }
-
-    const std::vector<Attribute*>* attrs = storage->GetAttributes();
-    if (!info_.IsAttributed()) {
-      EXPECT_EQ(attrs->size(), 0);
-    }
   }
 
 protected:
@@ -158,34 +170,41 @@ protected:
 TEST_F(NodeStorageTest, AddGetWeighted) {
   info_.format = kWeighted;
   Test();
+  Test4CompressedStorage();
 }
 
 TEST_F(NodeStorageTest, AddGetLabeled) {
   info_.format = kLabeled;
   Test();
+  Test4CompressedStorage();
 }
 
 TEST_F(NodeStorageTest, AddGetAttributed) {
   info_.format = kAttributed;
   Test();
+  Test4CompressedStorage();
 }
 
 TEST_F(NodeStorageTest, AddGetWeightedLabeled) {
   info_.format = kWeighted | kLabeled;
   Test();
+  Test4CompressedStorage();
 }
 
 TEST_F(NodeStorageTest, AddGetWeightedAttributed) {
   info_.format = kWeighted | kAttributed;
   Test();
+  Test4CompressedStorage();
 }
 
 TEST_F(NodeStorageTest, AddGetLabeledAttributed) {
   info_.format = kLabeled | kAttributed;
   Test();
+  Test4CompressedStorage();
 }
 
 TEST_F(NodeStorageTest, AddGetWeightedLabeledAttributed) {
   info_.format = kWeighted | kLabeled | kAttributed;
   Test();
+  Test4CompressedStorage();
 }

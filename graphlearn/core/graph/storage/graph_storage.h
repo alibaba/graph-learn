@@ -31,22 +31,21 @@ public:
   virtual void Lock() = 0;
   virtual void Unlock() = 0;
 
-  virtual void Build() = 0;
-
   virtual void SetSideInfo(const SideInfo* info) = 0;
   virtual const SideInfo* GetSideInfo() const = 0;
 
   virtual void Add(EdgeValue* value) = 0;
+  virtual void Build() = 0;
 
   virtual IdType GetEdgeCount() const = 0;
   virtual IdType GetSrcId(IdType edge_id) const = 0;
   virtual IdType GetDstId(IdType edge_id) const = 0;
-  virtual IndexType GetEdgeLabel(IdType edge_id) const = 0;
   virtual float GetEdgeWeight(IdType edge_id) const = 0;
-  virtual const Attribute* GetEdgeAttribute(IdType edge_id) const = 0;
+  virtual int32_t GetEdgeLabel(IdType edge_id) const = 0;
+  virtual Attribute GetEdgeAttribute(IdType edge_id) const = 0;
 
-  virtual const IdList* GetNeighbors(IdType src_id) const = 0;
-  virtual const IdList* GetOutEdges(IdType src_id) const = 0;
+  virtual Array<IdType> GetNeighbors(IdType src_id) const = 0;
+  virtual Array<IdType> GetOutEdges(IdType src_id) const = 0;
 
   virtual IndexType GetInDegree(IdType dst_id) const = 0;
   virtual IndexType GetOutDegree(IdType src_id) const = 0;
@@ -57,6 +56,7 @@ public:
 };
 
 GraphStorage* NewMemoryGraphStorage();
+GraphStorage* NewCompressedMemoryGraphStorage();
 
 }  // namespace io
 }  // namespace graphlearn

@@ -55,9 +55,7 @@ Status NodeLoader::Read(NodeValue* value) {
   }
 
   if (need_resize_) {
-    value->Reserve(side_info_.i_num,
-                   side_info_.f_num,
-                   side_info_.s_num);
+    value->attrs->Reserve(side_info_.i_num, side_info_.f_num, side_info_.s_num);
     need_resize_ = false;
   }
 
@@ -138,7 +136,7 @@ Status NodeLoader::CheckTableSchema(const std::vector<DataType>& types) {
 }
 
 Status NodeLoader::ParseValue(NodeValue* value) {
-  value->Clear();
+  value->attrs->Clear();
 
   int idx = 0;
   value->id = record_[idx++].n.l;
@@ -153,7 +151,7 @@ Status NodeLoader::ParseValue(NodeValue* value) {
     LiteString s(record_[idx].s.data, record_[idx].s.len);
     return ParseAttribute(s, source_->delimiter,
                           source_->types, source_->hash_buckets,
-                          value);
+                          value->attrs);
   }
 
   return Status::OK();

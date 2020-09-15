@@ -40,46 +40,68 @@ protected:
   void TearDown() override {
   }
 
-  void TestOneNeighbor() {
-    GraphStorage* storage = NewMemoryGraphStorage();
+  void InternalTestOneNeighbor(GraphStorage* storage) {
     storage->Lock();
     storage->SetSideInfo(&info_);
 
     EdgeValue value;
     for (int32_t i = 0; i < 100; ++i) {
-      value.Clear();
+      value.attrs->Clear();
       GenEdgeValue(&value, i, 0);
       storage->Add(&value);
     }
     storage->Unlock();
+    storage->Build();
 
     CheckInfo(storage->GetSideInfo());
     CheckEdges(storage, 0);
     CheckNeighbors(storage, 0);
+  }
+
+  void TestOneNeighbor() {
+    GraphStorage* storage = NewMemoryGraphStorage();
+    InternalTestOneNeighbor(storage);
     delete storage;
   }
 
-  void TestTwoNeighbors() {
-    GraphStorage* storage = NewMemoryGraphStorage();
+  void TestOneNeighbor4CompressedStorage() {
+    GraphStorage* storage = NewCompressedMemoryGraphStorage();
+    InternalTestOneNeighbor(storage);
+    delete storage;
+  }
+
+  void InternalTestTwoNeighbors(GraphStorage* storage) {
     storage->Lock();
     storage->SetSideInfo(&info_);
 
     EdgeValue value;
     for (int32_t i = 0; i < 100; ++i) {
-      value.Clear();
+      value.attrs->Clear();
       GenEdgeValue(&value, i, 0);
       storage->Add(&value);
     }
     for (int32_t i = 0; i < 100; ++i) {
-      value.Clear();
+      value.attrs->Clear();
       GenEdgeValue(&value, i, 100);
       storage->Add(&value);
     }
     storage->Unlock();
+    storage->Build();
 
     CheckInfo(storage->GetSideInfo());
     CheckEdges(storage, 100);
     CheckNeighbors(storage, 100);
+  }
+
+  void TestTwoNeighbors() {
+    GraphStorage* storage = NewMemoryGraphStorage();
+    InternalTestTwoNeighbors(storage);
+    delete storage;
+  }
+
+  void TestTwoNeighbors4CompressedStorage() {
+    GraphStorage* storage = NewCompressedMemoryGraphStorage();
+    InternalTestTwoNeighbors(storage);
     delete storage;
   }
 
@@ -96,13 +118,13 @@ protected:
     }
     if (info_.IsAttributed()) {
       for (int32_t i = 0; i < info_.i_num; ++i) {
-        value->i_attrs.emplace_back(edge_index + i);
+        value->attrs->Add(int64_t(edge_index + i));
       }
       for (int32_t i = 0; i < info_.f_num; ++i) {
-        value->f_attrs.emplace_back(float(edge_index + i));
+        value->attrs->Add(float(edge_index + i));
       }
       for (int32_t i = 0; i < info_.s_num; ++i) {
-        value->s_attrs.emplace_back(std::to_string(edge_index + i));
+        value->attrs->Add(std::to_string(edge_index + i));
       }
     }
   }
@@ -136,26 +158,26 @@ protected:
         EXPECT_FLOAT_EQ(weight, 0.0);
       }
 
-      const Attribute* attr = storage->GetEdgeAttribute(edge_id);
+      Attribute attr = storage->GetEdgeAttribute(edge_id);
       if (info_.IsAttributed()) {
         for (int32_t j = 0; j < info_.i_num; ++j) {
-          EXPECT_EQ(attr->i_attrs[j], IdType(edge_id + j));
+          EXPECT_EQ(attr->GetInts(nullptr)[j], IdType(edge_id + j));
         }
         for (int32_t j = 0; j < info_.f_num; ++j) {
-          EXPECT_EQ(attr->f_attrs[j], float(edge_id + j));
+          EXPECT_EQ(attr->GetFloats(nullptr)[j], float(edge_id + j));
         }
         for (int32_t j = 0; j < info_.s_num; ++j) {
-          EXPECT_EQ(attr->s_attrs[j], std::to_string(edge_id + j));
+          EXPECT_EQ(attr->GetStrings(nullptr)[j], std::to_string(edge_id + j));
         }
       } else {
         for (int32_t j = 0; j < info_.i_num; ++j) {
-          EXPECT_EQ(attr->i_attrs[j], GLOBAL_FLAG(DefaultIntAttribute));
+          EXPECT_EQ(attr->GetInts(nullptr)[j], GLOBAL_FLAG(DefaultIntAttribute));
         }
         for (int32_t j = 0; j < info_.f_num; ++j) {
-          EXPECT_EQ(attr->f_attrs[j], GLOBAL_FLAG(DefaultFloatAttribute));
+          EXPECT_EQ(attr->GetFloats(nullptr)[j], GLOBAL_FLAG(DefaultFloatAttribute));
         }
         for (int32_t j = 0; j < info_.s_num; ++j) {
-          EXPECT_EQ(attr->s_attrs[j], GLOBAL_FLAG(DefaultStringAttribute));
+          EXPECT_EQ(attr->GetStrings(nullptr)[j], GLOBAL_FLAG(DefaultStringAttribute));
         }
       }
     }
@@ -171,17 +193,24 @@ protected:
       IdType src_id = src_ids->at(i);
       EXPECT_EQ(src_id, i);
 
-      const IdList* nbrs = storage->GetNeighbors(src_id);
-      const IdList* edges = storage->GetOutEdges(src_id);
+      auto nbrs = storage->GetNeighbors(src_id);
+      auto edges = storage->GetOutEdges(src_id);
 
       int32_t nbr_count = dst_offset / src_id_count + 1;
-      EXPECT_EQ(nbrs->size(), nbr_count);
-      EXPECT_EQ(edges->size(), nbr_count);
+      EXPECT_EQ(nbrs.Size(), nbr_count);
+      EXPECT_EQ(edges.Size(), nbr_count);
       EXPECT_EQ(storage->GetOutDegree(src_id), nbr_count);
 
-      for (int32_t j = 0; j < nbr_count; ++j) {
-        EXPECT_EQ(nbrs->at(j), src_id + j * src_id_count);
-        EXPECT_EQ(edges->at(j), src_id + j * src_id_count);
+      if (info_.IsWeighted()) {
+        for (int32_t j = 0; j < nbr_count; ++j) {
+          EXPECT_EQ(nbrs[j], src_id + (nbr_count - j - 1) * src_id_count);
+          EXPECT_EQ(edges[j], src_id + (nbr_count - j - 1) * src_id_count);
+        }
+      } else {
+        for (int32_t j = 0; j < nbr_count; ++j) {
+          EXPECT_EQ(nbrs[j], src_id + j * src_id_count);
+          EXPECT_EQ(edges[j], src_id + j * src_id_count);
+        }
       }
     }
 
@@ -212,79 +241,95 @@ protected:
 TEST_F(GraphStorageTest, AddGetDefault) {
   info_.format = kDefault;
   TestOneNeighbor();
+  TestOneNeighbor4CompressedStorage();
 }
 
 TEST_F(GraphStorageTest, AddGetWeighted) {
   info_.format = kWeighted;
   TestOneNeighbor();
+  TestOneNeighbor4CompressedStorage();
 }
 
 TEST_F(GraphStorageTest, AddGetLabeled) {
   info_.format = kLabeled;
   TestOneNeighbor();
+  TestOneNeighbor4CompressedStorage();
 }
 
 TEST_F(GraphStorageTest, AddGetAttributed) {
   info_.format = kAttributed;
   TestOneNeighbor();
+  TestOneNeighbor4CompressedStorage();
 }
 
 TEST_F(GraphStorageTest, AddGetWeightedLabeled) {
   info_.format = kWeighted | kLabeled;
   TestOneNeighbor();
+  TestOneNeighbor4CompressedStorage();
 }
 
 TEST_F(GraphStorageTest, AddGetWeightedAttributed) {
   info_.format = kWeighted | kAttributed;
   TestOneNeighbor();
+  TestOneNeighbor4CompressedStorage();
 }
 
 TEST_F(GraphStorageTest, AddGetLabeledAttributed) {
   info_.format = kLabeled | kAttributed;
   TestOneNeighbor();
+  TestOneNeighbor4CompressedStorage();
 }
 
 TEST_F(GraphStorageTest, AddGetWeightedLabeledAttributed) {
   info_.format = kWeighted | kLabeled | kAttributed;
   TestOneNeighbor();
+  TestOneNeighbor4CompressedStorage();
 }
 
 TEST_F(GraphStorageTest, AddGetDefaultMultiNeighbors) {
   info_.format = kDefault;
   TestTwoNeighbors();
+  TestTwoNeighbors4CompressedStorage();
 }
 
 TEST_F(GraphStorageTest, AddGetWeightedMultiNeighbors) {
   info_.format = kWeighted;
   TestTwoNeighbors();
+  TestTwoNeighbors4CompressedStorage();
 }
 
 TEST_F(GraphStorageTest, AddGetLabeledMultiNeighbors) {
   info_.format = kLabeled;
   TestTwoNeighbors();
+  TestTwoNeighbors4CompressedStorage();
 }
 
 TEST_F(GraphStorageTest, AddGetAttributedMultiNeighbors) {
   info_.format = kAttributed;
   TestTwoNeighbors();
+  TestTwoNeighbors4CompressedStorage();
 }
 
 TEST_F(GraphStorageTest, AddGetWeightedLabeledMultiNeighbors) {
   info_.format = kWeighted | kLabeled;
   TestTwoNeighbors();
+  TestTwoNeighbors4CompressedStorage();
 }
 
 TEST_F(GraphStorageTest, AddGetWeightedAttributedMultiNeighbors) {
   info_.format = kWeighted | kAttributed;
   TestTwoNeighbors();
+  TestTwoNeighbors4CompressedStorage();
 }
 
 TEST_F(GraphStorageTest, AddGetLabeledAttributedMultiNeighbors) {
   info_.format = kLabeled | kAttributed;
   TestTwoNeighbors();
+  TestTwoNeighbors4CompressedStorage();
 }
 
 TEST_F(GraphStorageTest, AddGetWeightedLabeledAttributedMultiNeighbors) {
   info_.format = kWeighted | kLabeled | kAttributed;
   TestTwoNeighbors();
+  TestTwoNeighbors4CompressedStorage();
 }

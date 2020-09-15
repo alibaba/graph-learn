@@ -47,20 +47,20 @@ public:
     for (int32_t i = 0; i < batch_size; ++i) {
       int64_t src_id = src_ids[i];
       auto neighbor_ids = storage->GetNeighbors(src_id);
-      if (neighbor_ids == nullptr) {
+      if (!neighbor_ids) {
         res->FillWith(GLOBAL_FLAG(DefaultNeighborId), -1);
       } else {
         thread_local static std::random_device rd;
         thread_local static std::mt19937 engine(rd());
 
-        int32_t neighbor_size = neighbor_ids->size();
+        int32_t neighbor_size = neighbor_ids.Size();
         auto edge_ids = storage->GetOutEdges(src_id);
 
         std::vector<int32_t> indices(neighbor_size);
         std::iota(indices.begin(), indices.end(), 0);
         std::shuffle(indices.begin(), indices.end(), engine);
 
-        auto padder = GetPadder(*neighbor_ids, *edge_ids, indices);
+        auto padder = GetPadder(neighbor_ids, edge_ids, indices);
         s = padder->Pad(res, count, neighbor_size);
         if (!s.ok()) {
           return s;

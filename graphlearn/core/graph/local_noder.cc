@@ -17,13 +17,15 @@ limitations under the License.
 
 #include "graphlearn/common/base/errors.h"
 #include "graphlearn/core/graph/storage/node_storage.h"
+#include "graphlearn/core/graph/storage_creator.h"
+#include "graphlearn/include/config.h"
 
 namespace graphlearn {
 
 class LocalNoder : public Noder {
 public:
   LocalNoder() {
-    storage_ = io::NewMemoryNodeStorage();
+    storage_ = CreateNodeStorage();
   }
 
   virtual ~LocalNoder() {
@@ -68,7 +70,7 @@ public:
     while (request->Next(&node_id)) {
       res->AppendWeight(storage_->GetWeight(node_id));
       res->AppendLabel(storage_->GetLabel(node_id));
-      res->AppendAttribute(storage_->GetAttribute(node_id));
+      res->AppendAttribute(storage_->GetAttribute(node_id).get());
     }
     return Status::OK();
   }

@@ -16,6 +16,8 @@ limitations under the License.
 #ifndef GRAPHLEARN_CORE_OPERATOR_SAMPLER_PADDER_REPLICATE_PADDER_H_
 #define GRAPHLEARN_CORE_OPERATOR_SAMPLER_PADDER_REPLICATE_PADDER_H_
 
+#include <algorithm>
+#include <vector>
 #include "graphlearn/common/base/errors.h"
 #include "graphlearn/common/base/log.h"
 #include "graphlearn/core/operator/sampler/padder/padder.h"
@@ -26,8 +28,8 @@ namespace op {
 
 class ReplicatePadder : public BasePadder {
 public:
-  ReplicatePadder(const std::vector<int64_t>& neighbor_ids,
-                  const std::vector<int64_t>& edge_ids,
+  ReplicatePadder(const ::graphlearn::io::IdArray& neighbor_ids,
+                  const ::graphlearn::io::IdArray& edge_ids,
                   const std::vector<int32_t>& indices)
       : BasePadder(neighbor_ids, edge_ids, indices) {
   }
@@ -42,12 +44,12 @@ public:
     for (int32_t idx = 0; idx < size; idx++) {
       if (value_size == 0) {
         res->AppendNeighborId(neighbor_ids_[idx]);
-        if (edge_ids_.size() > 0) {
+        if (edge_ids_.Size() > 0) {
           res->AppendEdgeId(edge_ids_[idx]);
         }
       } else if (value_size >= actual_size) {
         res->AppendNeighborId(neighbor_ids_[indices_[idx]]);
-        if (edge_ids_.size() > 0) {
+        if (edge_ids_.Size() > 0) {
           res->AppendEdgeId(edge_ids_[indices_[idx]]);
         }
       } else {

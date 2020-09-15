@@ -99,7 +99,7 @@ public:
 };
 
 Coordinator* GetCoordinator(int32_t server_id, int32_t server_count,
-                            Env* env){
+                            Env* env) {
   static CoordinatorCreator creator;
   return creator(server_id, server_count, env);
 }

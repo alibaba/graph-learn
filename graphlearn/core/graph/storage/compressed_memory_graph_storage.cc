@@ -26,14 +26,14 @@ limitations under the License.
 namespace graphlearn {
 namespace io {
 
-class MemoryGraphStorage : public GraphStorage {
+class CompressedMemoryGraphStorage : public GraphStorage {
 public:
-  MemoryGraphStorage() {
-    topo_ = NewMemoryTopoStorage();
-    edges_ = NewMemoryEdgeStorage();
+  CompressedMemoryGraphStorage() {
+    topo_ = NewCompressedMemoryTopoStorage();
+    edges_ = NewCompressedMemoryEdgeStorage();
   }
 
-  virtual ~MemoryGraphStorage() {
+  virtual ~CompressedMemoryGraphStorage() {
     delete topo_;
     delete edges_;
   }
@@ -129,8 +129,8 @@ private:
   TopoStorage* topo_;
 };
 
-GraphStorage* NewMemoryGraphStorage() {
-  return new MemoryGraphStorage();
+GraphStorage* NewCompressedMemoryGraphStorage() {
+  return new CompressedMemoryGraphStorage();
 }
 
 }  // namespace io

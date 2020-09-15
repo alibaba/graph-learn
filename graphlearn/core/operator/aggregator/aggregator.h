@@ -16,6 +16,7 @@ limitations under the License.
 #ifndef GRAPHLEARN_CORE_OPERATOR_AGGREGATOR_AGGREGATOR_H_
 #define GRAPHLEARN_CORE_OPERATOR_AGGREGATOR_AGGREGATOR_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 #include "graphlearn/core/operator/operator.h"

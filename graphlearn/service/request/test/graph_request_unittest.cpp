@@ -53,13 +53,13 @@ protected:
     }
     if (info_.IsAttributed()) {
       for (int32_t i = 0; i < info_.i_num; ++i) {
-        value->i_attrs.emplace_back(index + i);
+        value->attrs->Add(int64_t(index + i));
       }
       for (int32_t i = 0; i < info_.f_num; ++i) {
-        value->f_attrs.emplace_back(float(index + i));
+        value->attrs->Add(float(index + i));
       }
       for (int32_t i = 0; i < info_.s_num; ++i) {
-        value->s_attrs.emplace_back(std::to_string(index + i));
+        value->attrs->Add(std::to_string(index + i));
       }
     }
   }
@@ -115,13 +115,14 @@ protected:
     }
     if (info_.IsAttributed()) {
       for (int32_t i = 0; i < info_.i_num; ++i) {
-        EXPECT_EQ(value->i_attrs[i], index + i);
+        EXPECT_EQ(value->attrs->GetInts(nullptr)[i], index + i);
       }
       for (int32_t i = 0; i < info_.f_num; ++i) {
-        EXPECT_EQ(value->f_attrs[i], float(index + i));
+        EXPECT_EQ(value->attrs->GetFloats(nullptr)[i], float(index + i));
       }
       for (int32_t i = 0; i < info_.s_num; ++i) {
-        EXPECT_EQ(value->s_attrs[i], std::to_string(index + i));
+        EXPECT_EQ(value->attrs->GetStrings(nullptr)[i],
+                  std::to_string(index + i));
       }
     }
   }
@@ -136,13 +137,13 @@ protected:
     }
     if (info_.IsAttributed()) {
       for (int32_t i = 0; i < info_.i_num; ++i) {
-        value->i_attrs.emplace_back(index + i);
+        value->attrs->Add(int64_t(index + i));
       }
       for (int32_t i = 0; i < info_.f_num; ++i) {
-        value->f_attrs.emplace_back(float(index + i));
+        value->attrs->Add(float(index + i));
       }
       for (int32_t i = 0; i < info_.s_num; ++i) {
-        value->s_attrs.emplace_back(std::to_string(index + i));
+        value->attrs->Add(std::to_string(index + i));
       }
     }
   }
@@ -158,13 +159,14 @@ protected:
     }
     if (info_.IsAttributed()) {
       for (int32_t i = 0; i < info_.i_num; ++i) {
-        EXPECT_EQ(value->i_attrs[i], index + i);
+        EXPECT_EQ(value->attrs->GetInts(nullptr)[i], index + i);
       }
       for (int32_t i = 0; i < info_.f_num; ++i) {
-        EXPECT_EQ(value->f_attrs[i], float(index + i));
+        EXPECT_EQ(value->attrs->GetFloats(nullptr)[i], float(index + i));
       }
       for (int32_t i = 0; i < info_.s_num; ++i) {
-        EXPECT_EQ(value->s_attrs[i], std::to_string(index + i));
+        EXPECT_EQ(value->attrs->GetStrings(nullptr)[i],
+                  std::to_string(index + i));
       }
     }
   }
@@ -179,7 +181,7 @@ protected:
     EXPECT_EQ(info->dst_type, info_.dst_type);
 
     for (int32_t i = 0; i < real_size; ++i) {
-      value.Clear();
+      value.attrs->Clear();
       GenEdgeValue(&value, i);
       req.Append(&value);
     }
@@ -216,7 +218,7 @@ protected:
     EXPECT_EQ(info->type, info_.type);
 
     for (int32_t i = 0; i < real_size; ++i) {
-      value.Clear();
+      value.attrs->Clear();
       GenNodeValue(&value, i);
       req.Append(&value);
     }
@@ -504,7 +506,7 @@ TEST_F(GraphRequestTest, LookupEdges) {
     LookupEdgesResponse res;
     res.SetSideInfo(&info_, 10);
     for (int32_t i = 0; i < 10; ++i) {
-      value.Clear();
+      value.attrs->Clear();
       GenEdgeValue(&value, i);
       res.AppendWeight(value.weight);
     }
@@ -533,7 +535,7 @@ TEST_F(GraphRequestTest, LookupEdges) {
     LookupEdgesResponse res;
     res.SetSideInfo(&info_, 20);
     for (int32_t i = 0; i < 20; ++i) {
-      value.Clear();
+      value.attrs->Clear();
       GenEdgeValue(&value, i);
       res.AppendLabel(value.label);
     }
@@ -565,9 +567,9 @@ TEST_F(GraphRequestTest, LookupEdges) {
     LookupEdgesResponse res;
     res.SetSideInfo(&info_, 10);
     for (int32_t i = 0; i < 10; ++i) {
-      value.Clear();
+      value.attrs->Clear();
       GenEdgeValue(&value, i);
-      res.AppendAttribute(&value);
+      res.AppendAttribute(value.attrs);
     }
 
     // Parse response after deserialize
@@ -605,11 +607,11 @@ TEST_F(GraphRequestTest, LookupEdges) {
     LookupEdgesResponse res;
     res.SetSideInfo(&info_, 10);
     for (int32_t i = 0; i < 10; ++i) {
-      value.Clear();
+      value.attrs->Clear();
       GenEdgeValue(&value, i);
       res.AppendWeight(value.weight);
       res.AppendLabel(value.label);
-      res.AppendAttribute(&value);
+      res.AppendAttribute(value.attrs);
     }
 
     // Parse response after deserialize
@@ -691,7 +693,7 @@ TEST_F(GraphRequestTest, LookupNodes) {
     LookupNodesResponse res;
     res.SetSideInfo(&info_, 10);
     for (int32_t i = 0; i < 10; ++i) {
-      value.Clear();
+      value.attrs->Clear();
       GenNodeValue(&value, i);
       res.AppendWeight(value.weight);
     }
@@ -720,7 +722,7 @@ TEST_F(GraphRequestTest, LookupNodes) {
     LookupNodesResponse res;
     res.SetSideInfo(&info_, 20);
     for (int32_t i = 0; i < 20; ++i) {
-      value.Clear();
+      value.attrs->Clear();
       GenNodeValue(&value, i);
       res.AppendLabel(value.label);
     }
@@ -751,9 +753,9 @@ TEST_F(GraphRequestTest, LookupNodes) {
     LookupNodesResponse res;
     res.SetSideInfo(&info_, 10);
     for (int32_t i = 0; i < 10; ++i) {
-      value.Clear();
+      value.attrs->Clear();
       GenNodeValue(&value, i);
-      res.AppendAttribute(&value);
+      res.AppendAttribute(value.attrs);
     }
 
     // Parse response after deserialize
@@ -791,11 +793,11 @@ TEST_F(GraphRequestTest, LookupNodes) {
     LookupNodesResponse res;
     res.SetSideInfo(&info_, 10);
     for (int32_t i = 0; i < 10; ++i) {
-      value.Clear();
+      value.attrs->Clear();
       GenNodeValue(&value, i);
       res.AppendWeight(value.weight);
       res.AppendLabel(value.label);
-      res.AppendAttribute(&value);
+      res.AppendAttribute(value.attrs);
     }
 
     // Parse response after deserialize

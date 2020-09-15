@@ -30,25 +30,44 @@ public:
   virtual void Lock() = 0;
   virtual void Unlock() = 0;
 
-  virtual void Build() = 0;
-
   virtual void SetSideInfo(const SideInfo* info) = 0;
   virtual const SideInfo* GetSideInfo() const = 0;
 
-  virtual void Add(NodeValue* value) = 0;
+  /// Do some re-organization after data fixed.
+  virtual void Build() = 0;
+
+  /// Get the total edge count after data fixed.
   virtual IdType Size() const = 0;
 
-  virtual IndexType GetLabel(IdType node_id) const = 0;
-  virtual float GetWeight(IdType node_id) const = 0;
-  virtual const Attribute* GetAttribute(IdType node_id) const = 0;
+  /// A NODE is made up of [ id, attributes, weight, label ].
+  /// Insert a node. If a node with the same id existed, just ignore.
+  virtual void Add(NodeValue* value) = 0;
 
+  /// Lookup node infos by node_id, including
+  ///    node weight,
+  ///    node label,
+  ///    node attributes
+  virtual float GetWeight(IdType node_id) const = 0;
+  virtual int32_t GetLabel(IdType node_id) const = 0;
+  virtual Attribute GetAttribute(IdType node_id) const = 0;
+
+  /// For the needs of traversal and sampling, the data distribution is
+  /// helpful. The interface should make it convenient to get the global data.
+  ///
+  /// Get all the node ids, the count of which is the same with Size().
+  /// These ids are distinct.
   virtual const IdList* GetIds() const = 0;
-  virtual const IndexList* GetLabels() const = 0;
+  
+  /// Get all weights if existed, the count of which is the same with Size().
   virtual const std::vector<float>* GetWeights() const = 0;
-  virtual const std::vector<Attribute*>* GetAttributes() const = 0;
+  /// Get all labels if existed, the count of which is the same with Size().
+  virtual const std::vector<int32_t>* GetLabels() const = 0;
+  /// Get all attributes if existed, the count of which is the same with Size().
+  virtual const std::vector<Attribute>* GetAttributes() const = 0;
 };
 
 NodeStorage* NewMemoryNodeStorage();
+NodeStorage* NewCompressedMemoryNodeStorage();
 
 }  // namespace io
 }  // namespace graphlearn

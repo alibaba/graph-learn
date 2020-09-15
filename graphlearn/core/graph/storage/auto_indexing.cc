@@ -13,38 +13,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/include/server.h"
-#include "graphlearn/service/server_impl.h"
+#include "graphlearn/core/graph/storage/auto_indexing.h"
 
 namespace graphlearn {
+namespace io {
 
-Server::Server(ServerImpl* impl) : impl_(impl) {
+void AutoIndex::Add(IdType id) {
+  IndexType index = converter_.size();
+  converter_.insert({id, index});
 }
 
-Server::~Server() {
-  delete impl_;
+IndexType AutoIndex::Get(IdType id) {
+  auto it = converter_.find(id);
+  if (it == converter_.end()) {
+    return -1;
+  } else {
+    return it->second;
+  }
 }
 
-void Server::Start() {
-  impl_->Start();
-}
-
-void Server::Init(const std::vector<io::EdgeSource>& edges,
-                  const std::vector<io::NodeSource>& nodes) {
-  impl_->Init(edges, nodes);
-}
-
-void Server::Stop() {
-  impl_->Stop();
-}
-
-Server* NewServer(int32_t server_id,
-                  int32_t server_count,
-                  const std::string& server_host,
-                  const std::string& tracker) {
-  ServerImpl* impl = new ServerImpl(
-    server_id, server_count, server_host, tracker);
-  return new Server(impl);
-}
-
+}  // namespace io
 }  // namespace graphlearn

@@ -33,6 +33,7 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
   m.def("set_default_neighbor_id", &SetGlobalFlagDefaultNeighborId);
   m.def("set_tracker_mode", &SetGlobalFlagTrackerMode);
   m.def("set_padding_mode", &SetGlobalFlagPaddingMode);
+  m.def("set_storage_mode", &SetGlobalFlagStorageMode);
   m.def("set_default_int_attr", &SetGlobalFlagDefaultIntAttribute);
   m.def("set_default_float_attr", &SetGlobalFlagDefaultFloatAttribute);
   m.def("set_default_string_attr", &SetGlobalFlagDefaultStringAttribute);

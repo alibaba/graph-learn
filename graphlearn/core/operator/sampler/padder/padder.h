@@ -16,6 +16,7 @@ limitations under the License.
 #ifndef GRAPHLEARN_CORE_OPERATOR_SAMPLER_PADDER_PADDER_H_
 #define GRAPHLEARN_CORE_OPERATOR_SAMPLER_PADDER_PADDER_H_
 
+#include "graphlearn/core/graph/storage/types.h"
 #include "graphlearn/include/sampling_request.h"
 
 namespace graphlearn {
@@ -23,8 +24,8 @@ namespace op {
 
 class BasePadder {
 public:
-  BasePadder(const std::vector<int64_t>& neighbor_ids,
-             const std::vector<int64_t>& edge_ids,
+  BasePadder(const ::graphlearn::io::IdArray& neighbor_ids,
+             const ::graphlearn::io::IdArray& edge_ids,
              const std::vector<int32_t>& indices)
       : neighbor_ids_(neighbor_ids),
         edge_ids_(edge_ids),
@@ -38,16 +39,17 @@ public:
                      int32_t actual_size) = 0;
 
 protected:
-  const std::vector<int64_t>& neighbor_ids_;
-  const std::vector<int64_t>& edge_ids_;
+  const ::graphlearn::io::IdArray& neighbor_ids_;
+  const ::graphlearn::io::IdArray& edge_ids_;  
   const std::vector<int32_t>& indices_;
 };
 
 typedef std::unique_ptr<BasePadder> PadderPtr;
 
-PadderPtr GetPadder(const std::vector<int64_t>& node_ids,
-                    const std::vector<int64_t>& edge_ids,
-                    const std::vector<int32_t>& indices = {});
+PadderPtr GetPadder(
+  const ::graphlearn::io::IdArray& node_ids,
+  const ::graphlearn::io::IdArray& edge_ids,
+  const std::vector<int32_t>& indices = {});
 
 }  // namespace op
 }  // namespace graphlearn

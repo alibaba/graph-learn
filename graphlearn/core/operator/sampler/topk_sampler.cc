@@ -44,12 +44,12 @@ public:
     for (int32_t i = 0; i < batch_size; ++i) {
       int64_t src_id = src_ids[i];
       auto neighbor_ids = storage->GetNeighbors(src_id);
-      if (neighbor_ids == nullptr) {
+      if (!neighbor_ids) {
         res->FillWith(GLOBAL_FLAG(DefaultNeighborId), -1);
       } else {
-        int32_t neighbor_size = neighbor_ids->size();
+        int32_t neighbor_size = neighbor_ids.Size();
         auto edge_ids = storage->GetOutEdges(src_id);
-        auto padder = GetPadder(*neighbor_ids, *edge_ids);
+        auto padder = GetPadder(neighbor_ids, edge_ids);
         s = padder->Pad(res, count, neighbor_size);
         if (!s.ok()) {
           return s;

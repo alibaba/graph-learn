@@ -145,10 +145,10 @@ protected:
       EXPECT_EQ(value.label, index);
     }
     if (info->IsAttributed()) {
-      EXPECT_EQ(value.i_attrs[0], index);
-      EXPECT_FLOAT_EQ(value.f_attrs[0], float(index));
-      EXPECT_EQ(value.s_attrs[0].length(), 1);
-      EXPECT_EQ(value.s_attrs[0][0], char('A' + index % 26));
+      EXPECT_EQ(value.attrs->GetInts(nullptr)[0], index);
+      EXPECT_FLOAT_EQ(value.attrs->GetFloats(nullptr)[0], float(index));
+      EXPECT_EQ(value.attrs->GetStrings(nullptr)[0].length(), 1);
+      EXPECT_EQ(value.attrs->GetStrings(nullptr)[0][0], char('A' + index % 26));
     }
   }
 };

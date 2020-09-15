@@ -13,38 +13,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/include/server.h"
-#include "graphlearn/service/server_impl.h"
+#include "graphlearn/core/graph/storage_creator.h"
+#include "graphlearn/core/graph/storage/storage_mode.h"
 
 namespace graphlearn {
 
-Server::Server(ServerImpl* impl) : impl_(impl) {
+#define CREATE(Type)                                 \
+  if (io::IsCompressedStorageEnabled()) {            \
+    return io::NewCompressedMemory##Type##Storage(); \
+  } else {                                           \
+    return io::NewMemory##Type##Storage();           \
+  }
+
+io::GraphStorage* CreateGraphStorage() {
+  CREATE(Graph)
 }
 
-Server::~Server() {
-  delete impl_;
+io::NodeStorage* CreateNodeStorage() {
+  CREATE(Node)
 }
 
-void Server::Start() {
-  impl_->Start();
-}
-
-void Server::Init(const std::vector<io::EdgeSource>& edges,
-                  const std::vector<io::NodeSource>& nodes) {
-  impl_->Init(edges, nodes);
-}
-
-void Server::Stop() {
-  impl_->Stop();
-}
-
-Server* NewServer(int32_t server_id,
-                  int32_t server_count,
-                  const std::string& server_host,
-                  const std::string& tracker) {
-  ServerImpl* impl = new ServerImpl(
-    server_id, server_count, server_host, tracker);
-  return new Server(impl);
-}
+#undef CREATE
 
 }  // namespace graphlearn

@@ -13,38 +13,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/include/server.h"
-#include "graphlearn/service/server_impl.h"
+#include "graphlearn/core/graph/storage/storage_mode.h"
+#include "graphlearn/include/config.h"
 
 namespace graphlearn {
+namespace io {
 
-Server::Server(ServerImpl* impl) : impl_(impl) {
+namespace {
+  int32_t kCompressedMode = 1;
+  int32_t kDataDistributionEnabled = 2;
+}  // anonymous namespace
+
+bool IsCompressedStorageEnabled() {
+  return GLOBAL_FLAG(StorageMode) & kCompressedMode;
 }
 
-Server::~Server() {
-  delete impl_;
+bool IsDataDistributionEnabled() {
+  return GLOBAL_FLAG(StorageMode) & kDataDistributionEnabled;
 }
 
-void Server::Start() {
-  impl_->Start();
-}
-
-void Server::Init(const std::vector<io::EdgeSource>& edges,
-                  const std::vector<io::NodeSource>& nodes) {
-  impl_->Init(edges, nodes);
-}
-
-void Server::Stop() {
-  impl_->Stop();
-}
-
-Server* NewServer(int32_t server_id,
-                  int32_t server_count,
-                  const std::string& server_host,
-                  const std::string& tracker) {
-  ServerImpl* impl = new ServerImpl(
-    server_id, server_count, server_host, tracker);
-  return new Server(impl);
-}
-
+}  // namespace io
 }  // namespace graphlearn

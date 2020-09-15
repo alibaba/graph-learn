@@ -21,6 +21,7 @@ limitations under the License.
 #include "graphlearn/core/graph/storage/node_storage.h"
 #include "graphlearn/core/io/element_value.h"
 #include "graphlearn/core/operator/operator_factory.h"
+#include "graphlearn/include/config.h"
 #include "graphlearn/platform/env.h"
 #include "gtest/gtest.h"
 
@@ -211,10 +212,10 @@ protected:
       EXPECT_EQ(value.label, index);
     }
     if (info->IsAttributed()) {
-      EXPECT_EQ(value.i_attrs[0], index);
-      EXPECT_FLOAT_EQ(value.f_attrs[0], float(index));
-      EXPECT_EQ(value.s_attrs[0].length(), 1);
-      EXPECT_EQ(value.s_attrs[0][0], char('A' + index % 26));
+      EXPECT_EQ(value.attrs->GetInts(nullptr)[0], index);
+      EXPECT_FLOAT_EQ(value.attrs->GetFloats(nullptr)[0], float(index));
+      EXPECT_EQ(value.attrs->GetStrings(nullptr)[0].length(), 1);
+      EXPECT_EQ(value.attrs->GetStrings(nullptr)[0][0], char('A' + index % 26));
     }
   }
 
@@ -273,7 +274,9 @@ protected:
     EXPECT_EQ(storage->GetIds()->size(), 100);
     EXPECT_EQ(storage->GetWeights()->size(), 100);
     EXPECT_EQ(storage->GetLabels()->size(), 0);
-    EXPECT_EQ(storage->GetAttributes()->size(), 0);
+    if (storage->GetAttributes() != nullptr) {
+      EXPECT_EQ(storage->GetAttributes()->size(), 0);
+    }
     const SideInfo* info = storage->GetSideInfo();
     EXPECT_EQ(info->format, int32_t(kWeighted));
     EXPECT_EQ(info->i_num, 0);
@@ -288,7 +291,9 @@ protected:
     EXPECT_EQ(storage->GetIds()->size(), 100);
     EXPECT_EQ(storage->GetWeights()->size(), 0);
     EXPECT_EQ(storage->GetLabels()->size(), 100);
-    EXPECT_EQ(storage->GetAttributes()->size(), 0);
+    if (storage->GetAttributes() != nullptr) {
+      EXPECT_EQ(storage->GetAttributes()->size(), 0);
+    }
     info = storage->GetSideInfo();
     EXPECT_EQ(info->format, int32_t(kLabeled));
     EXPECT_EQ(info->i_num, 0);
@@ -303,7 +308,9 @@ protected:
     EXPECT_EQ(storage->GetIds()->size(), 100);
     EXPECT_EQ(storage->GetWeights()->size(), 0);
     EXPECT_EQ(storage->GetLabels()->size(), 0);
-    EXPECT_EQ(storage->GetAttributes()->size(), 100);
+    if (storage->GetAttributes() != nullptr) {
+      EXPECT_EQ(storage->GetAttributes()->size(), 100);
+    }
     info = storage->GetSideInfo();
     EXPECT_EQ(info->format, int32_t(kAttributed));
     EXPECT_EQ(info->i_num, 1);
@@ -328,13 +335,28 @@ TEST_F(GraphStoreTest, OnlyEdges) {
   GenEdgeSource(&edge_source[2], kAttributed, a_file, "watch", "user", "movie");
 
   std::vector<NodeSource> node_source;
-  GraphStore store(Env::Default());
-  ::graphlearn::op::OperatorFactory::GetInstance().Set(&store);
+  {
+    GLOBAL_FLAG(StorageMode) = 2;
+    GraphStore store(Env::Default());
+    ::graphlearn::op::OperatorFactory::GetInstance().Set(&store);
 
-  Status s = store.Load(edge_source, node_source);
-  EXPECT_TRUE(s.ok());
+    Status s = store.Load(edge_source, node_source);
+    EXPECT_TRUE(s.ok());
+    store.Build();
 
-  TestGraph(&store);
+    TestGraph(&store);
+  }
+  {
+    GLOBAL_FLAG(StorageMode) = 3;
+    GraphStore store(Env::Default());
+    ::graphlearn::op::OperatorFactory::GetInstance().Set(&store);
+
+    Status s = store.Load(edge_source, node_source);
+    EXPECT_TRUE(s.ok());
+    store.Build();
+
+    TestGraph(&store);
+  }
 }
 
 TEST_F(GraphStoreTest, OnlyNodes) {
@@ -352,13 +374,28 @@ TEST_F(GraphStoreTest, OnlyNodes) {
   GenNodeSource(&node_source[2], kAttributed, a_file, "movie");
 
   std::vector<EdgeSource> edge_source;
-  GraphStore store(Env::Default());
-  ::graphlearn::op::OperatorFactory::GetInstance().Set(&store);
+  {
+    GLOBAL_FLAG(StorageMode) = 2;
+    GraphStore store(Env::Default());
+    ::graphlearn::op::OperatorFactory::GetInstance().Set(&store);
 
-  Status s = store.Load(edge_source, node_source);
-  EXPECT_TRUE(s.ok());
+    Status s = store.Load(edge_source, node_source);
+    EXPECT_TRUE(s.ok());
+    store.Build();
 
-  TestNoder(&store);
+    TestNoder(&store);
+  }
+  {
+    GLOBAL_FLAG(StorageMode) = 3;
+    GraphStore store(Env::Default());
+    ::graphlearn::op::OperatorFactory::GetInstance().Set(&store);
+
+    Status s = store.Load(edge_source, node_source);
+    EXPECT_TRUE(s.ok());
+    store.Build();
+
+    TestNoder(&store);
+  }
 }
 
 TEST_F(GraphStoreTest, EdgesAndNodes) {
@@ -392,12 +429,28 @@ TEST_F(GraphStoreTest, EdgesAndNodes) {
     GenNodeSource(&node_source[2], kAttributed, a_file, "movie");
   }
 
-  GraphStore store(Env::Default());
-  ::graphlearn::op::OperatorFactory::GetInstance().Set(&store);
+  {
+    GLOBAL_FLAG(StorageMode) = 2;
+    GraphStore store(Env::Default());
+    ::graphlearn::op::OperatorFactory::GetInstance().Set(&store);
 
-  Status s = store.Load(edge_source, node_source);
-  EXPECT_TRUE(s.ok());
+    Status s = store.Load(edge_source, node_source);
+    EXPECT_TRUE(s.ok());
+    store.Build();
 
-  TestGraph(&store);
-  TestNoder(&store);
+    TestGraph(&store);
+    TestNoder(&store);
+  }
+  {
+    GLOBAL_FLAG(StorageMode) = 3;
+    GraphStore store(Env::Default());
+    ::graphlearn::op::OperatorFactory::GetInstance().Set(&store);
+
+    Status s = store.Load(edge_source, node_source);
+    EXPECT_TRUE(s.ok());
+    store.Build();
+
+    TestGraph(&store);
+    TestNoder(&store);
+  }
 }

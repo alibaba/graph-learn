@@ -48,12 +48,12 @@ public:
     for (int32_t i = 0; i < batch_size; ++i) {
       int64_t src_id = src_ids[i];
       auto neighbor_ids = storage->GetNeighbors(src_id);
-      if (neighbor_ids == nullptr) {
+      if (!neighbor_ids) {
         res->FillWith(GLOBAL_FLAG(DefaultNeighborId), -1);
       } else {
         auto edge_ids = storage->GetOutEdges(src_id);
         SampleFrom(edge_ids, storage, count, indices.data());
-        auto padder = GetPadder(*neighbor_ids, *edge_ids, indices);
+        auto padder = GetPadder(neighbor_ids, edge_ids, indices);
         s = padder->Pad(res, count, count);
         if (!s.ok()) {
           return s;
@@ -64,13 +64,13 @@ public:
   }
 
 private:
-  void SampleFrom(const ::graphlearn::io::IdList* edge_ids,
+  void SampleFrom(const ::graphlearn::io::IdArray& edge_ids,
                   ::graphlearn::io::GraphStorage* storage,
                   int32_t n, int32_t* indices) {
     std::vector<float> edge_weights;
-    edge_weights.reserve(edge_ids->size());
-    for (size_t i = 0; i < edge_ids->size(); ++i) {
-      ::graphlearn::io::IdType edge_id = (*edge_ids)[i];
+    edge_weights.reserve(edge_ids.Size());
+    for (size_t i = 0; i < edge_ids.Size(); ++i) {
+      ::graphlearn::io::IdType edge_id = edge_ids[i];
       edge_weights.push_back(storage->GetEdgeWeight(edge_id));
     }
 

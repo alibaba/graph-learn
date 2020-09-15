@@ -47,9 +47,9 @@ Status Aggregator::Aggregate(const AggregatingRequest* req,
     this->InitFunc(emb.get(), dim);
     while (!req->SegmentEnd(idx)) {
       request->Next(&node_id, &segment_id);
+      auto attr = storage->GetAttribute(node_id)->GetFloats(nullptr);
+      this->AggFunc(emb.get(), attr, dim);
       segment_size++;
-      this->AggFunc(
-        emb.get(), storage->GetAttribute(node_id)->f_attrs.data(), dim);
     }
     this->FinalFunc(emb.get(), dim, &segment_size, 1);
     res->AppendEmbedding(emb.get());

@@ -60,7 +60,7 @@ Status NamingEngine::Update(const std::vector<std::string>& endpoints) {
   endpoints_ = endpoints;
   size_ = endpoints.size();
   std::stringstream ss;
-  for (auto& endpoint: endpoints) {
+  for (auto& endpoint : endpoints) {
     ss << ", " << endpoint;
   }
   LOG(INFO) << "Update endpoints:" << ss.str();

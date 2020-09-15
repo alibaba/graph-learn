@@ -16,6 +16,7 @@ limitations under the License.
 #ifndef GRAPHLEARN_CORE_OPERATOR_SAMPLER_PADDER_CIRCULAR_PADDER_H_
 #define GRAPHLEARN_CORE_OPERATOR_SAMPLER_PADDER_CIRCULAR_PADDER_H_
 
+#include <vector>
 #include "graphlearn/common/base/errors.h"
 #include "graphlearn/common/base/log.h"
 #include "graphlearn/core/operator/sampler/padder/padder.h"
@@ -25,8 +26,8 @@ namespace op {
 
 class CircularPadder : public BasePadder {
 public:
-  CircularPadder(const std::vector<int64_t>& neighbor_ids,
-                 const std::vector<int64_t>& edge_ids,
+  CircularPadder(const ::graphlearn::io::IdArray& neighbor_ids,
+                 const ::graphlearn::io::IdArray& edge_ids,
                  const std::vector<int32_t>& indices)
       : BasePadder(neighbor_ids, edge_ids, indices) {
   }
@@ -43,12 +44,12 @@ public:
       cursor %= actual_size;
       if (value_size == 0) {
         res->AppendNeighborId(neighbor_ids_[cursor]);
-        if (edge_ids_.size() > 0) {
+        if (edge_ids_.Size() > 0) {
           res->AppendEdgeId(edge_ids_[cursor]);
         }
       } else if (value_size >= actual_size) {
         res->AppendNeighborId(neighbor_ids_[indices_[cursor]]);
-        if (edge_ids_.size() > 0) {
+        if (edge_ids_.Size() > 0) {
           res->AppendEdgeId(edge_ids_[indices_[cursor]]);
         }
       } else {

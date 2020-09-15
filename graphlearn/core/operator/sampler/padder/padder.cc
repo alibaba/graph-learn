@@ -27,10 +27,9 @@ public:
   PadderCreator() {}
   ~PadderCreator() = default;
 
-  PadderPtr operator() (const std::vector<int64_t>& neighbor_ids,
-                        const std::vector<int64_t>& edge_ids,
+  PadderPtr operator() (const ::graphlearn::io::IdArray& neighbor_ids,
+                        const ::graphlearn::io::IdArray& edge_ids,
                         const std::vector<int32_t>& indices) {
-    
     if (GLOBAL_FLAG(PaddingMode == kCircular)) {
       PadderPtr ret(new CircularPadder(neighbor_ids, edge_ids, indices));
       return ret;
@@ -41,8 +40,8 @@ public:
   }
 };
 
-PadderPtr GetPadder(const std::vector<int64_t>& node_ids,
-                    const std::vector<int64_t>& edge_ids,
+PadderPtr GetPadder(const ::graphlearn::io::IdArray& node_ids,
+                    const ::graphlearn::io::IdArray& edge_ids,
                     const std::vector<int32_t>& indices) {
   static PadderCreator creator;
   return creator(node_ids, edge_ids, indices);

@@ -13,38 +13,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/include/server.h"
-#include "graphlearn/service/server_impl.h"
+#ifndef GRAPHLEARN_CORE_GRAPH_STORAGE_STORAGE_MODE_H_
+#define GRAPHLEARN_CORE_GRAPH_STORAGE_STORAGE_MODE_H_
 
 namespace graphlearn {
+namespace io {
 
-Server::Server(ServerImpl* impl) : impl_(impl) {
-}
+/// 0 --> row mode
+/// 1 --> column mode
+/// 2 --> row mode & data distribution enabled
+/// 3 --> column mode & data distribution enabled
+//
+/// Default is 2, the same behavior like before.
 
-Server::~Server() {
-  delete impl_;
-}
+bool IsCompressedStorageEnabled();
+bool IsDataDistributionEnabled();
 
-void Server::Start() {
-  impl_->Start();
-}
-
-void Server::Init(const std::vector<io::EdgeSource>& edges,
-                  const std::vector<io::NodeSource>& nodes) {
-  impl_->Init(edges, nodes);
-}
-
-void Server::Stop() {
-  impl_->Stop();
-}
-
-Server* NewServer(int32_t server_id,
-                  int32_t server_count,
-                  const std::string& server_host,
-                  const std::string& tracker) {
-  ServerImpl* impl = new ServerImpl(
-    server_id, server_count, server_host, tracker);
-  return new Server(impl);
-}
-
+}  // namespace io
 }  // namespace graphlearn
+
+#endif  // GRAPHLEARN_CORE_GRAPH_STORAGE_STORAGE_MODE_H_

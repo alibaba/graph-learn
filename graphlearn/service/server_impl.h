@@ -58,7 +58,6 @@ private:
   InMemoryService*   in_memory_service_;
   DistributeService* dist_service_;
   Coordinator*       coordinator_;
-
 };
 
 }  // namespace graphlearn

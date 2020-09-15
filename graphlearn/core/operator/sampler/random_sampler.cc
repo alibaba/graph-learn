@@ -46,16 +46,16 @@ public:
     for (int32_t i = 0; i < batch_size; ++i) {
       int64_t src_id = src_ids[i];
       auto neighbor_ids = storage->GetNeighbors(src_id);
-      if (neighbor_ids == nullptr) {
+      if (!neighbor_ids) {
         res->FillWith(GLOBAL_FLAG(DefaultNeighborId), -1);
       } else {
         auto edge_ids = storage->GetOutEdges(src_id);
-        std::uniform_int_distribution<> dist(0, neighbor_ids->size() - 1);
+        std::uniform_int_distribution<> dist(0, neighbor_ids.Size() - 1);
 
         for (int32_t j = 0; j < count; ++j) {
           int32_t idx = dist(engine);
-          res->AppendNeighborId((*neighbor_ids)[idx]);
-          res->AppendEdgeId((*edge_ids)[idx]);
+          res->AppendNeighborId(neighbor_ids[idx]);
+          res->AppendEdgeId(edge_ids[idx]);
         }
       }
     }

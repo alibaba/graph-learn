@@ -14,27 +14,32 @@ limitations under the License.
 ==============================================================================*/
 
 #include <vector>
+#include "graphlearn/common/base/log.h"
 #include "graphlearn/core/graph/storage/edge_storage.h"
 #include "graphlearn/include/config.h"
 
 namespace graphlearn {
 namespace io {
 
-class MemoryEdgeStorage : public EdgeStorage {
+class CompressedMemoryEdgeStorage : public EdgeStorage {
 public:
-  MemoryEdgeStorage() {
+  CompressedMemoryEdgeStorage()
+      : attributes_(nullptr) {
     int64_t estimate_size = GLOBAL_FLAG(AverageEdgeCount);
-
     src_ids_.reserve(estimate_size);
     dst_ids_.reserve(estimate_size);
   }
 
-  virtual ~MemoryEdgeStorage() {
+  virtual ~CompressedMemoryEdgeStorage() {
+    delete attributes_;
   }
 
   void SetSideInfo(const SideInfo* info) override {
     if (!side_info_.IsInitialized()) {
       side_info_.CopyFrom(*info);
+      if (side_info_.IsAttributed()) {
+        attributes_ = NewDataHeldAttributeValue();
+      }
     }
   }
 
@@ -47,10 +52,21 @@ public:
     dst_ids_.shrink_to_fit();
     labels_.shrink_to_fit();
     weights_.shrink_to_fit();
-    attributes_.shrink_to_fit();
+    if (attributes_) {
+      attributes_->Shrink();
+    }
+  }
+
+  IdType Size() const override {
+    return src_ids_.size();
   }
 
   IdType Add(EdgeValue* value) override {
+    if (!Validate(value)) {
+      LOG(WARNING) << "Ignore an invalid edge value";
+      return -1;
+    }
+
     IdType edge_id = src_ids_.size();
 
     src_ids_.push_back(value->src_id);
@@ -63,16 +79,20 @@ public:
       labels_.push_back(value->label);
     }
     if (side_info_.IsAttributed()) {
-      AttributeValue* attr = NewDataHeldAttributeValue();
-      attr->Swap(value->attrs);
-      attributes_.emplace_back(attr, true);
+      auto ints = value->attrs->GetInts(nullptr);
+      for (int32_t i = 0; i < side_info_.i_num; ++i) {
+        attributes_->Add(ints[i]);
+      }
+      auto floats = value->attrs->GetFloats(nullptr);
+      for (int32_t i = 0; i < side_info_.f_num; ++i) {
+        attributes_->Add(floats[i]);
+      }
+      auto ss = value->attrs->GetStrings(nullptr);
+      for (int32_t i = 0; i < side_info_.s_num; ++i) {
+        attributes_->Add(ss[i]);
+      }
     }
-
     return edge_id;
-  }
-
-  IdType Size() const override {
-    return src_ids_.size();
   }
 
   IdType GetSrcId(IdType edge_id) const override {
@@ -111,8 +131,24 @@ public:
     if (!side_info_.IsAttributed()) {
       return Attribute();
     }
-    if (edge_id < attributes_.size()) {
-      return Attribute(attributes_[edge_id].get(), false);
+    if (edge_id < Size()) {
+      auto value = NewDataRefAttributeValue();
+      if (side_info_.i_num > 0) {
+        int64_t offset = edge_id * side_info_.i_num;
+        value->Add(attributes_->GetInts(nullptr) + offset, side_info_.i_num);
+      }
+      if (side_info_.f_num > 0) {
+        int64_t offset = edge_id * side_info_.f_num;
+        value->Add(attributes_->GetFloats(nullptr) + offset, side_info_.f_num);
+      }
+      if (side_info_.s_num > 0) {
+        int64_t offset = edge_id * side_info_.s_num;
+        auto ss = attributes_->GetStrings(nullptr) + offset;
+        for (int32_t i = 0; i < side_info_.s_num; ++i) {
+          value->Add(ss[i].c_str(), ss[i].length());
+        }
+      }
+      return Attribute(value, true);
     } else {
       return Attribute(AttributeValue::Default(&side_info_), false);
     }
@@ -130,25 +166,50 @@ public:
     return &weights_;
   }
 
-  const IndexList* GetLabels() const override {
+  const std::vector<int32_t>* GetLabels() const override {
     return &labels_;
   }
 
   const std::vector<Attribute>* GetAttributes() const override {
-    return &attributes_;
+    return nullptr;
+  }
+
+private:
+  bool Validate(EdgeValue* value) {
+    if (!side_info_.IsAttributed()) {
+      return true;
+    }
+
+    int32_t len = 0;
+    value->attrs->GetInts(&len);
+    if (len != side_info_.i_num) {
+      LOG(WARNING) << "Unmatched int attributes count";
+      return false;
+    }
+    value->attrs->GetFloats(&len);
+    if (len != side_info_.f_num) {
+      LOG(WARNING) << "Unmatched float attributes count";
+      return false;
+    }
+    value->attrs->GetStrings(&len);
+    if (len != side_info_.s_num) {
+      LOG(WARNING) << "Unmatched string attributes count";
+      return false;
+    }
+    return true;
   }
 
 private:
   IdList     src_ids_;
   IdList     dst_ids_;
-  std::vector<int32_t>   labels_;
-  std::vector<float>     weights_;
-  std::vector<Attribute> attributes_;
-  SideInfo               side_info_;
+  std::vector<float>   weights_;
+  std::vector<int32_t> labels_;
+  AttributeValue*      attributes_;
+  SideInfo             side_info_;
 };
 
-EdgeStorage* NewMemoryEdgeStorage() {
-  return new MemoryEdgeStorage();
+EdgeStorage* NewCompressedMemoryEdgeStorage() {
+  return new CompressedMemoryEdgeStorage();
 }
 
 }  // namespace io

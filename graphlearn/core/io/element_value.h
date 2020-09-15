@@ -16,10 +16,12 @@ limitations under the License.
 #ifndef GRAPHLEARN_CORE_IO_ELEMENT_VALUE_H_
 #define GRAPHLEARN_CORE_IO_ELEMENT_VALUE_H_
 
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 #include "graphlearn/common/io/value.h"
+#include "graphlearn/common/string/lite_string.h"
 
 namespace graphlearn {
 namespace io {
@@ -68,57 +70,50 @@ struct SideInfo {
   }
 };
 
-struct AttributeValue {
-  std::vector<int64_t>     i_attrs;
-  std::vector<float>       f_attrs;
-  std::vector<std::string> s_attrs;
-
-  AttributeValue() {}
-
-  AttributeValue(const AttributeValue& right) {
-    i_attrs = right.i_attrs;
-    f_attrs = right.f_attrs;
-    s_attrs = right.s_attrs;
-  }
-
+class AttributeValue {
+public:
   static AttributeValue* Default(const SideInfo* info);
 
-  void Reserve(int32_t i_num, int32_t f_num, int32_t s_num) {
-    i_attrs.reserve(i_num);
-    f_attrs.reserve(f_num);
-    s_attrs.reserve(s_num);
-  }
+  virtual void Clear() = 0;
+  virtual void Shrink() = 0;
+  virtual void Swap(AttributeValue* rhs) = 0;
+  virtual void Reserve(int32_t i, int32_t f, int32_t s) = 0;
 
-  void AddInt(int64_t i) {
-    i_attrs.emplace_back(i);
-  }
-
-  void AddFloat(float f) {
-    f_attrs.emplace_back(f);
-  }
-
-  void AddString(std::string& s) {  // NOLINT
-    s_attrs.emplace_back(std::move(s));
-  }
-
-  void Clear() {
-    i_attrs.clear();
-    f_attrs.clear();
-    s_attrs.clear();
-  }
+  virtual void Add(int64_t value) = 0;
+  virtual void Add(float value) = 0;
+  virtual void Add(std::string&& value) = 0;
+  virtual void Add(const std::string& value) = 0;
+  virtual void Add(const char* value, int32_t len) = 0;
+  virtual void Add(const int64_t* values, int32_t len) = 0;
+  virtual void Add(const float* values, int32_t len) = 0;
+  virtual const int64_t* GetInts(int32_t* len) const = 0;
+  virtual const float* GetFloats(int32_t* len) const = 0;
+  virtual const std::string* GetStrings(int32_t* len) const = 0;
+  virtual const LiteString* GetLiteStrings(int32_t* len) const = 0;
 };
 
-struct EdgeValue : public AttributeValue {
+AttributeValue* NewDataHeldAttributeValue();
+AttributeValue* NewDataRefAttributeValue();
+
+struct EdgeValue {
   int64_t src_id;
   int64_t dst_id;
   float   weight;
   int32_t label;
+  AttributeValue* attrs;
+
+  EdgeValue() : attrs(NewDataHeldAttributeValue()) {}
+  ~EdgeValue() { delete attrs; }
 };
 
-struct NodeValue : public AttributeValue {
+struct NodeValue {
   int64_t id;
   float   weight;
   int32_t label;
+  AttributeValue* attrs;
+
+  NodeValue() : attrs(NewDataHeldAttributeValue()) {}
+  ~NodeValue() { delete attrs; }
 };
 
 }  // namespace io

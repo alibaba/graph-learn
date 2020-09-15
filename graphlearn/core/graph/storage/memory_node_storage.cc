@@ -29,10 +29,7 @@ public:
     ids_.reserve(estimate_size);
   }
 
-  ~MemoryNodeStorage() {
-    for (auto& it : attributes_) {
-      delete it;
-    }
+  virtual ~MemoryNodeStorage() {
   }
 
   void Lock() override {
@@ -43,9 +40,6 @@ public:
     mtx_.unlock();
   }
 
-  void Build() override {
-  }
-
   void SetSideInfo(const SideInfo* info) override {
     if (!side_info_.IsInitialized()) {
       side_info_.CopyFrom(*info);
@@ -54,6 +48,17 @@ public:
 
   const SideInfo* GetSideInfo() const override {
     return &side_info_;
+  }
+
+  void Build() override {
+    ids_.shrink_to_fit();
+    labels_.shrink_to_fit();
+    weights_.shrink_to_fit();
+    attributes_.shrink_to_fit();
+  }
+
+  IdType Size() const override {
+    return ids_.size();
   }
 
   void Add(NodeValue* value) override {
@@ -71,16 +76,10 @@ public:
       labels_.push_back(value->label);
     }
     if (side_info_.IsAttributed()) {
-      Attribute* attr = new Attribute();
-      attributes_.push_back(attr);
-      attr->i_attrs.swap(value->i_attrs);
-      attr->f_attrs.swap(value->f_attrs);
-      attr->s_attrs.swap(value->s_attrs);
+      AttributeValue* attr = NewDataHeldAttributeValue();
+      attr->Swap(value->attrs);
+      attributes_.emplace_back(attr, true);
     }
-  }
-
-  IdType Size() const override {
-    return ids_.size();
   }
 
   IndexType GetLabel(IdType node_id) const override {
@@ -109,25 +108,24 @@ public:
     }
   }
 
-  const Attribute* GetAttribute(IdType node_id) const override {
+  Attribute GetAttribute(IdType node_id) const override {
     if (!side_info_.IsAttributed()) {
-      return nullptr;
+      return Attribute();
     }
 
     auto it = id_to_index_.find(node_id);
     if (it == id_to_index_.end()) {
-      return AttributeValue::Default(&side_info_);
+      return Attribute(AttributeValue::Default(&side_info_), false);
     } else {
-      return attributes_[it->second];
+      return Attribute(attributes_[it->second].get(), false);
     }
   }
-
 
   const IdList* GetIds() const override {
     return &ids_;
   }
 
-  const IndexList* GetLabels() const override {
+  const std::vector<int32_t>* GetLabels() const override {
     return &labels_;
   }
 
@@ -135,7 +133,7 @@ public:
     return &weights_;
   }
 
-  const std::vector<Attribute*>* GetAttributes() const override {
+  const std::vector<Attribute>* GetAttributes() const override {
     return &attributes_;
   }
 
@@ -143,10 +141,10 @@ private:
   std::mutex mtx_;
   MAP        id_to_index_;
   IdList     ids_;
-  IndexList  labels_;
-  std::vector<float>      weights_;
-  std::vector<Attribute*> attributes_;
-  SideInfo                side_info_;
+  std::vector<float>     weights_;
+  std::vector<int32_t>   labels_;
+  std::vector<Attribute> attributes_;
+  SideInfo               side_info_;
 };
 
 NodeStorage* NewMemoryNodeStorage() {

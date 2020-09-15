@@ -15,6 +15,7 @@ limitations under the License.
 
 #include "graphlearn/core/io/parser.h"
 
+#include <utility>
 #include "graphlearn/common/base/errors.h"
 #include "graphlearn/common/base/hash.h"
 #include "graphlearn/common/base/log.h"
@@ -59,35 +60,35 @@ Status ParseAttribute(
         LOG(ERROR) << "Invalid attribute:" << attrs[i] << "\t" << i;
         return error::InvalidArgument(pattern, i, "int", attrs[i].c_str());
       }
-      value->AddInt(v);
+      value->Add(static_cast<int64_t>(v));
     } else if (type == DataType::kInt64) {
       int64_t v = 0;
       if (!::graphlearn::strings::FastStringTo64(attrs[i].c_str(), &v)) {
         LOG(ERROR) << "Invalid attribute:" << attrs[i] << "\t" << i;
         return error::InvalidArgument(pattern, i, "int64", attrs[i].c_str());
       }
-      value->AddInt(v);
+      value->Add(v);
     } else if (type == DataType::kFloat) {
       float v = 0.0;
       if (!::graphlearn::strings::FastStringToFloat(attrs[i].c_str(), &v)) {
         LOG(ERROR) << "Invalid attribute:" << attrs[i] << "\t" << i;
         return error::InvalidArgument(pattern, i, "float", attrs[i].c_str());
       }
-      value->AddFloat(v);
+      value->Add(v);
     } else if (type == DataType::kDouble) {
       double v = 0.0;
       if (!::graphlearn::strings::FastStringToDouble(attrs[i].c_str(), &v)) {
         LOG(ERROR) << "Invalid attribute:" << attrs[i] << "\t" << i;
         return error::InvalidArgument(pattern, i, "double", attrs[i].c_str());
       }
-      value->AddFloat(v);
+      value->Add(static_cast<float>(v));
     } else if (type == DataType::kString) {
       if (hash_buckets.empty()) {
-        value->AddString(attrs[i]);
+        value->Add(std::move(attrs[i]));
       } else if (hash_buckets[i] > 0) {
-        value->AddInt(Hash(attrs[i], hash_buckets[i]));
+        value->Add(Hash(attrs[i], hash_buckets[i]));
       } else {
-        value->AddString(attrs[i]);
+        value->Add(std::move(attrs[i]));
       }
     } else {
       LOG(WARNING) << "Could not reach here";

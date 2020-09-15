@@ -378,14 +378,19 @@ void LookupResponse::AppendLabel(int32_t label) {
 
 void LookupResponse::AppendAttribute(const io::AttributeValue* value) {
   if (info_->IsAttributed()) {
+    auto ints = value->GetInts(nullptr);
     for (int32_t i = 0; i < info_->i_num; ++i) {
-      i_attrs_->AddInt64(value->i_attrs[i]);
+      i_attrs_->AddInt64(ints[i]);
     }
+
+    auto floats = value->GetFloats(nullptr);
     for (int32_t i = 0; i < info_->f_num; ++i) {
-      f_attrs_->AddFloat(value->f_attrs[i]);
+      f_attrs_->AddFloat(floats[i]);
     }
+
+    auto ss = value->GetStrings(nullptr);
     for (int32_t i = 0; i < info_->s_num; ++i) {
-      s_attrs_->AddString(value->s_attrs[i]);
+      s_attrs_->AddString(ss[i]);
     }
   }
 }

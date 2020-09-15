@@ -94,14 +94,19 @@ void UpdateRequest::SetMembers() {
 
 void UpdateRequest::Append(const io::AttributeValue* value) {
   if (info_->IsAttributed()) {
+    auto ints = value->GetInts(nullptr);
     for (int32_t i = 0; i < info_->i_num; ++i) {
-      i_attrs_->AddInt64(value->i_attrs[i]);
+      i_attrs_->AddInt64(ints[i]);
     }
+
+    auto floats = value->GetFloats(nullptr);
     for (int32_t i = 0; i < info_->f_num; ++i) {
-      f_attrs_->AddFloat(value->f_attrs[i]);
+      f_attrs_->AddFloat(floats[i]);
     }
+
+    auto ss = value->GetStrings(nullptr);
     for (int32_t i = 0; i < info_->s_num; ++i) {
-      s_attrs_->AddString(value->s_attrs[i]);
+      s_attrs_->AddString(ss[i]);
     }
   }
 }
@@ -112,22 +117,24 @@ const io::SideInfo* UpdateRequest::GetSideInfo() const {
 
 void UpdateRequest::Next(io::AttributeValue* value) {
   if (info_->IsAttributed()) {
+    value->Clear();
+
     int32_t from = info_->i_num * cursor_;
     int32_t to = info_->i_num * (cursor_ + 1);
     for (int32_t i = from; i < to; ++i) {
-      value->i_attrs.emplace_back(i_attrs_->GetInt64(i));
+      value->Add(i_attrs_->GetInt64(i));
     }
 
     from = info_->f_num * cursor_;
     to = info_->f_num * (cursor_ + 1);
     for (int32_t i = from; i < to; ++i) {
-      value->f_attrs.emplace_back(f_attrs_->GetFloat(i));
+      value->Add(f_attrs_->GetFloat(i));
     }
 
     from = info_->s_num * cursor_;
     to = info_->s_num * (cursor_ + 1);
     for (int32_t i = from; i < to; ++i) {
-      value->s_attrs.emplace_back(s_attrs_->GetString(i));
+      value->Add(s_attrs_->GetString(i));
     }
   }
 }
@@ -191,7 +198,7 @@ void UpdateEdgesRequest::Append(const io::EdgeValue* value) {
   if (info_->IsLabeled()) {
     labels_->AddInt32(value->label);
   }
-  UpdateRequest::Append(value);
+  UpdateRequest::Append(value->attrs);
 }
 
 bool UpdateEdgesRequest::Next(io::EdgeValue* value) {
@@ -199,7 +206,6 @@ bool UpdateEdgesRequest::Next(io::EdgeValue* value) {
     return false;
   }
 
-  value->Clear();
   value->src_id = src_ids_->GetInt64(cursor_);
   value->dst_id = dst_ids_->GetInt64(cursor_);
   if (info_->IsWeighted()) {
@@ -208,7 +214,7 @@ bool UpdateEdgesRequest::Next(io::EdgeValue* value) {
   if (info_->IsLabeled()) {
     value->label = labels_->GetInt32(cursor_);
   }
-  UpdateRequest::Next(value);
+  UpdateRequest::Next(value->attrs);
   ++cursor_;
   return true;
 }
@@ -260,14 +266,13 @@ void UpdateNodesRequest::Append(const io::NodeValue* value) {
   if (info_->IsLabeled()) {
     labels_->AddInt32(value->label);
   }
-  UpdateRequest::Append(value);
+  UpdateRequest::Append(value->attrs);
 }
 
 bool UpdateNodesRequest::Next(io::NodeValue* value) {
   if (cursor_ >= Size()) {
     return false;
   }
-  value->Clear();
   value->id = ids_->GetInt64(cursor_);
   if (info_->IsWeighted()) {
     value->weight = weights_->GetFloat(cursor_);
@@ -275,7 +280,7 @@ bool UpdateNodesRequest::Next(io::NodeValue* value) {
   if (info_->IsLabeled()) {
     value->label = labels_->GetInt32(cursor_);
   }
-  UpdateRequest::Next(value);
+  UpdateRequest::Next(value->attrs);
   ++cursor_;
   return true;
 }

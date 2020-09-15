@@ -60,9 +60,12 @@ protected:
     std::unique_ptr<int32_t[]> indices(new int32_t[n]);
     auto dst_ids = storage->GetAllDstIds();
     for (int32_t i = 0; i < batch_size; ++i) {
-      int64_t src_id = src_ids[i];
-      auto nbr_ids = storage->GetNeighbors(src_id);
-      std::unordered_set<int64_t> sets(nbr_ids->begin(), nbr_ids->end());
+      auto nbr_ids = storage->GetNeighbors(src_ids[i]);
+
+      std::unordered_set<int64_t> sets;
+      for (int32_t k = 0; k < nbr_ids.Size(); ++k) {
+        sets.insert(nbr_ids[k]);
+      }
 
       int32_t count = 0;
       int32_t cursor = 0;

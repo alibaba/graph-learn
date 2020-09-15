@@ -159,7 +159,7 @@ public:
   virtual ~Generator() {
     delete storage_;
     storage_ = NULL;
-  };
+  }
   virtual bool Next(::graphlearn::io::IdType* ret) = 0;
   virtual void Reset() {}
   virtual int32_t Epoch() {

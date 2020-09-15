@@ -33,6 +33,10 @@ def set_tracker_mode(mode):
 def set_padding_mode(mode):
   pywrap.set_padding_mode(mode)
 
+ 
+def set_storage_mode(mode):
+  pywrap.set_storage_mode(mode)
+
 
 def set_default_int_attribute(value=0):
   """ Set default global int attribute.
