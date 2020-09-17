@@ -40,11 +40,13 @@
 
 &emsp;&emsp; [G S L](docs/gsl.md)
 
+&emsp;&emsp; [算法编程范式](docs/model_programming_cn.md)
+
 * [**系统配置**](docs/system_config.md)
 
 * **功能扩展**
 
-&emsp;&emsp; [自定义算法](docs/model_programming.md)
+&emsp;&emsp; [自定义算法](docs/algo_cn.md)
 
 &emsp;&emsp; [自定义算子](docs/operator.md)
 
