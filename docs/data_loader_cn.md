@@ -11,7 +11,7 @@ Graph数据可分为**顶点数据**和**边数据**。一般的，顶点数据�
 <br />基础的边数据只包含源顶点ID和目的顶点ID，ID类型为bigint，每条数据代表一条边，表示两个顶点之间的关系。基础边数据源的schema如下所示。
 基础的边数据格式可以独立使用，即不附加属性、权重和标签。<br />
 
-<div align=center>边基础格式schema</div>
+边基础格式schema
 
 | 域 | 数据类型 | 备注 |
 | --- | --- | --- |
@@ -23,9 +23,9 @@ Graph数据可分为**顶点数据**和**边数据**。一般的，顶点数据�
 ## 1.2 属性格式（ATTRIBUTED）
 用于表达顶点或边的属性信息。一般情况下，顶点默认具有属性，不然只需要边表就够了。属性列只有一列，为string类型。
 string内部可通过自定义分隔符分割多个属性。比如，某一顶点属性有3个，分别为`shanghai, 10, 0.01`，用分隔符‘:’分隔，则该顶点对应的属性数据为`shanghai:10:0.01`。
-当数据格式具有属性时，无论是顶点数据，还是边数据，在API描述时，都需要显示指定**`ATTRIBUTED`**以告知系统。
+当数据格式具有属性时，无论是顶点数据，还是边数据，在API描述时，都需要显示指定**ATTRIBUTED**以告知系统。
 
-<div align=center>顶点数据属性格式schema</div>
+顶点数据属性格式schema
 
 | 域 | 数据类型 | 备注 |
 | --- | --- | --- |
@@ -33,7 +33,7 @@ string内部可通过自定义分隔符分割多个属性。比如，某一顶�
 | attributes | STRING |  |
 
 <br />
-<div align=center>边数据属性格式schema</div>
+边数据属性格式schema
 
 | 域 | 数据类型 | 备注 |
 | --- | --- | --- |
@@ -43,8 +43,9 @@ string内部可通过自定义分隔符分割多个属性。比如，某一顶�
 <br />
 
 ## 1.3 权重格式（WEIGHTED）
-用于表达顶点或边带有权重的情况。权重列只有一列，为**float**类型。当数据格式具有权重时，无论是顶点数据，还是边数据，在API描述时，都需要显示指定**`WEIGHTED`**以告知系统。
-<div align=center>顶点数据权重格式schema</div>
+用于表达顶点或边带有权重的情况。权重列只有一列，为**float**类型。当数据格式具有权重时，无论是顶点数据，还是边数据，在API描述时，都需要显示指定**WEIGHTED**以告知系统。
+
+顶点数据权重格式schema
 
 | 域 | 数据类型 | 信息列 |
 | --- | --- | --- |
@@ -52,7 +53,7 @@ string内部可通过自定义分隔符分割多个属性。比如，某一顶�
 | attributes | FLOAT |  |
 
 <br />
-<div align=center>边数据权重格式schema</div>
+边数据权重格式schema
 
 | 域 | 数据类型 | 备注 |
 | --- | --- | --- |
@@ -62,9 +63,9 @@ string内部可通过自定义分隔符分割多个属性。比如，某一顶�
 <br />
 
 ## 1.4 标签格式（LABELED）
-用于表达顶点或边带有标签的情况。标签列只有一列，为int类型。当数据格式具有标签时，无论是顶点数据，还是边数据，在API描述时，都需要显示指定**`LABELD`**以告知系统。
+用于表达顶点或边带有标签的情况。标签列只有一列，为int类型。当数据格式具有标签时，无论是顶点数据，还是边数据，在API描述时，都需要显示指定**LABELD**以告知系统。
 
-<div align=center>顶点数据标签格式schema</div>
+顶点数据标签格式schema
 
 | 域 | 数据类型 | 备注 |
 | --- | --- | --- |
@@ -72,7 +73,7 @@ string内部可通过自定义分隔符分割多个属性。比如，某一顶�
 | label | INT |  |
 <br />
 
-<div align=center>边数据标签格式schema</div>
+边数据标签格式schema
 
 | 域 | 数据类型 | 备注 |
 | --- | --- | --- |
@@ -88,7 +89,7 @@ ID是组成顶点和边数据源的必选信息，weight，label，attribute为�
 | 域 | 数据类型 | 备注 |
 | --- | --- | --- |
 | id | BIGINT | 必选 |
-| weight | DOUBLE | 可选: WEIGHTED |
+| weight | FLOAT | 可选: WEIGHTED |
 | label | BIGINT | 可选: LABELED |
 | attributes | STRING | 可选: ATTRIBUTED |
 
@@ -99,7 +100,7 @@ ID是组成顶点和边数据源的必选信息，weight，label，attribute为�
 | --- | --- | --- |
 | src_id | BIGINT | 必选 |
 | dst_id | BIGINT | 必选 |
-| weight | DOUBLE | 可选: WEIGHTED |
+| weight | FLOAT | 可选: WEIGHTED |
 | label | BIGINT | 可选: LABELED |
 | attributes | STRING | 可选: ATTRIBUTED |
 
@@ -158,7 +159,7 @@ src_id:int64  dst_id:int64  weight:float  feature:string
 | 列 | 类型 |
 | --- | --- |
 | id | BIGINT |
-| weight | DOUBLE |
+| weight | FLOAT |
 | label | BIGINT |
 | features | STRING |
 
@@ -269,7 +270,7 @@ gl.Decoder(labeled=True, attr_type={your_attr_types}, attr_delimiter={you_delimi
 ## 3.4 使用示例
 假设数据源如下表1，表2，表3所示。<br />
 
-<div align=center>表1 item顶点表</div>
+表1 item顶点表
 
 | id | feature |
 | --- | --- |
@@ -277,7 +278,7 @@ gl.Decoder(labeled=True, attr_type={your_attr_types}, attr_delimiter={you_delimi
 | 10002 | feature2:2:0.2 |
 | 10003 | feature3:3:0.3 |
 
-<div align=center>表2 user顶点表</div>
+表2 user顶点表
 
 | id | feature |
 | --- | --- |
@@ -286,7 +287,7 @@ gl.Decoder(labeled=True, attr_type={your_attr_types}, attr_delimiter={you_delimi
 | 125 | 0.7:0.8:0.9 |
 
 
-<div align=center>表3 user-item边表</div>
+表3 user-item边表
 
 | src_id | dst_id | weight |
 | --- | --- | --- |
