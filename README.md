@@ -1,39 +1,74 @@
+简体中文 | [English](README_en.md)
+
 ![GL](docs/images/graph-learn.png)
 
 [![graph-learn CI](https://github.com/alibaba/graph-learn/workflows/graph-learn%20CI/badge.svg)](https://github.com/alibaba/graph-learn/actions)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/alibaba/graph-learn/blob/master/LICENSE)
 
-# Introduction
+# 介绍
 
-**Graph-Learn(GL)** is a framework designed to simplify the application of graph neural networks(**GNNs**).
-It abstracts solutions from the actual production cases.
-These solutions have been applied and verified on recommendation, anti-cheating and knowledge graph systems.
+**Graph-Learn(GL)**是面向大规模图神经网络的研发和应用而设计的一款分布式框架，
+它从实际问题出发，提炼和抽象了一套适合于当下图神经网络模型的编程范式，
+并已经成功应用在阿里巴巴内部的诸如搜索推荐、网络安全、知识图谱等众多场景。
 
-**GL** is **portable** and **flexible**, which makes it much more friendly to developers.
-Based on **GL**, developers are able to implement a kind of **GNNs** algorithms,
-**customize** some graph related operators and extend the existed modules easily.
-**GL** can be installed in containers or on physical machines, and deployed in single machine mode or **distributed mode**.
-
-# Documents
-
-* [Installation](docs/install.md)
-
-* [Quick Start](docs/quick_start.md)
-
-* [Conception and API](docs/concept_api.md)
-
-* [System Config](docs/system_config.md)
-
-* [Distribution](docs/distribution.md)
-
-* [Extend](docs/extend.md)
-
-* [Model Examples](docs/model_examples.md)
+**GL**注重**可移植**和**可扩展**，对于开发者更为友好，为了应对**GNN**在工业场景中的多样性和快速发展的需求。
+基于**GL**，开发者可以实现一种**GNN**算法，或者面向实际场景**定制化**一种图算子，例如图采样。
+**GL**的接口以Python和NumPy的形式提供，可与TensorFlow或PyTorch兼容但不耦合。
+目前**GL**内置了一些结合TensorFlow开发的经典模型，供用户参考。
+**GL**可运行于Docker内或物理机上，支持单机和分布式两种部署模式。
 
 
-# Paper
+# 用户文档
 
-Please cite the following paper in your publications if **GL** helps your research.
+* [**安装部署**](docs/install_cn.md)
+
+* [**快速开始**](docs/quick_start_cn.md)
+
+* **接口与概念**
+
+&emsp;&emsp; [数据源](docs/data_loader_cn.md)
+
+&emsp;&emsp; [图对象](docs/graph_object_cn.md)
+
+&emsp;&emsp; [图查询](docs/graph_query_cn.md)
+
+&emsp;&emsp; [图遍历](docs/graph_traverse_cn.md)
+
+&emsp;&emsp; [图采样](docs/graph_sampling_cn.md)
+
+&emsp;&emsp; [负采样](docs/negative_sampling_cn.md)
+
+&emsp;&emsp; [G S L](docs/gsl.md)
+
+* [**系统配置**](docs/system_config.md)
+
+* **功能扩展**
+
+&emsp;&emsp; [自定义算法](docs/model_programming.md)
+
+&emsp;&emsp; [自定义算子](docs/operator.md)
+
+&emsp;&emsp; [数据源接入](docs/other_source.md)
+
+* **模型示例**
+
+&emsp;&emsp; [GCN](examples/tf/gcn/README.md)
+
+&emsp;&emsp; [GAT](examples/tf/gat/README.md)
+
+&emsp;&emsp; [GraphSAGE](examples/tf/graphsage/README.md)
+
+&emsp;&emsp; [Bipartite GraphSAGE](examples/tf/bipartite_graphsage/README.md)
+
+&emsp;&emsp; [DeepWalk](examples/tf/deepwalk/README.md)
+
+&emsp;&emsp; [LINE](examples/tf/line/README.md)
+
+&emsp;&emsp; [TransE](examples/tf/transe/README.md)
+
+# 论文
+
+如果**GL**对你的工作有所帮助，请引用如下论文。
 
 ```
 @article{zhu2019aligraph,
@@ -48,21 +83,14 @@ Please cite the following paper in your publications if **GL** helps your resear
 }
 ```
 
-# License
+# 协议
 
-Apache License 2.0.
+Apache License 2.0。
 
-# Acknowledgement
+# 致谢
 
-The developers of **GL** are from several teams at Alibaba, including Computing Platform Department - PAI team,
-New Retail Intelligence Engine - Data Analytics And Intelligence Lab, and Security Department - Data and Algorithms team.
-Thanks to the ones who provide helps and suggestions to open source.
-
-Please email graph-learn@list.alibaba-inc.com if any questions. 
-
-**Welcome to contribution!**
-
-**GL** refers to the following projects. Thanks to the authors and contributors.
+**GL**孵化于阿里巴巴内部，由计算平台事业部-PAI团队、新零售智能引擎-智能计算实验室、安全部-数据与算法团队共同研发。
+研发过程中收到很多有价值的反馈，代码也依赖了以下开源社区的优秀项目，一并感谢。
 
 *  [protobuf](https://github.com/protocolbuffers/protobuf)
 
@@ -75,3 +103,6 @@ Please email graph-learn@list.alibaba-inc.com if any questions.
 *  [TensorFlow](https://github.com/tensorflow/tensorflow)
 
 *  [pybind11](https://github.com/pybind/pybind11)
+
+
+如果你在使用**GL**过程中遇到什么问题，请留言或发信至graph-learn@list.alibaba-inc.com，也欢迎贡献代码
