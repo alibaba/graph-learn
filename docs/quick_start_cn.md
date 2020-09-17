@@ -1,42 +1,36 @@
 # 快速开始
 
-本文档包含三个部分，第一部分说明如何快速跑一个**GL**提供的GNN模型；第二部分通过一个分布式的例子，说明GL中图数据、图采样接口的使用方式；第三部分以开源数据Cora为例，说明如何基于**GL**的基础接口和tensorflow自定义一个单机的GraphSAGE做有监督学习。<br />
+本文档包含三个部分
 
-- 如果只想用开源数据或自己的数据快速尝试一个**GL**中已有的模型，请参考第一部分。<br />
-- 如果希望对图数据做采样等操作，请参考第二部分。<br />
-- 如果希望基于**GL**，自行开发一个模型，请参考第三部分。<br />
+- 如何基于**GL**快速跑通一个GNN模型
 
-# 1 **GL**模型使用
+- 如何把数据加载到**GL**中，以及如何使用图数据、图采样、负采样等接口
 
-**GL**提供了GCN、GraphSAGE等多个GNN模型的示例和cora、ppi等开源数据的处理工具，你可以从执行脚本跑一个模型开始接触**GL**。<br />
+- 以**GraphSAGE**为例，说明如何基于**GL**和TensorFlow开发一个自己的GNN模型
 
-- 准备数据
+
+# 1 跑通内置模型
+
+**GL**内置了一些常见模型，如**GCN**，**GraphSAGE**，以及数据集**cora、ppi**等。
+我们从跑通**core**数据的顶点分类任务开始接触**GL**，完整模型代码请参考[模型示例](model_examples.md)。<br />
+
 
 ``` shell
+# 准备数据
 cd graph-learn/examples/data/
 python cora.py
-```
 
-- 训练、模型评估
-
-``` shell
+# 训练、模型评估
 python train_supervised.py
 ```
 
-**GL**的完整模型列表请参考文档[模型示例](model_examples.md)。<br />
 
-# 2 **GL**图接口使用
+# 2 **GL**接口使用
 
-这一部分提供了**GL**的大部分图接口包括构图、查询、采样、负采样在内的单机和分布式使用示例。<br />
+**GL**为GNN的开发提供了大量基础接口，下面将会展示如何基于**GL**来构图、查询、采样、负采样。
 
-- 准备数据
-
-我们准备了一个数据产生的脚本[gen_test_data.py](../examples/basic/distribute/gen_test_data.py)，用于生成顶点和边的本地数据。<br />
-在我们的伪分布式测试中，各个分布式的角色都读取同一个数据文件。如果在真正的分布式中使用，需要将数据表上传到所有分布式角色都能够访问的文件系统中。<br />
-
-- 图操作
-
-准备图操作的脚本。<br />
+我们准备了一个生成数据的脚本[gen_test_data.py](../examples/basic/distribute/gen_test_data.py)，用于生成顶点和边的本地数据。
+在下面的分布式代码中，各个进程都读取同一个数据文件，确保所有进程都有权限访问该文件。测试代码如下。
 
 ``` python
 # test.py
@@ -108,9 +102,8 @@ if __name__ == "__main__":
   main(sys.argv[1:])
 ```
 
-- 执行脚本
 
-准备完数据和代码后，我们执行伪分布式的shell脚本来进行测试。
+准备完数据和代码后，我们在本地拉起4个进程，2个worker2个server，分布式执行。
 
 ``` shell
 HERE=$(cd "$(dirname "$0")";pwd)
@@ -140,28 +133,28 @@ python $HERE/test.py \
   --job_name="client" --task_index=1
 ```
 
-# 3 第一个GNN任务
-这一部分，我们基于**GL**的基础构图、查询、采样接口进行开发，结合tensorflow开发了一个有监督的GraphSGAE模型，并在Cora数据上训练。<br />
-**GL**也提供了模型的高层封装，参考[模型的快速开发](quick_start.md)。<br />
+# 3 开发一个GNN模型
+
+下面将基于**GL**和**TensorFlow**开发一个有监督的**GraphSGAE**模型，并在Cora数据上训练，更详细的参考[模型的开发](algo_cn.md)。<br />
 
 ## 3.1 数据准备
 
-我们使用开源数据集Cora，它包含了机器学习的一些论文，以及论文之间的引用关系，每篇论文包含1433个属性。这些论文可以划分为7种类别：Case_Based, Genetic_Algorithms, Neural_Networks, Probabilistic_Methods, Reinforcement_Learning, Rule_Learning, Theory。该GNN任务的目的是预测论文的分类。我们将开源的Cora数据进行处理，得到我们构图所需的数据格式。Cora数据下载和处理的脚本参考[cora.py](../examples/data/cora.py)
-
-执行数据生成脚本。
+我们使用开源数据集Cora，它包含了机器学习的一些论文，以及论文之间的引用关系，每篇论文包含1433个属性。这些论文可以划分为7种类别：Case_Based, Genetic_Algorithms, Neural_Networks, Probabilistic_Methods, Reinforcement_Learning, Rule_Learning, Theory。该GNN任务的目的是预测论文的分类。我们将开源的Cora数据进行处理，得到我们构图所需的数据格式。Cora数据下载和处理的脚本参考[cora.py](../examples/data/cora.py)。
 ```
 cd ../examples/data
 python cora.py
 ```
 
-- 边数据，即论文之间的引用关系，一篇论文由其他至少一篇论文引用。
-```
+产出边数据和顶点数据。其中，边数据即论文之间的引用关系，一篇论文由其他至少一篇论文引用；
+顶点数据，即论文的词汇表示，包括论文的属性和标签，属性总共1433个维度，论文类别有7类，因此label值域设置为0~6。
+
+```shell
 src_id:int64   dst_id:int64
 35  1033
 35  103482
 35  103515
 ```
-- 顶点数据，即论文的词汇表示，包括论文的属性和标签，属性总共1433个维度，论文类别有7类，因此label值域设置为0~6。
+
 ```
 id:int64  label:int32   feature:string
 31336      4    0.0:0.0:... 
@@ -169,13 +162,9 @@ id:int64  label:int32   feature:string
 1106406    2    0.0:0.0:...
 ```
 
-- 指定数据源路径。当数据存在本地时，直接用本地文件的绝对路径即可。
-```python
-edge_path = "data/cora/node_table"
-node_path = "data/cora/edge_table"
-```
 
-- 描述数据格式。顶点表，除了id以外，包含label和attributes，其中attributes为1433个float。边表除了两个端点id以外，还包含边的权重。数据格式通过`gl.Decoder`类描述。
+顶点顶点数据除了id以外，包含label和attributes，其中attributes为1433个float。边数据除了两个端点id以外，还包含边的权重。
+数据格式通过`gl.Decoder`类描述。
 
 ```python
 import graphlearn as gl
@@ -191,11 +180,13 @@ edge_decoder = gl.Decoder(weighted=True)
 
 ## 3.2 图初始化
 
-图初始化的过程是将顶点数据和边数据加载到内存中，转换为逻辑上的图格式。初始化完成后，可供查询和采样。你的模型代码可以从这里开始。<br />
+图初始化的过程是将顶点数据和边数据加载到内存中，转换为逻辑上的图格式。初始化完成后，可供查询和采样。<br />
 
-- 配置参数
 
 ```python
+import graphlearn as gl
+
+# 配置参数
 N_CLASS = 7
 N_FEATURE = 1433
 BATCH_SIZE = 140
@@ -204,30 +195,20 @@ N_HOP =  2
 HOPS = [10, 5]
 N_EPOCHES = 2
 DEPTH = 2
-```
 
-- 定义一个`Graph`对象 <br />
-
-```python
-import graphlearn as gl
+# 定义一个Graph对象 
 g = gl.Graph()
-```
 
-- 添加顶点和边 <br />
-通过`.node()`将顶点表加入到图中，并指定顶点的类型；这里只有一种类型的顶点，我们命名为"item"。<br />
-通过`.edge()`将边表加入到图中，并通过一个三元组描述类型，分别为源顶点类型、目的顶点类型和边类型。<br />
-
-```python
+# 通过`.node()`将顶点表加入到图中，并指定顶点的类型；这里只有一种类型的顶点，我们命名为"item"。
+# 通过`.edge()`将边表加入到图中，并通过一个三元组描述类型，分别为源顶点类型、目的顶点类型和边类型。
 g.node("examples/data/cora/node_table",
        node_type="item",
        decoder=gl.Decoder(labeled=True, attr_types=["float"] * N_FEATURE)) \
   .edge("examples/data/cora/edge_table",
         edge_type=("item", "item", "relation"), decoder=gl.Decoder(weighted=True), directed=False) \
-```
 
-- 调用.init()进行初始化。这里以单机运行为例，分布式详见[图对象-初始化数据](graph_object_cn.md)。
 
-```python
+# 调用.init()进行初始化。这里以单机运行为例，分布式详见[图对象-初始化数据](graph_object_cn.md)。
 g.init()
 ```
 
