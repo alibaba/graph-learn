@@ -7,7 +7,7 @@
 
 # 介绍
 
-**Graph-Learn(GL)**是面向大规模图神经网络的研发和应用而设计的一款分布式框架，
+**Graph-Learn(GL)** 是面向大规模图神经网络的研发和应用而设计的一款分布式框架，
 它从实际问题出发，提炼和抽象了一套适合于当下图神经网络模型的编程范式，
 并已经成功应用在阿里巴巴内部的诸如搜索推荐、网络安全、知识图谱等众多场景。
 
@@ -22,7 +22,7 @@
 
 * [**安装部署**](docs/install_cn.md)
 
-* [**快速开始**](docs/quick_start_cn.md)
+* [**快速开始**](docs/quick_start.md)
 
 * **接口与概念**
 
@@ -105,4 +105,4 @@ Apache License 2.0。
 *  [pybind11](https://github.com/pybind/pybind11)
 
 
-如果你在使用**GL**过程中遇到什么问题，请留言或发信至graph-learn@list.alibaba-inc.com，也欢迎贡献代码
+如果你在使用**GL**过程中遇到什么问题，请留言或发信至graph-learn@list.alibaba-inc.com，也欢迎贡献代码。
