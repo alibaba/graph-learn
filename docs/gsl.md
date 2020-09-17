@@ -12,14 +12,14 @@ GNN发展至今，有一套相对成熟的编程范式。我们将一个GNN模�
 - 负采样（Negative），与关系型相对，一般用于无监督训练场景，产生负例样本；
 
 
-<br />我们把如上几类操作抽象成了一套接口，称为**GSL**。
+<br />我们把如上几类操作抽象成了一套接口，称为 **GSL**。
 开发者可以基于**GSL**描述用于GNN的图数据流，例如，针对“用户点击商品”异构图场景，“随机采样64个user，并按边的权重为每个user采样10个关联商品”，
 可以写成<br />`g.V("user").batch(64).outV("click").sample(10).by("edge_weight")`<br />
 <br />**GSL**考虑实际图数据的特点，覆盖了对超大图、异构图、属性图的支持，语法设计贴近[Gremlin](http://tinkerpop.apache.org/docs/current/reference/#_tinkerpop_documentation)形式，便于理解。<br />
 
 <a name="KFXRf"></a>
 # 2 GSL语法
-我们把一个由**GSL**描述的语句称为**Query**，一个**Query**通常由**`SOURCE`**、**`STEP`**和**`SINK`**三种类型的操作组成。
+我们把一个由**GSL**描述的语句称为**Query**，一个**Query**通常由**SOURCE**、**STEP**和**SINK**三种类型的操作组成。
 其中，**SOURCE**为查询语句的入口，表示从哪些数据出发；**STEP**为查询过程中游走和采样的路径，**SINK**为对执行结果的封装。
 在GSL中，一条Query必须包含**一个SOURCE**和**一个SINK**操作。<br />
 
@@ -364,7 +364,7 @@ g.run(q)
 - `emit` 直接获得这条query执行一次的结果。一般用于**SOURCE**为给定id的顶点或边的情况。
 
 
-<br />**SINK**操作可接收一个func参数，用于对返回结果进行后处理。每一个**SOURCE**和**STEP**操作都会返回一个 **`Nodes`** 对象或 **`Edges`** 对象(其中用full作为采样策略的采样STEP返回的是**SparseNodes**或**SparseEdges**对象)，与该操作所对应的对象相关。<br />例如， `*V()` 和* `Neg()` 系列的**SOURCE**或**STEP**对应的是`Nodes`对象（其中用full作为采样策略的采样STEP返回的是**SparseNodes**）。<br />`*E()` 系列的**SOURCE**或**STEP**对应的是`Edges`对象（其中用full作为采样策略的采样STEP返回的是**SparseNodes**）。如何获取`Nodes`/`Edges`/`SparseNodes`/`SparseEdges`对象的值可以参考[API](graph_query_cn.md#FPU74)。<br />
+<br />**SINK**操作可接收一个func参数，用于对返回结果进行后处理。每一个**SOURCE**和**STEP**操作都会返回一个 **`Nodes`** 对象或 **`Edges`** 对象(其中用full作为采样策略的采样STEP返回的是**SparseNodes**或**SparseEdges**对象)，与该操作所对应的对象相关。<br />例如， `*V()` 和 `*Neg()` 系列的**SOURCE**或**STEP**对应的是`Nodes`对象（其中用full作为采样策略的采样STEP返回的是**SparseNodes**）。<br />`*E()` 系列的**SOURCE**或**STEP**对应的是`Edges`对象（其中用full作为采样策略的采样STEP返回的是**SparseNodes**）。如何获取`Nodes`/`Edges`/`SparseNodes`/`SparseEdges`对象的值可以参考[API](graph_query_cn.md#FPU74)。<br />
 <br />在**SINK**之前，Query描述了多个操作，这些操作可能有`alias()`，也有的没有。
 
 - 对于没有出现过`alias()`的Query，所有操作的结果都会返回，按照在Query中的先后顺序排列成一个list对象，list中的每个元素为`Nodes`或`Edges`；需要注意的是，这里的顺序不包含存在分枝的情况，若有分枝，请务必使用`alias()`；
