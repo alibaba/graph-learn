@@ -1,6 +1,6 @@
 # 图查询
 
-图对象构建完成后，可进行图查询操作。查询是指获取图的**元信息**和**数据信息，**不涉及复杂的计算和采样逻辑。<br />
+图对象构建完成后，可进行图查询操作。查询是指获取图的 **元信息** 和 **数据信息**, 不涉及复杂的计算和采样逻辑。<br />
 
 <a name="WREbw"></a>
 # 1 Meta查询
@@ -16,7 +16,7 @@ def get_topology()
 ```
 
 <br />如下所示的异构图，获取其拓扑结构及返回结果格式参见示例代码。
-<div align=center> <img height ='320' src ="images/topology.png" /><br />图1 图的拓扑信息 </div>
+<div align=center> <img height ='320' src ="images/topology.png" /> <br /> 图1 图的拓扑信息 </div>
 
 ```python
 g = Graph(...)
@@ -145,7 +145,7 @@ Return:
 
 <br />通过下面的数据展示`get_nodes()`接口的用法。
 
-<div align=center>表1 user顶点数据 </div>
+表1 user顶点数据
 
 | id | attributes |
 | --- | --- |
@@ -188,7 +188,8 @@ Return:
 ```
 
 <br />通过下面的数据展示`get_edges()`接口的用法。
-<div align=center>表2 swing边数据 </div>
+
+表2 swing边数据 
 
 | src_id | dst_id | weight |
 | --- | --- | --- |
@@ -197,7 +198,7 @@ Return:
 | 10003 | 10002 | 0.3 |
 | 10004 | 10003 | 0.4 |
 
-<div align=center>表3 click边数据</div>
+表3 click边数据
 
 | src_id | dst_id | weight | attributes |
 | --- | --- | --- | --- |
@@ -237,7 +238,8 @@ edges = g.E("swing",
 ## 2.3 稀疏顶点/边查询
 遍历、采样的结果一般为Nodes/Edges对象，用上文2.1，2.2中的接口进行查询。<br />在非对齐采样中，结果是稀疏的，如在全邻居采样（即“full”策略的邻居采样）中，由于每个顶点的邻居数不统一，因此得到的邻居不是对齐的。<br />
 <br />以下以全邻居采样的边属性查询为例进行稀疏对象的接口使用说明。<br />
-<div align=center>表4 buy边数据</div>
+
+表4 buy边数据
 
 | user | item | weight |
 | --- | --- | --- |
