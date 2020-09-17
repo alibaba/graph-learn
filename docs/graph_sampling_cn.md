@@ -23,8 +23,8 @@ def neighbor_sampler(meta_path, expand_factor, strategy="random"):
 """
 Args:
   meta_path(list):     由edge_type组成的string list，指邻居采样的路径;
-    expand_factor(list): 由int组成的list，第i个元素代表第i跳采样的邻居个数; 长度必须与meta_path一致
-    strategy(string):    采样策略，具体参考下文的详细解释
+  expand_factor(list): 由int组成的list，第i个元素代表第i跳采样的邻居个数; 长度必须与meta_path一致
+  strategy(string):    采样策略，具体参考下文的详细解释
 Return:
   NeighborSampler对象
 """
