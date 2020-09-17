@@ -22,7 +22,7 @@
 
 * [**安装部署**](docs/install_cn.md)
 
-* [**快速开始**](docs/quick_start.md)
+* [**快速开始**](docs/quick_start_cn.md)
 
 * **接口与概念**
 
