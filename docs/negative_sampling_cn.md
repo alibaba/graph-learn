@@ -32,7 +32,7 @@ def NegativeSampler.get(ids, **kwargs):
 """ 对指定顶点ids进行负采样
 Args:
   ids(numpy.ndarray): 一维int64数组
-    **kwargs: 扩展参数，不同采样策略需要的参数可能不同
+  **kwargs: 扩展参数，不同采样策略需要的参数可能不同
 Return:
   Nodes对象
 """
@@ -57,13 +57,13 @@ for i in range(5):
 <br />在GSL中，实现负采样主要为 `outNeg()` / `inNeg()` / `Neg()`几个操作。
 ```python
 # 1. 负采样一跳邻居顶点
-g.V()....outNeg(edge_type).sample(count).by(strategy)
+g.V().outNeg(edge_type).sample(count).by(strategy)
 
 # 2. 负采样二跳邻居顶点
-g.V()....outNeg(edge_type).sample(count).by(strategy).outNeg(edge_type).sample(count).by(strategy)
+g.V().outNeg(edge_type).sample(count).by(strategy).outNeg(edge_type).sample(count).by(strategy)
 
 # 3. 在给定顶点候选集上负采样
-g.V()....Neg(node_type).sample(count).by("node_weight")
+g.V().Neg(node_type).sample(count).by("node_weight")
 ```
 
 
