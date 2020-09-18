@@ -1,18 +1,15 @@
 # 自定义算法
 
 这篇文档我们将介绍如何用**GL**提供的基本APIs配合深度学习引擎(如TensorFlow)来构建图学习算法。
-我们以图神经网络里最流行的GCN模型做为示例来说明。
-
-
-在 [算法编程范式](model_programming_cn.md) 里, 我们介绍了一些
-开发算法用到的基本概念，包括`EgoGraph`, `EgoTensor` 编码器等。
+我们以图神经网络里最流行的GCN模型做为示例来说明。在 [算法编程范式](model_programming_cn.md) 里, 
+我们介绍了一些开发算法用到的基本概念，如`EgoGraph`, `EgoTensor` 编码器等，
 请先了解这些基本概念后再继续阅读。
 
 ## 如何构建一个图学习算法
 
 通常来说，实现一个算法需要下面四个步骤
 
-- 指定采样：用图采样、查询方法采样子图并组织成`EgoGraph`。
+- 指定采样模式：用图采样、查询方法采样子图并组织成`EgoGraph`。
     
     我们抽象了4个基本的函数，`sample_seed`, `positive_sample`,
     `negative_sample`和`receptive_fn`。 `sample_seed` 用来遍历图数据产生 `Nodes`或者
@@ -203,5 +200,3 @@ def main():
 
 我们实现了GCN, GAT, GraphSage, DeepWalk, LINE, TransE, Bipartite GraphSage, 
 sample-based GCN and GAT等模型，你可以参考和你的模型相似的模型代码做为开始。
-
-[Home](README.md)
