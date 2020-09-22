@@ -1,6 +1,6 @@
 # Introduction
 
-In **GL**, negative smapling is treated as a kind of sampling.
+In **GL**, negative sampling is treated as a kind of sampling.
 It shares the same interface with [**neighbor sampling**](sampling.md).
 
 All negative sampling queries start from a node, and then use `outNeg()` to sample negative neighbor nodes.
@@ -16,7 +16,7 @@ If you want to customize a kind of sampling strategy, please refer to [Operator]
 
 Randomly sample the negative neighbor nodes for the current nodes.
 
-For exmaple, sample negative items for user nodes and then sample neighbor nodes for each sampled items.
+For example, sample negative items for user nodes and then sample neighbor nodes for each sampled items.
 It means get the similar items of the items that users did not buy.
 
 ```python
