@@ -18,7 +18,13 @@ limitations under the License.
 
 #include <cstdint>
 #include <vector>
+
+#if __cplusplus >= 201103L
+#include <unordered_map>
+#else
 #include <tr1/unordered_map>  // NOLINT [build/c++tr1]
+#endif
+
 #include "graphlearn/core/io/element_value.h"
 
 namespace graphlearn {
@@ -30,7 +36,11 @@ typedef int32_t IndexType;
 typedef std::vector<IdType> IdList;
 typedef std::vector<IndexType> IndexList;
 typedef std::vector<std::vector<IdType>> IdMatrix;
+#if __cplusplus >= 201103L
+typedef std::unordered_map<IdType, IndexType> MAP;
+#else
 typedef std::tr1::unordered_map<IdType, IndexType> MAP;
+#endif
 
 template <class T>
 class Array {
