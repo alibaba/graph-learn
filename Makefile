@@ -91,6 +91,9 @@ gflags:
 	@echo "gflags done"
 
 
+VINEYARD_INCLUDE := /usr/local/include/vineyard
+VINEYARD_MACRO := ENDPOINT_LISTS
+
 # compling flags
 DEBUG ?= 0
 ifeq ($(DEBUG), 1)
@@ -104,7 +107,9 @@ CXX := g++
 CXXFLAGS := $(MODEFLAGS) -std=c++11 -fPIC    \
             -pthread -mavx -msse4.2 -msse4.1 \
             -D$(PROFILING)_PROFILING         \
+            -D$(VINEYARD_MACRO)              \
             -I. -I$(ROOT) -I$(BUILT_DIR)     \
+            -I$(VINEYARD_INCLUDE)            \
             -I$(PROTOBUF_INCLUDE)            \
             -I$(GLOG_INCLUDE)                \
             -I$(GRPC_INCLUDE)
@@ -117,6 +122,7 @@ so:protobuf grpc gflags glog gtest proto common platform service core
 	$(CXX) $(CXXFLAGS) -shared $(PROTO_OBJ) $(COMMON_OBJ) $(PLATFORM_OBJ) $(SERVICE_OBJ) $(CORE_OBJ) \
 		-L$(ROOT) -L$(GLOG_LIB) -L$(PROTOBUF_LIB) -L$(GRPC_LIB) -L$(GFLAGS_LIB) \
 		-lglog -lprotobuf -lgflags -lgrpc++ -lgrpc -lgpr -lupb \
+		-lvineyard_graph -lvineyard_basic -lvineyard_client -larrow \
 		-o $(LIB_DIR)/libgraphlearn_shared.so
 
 ####################################### proto begin ########################################
@@ -290,7 +296,7 @@ $(CORE_BUILT_DIR)/runner/%.o:$(CORE_DIR)/runner/%.cc $(CORE_H)
 core:$(CORE_OBJ)
 ####################################### core done ########################################
 
-TEST_FLAG := -I$(GTEST_INCLUDE) -L$(GTEST_LIB) -L$(LIB_DIR) -L$(GRPC_LIB) -L/lib64 -lgraphlearn_shared -lgtest -lgtest_main -lstdc++ -lgrpc++ -lgrpc -lgpr -lupb
+TEST_FLAG := -I$(GTEST_INCLUDE) -L$(GTEST_LIB) -L$(LIB_DIR) -L$(GRPC_LIB) -L/lib64 -lgraphlearn_shared -lgtest -lgtest_main -lstdc++ -lgrpc++ -lgrpc -lgpr -lupb -lprotobuf
 
 test:so gtest
 	$(CXX) $(CXXFLAGS) graphlearn/common/base/test/closure_unittest.cpp -o built/bin/closure_unittest $(TEST_FLAG)
@@ -307,6 +313,7 @@ test:so gtest
 	$(CXX) $(CXXFLAGS) graphlearn/core/graph/test/graph_store_unittest.cpp -o built/bin/graph_store_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/core/graph/storage/test/node_storage_unittest.cpp -o built/bin/node_storage_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/core/graph/storage/test/graph_storage_unittest.cpp -o built/bin/graph_storage_unittest $(TEST_FLAG)
+	$(CXX) $(CXXFLAGS) graphlearn/core/graph/storage/test/vineyard_storage_unittest.cpp -o built/bin/vineyard_storage_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/core/io/test/data_slicer_unittest.cpp -o built/bin/data_slicer_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/core/io/test/edge_loader_unittest.cpp -o built/bin/edge_loader_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/core/io/test/node_loader_unittest.cpp -o built/bin/node_loader_unittest $(TEST_FLAG)
