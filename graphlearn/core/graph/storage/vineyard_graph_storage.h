@@ -12,25 +12,25 @@ namespace graphlearn {
 namespace io {
 
 class VineyardGraphStorage : public GraphStorage {
- public:
-  explicit VineyardGraphStorage(std::shared_ptr<gl_frag_t> frag) : frag_(frag) {}
+public:
+  explicit VineyardGraphStorage(std::shared_ptr<gl_frag_t> frag,
+                                label_id_t const edge_label=0)
+      : frag_(frag), edge_label_(edge_label) {}
   virtual ~VineyardGraphStorage() = default;
 
   virtual void Lock() override {}
   virtual void Unlock() override {}
 
-  virtual void SetSideInfo(const SideInfo* info) override {}
-  virtual const SideInfo* GetSideInfo() const override { return nullptr; }
+  virtual void SetSideInfo(const SideInfo *info) override {}
+  virtual const SideInfo *GetSideInfo() const override {
+    return frag_side_info(frag_, edge_label_);
+  }
 
-  virtual void Add(EdgeValue* value) override {}
+  virtual void Add(EdgeValue *value) override {}
   virtual void Build() override {}
 
   virtual IdType GetEdgeCount() const override {
-    IdType count = 0;
-    for (int label_id = 0; label_id < frag_->edge_label_num(); ++label_id) {
-      count += frag_->edge_data_table(label_id)->num_rows();
-    }
-    return count;
+    return frag_->edge_data_table(edge_label_)->num_rows();
   }
   virtual IdType GetSrcId(IdType edge_id) const override {
     return get_edge_src_id(frag_, edge_id);
@@ -49,46 +49,37 @@ class VineyardGraphStorage : public GraphStorage {
   }
 
   virtual Array<IdType> GetNeighbors(IdType src_id) const override {
-    return get_all_outgoing_neighbor_nodes(frag_, src_id);
+    return get_all_outgoing_neighbor_nodes(frag_, src_id, edge_label_);
   }
   virtual Array<IdType> GetOutEdges(IdType src_id) const override {
-    return get_all_outgoing_neighbor_edges(frag_, src_id);
+    return get_all_outgoing_neighbor_edges(frag_, src_id, edge_label_);
   }
 
   virtual IndexType GetInDegree(IdType dst_id) const override {
-    auto v = vertex_t{dst_id};
-    IdType count = 0;
-    for (int label_id = 0; label_id < frag_->edge_label_num(); ++label_id) {
-      count += frag_->GetLocalInDegree(v, label_id);
-    }
-    return count;
+    return frag_->GetLocalInDegree(vertex_t{dst_id}, edge_label_);
   }
   virtual IndexType GetOutDegree(IdType src_id) const override {
-    auto v = vertex_t{src_id};
-    IdType count = 0;
-    for (int label_id = 0; label_id < frag_->edge_label_num(); ++label_id) {
-      count += frag_->GetLocalOutDegree(v, label_id);
-    }
-    return count;
+    return frag_->GetLocalOutDegree(vertex_t{src_id}, edge_label_);
   }
-  virtual const IndexList* GetAllInDegrees() const override {
-    return get_all_in_degree(frag_);
+  virtual const IndexList *GetAllInDegrees() const override {
+    return get_all_in_degree(frag_, edge_label_);
   }
-  virtual const IndexList* GetAllOutDegrees() const override {
-    return get_all_out_degree(frag_);
+  virtual const IndexList *GetAllOutDegrees() const override {
+    return get_all_out_degree(frag_, edge_label_);
   }
-  virtual const IdList* GetAllSrcIds() const override {
-    return get_all_src_ids(frag_);
+  virtual const IdList *GetAllSrcIds() const override {
+    return get_all_src_ids(frag_, edge_label_);
   }
-  virtual const IdList* GetAllDstIds() const override {
-    return get_all_dst_ids(frag_);
+  virtual const IdList *GetAllDstIds() const override {
+    return get_all_dst_ids(frag_, edge_label_);
   }
 
- private:
+private:
   std::shared_ptr<gl_frag_t> frag_;
+  label_id_t edge_label_;
 };
 
-}  // namespace io
-}  // namespace graphlearn
+} // namespace io
+} // namespace graphlearn
 
-#endif  // GRAPHLEARN_CORE_GRAPH_STORAGE_VINEYARD_GRAPH_STORAGE_H_
+#endif // GRAPHLEARN_CORE_GRAPH_STORAGE_VINEYARD_GRAPH_STORAGE_H_
