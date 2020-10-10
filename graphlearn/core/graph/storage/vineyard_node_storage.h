@@ -11,9 +11,11 @@ namespace io {
 
 class VineyardNodeStorage : public graphlearn::io::NodeStorage {
 public:
-  explicit VineyardNodeStorage(std::shared_ptr<gl_frag_t> const frag,
-                               label_id_t const edge_label=0)
-      : frag_(frag), edge_label_(edge_label) {}
+  explicit VineyardNodeStorage(label_id_t const edge_label=0)
+      : edge_label_(edge_label) {
+    VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
+    frag_ = client_.GetObject<gl_frag_t>(GLOBAL_FLAG(VineyardGraphID));
+  }
 
   virtual ~VineyardNodeStorage() = default;
 
@@ -185,6 +187,7 @@ private:
     return value_list;
   }
 
+  vineyard::Client client_;
   std::shared_ptr<gl_frag_t> const frag_;
   label_id_t edge_label_;
 };

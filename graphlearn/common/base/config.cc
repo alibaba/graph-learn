@@ -83,6 +83,9 @@ DEFINE_STRING_GLOBAL_FLAG(DefaultStringAttribute, "")
 DEFINE_STRING_GLOBAL_FLAG(Tracker, "/tmp/graphlearn/")
 DEFINE_STRING_GLOBAL_FLAG(ServerHosts, "")
 
+DEFINE_INT64_GLOBAL_FLAG(VineyardGraphID)
+DEFINE_STRING_GLOBAL_FLAG(VineyardIPCSocket, "/tmp/vineyard.sock")
+
 // Define the setters
 DEFINE_SET_INT32_GLOBAL_FLAG(DeployMode)
 DEFINE_SET_INT32_GLOBAL_FLAG(ClientId)

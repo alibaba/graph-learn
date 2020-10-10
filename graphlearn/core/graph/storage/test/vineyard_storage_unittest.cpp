@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
   LOG(INFO) << "obtain graph from vineyard: frag ptr = " << frag;
 
   {
-    auto store = std::make_shared<VineyardEdgeStorage>(frag);
+    auto store = std::make_shared<VineyardEdgeStorage>();
     auto size = store->Size(); // edge size
     LOG(INFO) << "edge size = " << size;
     auto &src_ids = *store->GetSrcIds();
@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
   LOG(INFO) << "Passed graph-learn edge storage test...";
 
   {
-    auto store = std::make_shared<VineyardNodeStorage>(frag);
+    auto store = std::make_shared<VineyardNodeStorage>();
     auto size = store->Size(); // edge size
     LOG(INFO) << "node size = " << size;
     auto &node_ids = *store->GetIds();
@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
   LOG(INFO) << "Passed graph-learn node storage test...";
 
   {
-    auto store = std::make_shared<VineyardGraphStorage>(frag);
+    auto store = std::make_shared<VineyardGraphStorage>();
     auto size = store->GetEdgeCount(); // edge size
     LOG(INFO) << "edge size = " << size;
     auto &src_ids = *store->GetAllSrcIds();
@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
   LOG(INFO) << "Passed graph-learn graph storage test...";
 
   {
-    auto store = std::make_shared<VineyardTopoStorage>(frag);
+    auto store = std::make_shared<VineyardTopoStorage>();
     auto &src_ids = *store->GetAllSrcIds();
     for (auto const &src : src_ids) {
       auto nbrs = store->GetNeighbors(src);

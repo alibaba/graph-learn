@@ -13,9 +13,12 @@ namespace io {
 
 class VineyardGraphStorage : public GraphStorage {
 public:
-  explicit VineyardGraphStorage(std::shared_ptr<gl_frag_t> frag,
-                                label_id_t const edge_label=0)
-      : frag_(frag), edge_label_(edge_label) {}
+  explicit VineyardGraphStorage(label_id_t const edge_label=0)
+      : edge_label_(edge_label) {
+    VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
+    frag_ = client_.GetObject<gl_frag_t>(GLOBAL_FLAG(VineyardGraphID));
+  }
+
   virtual ~VineyardGraphStorage() = default;
 
   virtual void Lock() override {}
@@ -75,6 +78,7 @@ public:
   }
 
 private:
+  vineyard::Client client_;
   std::shared_ptr<gl_frag_t> frag_;
   label_id_t edge_label_;
 };
