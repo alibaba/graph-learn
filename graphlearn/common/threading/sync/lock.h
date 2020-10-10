@@ -17,6 +17,9 @@ limitations under the License.
 #define GRAPHLEARN_COMMON_THREADING_SYNC_LOCK_H_
 
 #include <pthread.h>
+#if __APPLE__
+#include <libkern/OSAtomic.h>
+#endif
 #include <mutex>  // NOLINT [build/c++11]
 #include "graphlearn/common/base/uncopyable.h"
 #include "graphlearn/common/threading/atomic/atomic.h"
@@ -142,27 +145,48 @@ public:
   using Unlocker = ScopedUnlocker<SpinLock>;
 
   SpinLock() {
+#if !__APPLE__
     ::pthread_spin_init(&spin_, PTHREAD_PROCESS_PRIVATE);
+#endif
   }
 
   ~SpinLock() {
+#if !__APPLE__
     ::pthread_spin_destroy(&spin_);
+#endif
   }
 
   void Lock() {
+#if __APPLE__
+    OSSpinLockLock(&spin_);
+#else
     ::pthread_spin_lock(&spin_);
+#endif
   }
 
   void Unlock() {
+#if __APPLE__
+    OSSpinLockUnlock(&spin_);
+#else
     ::pthread_spin_unlock(&spin_);
+#endif
   }
 
   bool IsLocked() const {
+#if __APPLE__
+  // The convention is that unlocked is zero, locked is nonzero.
+    return spin_ != 0;
+#else
     return spin_ == 0;
+#endif
   }
 
 private:
+#if __APPLE__
+  OSSpinLock spin_;
+#else
   pthread_spinlock_t spin_;
+#endif
 };
 
 class MutexBase : private Uncopyable {
@@ -188,9 +212,12 @@ public:
     ::pthread_mutex_unlock(&mutex_);
   }
 
+#if !__APPLE__
   bool IsLocked() const {
+    // mutex_.__data is not supported on mac yet.
     return mutex_.__data.__lock > 0;
   }
+#endif
 
   pthread_mutex_t* NativeLock() {
     return &mutex_;
@@ -229,7 +256,11 @@ public:
   using Locker = ScopedLocker<AdaptiveMutex>;
   using Unlocker = ScopedUnlocker<AdaptiveMutex>;
 
+#if defined(PTHREAD_MUTEX_RECURSIVE_NP)
   AdaptiveMutex() : MutexBase(PTHREAD_MUTEX_ADAPTIVE_NP) { }
+#else
+  AdaptiveMutex() : MutexBase(PTHREAD_MUTEX_RECURSIVE) { }
+#endif
 };
 
 // read write lock
@@ -285,9 +316,16 @@ public:
   using WriterLocker = ScopedWriterLocker<RWLock>;
 
   enum Mode {
+#if __APPLE__
+    // just placeholder, won't be used.
+    kModePreferReader = 0,
+    kModePreferWriter = 1,
+    kModeDefault = 2,
+#else
     kModePreferReader = PTHREAD_RWLOCK_PREFER_READER_NP,
     kModePreferWriter = PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP,
     kModeDefault = PTHREAD_RWLOCK_DEFAULT_NP,
+#endif
     PREFER_READER = kModePreferReader,
     PREFER_WRITER = kModePreferWriter
   };
@@ -295,8 +333,13 @@ public:
   explicit RWLock(Mode mode = kModeDefault) {
     pthread_rwlockattr_t attr;
     ::pthread_rwlockattr_init(&attr);
+#if __APPLE__
+    // pthread_rwlock_t is writer-preferring by default
+    ::pthread_rwlock_init(&lock_, NULL);
+#else
     ::pthread_rwlockattr_setkind_np(&attr, mode);
     ::pthread_rwlock_init(&lock_, &attr);
+#endif
     ::pthread_rwlockattr_destroy(&attr);
   }
 

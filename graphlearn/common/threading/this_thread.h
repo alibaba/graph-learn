@@ -39,7 +39,11 @@ public:
   }
 
   static void Yield() {
+#if __APPLE__
+    ::sched_yield();
+#else
     ::pthread_yield();
+#endif
   }
 
   static int GetId() {
@@ -50,9 +54,17 @@ public:
     return tid;
   }
 
+#if __APPLE__
+  static int GetThreadId() {
+    uint64_t thread_id;
+    ::pthread_threadid_np(::pthread_self(), &thread_id);
+    return static_cast<int>(thread_id);
+  }
+#else
   static pthread_t GetThreadId() {
     return ::pthread_self();
   }
+#endif
 };
 
 }  // namespace graphlearn
