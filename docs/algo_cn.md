@@ -1,6 +1,6 @@
 # 自定义算法
 
-这篇文档我们将介绍如何用**GL**提供的基本APIs配合深度学习引擎(如TensorFlow)来构建图学习算法。
+这篇文档我们将介绍如何用**GL**提供的基本API配合深度学习引擎(如TensorFlow)来构建图学习算法。
 我们以图神经网络里最流行的GCN模型做为示例来说明。在 [算法编程范式](model_programming_cn.md) 里, 
 我们介绍了一些开发算法用到的基本概念，如`EgoGraph`, `EgoTensor` 编码器等，
 请先了解这些基本概念后再继续阅读。
@@ -16,7 +16,7 @@
     `Edges`, 然后`positve_sample` 以这些`Nodes`或者`Edges`为输入产生
     训练的正样本。对于无监督学习`negative_sample`产生负样本。
     GNNs需要聚合邻居信息, 我们抽象了`receptive_fn`来采样邻居。
-    最后将这些种子`Nodes`、`Edges` 以及采样出的邻居组成`EgoGraph`。
+    最后将`sample_seed`产生的`Nodes`、`Edges` 以及采样出的邻居组成`EgoGraph`。
 
 - 构建图数据流：使用`EgoFlow`将`EgoGraph`转换为`EgoTensor`。
 
@@ -101,7 +101,7 @@ class GCN(gl.LearningBasedModel):
 ```
 
 前两个函数用来采样种子节点和正样本，`_receptive_fn` 采样邻居并组织`EgoGraph`, 
- `outV`返回一跳邻居，因此上面代码是采样二跳邻居，这里可以选择不同的邻居采样方法，
+ `outV`返回一跳邻居，因此上面代码是采样二跳邻居。这里可以选择不同的邻居采样方法，
  对于原始GCN来说因为要获得每个点的所有邻居，因此选择'full'。采样完后将结果组织
  成`EgoGraph`返回。
  
@@ -126,8 +126,8 @@ class GCN(gl.LearningBasedModel):
 
 ### 编码器
 
-接下来首先使用特征编码器来编码原始特征，这里我们使用`IdentityEncoder`，即返回自身即可，因为
-cora的特征已经是处理过的向量格式了，对于既有离散特征由于连续特征的情况，可以使用`WideNDeepEncoder`,
+接下来，首先使用特征编码器来编码原始特征。这里我们使用`IdentityEncoder`，即返回自身即可，因为
+Cora的特征已经是处理过的向量格式了。对于既有离散特征由于连续特征的情况，可以使用`WideNDeepEncoder`。
 更多encoder请参考`python/model/tf/encoders/feature_encoder.py`。
 然后用`GCNConv`层构建图编码器，GCN每个节点采样全部邻居，邻居以稀疏格式组织，所以这里使用
 `SparseEgoGraphEncoder`, 邻居对齐的模型可以参考GraphSAGE的实现。
@@ -199,4 +199,4 @@ def main():
 这样就完成了一个GCN模型的编写。完整代码请参考examples/GCN目录。
 
 我们实现了GCN, GAT, GraphSage, DeepWalk, LINE, TransE, Bipartite GraphSage, 
-sample-based GCN and GAT等模型，你可以参考和你的模型相似的模型代码做为开始。
+sample-based GCN and GAT等模型，你可以参考相似的模型代码做为开始。
