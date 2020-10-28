@@ -130,7 +130,7 @@ g.init()
 ```python
 g.init(task_index, task_count)
 ```
-Server Mode适用于图规模不是超大的情况，此时，与分布式训练结合，例如TensorFlow，每个GL的Server需要与TensorFlow的worker在同一个进程，这就省去了worker到GL的server的一次数据通信开销。由于分布式规模不是超大（worker数不是很大），Server之间的两两互联不会造成网络的负担。另外，对于模型并行训练的场景，非典型的worker-ps模式，也需要使用Server Mode部署。
+Server Mode适用于图规模不是超大的情况，此时，与分布式训练结合，例如TensorFlow，每个GL的Server需要与TensorFlow的worker在同一个进程，这就省去了worker到GL的server的一次数据通信开销。由于分布式规模不是超大（worker数不是很大），Server之间的两两互联不会造成网络的负担。另外，对于模型并行训练的场景，非典型的worker-ps模式也需要使用Server Mode部署。
 
 与TensorFlow结合，大致代码如下。
 
@@ -148,7 +148,7 @@ else:
 ## 3.3 分布式--Client/Server Mode
 
 该模式下，与Server Mode类似，数据分布式存在于各个Server上，Server之间两两互联。此时，Graph对象的入口位于Client端，而非Server端。每个Client都与唯一一个Server连接，该Server作为Client的响应Server（类似于Server Mode里的本地Server）。Client与Server的对应关系由负载均衡算法决定。Client作为入口，提交请求到其响应Server，由该Server决定如何分布式处理。<br />
-<br />C/S Mode适用于分布式规模超大的情况（百以上），此时以为worker规模很大，使用Server Mode部署会大大增加网络互联的开销。另外，图数据的规模和worker规模不一定匹配，例如，当1000个worker并发训练时，并不一定需要这么多Server去承载Graph数据，数据太分散会严重降低性能。一般而言，训练的worker数 >= 图Server数。<br />
+<br />C/S Mode适用于分布式规模超大的情况（一百以上），此时以为worker规模很大，使用Server Mode部署会大大增加网络互联的开销。另外，图数据的规模和worker规模不一定匹配，例如，当1000个worker并发训练时，并不一定需要这么多Server去承载Graph数据，数据太分散会严重降低性能。一般而言，训练的worker数 >= 图Server数。<br />
 <br />C/S Mode部署代码如下。
 
 ```python
