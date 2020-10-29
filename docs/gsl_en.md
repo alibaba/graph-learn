@@ -2,14 +2,17 @@
 
 <a name="TUTVl"></a>
 # 1. Introduction
-There has been a well-developed programming paradigm since Graph Neural Network (GNN) was introduced. There are two stage of GNN model development, which are graph data processing and building neural network by Deep Learning framework like Tensorflow and Pytorch. How to design and implement the pattern of accessing graph data efficiently and effectively has become the focus of Graph Learn.<br />
-<br />In reality, sampling is necessary due to large scale of graphs. There are several graph sampling techniques:
+There has been a well-developed programming paradigm since Graph Neural Network (GNN) was introduced.
+Developing a GNN model contains two parts: graph data processing and neural network training.
+There are matured Deep Learning framework such as Tensorflow and Pytorch for neural network training. 
+Therefore, how to express and implement graph data processing easily and efficiently, and how to work with the DL frameworks are the focuses of Graphlearn.<br />
+<br />In reality, sampling is necessary due to the sheer scale of graphs. There are several graph sampling techniques:
 
-- Traversal based sampling, the process of visiting (checking and/or updating) each vertex in a graph
-- Neighborhood/Subgraph sampling, obtain the Nth neighbors or generate a subgraph from vertices for training sets
-- Negative sampling, the opposite of Neighborhood sampling, is usually used to generate negative samples in unsupervised learning
+- Traversal based sampling, the process of visiting (checking and/or updating) each vertex in a graph !!!!!!!!!!!!!!!!!!!!
+- Neighborhood/Subgraph sampling which obtains the Nth neighbors or generates a subgraph from vertices for training sets
+- Negative sampling, the opposite of Neighborhood sampling which is usually used to generate negative samples in unsupervised learning
 
-<br />So we created the Graph Sampling Language (GSL)  which is an interface of above sampling techniques. Developers can describe the GNN data stream by using GSL. For example, in the "customer clicks a product" use case, developer can sample 64 users randomly and sample 10 relative products for each user based on the weight of the edge.
+<br />So we created the Graph Sampling Language (GSL) which is an interface of above sampling techniques. Developers can describe the GNN data stream by using GSL. For example, in the "customer clicks a product" use case, developers can sample 64 users randomly and sample 10 relative products for each user based on the weight of the edge.
 
 ```python
 g.V("user").batch(64).outV("click").sample(10).by("edge_weight")
@@ -20,7 +23,7 @@ GSL supports super large graph, heterogeneous graph and property graph and has s
 <a name="KFXRf"></a>
 # 2 GSL Syntax
 
-We call a GSL statement a query, which consist of three types of operations: SOURCE, STEP and SINK. SOURCE is the entrance of a query, indicating which data to start from; STEP is the path to walk through and sample data during the query process, and SINK is the encapsulation of execution results. In GSL, a query must have  a SOURCE and SINK.
+We call a GSL statement a query, which consists of three types of operations: SOURCE, STEP and SINK. SOURCE is the entrance of a query, indicating which data to start from; STEP is the path to walk through and sample data during the query process, and SINK is the encapsulation of execution results. In GSL, a query must have  a SOURCE and SINK.
 
 <a name="5xWGq"></a>
 ## 2.1 SOURCE
@@ -56,7 +59,7 @@ Return:
 <a name="t34wT"></a>
 ### 2.1.2 shuffle
 
-`V()` and `E()` can be followed by `shuffle()`.  `shuffle()` is an optional API，which provides options to sample the data randomly when `feed` is set to `None`. 
+`V()` and `E()` can be followed by `shuffle()`.  `shuffle()` is an optional API，which provides options to sample the data randomly when retrieving data from graphs (`feed = None`). 
 
 ```python
 def shuffle(traverse=False):
@@ -72,7 +75,7 @@ Return:
 <a name="W56KH"></a>
 ### 2.1.3 batch
 
-When `feed` is `None`, `batch()` determines how much data `V()` and`E()` query each time. If you need to use `shuffle`, make sure you use it before `batch()`. When `shuffle(traverse=True)`, it won't return `OutOfRangeError` but the remaining data if the remaining data is less than the `batch_size` but not 0. It only returns `OutOfRangeError` if the remaining data is 0.
+When retrieving data from graphs (`feed = None`), `batch()` determines how much data `V()` and`E()` query each time. If you need to use `shuffle`, make sure you use it before `batch()`. When `shuffle(traverse=True)` but the remaining data is less than the `batch_size`, it will simply return the remaining data if it is not 0, and otherwise `OutOfRangeError`.
 
 ```python
 def batch(batch_size):
@@ -137,9 +140,9 @@ g.E("buy", feed=generator)
 <a name="5kq55"></a>
 ## 2.2 STEP
 
-STEP is the path to walk through and sample data during the query process. A query can have 0 or more STEPs. So far, STEP has two types of APIs, which are path and sampling.
-
-Path means the transfer of the current object. For example, `g.V()` represents the vertices of the current object, which can be transferred from a vertex to an outgoing edge by `outE()` and the following operations will be based on edges. When the edge's operations completed, it can be transferred back to the vertices by `inV()` or `outV()`.
+STEP is the path to walk through and sample data during the query process. A query can have zero or more steps. There are two types of steps, which are path steps and sampling steps.
+<br />
+<br />A path step describes the movement of the current object. For example, with `g.V()`, the cursor starts at all the vertices in the graph. One can move the cursor to the outgoing edges of the vertices by `outE()` and the following operations will be on these edges. When the operations on the outgoing edges complete, the cursor moves to the target/source vertices by `inV()`/`outV()`.
 
 ```python
 def inV():
@@ -221,10 +224,10 @@ Return:
 """
 ```
 
-The following is the interface that describe the sample method. Based on the previous steps description and the current object is a node, we can get how to sample the node as the neighbor of the preivous node, including the sample size and strategy. To learn more about the sample strategy, please read [graph sampling](graph_sampling_cn.md) and [negative sampling](negative_sampling_cn.md).
+A sampling step must follow a vertex step. It specifies how to sample the node as the neighbors of the previous nodes generated by previous steps, including the sample size and strategy. To learn more about the sampling strategy, please read [graph sampling](graph_sampling_cn.md) and [negative sampling](negative_sampling_cn.md).
 ```python
 def sample(N):
-""" 承接顶点（只能跟在顶点操作之后），the number of neighbors of previous node 
+""" follows a vertex step，specifying the number of samples at this step 
 Args:
   N(int): sampling size
 Return:
@@ -246,9 +249,9 @@ Return:
 <a name="wOTQV"></a>
 ### 2.2.1 out*, in*
 
-`out*()` and ` in*()` are used to decribe forward and backward propgation while travering.
+`out*()` and ` in*()` are used to describe forward and backward propagation while traversing.
 
-For example, in the following heterogeneous graph, start from 'user' vertices, sample user's one-hop neighbors along the 'u2i' edge, and then sample the user's two-hop neighbors along the 'i2i' edge.
+For example, in the heterogeneous graph shown below, start from a 'user' vertex, sample its one-hop neighbors along the 'u2i' edge, and then sample its two-hop neighbors along the 'i2i' edge.
 
 <div align=center> <img height=150 src="images/gsl-u-i-i.png" /></div>
 
@@ -258,7 +261,7 @@ g.V("user").batch(64)                       # (1) randomly get 64 'user' vertice
  .outV("i2i").sample(15).by("random")       # (3) for each neighbor, sample 15 neighbors
 ```
 
-If data source is edges, you can obtain the edges and operate on their endpoints respectively. In general, these edges is often used for unsupervised learning, using the edges as positive samples, and then sampling the source vertices of the edges as negative neighbors as negative samples.
+If the data source is edges, you can operate on their endpoints. In general, this kind of sampling is often used for unsupervised learning, which uses the edges as positive samples, and then samples the source vertices of the edges as negative samples.
 
 <div align=center> <img height=150 src="images/gsl-u-i-neg.png" /></div>
 
@@ -268,20 +271,20 @@ g.E("u2i").batch(64)                     # (1) randomly get 64 'u2i' edges
  .outNeg("u2i").sample(10).by("random")  # (3) for each user vertex, sample 10 negative neighbors
 ```
 
-When the edge is undirected, circular sampling can be done by `outV()` and `inV()`. The source vertex and the destination vertex are neighbors of each other.
+When the edge is undirected, one can conduct circular sampling by `outV()` and `inV()`. The source and destination vertices are neighbors of each other.
 
 <div align=center> <img height=150 src="images/gsl-i-i.png" /></div>
 
 ```python
 g.V("user").batch(64)                   # (1) randomly get 64 'user' vertex
- .outV("u2i").sample(10).by("random")   # (2) for each 'user' vertex, sample 10 neigbors (item)
- .inV("u2i").sample(5).by("random")     # (3) for each 'item' vertex, sample 10 neigbors (user)
+ .outV("u2i").sample(10).by("random")   # (2) for each 'user' vertex, sample 10 neighbors (item)
+ .inV("u2i").sample(5).by("random")     # (3) for each 'item' vertex, sample 10 neighbors (user)
 ```
 
 <a name="TTlWe"></a>
 ### 2.2.2 each
 
-A typical GNN algorithm often has multiple requirements for graph data, rather than just query the final result. The `each()` interface is used to express multiple branches of Query. When a certain stage is reached, different operations are performed on the previous results (there may be multiple). There is at most one `each()` in each query, and it is the last operation of the query.
+A typical GNN algorithm often has multiple sampling branches. The `each()` interface can be used to express multiple branches of sampling. When a certain stage is reached, different operations are performed on the previous results (there may be multiple). A query can contain at most one `each()`, and it has to be the last operation of the query.
 
 ```python
 def each(func):
@@ -293,7 +296,7 @@ Return:
 """
 ```
 
-For example, in the user-item-item GraphSAGE algorithm, in order to learn the similarity between user and item in the same space, we first randomly obtain the u2i edges from the graph as the positive sample for training. Then, we sample the negative neighbors (item) of the source vertex (user) to generate a negative sample. The user vertex encodes the one-hop neighbors (aggregating neighborhood information to the central node). The item vertex also encodes the one-hop neighbors. An example is shown below.
+For example, in the user-item-item GraphSAGE algorithm, in order to learn the similarity between user and item in the same space, we first randomly obtain the u2i edges from the graph as the positive sample for training. Then, we sample the negative neighbors (item) of the source vertex (user) as negative samples. The user vertex is encoded by its one-hop neighbors (aggregating neighborhood information to the central node). The item vertex is encoded in a similar way. An example is shown below.
 
 
 <div align=center> <img height=300 src="images/gsl-u-i-i-neg.png" /></div>
@@ -308,12 +311,12 @@ g.E("u2i").shuffle().batch(512)                            # (1) randomly get 51
 
 ```
 
-Please note that the result of the branched query is complecated, and the result from branches are not in order. Therefore, we strongly recommend to use `each()` together with `alias()` introduced in the following section.
+Please note that the result from different sampling branches are not in order. Therefore, we strongly recommend to use `each()` together with `alias()` introduced in the next section.
 
 <a name="wHdJ3"></a>
 ### 2.2.3 alias
 
-`alias()` is used to label the name of the current SOURCE or STEP, which makes accessing the output results easier. In particular, when the query is long and we need to keep the results of each step, `alias()` is conveniet to access these results.
+`alias()` is used to label the name of the current SOURCE or STEP, which makes accessing the output results easier. In particular, when the query is long and we need to keep the results of each step, `alias()` is convenient to access these results.
 
 ```python
 def alias(name):
@@ -339,7 +342,7 @@ g.E("u2i").shuffle().batch(512).alias("edges")
 
 <a name="MI24G"></a>
 ### 2.2.4 repeat
-When the query is relatively long and the operation is repeated, you can use `repeat()` to simplify the writing. For example, for a certain isomorphic undirected graph, sample its 10-hop neighbors from the vertex. It takes in a function, similar to the one in ʻeach()`, which means that the operation represented by the function is repeated `times` times.
+When the query is relatively long and the operation is repeated, you can use `repeat()` to simplify the writing. For example, in a certain isomorphic undirected graph, we would like to sample a vertex's 10-hop neighbors. `repeat()` takes in a function, similar to the one in `each()`, which means that the operation represented by that function is repeated `times` times.
 ```python
 def repeat(self, func, times, parmas_list=None):
 """
@@ -353,7 +356,7 @@ Return:
 """
 ```
 
-<br />The first parameter of func takes the upstream output, which can be Node or Edge. The operations in func need to comply with the syntax specifications of Node and Edge. For example, the following Query obtains vertices on the undirected graph i-i, and then expands to 3-hop neighbors.
+<br />The first parameter of `func` takes the upstream output, which can be Node or Edge. The operations in func need to comply with the syntax specifications of Node and Edge. For example, the following Query obtains vertices on the undirected graph i-i, and then expands to 3-hop neighbors.
 ```python
 func = lambda v: v.outV("i-i").sample(5).by("random")
 q = g.V("item").batch(64).repeat(func, 3).values()
@@ -382,18 +385,18 @@ g.run(q)
 <a name="xDuJp"></a>
 ## 2.3 SINK
 Each Query must end with a **SINK** operation, which means that the current Query is completed and can be used to analyze execution or return results. **SINK** operation has two interfaces, `values()` and `emit()`. The **SINK** operation can only be called once in a Query.
--`values` returns the entire query, which can be executed multiple times. It is generally used when **SOURCE** is traversal.
+-`values` returns the entire query, which can be executed multiple times. It is generally used when **SOURCE** is graph traversal.
 -`Emit` directly gets the execution result of this query. It is generally used when **SOURCE** is a vertex or edge with a given id.
 
 
 <br />
-The **SINK** operation can receive a func parameter, which is used to post-process the returned result. Each **SOURCE** and **STEP** operation will return a **`Nodes`** object or **`Edges`** object (the sampling STEP with `full` as its sampling strategy returns **SparseNodes** or **SparseEdges** object), related to the object of the operation.
-<br /> For example, the **SOURCE** or **STEP** of the `*V()` and `*Neg()` series corresponds to the `Nodes` object (the sampling STEP with `full` as its sampling strategy returns ** SparseNodes**).
+The **SINK** operation can receive a func parameter, which is used to post-process the returned result. Each **SOURCE** and **STEP** operation will return a **`Nodes`** object or **`Edges`** object (the sampling STEP with `full` as its sampling strategy returns **SparseNodes** or **SparseEdges** object). The returned object is related to the object of this operation.
+<br /> For example, the **SOURCE** or **STEP** of the `*V()` and `*Neg()` series corresponds to the `Nodes` object (the sampling STEP with `full` as its sampling strategy returns **SparseNodes**).
 <br />
-The **SOURCE** or **STEP** of the `*E()` series corresponds to the ʻEdges` object (the sampling STEP with `full` as its sampling strategy returns **SparseNodes**). For instruction on how to get the value of `Nodes`/ʻEdges`/`SparseNodes`/`SparseEdges` object, please refer to [API](graph_query_cn.md#FPU74).<br />
-<br />Before **SINK**, Query described multiple operations. These operations may have `alias()` or not.
--For Query without ʻalias()`, the results of all operations will be returned, arranged in a list object according to the order in the Query. Each element in this returned list is `Nodes` or `Edges`. One thing needs to pay attention is that the order here does not include the existence of branches. If there are branches, please use `alias()`.
--When there is `alias()`, the return result is a dict, where the key is the name passed by `alias()` and the value is the corresponding `Nodes` or `Edges`.
+The **SOURCE** or **STEP** of the `*E()` series corresponds to the `Edges` object (the sampling STEP with `full` as its sampling strategy returns **SparseNodes**). For instruction on how to get the value of `Nodes`/`Edges`/`SparseNodes`/`SparseEdges` object, please refer to [API](graph_query_cn.md#FPU74).<br />
+<br />Before **SINK**, Query describs multiple operations. These operations may have `alias()`.
+-For Query without `alias()`, the results of all operations will be returned, arranged in a list object according to the order in the Query. Each element in this returned list is either `Nodes` or `Edges`. One thing needs to pay attention is that the order here does not include cases where branches exist. If there exist branches, please use `alias()`.
+-When there is `alias()`, the return result is a dict, where the key is the name passed in `alias()` and the value is the corresponding `Nodes` or `Edges`.
 
 
 <a name="FOeWa"></a>
@@ -403,13 +406,13 @@ The generator that returns the execution result of the query can be executed by 
 def values(func=None):
 """
 Args:
-  func(function): Post-processing function that returns the result
+  func(function): Post-processing function that processes the result
 Return:
   Generator that returns the execution result
 """
 ```
 
-<br />func can be an anonymous function or a function defined by def. The input of func is a dict or list, depending on whether there exists ʻalias()`.
+<br />func can be an anonymous function or defined by `def`. The input of func is a dict or list, depending on whether there exists `alias()`.
 ```python
 def func(x):
     """ x refers to {'a':Nodes, 'b':Nodes, 'c':Edges, 'd':Nodes}
@@ -444,7 +447,7 @@ print(res[0].ids)
 
 <a name="tbPOc"></a>
 ### 2.3.2 emit
-`Emit()` is equivalent to the combination of `values()` and a `g.run()`, which means that the current Query is executed once and the result is returned. The result is a dict or a list depending on whether there exists `alias()`. Under normal circumstances, `emit()` is used in the debugging phase to verify the correctness of the code and data.
+`Emit()` is equivalent to the combination of `values()` and a `g.run()`, which means that the current Query is executed once and its result is returned. The result is a dict or a list depending on whether there exists `alias()`. Under normal circumstances, `emit()` is used in the debugging phase to verify the correctness of the code and data.
 ```python
 def emit(func=None):
 """
@@ -473,7 +476,7 @@ Worth noticing that when the query only contains Soure (`g.V()` / `g.E()`), `emi
 # 3 Query execution
 <a name="Cmqcj"></a>
 ## 3.1 run
-`run()` interface is used to execute Query and get the final result. The result form is defined by the func function of the `values()` interface. You can refer to the usage example in the [`values`](#FOeWa) section.
+`run()` interface is used to execute Query and get the final result. The result form is defined by the func function of the `values()` interface. You can refer to the example in the [`values`](#FOeWa) section.
 ```python
 def run(generator):
 """
@@ -486,8 +489,8 @@ Return:
 
 
 <a name="h7Pvb"></a>
-## 3.2 与TensorFlow结合
-`values(func)` returns a generator whose returned data type is defined by func. This generator can be directly connected to TensorFlow[tf.data.Dataset](https://www.tensorflow.org/api_docs/python/tf/data/Dataset)。<br />
+## 3.2 Combining with TensorFlow
+`values(func)` returns a generator whose returned data type is defined by `func`. This generator can be directly connected to TensorFlow's [tf.data.Dataset](https://www.tensorflow.org/api_docs/python/tf/data/Dataset)。<br />
 ```python
 query = g.E("u2i").shuffle().batch(512).alias("edges")
          .each(lambda edge:
