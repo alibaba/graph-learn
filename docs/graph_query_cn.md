@@ -39,7 +39,7 @@ egde_type:swing, src_type:item, dst_type:item
 <a name="FPU74"></a>
 # 2 数据查询
 
-**GL**有两个基本的数据类型： `Nodes` 和 `Edges` ，作为遍历、查询、采样的返回对象，包含了一个batch的顶点或边。特别地，非对齐的采样返回的是两个基本数据类型的稀疏形式，分别为`SparseNodes`和`SparseEdges`。<br />
+**GL**有两个基本的数据类型： `Nodes` 和 `Edges` 。遍历、查询、采样操作的返回对象是一个batch的顶点或边。特别地，非对齐的采样返回的是两个基本数据类型的稀疏形式，分别为`SparseNodes`和`SparseEdges`。<br />
 <br />其中`Nodes` 接口如下。
 ```python
 @property
@@ -70,7 +70,7 @@ def weights(self):
 def labels(self):
 """ 标签，numpy.ndarray(int32)，shape为ids.shape """
 ```
-`Edges` 接口与Nodes的区别为，去掉了ids接口，增加了以下4个接口，用于访问源顶点和目的顶点。
+`Edges` 接口与Nodes的区别为: 去掉了ids接口，增加了以下4个接口，用于访问源顶点和目的顶点。
 ```python
 @property
 def src_nodes(self):
@@ -88,8 +88,8 @@ def src_ids(self):
 def dst_ids(self):
 """ 目的顶点id，numpy.ndarray(int64) """
 ```
-关于ids的shape，在顶点和边遍历操作中，shape为一维，大小为指定的batch size。在采样操作中，shape为二维，大小为`[输入数据的一维展开大小，当前采样个数]`。<br />
-<br />`SparseNodes`用于表达顶点的稀疏邻居顶点，相对于`Nodes`增加了以下接口。
+在顶点和边遍历操作中，ids的shape为一维，大小为指定的batch size。在采样操作中，ids的shape为二维，大小为`[输入数据的一维展开大小，当前采样个数]`。<br />
+<br />`SparseNodes`用于表达顶点的稀疏邻居顶点。相比于`Nodes`，`SparseNodes`增加了以下接口。
 ```python
 @property
 def offsets(self):
@@ -108,7 +108,7 @@ def __next__(self):
   return Nodes
 ```
 
-<br />`SparseEdges`用于表达顶点的稀疏邻边，相对于`Edges`增加了以下接口。
+<br />`SparseEdges`用于表达顶点的稀疏邻边。相比于`Edges`，增加了以下接口。
 ```python
 @property
 def offsets(self):
@@ -143,9 +143,9 @@ Return:
 '''
 ```
 
-<br />通过下面的数据展示`get_nodes()`接口的用法。
+<br />下面的数据展示了`get_nodes()`接口的用法。
 
-表1 user顶点数据
+表1： user顶点数据
 
 | id | attributes |
 | --- | --- |
@@ -164,7 +164,7 @@ print(u_nodes.float_attrs) # shape = [3, 1]
 # array([[ 0.1],  [0.2],  [0.3]])
 ```
 
-<br />GSL中，`get_nodes()` 可以用 `V()` 代替，写法如下。
+<br />GSL中，`get_nodes()` 可以用 `V()` 代替`get_nodes()`，写法如下。
 ```python
 g = Graph(...)
 u_nodes = g.V("user", feed=np.array([10001, 10002, 10003])).emit()
@@ -187,9 +187,9 @@ Return:
 '''
 ```
 
-<br />通过下面的数据展示`get_edges()`接口的用法。
+<br />下面的数据展示了`get_edges()`接口的用法。
 
-表2 swing边数据 
+表2：swing边数据 
 
 | src_id | dst_id | weight |
 | --- | --- | --- |
@@ -198,7 +198,7 @@ Return:
 | 10003 | 10002 | 0.3 |
 | 10004 | 10003 | 0.4 |
 
-表3 click边数据
+表3： click边数据
 
 | src_id | dst_id | weight | attributes |
 | --- | --- | --- | --- |
@@ -236,10 +236,10 @@ edges = g.E("swing",
 
 <a name="rogkI"></a>
 ## 2.3 稀疏顶点/边查询
-遍历、采样的结果一般为Nodes/Edges对象，用上文2.1，2.2中的接口进行查询。<br />在非对齐采样中，结果是稀疏的，如在全邻居采样（即“full”策略的邻居采样）中，由于每个顶点的邻居数不统一，因此得到的邻居不是对齐的。<br />
-<br />以下以全邻居采样的边属性查询为例进行稀疏对象的接口使用说明。<br />
+遍历、采样的结果一般为Nodes/Edges对象，可以用上文2.1，2.2中的接口进行查询。<br />在非对齐采样中，结果是稀疏的。例如在全邻居采样（即“full”策略的邻居采样）中，由于每个顶点的邻居数不统一，因此得到的邻居不是对齐的。<br />
+<br />以下，我们以全邻居采样的边属性查询为例，进行稀疏对象的接口使用说明。<br />
 
-表4 buy边数据
+表4：buy边数据
 
 | user | item | weight |
 | --- | --- | --- |
