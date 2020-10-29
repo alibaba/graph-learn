@@ -1,36 +1,34 @@
 # Userdefined Algorithm
 
-In this document, we will introduce how to use the basic APIs provided by **GL** to cooperate with deep learning engines (such as TensorFlow) to build graph learning algorithms.
-We demostrate the GCN model as an example which is the most popular model in graph nerual network. 
-In [Algorithm Programming Paradigm](model_programming_cn.md), we introduced some basic concepts used in developing algorithms, such as ʻEgoGraph`, ʻEgoTensor` encoder, etc.,
-Please understand these basic concepts before continuing reading.
+In this document, we will introduce how to use the basic APIs provided by **GL** to cooperate with deep learning engines, such as TensorFlow, to build graph learning algorithms.
+We demonstrate the GCN model as an example which is the most popular model in graph neural network. 
+In [Algorithm Programming Paradigm](model_programming_cn.md), we introduced some basic concepts used in developing algorithms, such as ʻEgoGraph`, ʻEgoTensor` encoder, etc.
+Please understand these basic concepts before continuing to read.
 
 # How to Build a Graph Learning Algorithm
 
-In general, it requires following four steps to build an algorithm
+In general, it requires the following four steps to build an algorithm
 
 - Specify sampling mode: use graph sampling and query methods to sample subgraphs and organize them into `EgoGraph`
 
-    We abstracted 4 basic functions, `sample_seed`, `positive_sample`,
+    We abstract out four basic functions, `sample_seed`, `positive_sample`,
     `negative_sample` and `receptive_fn`.
-    To generate `Nodes` ot `Edges`, we use `sample_seed` to tranverse the graph. Then, we use `positive_sample` with `Node` or `Edges` as inputs to generate the positive sample for tranining. For unsupervised learning `negative_sample` produces negative samples.
-    GNNs need to aggregate neighbor information so that we abstract `receptive_fn` to sample neighbors. Finally, these seeds `Nodes`, `Edges` and sampled neighbors form an `EgoGraph`.
+    To generate `Node` or `Edges`, we use `sample_seed` to traverse the graph. Then, we use `positive_sample` with `Nodes` or `Edges` as inputs to generate positive samples for training. For unsupervised learning `negative_sample` produces negative samples.
+    GNNs need to aggregate neighbor information so that we abstract `receptive_fn` to sample neighbors. Finally, the `Nodes` and `Edges` produced by `sample_seed`, and their sampled neighbors form an `EgoGraph`.
 
 - Construct graph data flow: convert `EgoGraph` to `EgoTensor` using `EgoFlow`
 
     **GL** algorithm model is based on a deep learning engine similar to TensorFlow. 
-    As a result, it requires to convert the sampled `EgoGraph`s to the tensor format `EgoTensor`, which is encapsulated in `EgoFlow`.
-    `EgoFlow` can generate an iterator for batch training.
+    As a result, it requires to convert the sampled `EgoGraph`s to the tensor format `EgoTensor`, which is encapsulated in `EgoFlow` that can generate an iterator for batch training.
 
-- Define encoder: Use `EgoGraph` encoder and feature encoder to encode `EgoTensor`.
+- Define encoder: Use `EgoGraph` encoder and feature encoder to encode `EgoTensor`
 
-    After getting the `EgoTensor`, we first encode the original point and edge features into vectors with some common feature encoders.
-    These vectors can be used as the feature input of GNNs model. Then, we use the graph encoder to process the `EgoTensor`, combining the neighbor node features with its own characteristics to get the final nodes or edge vector.
+    After getting the `EgoTensor`, we first encode the original nodes and edge features into vectors using common feature encoders. Then, we feed the vectors into a GNN model as the feature input. Next, we use the graph encoder to process the `EgoTensor`, combining the neighbor node features with its characteristics to get the nodes or edge vectors.
 
-- Design loss function and training process: select the appropriate loss function and write the training process.
+- Design loss functions and training processes: select the appropriate loss function and write the training process.
 
-    **GL** has built-in some common loss functions and optimizers, and encapsulates the training process. It supports both stand-alone and distributed training.
-    Users can also customize the loss function, optimizer and training process.
+    **GL** has built-in common loss functions and optimizers. It also encapsulates the training process. **GL** supports both single-machine and distributed training.
+    Users can also customize the loss functions, optimizers and training processes.
 
 Next, we introduce how to implement a GCN model using the above 4 steps.
 
@@ -121,12 +119,11 @@ We can get the `EgoTensor` corresponding to the previous `EgoGraph` from `EgoFlo
 ### Encoder
 
 Next, we first use the feature encoder to encode the original features.
-In this example, we use `IdentityEncoder`, that is, return to itself, because
+In this example, we use `IdentityEncoder` that returns itself, because
 the features of cora are already in vector formats.
 For the both discrete and continuous features, we can use `WideNDeepEncoder`,
 To learn more encoders, please refer to `python/model/tf/encoders/feature_encoder.py`.
-Then, we use the `GCNConv` layer to construct the graph encoder. Each node of GCN samples all neighbors, and the neighbors are organized in a sparse format. Therefore, we use
-`SparseEgoGraphEncoder`. For neighbor-aligned model, please refer to the implementation of GraphSAGE.
+Then, we use the `GCNConv` layer to construct the graph encoder. For each node in GCN, we sample all of its neighbors, and organize them in a sparse format. Therefore, we use `SparseEgoGraphEncoder`. For the neighbor-aligned model, please refer to the implementation of GraphSAGE.
 
 ```python
 class GCN(gl.LearningBasedModel):
