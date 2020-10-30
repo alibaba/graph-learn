@@ -1,4 +1,4 @@
-# Userdefined Algorithm
+# Developing Your Own Model
 
 In this document, we will introduce how to use the basic APIs provided by **GL** to cooperate with deep learning engines, such as TensorFlow, to build graph learning algorithms.
 We demonstrate the GCN model as an example which is the most popular model in graph neural network. 
