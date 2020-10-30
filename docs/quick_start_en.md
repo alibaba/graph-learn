@@ -1,36 +1,37 @@
-# 快速开始
+# Quick Start
 
-本文档包含三个部分
+This tutorial has three parts:
+- How to quickly try out a graph learning model using **GL**.
+- How to import data into **GL**, and use the graph data, graph sampling and negative sampling APIs.
+- How to develop your own GNN models using **GL** and Tensorflow using **GraphSAGE** as an example.
 
-- 如何基于**GL**快速跑通一个GNN模型
+# 1 Trying out the built-in models
 
-- 如何把数据加载到**GL**中，以及如何使用图数据、图采样、负采样等接口
-
-- 以**GraphSAGE**为例，说明如何基于**GL**和TensorFlow开发一个自己的GNN模型
-
-
-# 1 跑通内置模型
-
-**GL**内置了一些常见模型，如**GCN**，**GraphSAGE**，以及数据集**cora、ppi**等。
-我们从跑通**core**数据的顶点分类任务开始接触**GL**。完整模型代码请参考[模型示例](model_examples.md)。<br />
+We have implemented in **GL** a set of popular GNN models, such as **GCN**, **GraphSAGE**,
+and some datasets, such as **cora**, **ppi**.
+To try out **GL**, we can start with the vertex-classification task in **core** .
+The codes of all example models are available in [Example Models](model_examples.md).<br />
 
 
 ``` shell
-# 准备数据
+# Data preparation
 cd graph-learn/examples/data/
 python cora.py
 
-# 训练、模型评估
+# Training and model assessment
 python train_supervised.py
 ```
 
+# 2 How to use the **GL** APIs
 
-# 2 **GL**接口使用
+**GL** provides a large collection of basic APIs for developing GNN models.
+In this part, we will go through how to use them to (1) construct graphs,
+(2) to query graphs, and (3) to generate samples and (4) negative samples
 
-**GL**为GNN的开发提供了大量基础接口，下面将会展示如何基于**GL**来构图、查询、采样、负采样。
+We have prepared a script [gen_test_data.py](../examples/basic/distribute/gen_test_data.py) to generate a local example graph.
+Below shows a code example running distributedly. Each process will read the same data file.
+Please make sure all the processes have access to the data file.
 
-我们准备了一个生成数据的脚本[gen_test_data.py](../examples/basic/distribute/gen_test_data.py)，用于生成顶点和边的本地数据。
-在下面的分布式代码中，各个进程都读取同一个数据文件，确保所有进程都有权限访问该文件。测试代码如下。
 
 ``` python
 # test.py
@@ -103,7 +104,8 @@ if __name__ == "__main__":
 ```
 
 
-准备完数据和代码后，我们在本地拉起4个进程，2个worker2个server，分布式执行。
+Once done with the deployment of the data and the codes, we start four processes
+(two worker processes and two server processes) locally to simulate a distributed setting.
 
 ``` shell
 HERE=$(cd "$(dirname "$0")";pwd)
@@ -133,21 +135,34 @@ python $HERE/test.py \
   --job_name="client" --task_index=1
 ```
 
-# 3 开发一个GNN模型
+# 3 Developing a GNN model
 
-下面将基于**GL**和**TensorFlow**开发一个有监督的**GraphSAGE**模型，并在Cora数据上训练，更详细的参考[模型的开发](algo_cn.md)。<br />
+Next we will go through how to develop a supervised **GraphSAGE** model using **GL** and **TensorFlow**, and train it on the Cora dataset.
+Please refer to [Developing Your Own Model](algo_en.md) for details. <br />
 
-## 3.1 数据准备
+## 3.1 Data Preparation
 
-我们使用开源数据集Cora，它包含了机器学习的一些论文，以及论文之间的引用关系，每篇论文包含1433个属性。这些论文可以划分为7种类别：Case_Based，Genetic_Algorithms，Neural_Networks，Probabilistic_Methods，Reinforcement_Learning，Rule_Learning，Theory。该GNN任务的目的是预测论文的分类。我们将开源的Cora数据进行处理，得到我们构图所需的数据格式。Cora数据下载和处理的脚本参考[cora.py](../examples/data/cora.py)。
+We use the open-source dataset Cora as an example. The Cora dataset contains papers
+from the machine learning field, and the citation relationship between these papers.
+Each paper has 1433 attributes.  These papers are classified
+into seven categories:
+Case_Based, Genetic_Algorithms, Neural_Networks, Probabilistic_Methods, Reinforcement_Learning, Rule_Learning, Theory.
+We would like to train a GNN model that automatically classify the papers into these
+seven categories.
+Next we will preprocess the Cora dataset in order to convert them into the data format
+suitable for constructing graphs in **GL**. The codes for data download and preparation
+are available at [cora.py](../examples/data/cora.py).
 
 ```
 cd ../examples/data
 python cora.py
 ```
 
-产出边数据和顶点数据。其中，边数据即论文之间的引用关系，一篇论文由其他至少一篇论文引用；
-顶点数据，即论文的词汇表示，包括论文的属性和标签，属性总共1433个维度，论文类别有7类，因此label值域设置为0~6。
+The vertex and edge data produced are shown below.
+Specifically, the edge data shows the citations pairs;
+the vertex data contains the papers and their bag of words, attributes and labels.
+The attributes are represented using 1433 floats, and the labels have seven types, taking values from 0 to 6.
+Besides vertex ids, each edge also has a weight. The data format is described through `gl.Decoder`.
 
 ```shell
 src_id:int64   dst_id:int64
@@ -163,31 +178,28 @@ id:int64  label:int32   feature:string
 1106406    2    0.0:0.0:...
 ```
 
-
-顶点数据除了id以外，包含label和attributes，其中attributes为1433个float。边数据除了两个端点id以外，还包含边的权重。
-数据格式通过`gl.Decoder`类描述。
-
 ```python
 import graphlearn as gl
 
 N_FEATURE = 1433
 
-# 描述顶点表的数据格式，包含lable和attributes
+# Describe the vertex data format，with lable and attributes
 node_decoder = gl.Decoder(labeled=True, attr_types=["float"] * N_FEATURE)
 
-# 表示边表的数据格式，除了端点id以外，还有边的权重
+# Describe the edge data format, with weights.
 edge_decoder = gl.Decoder(weighted=True)
 ```
 
-## 3.2 图构建
 
-图构建的过程是将顶点数据和边数据加载到内存中，转换为逻辑上的图格式。构建完成后，可供查询和采样。<br />
+## 3.2 Graph Construction
 
+Graph construction is the process of loading the vertex and edge data into memory.
+After construction, the graph can be queries and sampled. <br />
 
 ```python
 import graphlearn as gl
 
-# 配置参数
+# Configure the parameters
 N_CLASS = 7
 N_FEATURE = 1433
 BATCH_SIZE = 140
@@ -197,11 +209,11 @@ HOPS = [10, 5]
 N_EPOCHES = 2
 DEPTH = 2
 
-# 定义一个Graph对象
+# Define a graph object
 g = gl.Graph()
 
-# 通过`.node()`将顶点表加入到图中，并指定顶点的类型；这里只有一种类型的顶点，我们命名为"item"。
-# 通过`.edge()`将边表加入到图中，并通过一个三元组描述类型，分别为源顶点类型、目的顶点类型和边类型。
+# Add the vertex data into the graph through `.node()` and define the node type ("item") and data format.
+# Add the edge data into the graph through `.edge()` and define its type through a triple (source vertex type, destination vertex type, edge type).
 g.node("examples/data/cora/node_table",
        node_type="item",
        decoder=gl.Decoder(labeled=True, attr_types=["float"] * N_FEATURE)) \
@@ -209,17 +221,19 @@ g.node("examples/data/cora/node_table",
         edge_type=("item", "item", "relation"), decoder=gl.Decoder(weighted=True), directed=False) \
 
 
-# 调用.init()进行初始化。这里以单机运行为例，分布式详见[图对象-初始化数据](graph_object_cn.md)。
+# Construct the graph. This is a local example. For the distributed example, see [Graph Object#Initialization](graph_object_cn.md)。
 g.init()
 ```
 
-## 3.3 图采样
-为了实现GraphSAGE，需要进行图采样以作为上层网络的输入。在这里，我们的采样顺序为：<br />
-(1) 按batch采样种子“item”顶点；<br />
-(2) 采样上述顶点沿着“relation”边的1-hop邻居和2-hop邻居；<br />
-(3) 获取路径的上所有顶点的属性和种子顶点的labels。<br />
+## 3.3 Graph Sampling
 
-这里我们定义了一个生成器，通过遍历图，得到每一次迭代的batch的样本数据。<br />
+GraphSAGE requires graph sampling to generate input for the neural network.
+Here, we use the following sampling steps: <br />
+(1) sample a batch of "item" vertices as the seed; <br />
+(2) sample the 1-hop and 2-hop neighbors of these "item" vertices, by following the "relation" edges; <br />
+(3) retrieve all the vertex attributes along the path, along with the labels of the seed vertices.
+
+Here we define a data generator, which generates batches of samples through graph traversal. <br />
 
 ``` python
 def sample_gen():
@@ -238,10 +252,12 @@ def sample_gen():
       break
 ```
 
-## 3.4 模型代码
-以TensorFlow Estimator为例，说明在**GL**上自行开发GNN的方式。<br />
+## 3.4 GNN Model
 
-- 将图采样的样本生成器作为`input_fn`
+In this part, we use the TensorFlow Estimator as an example to demonstrate
+developing a GNN model on **GL**.
+
+- Generate training data through graph sampling as `input_fn`
 
 ```python
 import tensorflow as tf
@@ -260,7 +276,7 @@ def sample_input_fn():
   return {"logits": features}, labels
 ```
 
-- 定义GNN模型的Aggregator和Encoder。
+- Define the Aggregator and Encoder of the GNN model
 
 ```python
 vars = {}
@@ -295,7 +311,7 @@ def encode_fn(layer_features, raw_feat_layer_index, depth_to_encode):
   return h_self_vec
 ```
 
-- 定义features_column
+- Define features_column
 
 ```python
 features, labels = sample_input_fn()
@@ -304,7 +320,7 @@ for key in features.keys():
   feature_columns.append(tf.feature_column.numeric_column(key=key))
 ```
 
-- 定义Loss和Model
+- Define Loss and Model
 
 ```python
 def loss_fn(logits, labels):
@@ -325,7 +341,7 @@ def model_fn(features, labels, mode, params):
     return spec
 ```
 
-- 实例化Estimator，并训练
+- Instantiate Estimator and start training
 
 ```python
 params = {"learning_rate": 1e-4,
@@ -335,5 +351,4 @@ model = tf.estimator.Estimator(model_fn=model_fn,
                                params=params)
 model.train(input_fn=sample_input_fn)
 ```
-
 
