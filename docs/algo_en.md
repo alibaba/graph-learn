@@ -1,7 +1,7 @@
-# Developing Your Own Model
+# Developing Your Own Model
 
 In this document, we will introduce how to use the basic APIs provided by **GL** to cooperate with deep learning engines, such as TensorFlow, to build graph learning algorithms.
-We demonstrate the GCN model as an example which is the most popular model in graph neural network. 
+We demonstrate the GCN model as an example which is the most popular model in graph neural network.
 In [Algorithm Programming Paradigm](model_programming_cn.md), we introduced some basic concepts used in developing algorithms, such as ʻEgoGraph`, ʻEgoTensor` encoder, etc.
 Please understand these basic concepts before continuing to read.
 
@@ -18,7 +18,7 @@ In general, it requires the following four steps to build an algorithm
 
 - Construct graph data flow: convert `EgoGraph` to `EgoTensor` using `EgoFlow`
 
-    **GL** algorithm model is based on a deep learning engine similar to TensorFlow. 
+    **GL** algorithm model is based on a deep learning engine similar to TensorFlow.
     As a result, it requires to convert the sampled `EgoGraph`s to the tensor format `EgoTensor`, which is encapsulated in `EgoFlow` that can generate an iterator for batch training.
 
 - Define encoder: Use `EgoGraph` encoder and feature encoder to encode `EgoTensor`
@@ -46,7 +46,7 @@ g = gl.Graph()\
             decoder=gl.Decoder(labeled=True,
                                attr_types=["float"] * 1433,
                                attr_delimiter=":"))\
-      .edge(dataset_folder + "edge_table_with_self_loop", 
+      .edge(dataset_folder + "edge_table_with_self_loop",
             edge_type=(node_type, node_type, edge_type),
             decoder=gl.Decoder(weighted=True), directed=False)\
       .node(dataset_folder + "train_table", node_type="train",
@@ -74,7 +74,7 @@ class GCN(gl.LearningBasedModel):
   self.batch_size = batch_size
 ```
 
-The GCN model inherits from the basic learning model class `LearningBasedModel`. As a result, we only need to override the sampling, model construction, and other methods to build GCN model. 
+The GCN model inherits from the basic learning model class `LearningBasedModel`. As a result, we only need to override the sampling, model construction, and other methods to build GCN model.
 
 ```python
 class GCN(gl.LearningBasedModel):
@@ -145,7 +145,7 @@ class GCN(gl.LearningBasedModel):
 
 ### Loss Function and Training Process
 
-For the Cora node classification model, we can select the corresponding classification loss function in TensorFlow. 
+For the Cora node classification model, we can select the corresponding classification loss function in TensorFlow.
 Then, we combine the encoder and loss function in the `build` function, and finally return a data iterator and a loss function.
 
 ```python

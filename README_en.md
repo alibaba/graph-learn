@@ -21,22 +21,57 @@ Currently, **GL** has some build-in classic models developed with TensorFlow for
 
 # Documents
 
-* [Installation](docs/install.md)
+* [**Installation**](docs/install_en.md)
 
-* [Quick Start](docs/quick_start.md)
+* [**Quick Start**](docs/quick_start_en.md)
 
-* [Conception and API](docs/concept_api.md)
+* **Concepts and API**
 
-* [System Config](docs/system_config.md)
+	* [Data Source](docs/data_loader_en.md)
 
-* [Distribution](docs/distribution.md)
+	* [Graph Object](docs/graph_object_en.md)
 
-* [Extend](docs/extend.md)
+	* [Graph Query](docs/graph_query_en.md)
 
-* [Model Examples](docs/model_examples.md)
+	* [Graph Traversal](docs/graph_traverse_en.md)
+
+	* [Graph Sampling](docs/graph_sampling_en.md)
+
+	* [Negative Sampling](docs/negative_sampling_en.md)
+
+	* [Graph Sampling Language](docs/gsl_en.md)
+
+	* [Model Programming](docs/model_programming_en.md)
+
+* [**System Configuration**](docs/system_config.md)
+
+* **Functionality Extensions**
+
+	* [Developing Your Own Model](docs/algo_en.md)
+
+	* [Defining Your Own Operator](docs/operator.md)
+
+	* [Integrating Other Data Sources](docs/other_source.md)
 
 
-# Paper
+* **Model Examples**
+
+	* [GCN](examples/tf/gcn/README.md)
+
+	* [GAT](examples/tf/gat/README.md)
+
+	* [GraphSAGE](examples/tf/graphsage/README.md)
+
+	* [Bipartite GraphSAGE](examples/tf/bipartite_graphsage/README.md)
+
+	* [DeepWalk](examples/tf/deepwalk/README.md)
+
+	* [LINE](examples/tf/line/README.md)
+
+	* [TransE](examples/tf/transe/README.md)
+
+
+# Citation
 
 Please cite the following paper in your publications if **GL** helps your research.
 

@@ -1,4 +1,4 @@
-# Introduction
+# Integrating Other Data Sources
 
 Data source plays an important role in **GL**, through which **GL** loads the raw data to build graph and sync states among distributed servers.
 The data source is implemented by a kind of **file system**.
@@ -8,7 +8,7 @@ When running distributedly, a distributed file system is needed.
 
 If it is difficult to configure your environment with KubeFlow and NFS, you `NEED` to implement a kind of file system to satisfy the requirements of GL.
 
-# File system interface
+# File System Interface
 
 The [interface](../graphlearn/platform/file_system.h) of file system defines the basic operation for file and directory, such as **Exist**, **Create** and **Delete**.
 Besides, we abstract **three** kinds of files that a file system should implement.
@@ -52,7 +52,7 @@ A **WritableFile** enables to append pieces of data into a file, and does not ca
 virtual Status Append(const LiteString& data) = 0;
 ```
 
-# Register with scheme
+# Register with Scheme
 
 At last, register the new file system to the **Environment**.
 Each file system should has a unique scheme, such as ```hdfs://```.

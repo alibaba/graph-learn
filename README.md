@@ -38,7 +38,7 @@
 
 &emsp;&emsp; [负采样](docs/negative_sampling_cn.md)
 
-&emsp;&emsp; [G S L](docs/gsl.md)
+&emsp;&emsp; [图采样语言](docs/gsl.md)
 
 &emsp;&emsp; [算法编程范式](docs/model_programming_cn.md)
 
