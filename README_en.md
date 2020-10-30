@@ -7,14 +7,17 @@
 
 # Introduction
 
-**Graph-Learn(GL)** is a framework designed to simplify the application of graph neural networks(**GNNs**).
-It abstracts solutions from the actual production cases.
-These solutions have been applied and verified on recommendation, anti-cheating and knowledge graph systems.
+**Graph-Learn(GL)** is a distributed framework designed for the development and application of large-scale graph neural networks.
+It refines and abstracts a set of programming paradigms suitable for the current neural network model.
+It has been successfully applied to many scenarios such as search recommendation, network security, and knowledge graphs within Alibaba.
 
-**GL** is **portable** and **flexible**, which makes it much more friendly to developers.
-Based on **GL**, developers are able to implement a kind of **GNNs** algorithms,
-**customize** some graph related operators and extend the existed modules easily.
-**GL** can be installed in containers or on physical machines, and deployed in single machine mode or **distributed mode**.
+
+To support the diversity and rapid development of **GNN** in industrial scenarios, **GL** focuses on **portability** and **scalability**, which is more friendly to developers.
+Developers can use **GL** to implement a **GNNs** algorithms, or
+**customize** a graph operator, such as graph sampling.
+The interfaces of **GL** are provided in the form of Python and NumPy. It is compatible with TensorFlow or PyTorch.
+Currently, **GL** has some build-in classic models developed with TensorFlow for the user reference.
+**GL** can run in Docker or on a physical machine, and supports both stand-alone and distributed deployment modes.
 
 # Documents
 
@@ -56,13 +59,9 @@ Apache License 2.0.
 
 # Acknowledgement
 
-The developers of **GL** are from several teams at Alibaba, including Computing Platform Department - PAI team,
+**GL** is developed by several teams at Alibaba, including Computing Platform Department - PAI team,
 New Retail Intelligence Engine - Data Analytics And Intelligence Lab, and Security Department - Data and Algorithms team.
 Thanks to the ones who provide helps and suggestions to open source.
-
-Please email graph-learn@list.alibaba-inc.com if any questions. 
-
-**Welcome to contribution!**
 
 **GL** refers to the following projects. Thanks to the authors and contributors.
 
@@ -77,3 +76,5 @@ Please email graph-learn@list.alibaba-inc.com if any questions.
 *  [TensorFlow](https://github.com/tensorflow/tensorflow)
 
 *  [pybind11](https://github.com/pybind/pybind11)
+
+Please email graph-learn@list.alibaba-inc.com if any questions. Welcome to contribution!
