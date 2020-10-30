@@ -53,6 +53,12 @@ source env.sh
 
 若使用Docker运行，可以下载我们准备好的镜像，也可以基于此镜像开发。
 
+CPU版本
 ```
-docker pull registry.cn-zhangjiakou.aliyuncs.com/pai-image/graph-learn:v0.1
+docker pull registry.cn-zhangjiakou.aliyuncs.com/pai-image/graph-learn:v0.1-cpu
+```
+
+GPU版本
+```
+docker pull registry.cn-zhangjiakou.aliyuncs.com/pai-image/graph-learn:v0.1-gpu
 ```
