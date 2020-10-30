@@ -1,8 +1,10 @@
 # Install from pip
 
 We build the wheel package with```g++ 5.4.0``` and ```python 2.7``` on ```Ubuntu 16.04```.
-Just download and install it if it matches your environment.
+If you have the same environment, you can download and install directly.
 Otherwise, please refer to the section 'build from source'.
+Currently, the example models provided by **GL** are developed based on **TensorFlow 1.12**. To run the example models, please install **TensorFlow 1.12**.
+Users who only rely on system interfaces for model development can modify the source code slightly and remove the relevant part of ```import *tf*``` in the ```__init__.py``` file.
 
 ## Get wheel package
 
@@ -33,8 +35,7 @@ sudo apt-get install git-all
 ## Install dependent libraries
 
 ```bash
-sudo apt-get install autoconf automake libtool cmake
-pip install numpy
+sudo apt-get install autoconf automake libtool cmake python-numpy
 ```
 
 ## Compile
@@ -60,7 +61,7 @@ source env.sh
 
 # Docker image
 
-You can download our docker image to execute **GL** projects.
+You can download our docker image to run **GL** projects.
 
 CPU version:
 ```

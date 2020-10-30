@@ -1,4 +1,4 @@
-# Operator introduction
+# Defining Your Own Operator
 
 In **GL**, an **operator** is a basic executable unit.
 The system function is represented by the operators.
@@ -7,7 +7,7 @@ Operators can be **extended** according to requirements.
 Usually, we just focus on the local implementation when customizing an operator.
 The system framework will help run it distributedly.
 
-# Programming interface
+# Programming Interface
 
 To customize an **operator**, class [**Operator**](../graphlearn/core/operator/operator.h) should be inherited.
 And then override the following virtual function.
@@ -33,7 +33,7 @@ Till now, we have abstracted the partition rules for all the existed operators.
 You can just use the [**Partitioner**](../graphlearn/core/partition/partitioner.h) in most cases.
 
 
-# Distribute runtime design
+# Distributed Runtime Design
 
 **GL** follows the principle that the **computation happens where the data is placed**.
 In distributed mode, all severs can communicate with each other and know the distribution of the partitioned data.
@@ -46,7 +46,7 @@ Developers just need care about the next three functions **Partition()**, **Proc
 ![op](images/operator_runtime.png)
 
 
-# Implement a new operator
+# Implement a New Operator
 
 ## Clone source code
 
@@ -74,7 +74,7 @@ public:
 If you need to rewrite the **Partition()** and **Stitch()**, you should customize request and response class,
 which inherits from **OpRequest** and **OpResponse**.
 
-## Register operator
+## Register Operator
 
 Each operator has a **unique name**. Register the operator with its name and class name.
 
@@ -101,7 +101,7 @@ make python
 pip install dist/your_wheel_name.whl -U
 ```
 
-# How to use an operator
+# How to Use an Operator
 
 For example, if a new sampler named **xxxSampler**, you can call it like this:
 
