@@ -112,7 +112,7 @@ ID is required for the vertex and edge data source, while weight, label, and att
 
 # 2 Data source type
 
-<div align=center> <img height ='320' src ="images/data_source.png" /> </div>
+<div align=center> <img height ='320' src ="images/data_source_en.png" /> </div>
 
 <br /> The system abstracts the data access layer to allow easy connection to multiple types of data sources. Currently, it supports LocalFileSystem. If it is used on the Alibaba Cloud PAI platform, you can directly read MaxCompute data tables. The data is represented as a two-dimensional structure, the row represents a vertex or an edge data, and the column represents a certain dimension of information of the vertex or edge.
 <br />
