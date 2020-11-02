@@ -1,7 +1,7 @@
 # Graph Sampling Language（GSL)
 
 <a name="TUTVl"></a>
-# 1. Introduction
+# Introduction
 There has been a well-developed programming paradigm since Graph Neural Network (GNN) was introduced.
 Developing a GNN model contains two parts: graph data processing and neural network training.
 There are matured Deep Learning framework such as Tensorflow and Pytorch for neural network training.
@@ -21,14 +21,14 @@ g.V("user").batch(64).outV("click").sample(10).by("edge_weight")
 GSL supports super large graph, heterogeneous graph and property graph and has similar syntax like [Gremlin](http://tinkerpop.apache.org/docs/current/reference/#_tinkerpop_documentation) which is easy to understand.
 
 <a name="KFXRf"></a>
-# 2 GSL Syntax
+# GSL Syntax
 
 We call a GSL statement a query, which consists of three types of operations: SOURCE, STEP and SINK. SOURCE is the entrance of a query, indicating which data to start from; STEP is the path to walk through and sample data during the query process, and SINK is the encapsulation of execution results. In GSL, a query must have  a SOURCE and SINK.
 
 <a name="5xWGq"></a>
-## 2.1 SOURCE
+## SOURCE
 <a name="IHxBA"></a>
-#### 2.1.1 V/E
+#### V/E
 
 SOURCE is the entrance of a GSL query, supporting  `V()` 和 `E()` APIs, which represent querying from vertices and edges respectively.
 
@@ -57,7 +57,7 @@ Return:
 ```
 
 <a name="t34wT"></a>
-### 2.1.2 shuffle
+### shuffle
 
 `V()` and `E()` can be followed by `shuffle()`.  `shuffle()` is an optional API，which provides options to sample the data randomly when retrieving data from graphs (`feed = None`).
 
@@ -73,7 +73,7 @@ Return:
 ```
 
 <a name="W56KH"></a>
-### 2.1.3 batch
+### batch
 
 When retrieving data from graphs (`feed = None`), `batch()` determines how much data `V()` and`E()` query each time. If you need to use `shuffle`, make sure you use it before `batch()`. When `shuffle(traverse=True)` but the remaining data is less than the `batch_size`, it will simply return the remaining data if it is not 0, and otherwise `OutOfRangeError`.
 
@@ -88,7 +88,7 @@ Return:
 ```
 
 <a name="WQ5EP"></a>
-### 2.1.4 examples
+### examples
 
 Randomly sample 64 user type vertices.
 
@@ -138,7 +138,7 @@ g.E("buy", feed=generator)
 
 
 <a name="5kq55"></a>
-## 2.2 STEP
+## STEP
 
 STEP is the path to walk through and sample data during the query process. A query can have zero or more steps. There are two types of steps, which are path steps and sampling steps.
 <br />
@@ -247,7 +247,7 @@ Return:
 ```
 
 <a name="wOTQV"></a>
-### 2.2.1 out*, in*
+### out*, in*
 
 `out*()` and ` in*()` are used to describe forward and backward propagation while traversing.
 
@@ -282,7 +282,7 @@ g.V("user").batch(64)                   # (1) randomly get 64 'user' vertex
 ```
 
 <a name="TTlWe"></a>
-### 2.2.2 each
+### each
 
 A typical GNN algorithm often has multiple sampling branches. The `each()` interface can be used to express multiple branches of sampling. When a certain stage is reached, different operations are performed on the previous results (there may be multiple). A query can contain at most one `each()`, and it has to be the last operation of the query.
 
@@ -314,7 +314,7 @@ g.E("u2i").shuffle().batch(512)                            # (1) randomly get 51
 Please note that the result from different sampling branches are not in order. Therefore, we strongly recommend to use `each()` together with `alias()` introduced in the next section.
 
 <a name="wHdJ3"></a>
-### 2.2.3 alias
+### alias
 
 `alias()` is used to label the name of the current SOURCE or STEP, which makes accessing the output results easier. In particular, when the query is long and we need to keep the results of each step, `alias()` is convenient to access these results.
 
@@ -341,7 +341,7 @@ g.E("u2i").shuffle().batch(512).alias("edges")
 ```
 
 <a name="MI24G"></a>
-### 2.2.4 repeat
+### repeat
 When the query is relatively long and the operation is repeated, you can use `repeat()` to simplify the writing. For example, in a certain isomorphic undirected graph, we would like to sample a vertex's 10-hop neighbors. `repeat()` takes in a function, similar to the one in `each()`, which means that the operation represented by that function is repeated `times` times.
 ```python
 def repeat(self, func, times, parmas_list=None):
@@ -383,7 +383,7 @@ g.run(q)
 
 
 <a name="xDuJp"></a>
-## 2.3 SINK
+## SINK
 Each Query must end with a **SINK** operation, which means that the current Query is completed and can be used to analyze execution or return results. **SINK** operation has two interfaces, `values()` and `emit()`. The **SINK** operation can only be called once in a Query.
 -`values` returns the entire query, which can be executed multiple times. It is generally used when **SOURCE** is graph traversal.
 -`Emit` directly gets the execution result of this query. It is generally used when **SOURCE** is a vertex or edge with a given id.
@@ -400,7 +400,7 @@ The **SOURCE** or **STEP** of the `*E()` series corresponds to the `Edges` objec
 
 
 <a name="FOeWa"></a>
-### 2.3.1 values
+### values
 The generator that returns the execution result of the query can be executed by `g.run()`, which is suitable for recursive training settings.
 ```python
 def values(func=None):
@@ -446,7 +446,7 @@ print(res[0].ids)
 
 
 <a name="tbPOc"></a>
-### 2.3.2 emit
+### emit
 `Emit()` is equivalent to the combination of `values()` and a `g.run()`, which means that the current Query is executed once and its result is returned. The result is a dict or a list depending on whether there exists `alias()`. Under normal circumstances, `emit()` is used in the debugging phase to verify the correctness of the code and data.
 ```python
 def emit(func=None):
@@ -473,9 +473,9 @@ print(res[1].ids)
 Worth noticing that when the query only contains Soure (`g.V()` / `g.E()`), `emit()` directly returns the data of list[0].<br />
 
 <a name="dF3l2"></a>
-# 3 Query execution
+# Query execution
 <a name="Cmqcj"></a>
-## 3.1 run
+## run
 `run()` interface is used to execute Query and get the final result. The result form is defined by the func function of the `values()` interface. You can refer to the example in the [`values`](#FOeWa) section.
 ```python
 def run(generator):
@@ -489,7 +489,7 @@ Return:
 
 
 <a name="h7Pvb"></a>
-## 3.2 Combining with TensorFlow
+## Combining with TensorFlow
 `values(func)` returns a generator whose returned data type is defined by `func`. This generator can be directly connected to TensorFlow's [tf.data.Dataset](https://www.tensorflow.org/api_docs/python/tf/data/Dataset)。<br />
 ```python
 query = g.E("u2i").shuffle().batch(512).alias("edges")

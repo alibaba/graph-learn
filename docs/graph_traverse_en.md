@@ -1,15 +1,15 @@
 # Graph Traversal
 
 <a name="pLeth"></a>
-# 1. Introduction
+# Introduction
 The semantics of graph traversal in GNN is different from classic graph computation. Training by batch is the characteristics of mainstream deep learning alogrithms. Thus, to meet this requirement, graph data must be able to access by batches. We denote this data access pattern as graph traversal. In a GNN algorithm, the data source is the graph and the training samples are comprised of vertices and edges. Graph traversal refers to the approach of obtaining the training vertices and edges in batch.
 
 Currently, **GL** supports traversing graph by batch and such random traversal could be with or without replacement. In the traversal without replacement, the program will throw a `gl.OutOfRangeError` exception when an epoch is finished. The data source to be traversed is partitioned, which means each worker(e.g. distributed tensorflow) only traverses the data on the corresponding Server.
 
 <a name="Fj1gp"></a>
-# 2. Vertex Traversal
+# Vertex Traversal
 <a name="HEDng"></a>
-## 2.1 Usages
+## Usages
 There are three type of data sources for vertices: all unique vertices, source vertices of all edges and destination vertices of all edges. Vertex traversal is implemented by the `NodeSampler` operator. The `node_sampler()` API of `Graph` object returns a `NodeSampler` object, and then invokes `get()` API of this object to return `Nodes` data.
 
 ```python
@@ -40,7 +40,7 @@ Return:
 <br />You can access specific values through the `Nodes` object, such as id, weight, attribute and etc. Please refer to APIs [API](graph_query_cn.md#FPU74) for more details. And refer to `g.V()` for vertex traversal in GSL.<br />
 
 <a name="aNB50"></a>
-## 2.2 Example
+## Example
 | id | attributes |
 | --- | --- |
 | 10001 | 0:0.1:0 |
@@ -57,9 +57,9 @@ for i in range(5):
 ```
 
 <a name="8lRI5"></a>
-# 3 Edge Traversal
+# Edge Traversal
 <a name="EWBuj"></a>
-## 3.1 Usages
+## Usages
  Edge traversal is implemented by the `EdgeSampler` operation. The `edge_sampler()` API of `Graph` object returns a `EdgeSampler` object, and then invokes `get()` API of this object to return `Edges` data.
 
 ```python
@@ -87,7 +87,7 @@ Return:
 <br />You can access specific values through the `Edges` object, such as id, weight, attribute, etc. Please refer to [API](graph_query_cn.md#FPU74) for more details. And refer to `g.E()` for edge traversal in GSL.<br />
 
 <a name="RVPmZ"></a>
-## 3.2 Example
+## Example
 | src_id | dst_id | weight | attributes |
 | --- | --- | --- | --- |
 | 20001 | 30001 | 0.1 | 0.10,0.11,0.12,0.13,0.14,0.15,0.16,0.17,0.18,0.19 |

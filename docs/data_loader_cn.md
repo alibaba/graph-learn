@@ -2,11 +2,11 @@
 
 本文档用以说明GraphLearn支持的数据格式，以及如何通过API来描述和解析。<br />
 
-# 1 数据格式
+# 数据格式
 Graph数据可分为**顶点数据**和**边数据**。一般的，顶点数据包含**顶点ID**和**属性**，描述一个实体；边数据包含**源顶点ID**和**目的顶点ID**，描述顶点间的关系。在异构图场景中，顶点和边分别存在多种类型。因此，我们需要顶点和边的类型信息，才能对不同类型的顶点和边加以识别。类型信息通过API来描述。顶点和边都可以具有属性，比如“某用户在星期六上午购买了某商品”，时间信息“星期六上午”就是边属性。此外，很多场景用户需要“权重”的概念，或是顶点权重，或是边的权重，作为某种重要性的度量，比如“按权重进行邻居节点采样”。“权重”的来源多种多样，因任务不同而不同。在有监督学习的分类任务中，顶点或边还可能拥有标签。<br />
 <br />我们将这些典型场景的数据格式抽象为**ATTRIBUTED**、**WEIGHTED、LABELED**，分别用于表示顶点或边包含属性的、具有权重的、具有标签的。对顶点数据源和边数据源来说，这三者可以同时存在，也可以部分存在。<br />
 
-## 1.1 基础格式
+## 基础格式
 基础的顶点数据只包含一个顶点的ID，ID类型为bigint，每条数据代表一个顶点。很多时候只有顶点ID是不够的，还需包含属性、权重或标签。<br />
 <br />基础的边数据只包含源顶点ID和目的顶点ID，ID类型为bigint，每条数据代表一条边，表示两个顶点之间的关系。基础边数据源的schema如下所示。
 基础的边数据格式可以独立使用，即不附加属性、权重和标签。<br />
@@ -20,7 +20,7 @@ Graph数据可分为**顶点数据**和**边数据**。一般的，顶点数据�
 
 <br />
 
-## 1.2 属性格式（ATTRIBUTED）
+## 属性格式（ATTRIBUTED）
 用于表达顶点或边的属性信息。一般情况下，顶点默认具有属性，不然只需要边表就够了。属性列只有一列，为string类型。
 string内部可通过自定义分隔符分割多个属性。比如，某一顶点属性有3个，分别为`shanghai, 10, 0.01`，用分隔符‘:’分隔，则该顶点对应的属性数据为`shanghai:10:0.01`。
 当数据格式具有属性时，无论是顶点数据，还是边数据，在API描述时，都需要显示指定**ATTRIBUTED**以告知系统。
@@ -42,7 +42,7 @@ string内部可通过自定义分隔符分割多个属性。比如，某一顶�
 | attributes | STRING |  |
 <br />
 
-## 1.3 权重格式（WEIGHTED）
+## 权重格式（WEIGHTED）
 用于表达顶点或边带有权重的情况。权重列只有一列，为**float**类型。当数据格式具有权重时，无论是顶点数据，还是边数据，在API描述时，都需要显示指定**WEIGHTED**以告知系统。
 
 顶点数据权重格式schema
@@ -62,7 +62,7 @@ string内部可通过自定义分隔符分割多个属性。比如，某一顶�
 | weight | FLOAT  |  |
 <br />
 
-## 1.4 标签格式（LABELED）
+## 标签格式（LABELED）
 用于表达顶点或边带有标签的情况。标签列只有一列，为int类型。当数据格式具有标签时，无论是顶点数据，还是边数据，在API描述时，都需要显示指定**LABELD**以告知系统。
 
 顶点数据标签格式schema
@@ -82,7 +82,7 @@ string内部可通过自定义分隔符分割多个属性。比如，某一顶�
 | label | INT |  |
 <br />
 
-## 1.5 组合格式
+## 组合格式
 ID是组成顶点和边数据源的必选信息，weight，label，attribute为可选信息。当同时具备**WEIGHTED、ATTRIBUTED、LABELED**一到多个时，在数据源中，必选信息和可选格式信息的组合需要遵循一定的顺序。<br />
 <br />1）**顶点数据源**，混合格式schema的顺序如下表所示。<br />
 
@@ -107,7 +107,7 @@ ID是组成顶点和边数据源的必选信息，weight，label，attribute为�
 
 <br />扩展信息可选择**0个或多个**，同时需要保证schema的**顺序维持上表顺序不变**。<br />
 
-# 2 数据源类型
+# 数据源类型
 
 <div align=center> <img height ='320' src ="images/data_source.png" /> </div>
 
@@ -115,7 +115,7 @@ ID是组成顶点和边数据源的必选信息，weight，label，attribute为�
 
 
 <a name="9Im2p"></a>
-## 2.1 Local FileSystem
+## Local FileSystem
 在本地文件中，数据类型如下。其中，列名不做要求。支持从一个或多个本地文件读取数据，以便于在本地做调试。
 
 | 列 | 类型 |
@@ -153,7 +153,7 @@ src_id:int64  dst_id:int64  weight:float  feature:string
 
 <a name="mzVG6"></a>
 
-## 2.2 阿里云MaxCompute数据表
+## 阿里云MaxCompute数据表
 在MaxCompute表中，数据类型如下。其中，列名不做要求。
 
 | 列 | 类型 |
@@ -184,9 +184,9 @@ node_source, edge_source = FLAGS.tables.split(',')
 ```
 <a name="eh1Rf"></a>
 
-# 3 用户API
+# 用户API
 <a name="IqJlv"></a>
-## 3.1 Decoder定义
+## Decoder定义
 `Decoder`类用于描述上所述数据格式，定义如下。
 ```python
 class Decoder(weighted=False, labeled=False, attr_types=None, attr_delimiter=":")
@@ -206,7 +206,7 @@ attr_delimiter: 当数据带有属性(被压缩为一个大string)时，需要�
 <br />考虑与神经网络的结合，string类型的属性比较难处理，通常做法是先将string通过hash映射到int，再把int编码成embedding。为此，GL对string类型的属性做了特别扩展，即支持在图数据初始化阶段把string转成int。此时，attr_types参数中的"string"需要变为tuple类型`("string", bucket_size)`，bucket_size表示被转换到的int空间大小。若做此转换，后续访问时统一为int类型的attributes。除了简化后续操作以外，该转换也会大大降低内存开销。<br />
 
 <a name="A2hT8"></a>
-## 3.2 顶点Decoder
+## 顶点Decoder
 顶点的Decoder有以下几种形式。
 ```python
 import graphlearn as gl
@@ -235,7 +235,7 @@ gl.Decoder(weighted=True, labeled=True, attr_type={your_attr_types}, attr_delimi
 
 
 <a name="wKeTO"></a>
-## 3.3 边Decoder
+## 边Decoder
 边的Decoder有以下几种形式。
 ```python
 import graphlearn as gl
@@ -267,7 +267,7 @@ gl.Decoder(labeled=True, attr_type={your_attr_types}, attr_delimiter={you_delimi
 
 
 <a name="BdNad"></a>
-## 3.4 使用示例
+## 使用示例
 假设数据源如下表1，表2，表3所示。<br />
 
 表1 item顶点表

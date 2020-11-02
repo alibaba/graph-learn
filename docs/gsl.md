@@ -1,7 +1,7 @@
 # Graph Sampling Language（GSL）
 
 <a name="TUTVl"></a>
-# 1 简介
+# 简介
 GNN发展至今，有一套相对成熟的编程范式。我们将一个GNN模型的开发分为两个阶段：图模式的数据处理部分和神经网络部分。
 神经网络部分，我们可以借助成熟的DL框架，如TensorFlow、PyTorch。
 如何简单高效的描述和实现适合GNN的图数据访问模式，以及如何与主流的深度学习框架对接，是GL重点关注的。<br />
@@ -18,15 +18,15 @@ GNN发展至今，有一套相对成熟的编程范式。我们将一个GNN模�
 <br />**GSL**考虑实际图数据的特点，覆盖了对超大图、异构图、属性图的支持，语法设计贴近[Gremlin](http://tinkerpop.apache.org/docs/current/reference/#_tinkerpop_documentation)形式，便于理解。<br />
 
 <a name="KFXRf"></a>
-# 2 GSL语法
+# GSL语法
 我们把一个由**GSL**描述的语句称为**Query**，一个**Query**通常由**SOURCE**、**STEP**和**SINK**三种类型的操作组成。
 其中，**SOURCE**为查询语句的入口，表示从哪些数据出发；**STEP**为查询过程中游走和采样的路径，**SINK**为对执行结果的封装。
 在GSL中，一条Query必须包含**一个SOURCE**和**一个SINK**操作。<br />
 
 <a name="5xWGq"></a>
-## 2.1 SOURCE
+## SOURCE
 <a name="IHxBA"></a>
-### 2.1.1 V/E
+### V/E
 SOURCE是查询语句的入口，支持 `V()` 和 `E()` 两个接口，分别表示从顶点和从边开始查询。具体如下。
 ```python
 def V(node_type, feed=None)
@@ -54,7 +54,7 @@ Return:
 
 
 <a name="t34wT"></a>
-### 2.1.2 shuffle
+### shuffle
 `V()`和`E()`之后可以接 `shuffle`。 `shuffle()` 为可选接口，当从图获取数据时（feed为None），表示是否要对顶点/边进行随机获取。
 ```python
 def shuffle(traverse=False):
@@ -69,7 +69,7 @@ Return:
 
 
 <a name="W56KH"></a>
-### 2.1.3 batch
+### batch
 当从图获取数据时（feed为None），`batch()`用于指定每次获取到的`V()`或`E()`的多少。若同时要对数据进行`shuffle()`，注意在`batch()`之前。当`shuffle(traverse=True)`时，如果剩余数据不足batch_size但不为0，则返回实际数据，此时不会触发OutOfRangeError。只有剩余数据为0时，才会OutOfRangeError。
 ```python
 def batch(batch_size):
@@ -83,7 +83,7 @@ Return:
 
 
 <a name="WQ5EP"></a>
-### 2.1.4 示例
+### 示例
 随机获取64个user类型的顶点。
 ```python
 g.V("buy").shuffle().batch(64)
@@ -121,7 +121,7 @@ g.E("buy", feed=generator)
 
 
 <a name="5kq55"></a>
-## 2.2 STEP
+## STEP
 STEP用于描述查询游走的路径和采样的方式。一条查询语句中可以包含0到多个STEP。目前，STEP包含以下两类接口：描述路径游走，描述采样方式。<br />
 <br />描述路径游走的接口，表示当前操作对象的转移。例如，`g.V()`表示当前操作对象为顶点，可以通过`outE()`把当前操作对象转移到顶点的出边上，后面的操作表示针对边来进行。当边的操作结束后，可以通过`inV() / outV()`，再将焦点转移到边对应的目的顶点或源顶点上。
 ```python
@@ -227,7 +227,7 @@ Return:
 
 
 <a name="wOTQV"></a>
-### 2.2.1 out*, in*
+### out*, in*
 `out*()`和` in*()`系列用于描述在游走过程中**向前推进**和**向后回溯**。<br />
 <br />例如，对于如下所示异构图，从user顶点开始，沿u2i边采样user的一跳邻居，再沿i2i边采样user的二跳邻居。
 
@@ -261,7 +261,7 @@ g.V("user").batch(64)                   # (1) 随机获取64个user顶点
 
 
 <a name="TTlWe"></a>
-### 2.2.2 each
+### each
 一个典型的GNN算法对图数据的需求往往是多路的，而非只要Query的最后结果。`each()`接口用于表达Query的多分枝，当进行到某个阶段后，针对前序结果（可能有多个）分别进行不同的操作。每条Query中最多存在一个`each()`，且是Query的最后一个操作，即`each()`之后不能再有其他操作。
 ```python
 def each(func):
@@ -290,7 +290,7 @@ g.E("u2i").shuffle().batch(512)                            # (1) 随机获取512
 <br />需要注意的是，有分枝的Query返回结果比较复杂，分枝之间没有先后顺序。我们强烈建议`each()`配合下面将要提到的`alias()`一起使用。<br />
 
 <a name="wHdJ3"></a>
-### 2.2.3 alias
+### alias
 `alias()` 用于标记当前SOURCE或STEP的名称，便于后续对输出结果的访问。特别的，当Query链路较长且需要保留链路中的每个结果时，`alias()`比较方便。
 ```python
 def alias(name):
@@ -315,7 +315,7 @@ g.E("u2i").shuffle().batch(512).alias("edges")
 
 
 <a name="MI24G"></a>
-### 2.2.4 repeat
+### repeat
 当Query比较长且操作重复时，可以用`repeat()`简化写法。例如，针对某个同构无向图，从顶点出发采样其10跳邻居。接受一个function，与`each()`中的类似，表示该function所代表的操作被重复times次。
 ```python
 def repeat(self, func, times, parmas_list=None):
@@ -357,7 +357,7 @@ g.run(q)
 
 
 <a name="xDuJp"></a>
-## 2.3 SINK
+## SINK
 每一个Query必须以一个**SINK**操作为结尾，表示当前Query已经完成，可被用于解析执行或返回结果。**SINK**操作接口有两个， `values()` 和 `emit()` 。**SINK**操作在一个Query中只可以被调用一次。<br />
 
 - `values` 返回一整条query，可多次执行。一般用于**SOURCE**为遍历的情况。
@@ -373,7 +373,7 @@ g.run(q)
 
 
 <a name="FOeWa"></a>
-### 2.3.1 values
+### values
 返回Query执行结果的生成器，可被`g.run()`驱动执行，适用于迭代训练的场景。
 ```python
 def values(func=None):
@@ -419,7 +419,7 @@ print(res[0].ids)
 
 
 <a name="tbPOc"></a>
-### 2.3.2 emit
+### emit
 `emit()` 相当于 `values()` 和一次 `g.run()` 的结合，表示对当前Query执行一次并返回结果，结果为dict还是list视有无`alias()`而定。一般情况下，`emit()`用于调试阶段，验证代码和数据正确性时使用。
 ```python
 def emit(func=None):
@@ -445,9 +445,9 @@ print(res[1].ids)
 <br />需要注意的是，当Query只有Soure（ `g.V()`  / `g.E()` ）时，`emit()`直接返回list[0]的数据。<br />
 
 <a name="dF3l2"></a>
-# 3 Query执行
+# Query执行
 <a name="Cmqcj"></a>
-## 3.1 run
+## run
 `run()` 接口用于执行Query，得到最终的结果，结果形式由`values()`接口的func函数定义。可以参考[`values`](#FOeWa)一节的使用示例。
 ```python
 def run(generator):
@@ -461,7 +461,7 @@ Return:
 
 
 <a name="h7Pvb"></a>
-## 3.2 与TensorFlow结合
+## 与TensorFlow结合
 `values(func)`返回一个以func定义返回数据类型的generator，可以直接对接TensorFlow的[tf.data.Dataset](https://www.tensorflow.org/api_docs/python/tf/data/Dataset)。<br />
 ```python
 query = g.E("u2i").shuffle().batch(512).alias("edges")
