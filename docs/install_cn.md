@@ -27,11 +27,24 @@ sudo apt-get install autoconf automake libtool cmake python-numpy
 
 ## 编译
 
+首先，下载源代码:
 ```bash
 git clone https://github.com/alibaba/graph-learn.git
 cd graph-learn
 git submodule update --init
+```
+接着，可以使用如下两种方式编译整个项目及测试用例：
+1. 使用Makefile:
+```bash
 make test
+```
+2. 使用CMakeLists.txt:
+```bash
+mkdir cmake-build && cd cmake-build
+cmake -DTESTING=ON .. && make
+```
+最后，编译python包:
+```bash
 make python
 ```
 

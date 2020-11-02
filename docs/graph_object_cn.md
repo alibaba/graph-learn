@@ -8,7 +8,7 @@ Graph对象是将原始数据组织起来、供上层算子进行操作的本体
 
 
 <a name="2Kpiz"></a>
-# 1 声明Graph对象
+# 声明Graph对象
 声明Graph对象很简单，代码如下。后续所有相关操作都基于`g`来进行。
 ```python
 import graphlearn as gl
@@ -16,7 +16,7 @@ g = gl.Graph()
 ```
 <br />
 
-# 2 描述拓扑结构
+# 描述拓扑结构
 拓扑结构描述的是图中的边与顶点的关联关系。这里的拓扑指的是“一类”数据的关系，而非“一条”数据。拓扑关系都是有向的，即有向图。<br />
 <br />例如，对于一个“商品-商品”同构图，其拓扑结构图1所示。图中只有item到item类型的数据关联，边类型为swing，表示通过swing算法生成的item关联关系，源顶点和目的顶点类型均为item。
 
@@ -30,7 +30,7 @@ g = gl.Graph()
 <br />实际中，图中边的数量要远大于顶点的数量，大部分情况下顶点都具有丰富的属性信息，为了节省空间，边和顶点往往是分开存储的。我们通过向Graph对象添加顶点数据源和边数据源的形式，来构建拓扑结构。<br />
 
 <a name="OVdVh"></a>
-## 2.1 添加顶点
+## 添加顶点
 Graph对象提供 **node()** 接口，用于添加一种顶点数据源。**node()**返回Graph对象本身，也就意味着可以连续多次调用**node()**。具体接口形式和参数如下：
 ```python
 def node(source, node_type, decoder)
@@ -66,7 +66,7 @@ g.node(source="table_1", node_type="user", decoder=Decoder(attr_types=["int", "f
 
 
 <a name="grjJs"></a>
-## 2.2 添加边
+## 添加边
 Graph对象提供 **edge()** 接口，用于添加一种边数据源，支持将同构或异构的边指定为无向边。**edge()**返回Graph对象本身，也就意味着可以连续多次调用**edge()**。通过添加边数据源，确定了图中边类型与其源点、目的点类型的对应关系，再结合对应的顶点类型数据源，共同构成一张打通连接关系的大图。具体接口形式和参数如下：
 ```python
 def edge(source, edge_type, decoder, directed=True)
@@ -109,13 +109,13 @@ g.edge(source="table_3", edge_type=("user", "item", "click"), decoder=ui_decoder
 
 
 <a name="HNiIP"></a>
-# 3 初始化
+# 初始化
 
 顶点与边添加完成后，需要调用初始化接口，完成从原始数据到内存索引的构建。初始化过程决定了图数据被Serving的情况，单机的还是分布式的。若为分布式的，还要区分Server Mode和Client-Server Mode。初始化完成后，便可对Graph对象进行操作了。<br />
 
 <a name="nGHkF"></a>
 
-## 3.1 单机
+## 单机
 单机模式比较简单，表示该Graph对象Hold全部图数据。
 
 ```python
@@ -123,7 +123,7 @@ g.init()
 ```
 
 <a name="oKpvB"></a>
-## 3.2 分布式--Server Mode
+## 分布式--Server Mode
 
 该模式下，数据分布式存在于各个Server上，Server之间两两互联，每个Server对应一个Graph对象的入口。当进行图采样或查询等操作时，Graph对象把请求提交给本地Server，由Server决定如何分布式处理。Graph对象与本地Server之间不存在网络通信。
 
@@ -145,7 +145,7 @@ else:
 <br />
 <a name="xgEg9"></a>
 
-## 3.3 分布式--Client/Server Mode
+## 分布式--Client/Server Mode
 
 该模式下，与Server Mode类似，数据分布式存在于各个Server上，Server之间两两互联。此时，Graph对象的入口位于Client端，而非Server端。每个Client都与唯一一个Server连接，该Server作为Client的响应Server（类似于Server Mode里的本地Server）。Client与Server的对应关系由负载均衡算法决定。Client作为入口，提交请求到其响应Server，由该Server决定如何分布式处理。<br />
 <br />C/S Mode适用于分布式规模超大的情况（一百以上），此时以为worker规模很大，使用Server Mode部署会大大增加网络互联的开销。另外，图数据的规模和worker规模不一定匹配，例如，当1000个worker并发训练时，并不一定需要这么多Server去承载Graph数据，数据太分散会严重降低性能。一般而言，训练的worker数 >= 图Server数。<br />

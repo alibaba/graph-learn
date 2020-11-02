@@ -1,15 +1,15 @@
 # 图采样
 
 <a name="fOsGk"></a>
-# 1 介绍
+# 介绍
 图采样是处理超大规模图的有效手段，已经在以[GraphSAGE](https://arxiv.org/abs/1706.02216)框架为代表的编程范式中广泛使用。实际中，采样除了降低数据规模以外，也实现了数据对齐，有利于Tensor-Based计算框架高效处理。<br />
 <br />我们把用户对采样的需求抽象成**2类**操作：**邻居采样（NEIGHBORHOOD）**，**负采样（NEGATIVE）**。邻居采样，根据输入的顶点，采样其一跳或多跳邻居顶点，用于构造[GCN](https://arxiv.org/abs/1609.02907)理论中的感受野。邻居采样的输入，可以来自图遍历的输出，也可以来自图之外的其他数据源。负采样，根据输入的顶点，采样与其不直接相连的顶点。负采样往往作为监督学习的重要手段。<br />
 <br />每一类采样操作都有不同的实现策略，如随机、按权重等。与实际生产相结合，我们已经积累了**10余种**采样算子，并开放了算子编程接口，允许用户自定义，以满足快速发展的GNN的需求。本章介绍邻居采样，负采样将在下一章中详细介绍。此外，最近的AI顶会提出的子图采样正在研发中。<br />
 
 <a name="gvEnk"></a>
-# 2 用法
+# 用法
 <a name="OI8t6"></a>
-## 2.1 接口
+## 接口
 采样算子以meta-path和采样数量作为输入，用于表达对任意异构图、任意跳数采样的支持，采样结果组织成`Layers`对象，每一跳采样的结果为一个`Layer`，可获取其中对应的`Nodes`和`Edges`。一个采样操作可具体分为以下3步实现：
 
 - 通过`g.neighbor_sampler()`定义采样算子，得到`NeighborSampler`对象`S`；
@@ -58,7 +58,7 @@ g.V().outV().sample(count).by(strategy).outV().sample(count).by(strategy)
 
 
 <a name="j0egY"></a>
-## 2.2 示例
+## 示例
 如下图所示，从user类型的顶点开始，采样其2跳邻居，返回结果为layers，layers包含layer1和layer2。**layer的index从1开始**，即1跳邻居为layer1，2跳邻居为layer2。
 
 <div align=center><img src ="images/2-hop-sampling.png" /> </div>
@@ -80,7 +80,7 @@ l.layer_edges(2).float_attrs
 
 
 <a name="UpHHt"></a>
-# 3 采样策略
+# 采样策略
 GL目前已支持以下几种采样策略，对应产生`NeighborSampler`对象时的`strategy`参数。
 
 | **strategy** | **说明** |

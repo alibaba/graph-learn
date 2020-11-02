@@ -1,13 +1,13 @@
 # 负采样
 
 <a name="znmkl"></a>
-# 1 介绍
+# 介绍
 负采样作为无监督训练的重要手段，是指采样与给定顶点没有直接边关系的顶点。同邻居采样类似，负采样也有不同的实现策略，如随机、按顶点入度等。作为GNN的一种常见算子，负采样支持扩展和面向场景的自定义。<br />
 
 <a name="6WYEX"></a>
-# 2 用法
+# 用法
 <a name="keU3J"></a>
-## 2.1 接口
+## 接口
 负采样算子以边或顶点类型作为输入。当输入边类型时，表示“在该边类型下采样与给定顶点无直接关联的顶点”，候选集为边的目的顶点中与给定顶点不直接相连的顶点。当输入顶点类型时，表示“在该类型的顶点中采样与给定顶点无关联的顶点”，此时需要用户指定候选顶点集。采样结果组织成`Nodes`对象（类似一跳邻居采样，但不存在`Edges`对象）。一个负采样操作可具体分为以下3步实现：
 
 - 通过`g.negative_sampler()`定义负采样算子，得到`NegativeSampler`对象`S`；
@@ -40,7 +40,7 @@ Return:
 
 
 <a name="B3CYq"></a>
-## 2.2 示例
+## 示例
 ```python
 es = g.edge_sampler("buy", batch_size=3, strategy="random")
 ns = g.negative_sampler("buy", 5, strategy="random")
@@ -59,16 +59,16 @@ for i in range(5):
 # 1. 负采样一跳邻居顶点
 g.V().outNeg(edge_type).sample(count).by(strategy)
 
-# 2. 负采样二跳邻居顶点
+# 负采样二跳邻居顶点
 g.V().outNeg(edge_type).sample(count).by(strategy).outNeg(edge_type).sample(count).by(strategy)
 
-# 3. 在给定顶点候选集上负采样
+# 在给定顶点候选集上负采样
 g.V().Neg(node_type).sample(count).by("node_weight")
 ```
 
 
 <a name="ePTLM"></a>
-# 3 负采样策略
+# 负采样策略
 GL目前已支持以下几种负采样策略，对应产生`NegativeSampler`对象时的`strategy`参数。
 
 | **strategy** | **说明** |
