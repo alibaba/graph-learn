@@ -37,7 +37,7 @@ egde_type:swing, src_type:item, dst_type:item
 Coming soon...<br />
 
 <a name="FPU74"></a>
-#2 Data Query
+# 2 Data Query
 
 **GL** has two basic data types: `Nodes` and `Edges`. Graph raversal, query, and sampling operations all return a batch of vertices or edges. In particular, non-aligned sampling returns the sparse form of two basic data types, namely `SparseNodes` and `SparseEdges`.<br />
 <br /> The interface of `Nodes` is shown as follows.
