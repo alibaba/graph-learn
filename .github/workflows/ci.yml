@@ -30,7 +30,9 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 graphlearn --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Make test
-      run: make test
+      run: |
+        mkdir cmake-build && cd cmake-build
+        cmake -DTESTING=ON .. && make
     - name: Test env
       run: source env.sh
     - name: Cpp test
