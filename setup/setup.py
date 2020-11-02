@@ -23,6 +23,9 @@ from setuptools import setup, Extension, find_packages
 import shlex
 from subprocess import check_output
 
+# This version string should be updated when releasing a new version.
+_VERSION = '0.1'
+
 ROOT_PATH = os.path.abspath(os.path.join(os.getcwd()))
 CUT_PATH = sys.path[0]
 
@@ -69,11 +72,10 @@ extensions.append(graphlearn_extension)
 GIT_BRANCH_NAME = check_output(shlex.split(
   'git rev-parse --abbrev-ref HEAD')).strip()
 GIT_HEAD_REV = check_output(shlex.split('git rev-parse --short HEAD')).strip()
-VERSION = check_output(shlex.split('cat {}/version.txt'.format(CUT_PATH))).strip()
 
 setup(
     name='graphlearn',
-    version=VERSION,
+    version=_VERSION,
     description='Python Interface for Graph Neural Network',
     ext_package='graphlearn',
     ext_modules=extensions,

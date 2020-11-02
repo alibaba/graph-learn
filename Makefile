@@ -329,12 +329,14 @@ test:so gtest
 	$(CXX) $(CXXFLAGS) graphlearn/service/dist/test/service_unittest.cpp -o built/bin/service_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/service/dist/test/service_with_hosts_unittest.cpp -o built/bin/service_with_hosts_unittest $(TEST_FLAG)
 
+VERSION := $(shell grep "_VERSION = " ${SETUP_DIR}/setup.py | cut -d= -f2)
 python: so pybind
 	@rm -rf build
 	@rm -rf dist
 	@rm -rf graphlearn.egg-info
 	@mkdir -p $(PYTHON_LIB)
 	@cp $(SETUP_DIR)/gl.__init__.py $(PYTHON_DIR)/__init__.py
+	@echo "__version__ = $(VERSION)" >> $(PYTHON_DIR)/__init__.py
 	@cp $(THIRD_PARTY_DIR)/grpc/build/lib/libgrpc++.so.1.26.0 $(PYTHON_LIB)/libgrpc++.so.1.26.0
 	@cp $(THIRD_PARTY_DIR)/grpc/build/lib/libgrpc.so.9.0.0 $(PYTHON_LIB)/libgrpc.so.9.0.0
 	@cp $(THIRD_PARTY_DIR)/grpc/build/lib/libgpr.so.9.0.0 $(PYTHON_LIB)/libgpr.so.9.0.0

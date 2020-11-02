@@ -378,6 +378,14 @@ if (TESTING)
         graphlearn/service/dist/test/service_with_hosts_unittest.cpp)
 endif()
 
+execute_process (
+    COMMAND /bin/sh -c "cat ${SETUP_DIR}/setup.py | grep '_VERSION =' | cut -d= -f2"
+    OUTPUT_VARIABLE VERSION
+    WORKING_DIRECTORY ${ROOT}
+)
+
+string(STRIP ${VERSION} VERSION)
+
 # python
 add_custom_target (python)
 add_dependencies (python pybind_target)
@@ -387,6 +395,7 @@ add_custom_command (TARGET python
     COMMAND /bin/sh -c "rm -rf graphlearn.egg-info"
     COMMAND /bin/sh -c "mkdir -p ${PYTHON_LIB}"
     COMMAND /bin/sh -c "cp ${SETUP_DIR}/gl.__init__.py ${PYTHON_DIR}/__init__.py"
+    COMMAND /bin/sh -c "echo '__version__ = ${VERSION}' > ${PYTHON_DIR}/__init__.py"
     COMMAND /bin/sh -c "cp ${THIRD_PARTY_DIR}/grpc/build/lib/libgrpc++.so.1.26.0 ${PYTHON_LIB}/libgrpc++.so.1.26.0"
     COMMAND /bin/sh -c "cp ${THIRD_PARTY_DIR}/grpc/build/lib/libgrpc.so.9.0.0 ${PYTHON_LIB}/libgrpc.so.9.0.0"
     COMMAND /bin/sh -c "cp ${THIRD_PARTY_DIR}/grpc/build/lib/libgpr.so.9.0.0 ${PYTHON_LIB}/libgpr.so.9.0.0"

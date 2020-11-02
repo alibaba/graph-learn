@@ -341,12 +341,14 @@ def check_not_exist_edge_attrs(edges,
 
 
 def check_equal(lhs, rhs):
-  npt.assert_equal(lhs, rhs)
+  npt.assert_equal(list(lhs), list(rhs))
 
 
 def check_sorted_equal(lhs, rhs):
   """ check sorted lhs is equal with sorted rhs.
   """
+  lhs = list(lhs)
+  rhs = list(rhs)
   lhs.sort()
   rhs.sort()
   npt.assert_equal(lhs, rhs)
