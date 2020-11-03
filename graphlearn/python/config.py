@@ -86,3 +86,11 @@ def set_shuffle_buffer_size(size):
 
 def set_rpc_message_max_size(size):
   pywrap.set_rpc_message_max_size(size)
+
+
+def set_vineyard_graph_id(graph_id):
+  pywrap.set_vineyard_graph_id(graph_id)
+
+
+def set_vineyard_ipc_socket(ipc_socket):
+  pywrap.set_vineyard_ipc_socket(ipc_socket)

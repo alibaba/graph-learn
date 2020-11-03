@@ -26,7 +26,7 @@ namespace graphlearn {
 template <class T>
 class HeterDispatcher {
 public:
-  typedef T* (*TypeCreator)();
+  typedef T* (*TypeCreator)(const std::string& type);
 
 public:
   explicit HeterDispatcher(TypeCreator creator)
@@ -46,7 +46,7 @@ public:
       return it->second;
     }
 
-    T* t = creator_();
+    T* t = creator_(type);
     holder_[type] = t;
     return t;
   }

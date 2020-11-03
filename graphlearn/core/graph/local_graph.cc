@@ -24,8 +24,8 @@ namespace graphlearn {
 
 class LocalGraph : public Graph {
 public:
-  LocalGraph() {
-    storage_ = CreateGraphStorage();
+  LocalGraph(const std::string& type) {
+    storage_ = CreateGraphStorage(type);
   }
 
   virtual ~LocalGraph() {
@@ -86,8 +86,8 @@ private:
   io::GraphStorage* storage_;
 };
 
-Graph* CreateLocalGraph() {
-  return new LocalGraph();
+Graph* CreateLocalGraph(const std::string& type) {
+  return new LocalGraph(type);
 }
 
 }  // namespace graphlearn

@@ -36,7 +36,7 @@ public:
   /// Do some re-organization after data fixed.
   virtual void Build() = 0;
 
-  /// Get the total edge count after data fixed.
+  /// Get the total node count after data fixed.
   virtual IdType Size() const = 0;
 
   /// A NODE is made up of [ id, attributes, weight, label ].
@@ -68,6 +68,7 @@ public:
 
 NodeStorage* NewMemoryNodeStorage();
 NodeStorage* NewCompressedMemoryNodeStorage();
+NodeStorage* NewVineyardNodeStorage(const std::string& node_type);
 
 }  // namespace io
 }  // namespace graphlearn

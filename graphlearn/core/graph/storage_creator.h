@@ -21,8 +21,8 @@ limitations under the License.
 
 namespace graphlearn {
 
-io::GraphStorage* CreateGraphStorage();
-io::NodeStorage* CreateNodeStorage();
+io::GraphStorage* CreateGraphStorage(const std::string& type);
+io::NodeStorage* CreateNodeStorage(const std::string& type);
 
 }  // namespace graphlearn
 
