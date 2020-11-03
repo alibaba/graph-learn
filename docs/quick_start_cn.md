@@ -9,7 +9,7 @@
 - 以**GraphSAGE**为例，说明如何基于**GL**和TensorFlow开发一个自己的GNN模型
 
 
-# 跑通内置模型
+# 1. 跑通内置模型
 
 **GL**内置了一些常见模型，如**GCN**，**GraphSAGE**，以及数据集**cora、ppi**等。
 我们从跑通**core**数据的顶点分类任务开始接触**GL**。完整模型代码请参考[模型示例](model_examples.md)。<br />
@@ -25,7 +25,7 @@ python train_supervised.py
 ```
 
 
-# **GL**接口使用
+# 2. **GL**接口使用
 
 **GL**为GNN的开发提供了大量基础接口，下面将会展示如何基于**GL**来构图、查询、采样、负采样。
 
@@ -133,11 +133,11 @@ python $HERE/test.py \
   --job_name="client" --task_index=1
 ```
 
-# 开发一个GNN模型
+# 3. 开发一个GNN模型
 
 下面将基于**GL**和**TensorFlow**开发一个有监督的**GraphSAGE**模型，并在Cora数据上训练，更详细的参考[模型的开发](algo_cn.md)。<br />
 
-## 数据准备
+## 3.1 数据准备
 
 我们使用开源数据集Cora，它包含了机器学习的一些论文，以及论文之间的引用关系，每篇论文包含1433个属性。这些论文可以划分为7种类别：Case_Based，Genetic_Algorithms，Neural_Networks，Probabilistic_Methods，Reinforcement_Learning，Rule_Learning，Theory。该GNN任务的目的是预测论文的分类。我们将开源的Cora数据进行处理，得到我们构图所需的数据格式。Cora数据下载和处理的脚本参考[cora.py](../examples/data/cora.py)。
 
@@ -179,7 +179,7 @@ node_decoder = gl.Decoder(labeled=True, attr_types=["float"] * N_FEATURE)
 edge_decoder = gl.Decoder(weighted=True)
 ```
 
-## 图构建
+## 3.2 图构建
 
 图构建的过程是将顶点数据和边数据加载到内存中，转换为逻辑上的图格式。构建完成后，可供查询和采样。<br />
 
@@ -213,7 +213,7 @@ g.node("examples/data/cora/node_table",
 g.init()
 ```
 
-## 图采样
+## 3.3 图采样
 为了实现GraphSAGE，需要进行图采样以作为上层网络的输入。在这里，我们的采样顺序为：<br />
 (1) 按batch采样种子“item”顶点；<br />
 (2) 采样上述顶点沿着“relation”边的1-hop邻居和2-hop邻居；<br />
@@ -238,7 +238,7 @@ def sample_gen():
       break
 ```
 
-## 模型代码
+## 3.4 模型代码
 以TensorFlow Estimator为例，说明在**GL**上自行开发GNN的方式。<br />
 
 - 将图采样的样本生成器作为`input_fn`

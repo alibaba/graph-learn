@@ -1,15 +1,15 @@
 # 图遍历
 
 <a name="pLeth"></a>
-# 介绍
+# 1. 介绍
 图遍历，在GNN里的语义有别于经典的图计算。主流深度学习算法的训练模式会按batch迭代。为了满足这种要求，数据要能够按batch访问，我们把这种数据的访问模式称为遍历。在GNN算法中，数据源为图，训练样本通常由图的顶点和边构成。图遍历是指为算法提供按batch获取顶点、边或子图的能力。
 
 目前**GL**支持顶点和边的batch遍历。这种随机遍历可以是无放回的，也可以是有放回的。在无放回遍历中，每当一个epoch结束后都会触发`gl.OutOfRangeError`。被遍历的数据源是划分后的，即当前worker（以分布式TF为例）只遍历与其对应的Server上的数据。
 
 <a name="Fj1gp"></a>
-# 顶点遍历
+# 2. 顶点遍历
 <a name="HEDng"></a>
-## 用法
+## 2.1 用法
 顶点的数据来源有3种：所有unique的顶点，所有边的源顶点，所有边的目的顶点。顶点遍历依托`NodeSampler`算子实现，Graph对象的`node_sampler()`接口返回一个`NodeSampler`对象，再调用该对象的`get()`接口返回`Nodes`格式的数据。
 ```python
 def node_sampler(type, batch_size=64, strategy="by_order", node_from=gl.NODE):
@@ -37,7 +37,7 @@ Return:
 <br />通过`Nodes`对象获取具体的值，如id、weight、attribute等，参考[API](graph_query_cn.md#FPU74)。在GSL中，顶点遍历参考`g.V()`。<br />
 
 <a name="aNB50"></a>
-## 示例
+## 2.2 示例
 | id | attributes |
 | --- | --- |
 | 10001 | 0:0.1:0 |
@@ -55,9 +55,9 @@ for i in range(5):
 
 
 <a name="8lRI5"></a>
-# 边遍历
+# 3. 边遍历
 <a name="EWBuj"></a>
-## 用法
+## 3.1 用法
 边遍历依托`EdgeSampler`算子实现。Graph对象的`edge_sampler()`接口返回一个`EdgeSampler`对象，再调用该对象的`get()`接口返回`Edges`格式的数据。
 ```python
 def edge_sampler(edge_type, batch_size=64, strategy="by_order"):
@@ -82,7 +82,7 @@ Return:
 <br />通过`Edges`对象获取具体的值，如id、weight、attribute等，参考[API](graph_query_cn.md#FPU74)。在GSL中，边遍历参考`g.E()`。<br />
 
 <a name="RVPmZ"></a>
-## 示例
+## 3.2 示例
 | src_id | dst_id | weight | attributes |
 | --- | --- | --- | --- |
 | 20001 | 30001 | 0.1 | 0.10,0.11,0.12,0.13,0.14,0.15,0.16,0.17,0.18,0.19 |

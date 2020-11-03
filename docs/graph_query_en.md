@@ -3,11 +3,11 @@
 After constructing the graph object, we can query on the graph. Graph query refers to getting **meta information** and **data information** without complex calculation and sampling logic.
 
 <a name="WREbw"></a>
-# Meta Query
+# 1. Meta Query
 Meta infomation refers to the graph structure and statistical data, including graph topology, number of vertices, distribution of edges and vertices, maximum in-and-out degrees and etc.<br />
 
 <a name="EyXMf"></a>
-## Graph Topology
+## 1.1 Graph Topology
 ```python
 def get_topology()
 """ Get the topology of the graph
@@ -33,11 +33,11 @@ egde_type:swing, src_type:item, dst_type:item
 
 
 <a name="laOmB"></a>
-## In-and-Out Degree Distribution
+## 1.2 In-and-Out Degree Distribution
 Coming soon...<br />
 
 <a name="FPU74"></a>
-# Data Query
+# 2. Data Query
 
 **GL** has two basic data types: `Nodes` and `Edges`. Graph raversal, query, and sampling operations all return a batch of vertices or edges. In particular, non-aligned sampling returns the sparse form of two basic data types, namely `SparseNodes` and `SparseEdges`.<br />
 <br /> The interface of `Nodes` is shown as follows.
@@ -129,7 +129,7 @@ def __next__(self):
 
 
 <a name="OdSFV"></a>
-## Vertices Query
+## 2.1 Vertices Query
 We can get Nodes by traversing the graph, sampling or specifying the node id. Once we get the nodes, we can query their attributes, weights or lables.
  <br />Query vertices with specified ids:
  ```python
@@ -172,7 +172,7 @@ u_nodes = g.V("user", feed=np.array([10001, 10002, 10003])).emit()
 
 
 <a name="q3IOm"></a>
-## Edges Query
+## 2.2 Edges Query
 We can get edges from graph travesal, sampling or specifying src_id and dst_id. Once we get the edges, we can query their attributes, weights or labels.
 <br />edges query by specifying src_id, dst_id:
 ```python
@@ -235,7 +235,7 @@ edges = g.E("swing",
 
 
 <a name="rogkI"></a>
-## Sparse Vertices and Edges Query
+## 2.3 Sparse Vertices and Edges Query
 We can get Nodes or Edges object from graph traversal or sampling, and query them by interfaces introduced in 2.1 and 2.2.<br />The results of non-aligned sampling are often sparse. For instance, the full neighbor sampling returns non-aligned results because vertices have different numbers of neighbors.<br />
 <br />In the following example of using the edge attribute query of full neighbor sampling, we illustrate the interfaces and the usage of sparse objects.<br />
 

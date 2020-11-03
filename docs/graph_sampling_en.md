@@ -2,7 +2,7 @@
 
 <a name="fOsGk"></a>
 
-# Introduction
+# 1. Introduction
 Graph sampling is an effective way to deal with very large graphs, which has been widely adopted by mainstream Graph Neural Network models such as [GraphSage](https://arxiv.org/abs/1706.02216). In practice, sampling not only reduces the data scale, but also aligns the data, which is conducive to the efficient processing of the tensor-based computing framework. <br />
 
 <br />We characterized the sampling operations into **2 types** according to user needs: **neighbor sampling** and **negative sampling**. Neighbor sampling retrieves multi-hops neighbors of the given input vertices. Those sampled neighbors could be used to construct the receptive field in [GCN](https://arxiv.org/abs/1609.02907) theory. Negative sampling retrieves vertices which are not directly connected to the given input vertices. In practice, negative sampling is an important method for supervised learning.<br />
@@ -10,9 +10,9 @@ Graph sampling is an effective way to deal with very large graphs, which has bee
 <br />Each type of sampling operation has different sampling strategies, such as random, weighted, etc. To support the rich application scenarios, we have implemented more than ten kinds of ready-made sampling operators. We also expose necessary APIs for users to customize their own sampling operators to meet the needs of the rapidly developing GNN. This chapter introduces neighbor sampling, and negative sampling will be described in detail in the next chapter. In addition, we are working on implementing the sub-graph sampling methods proposed in recent AI top conferences.<br />
 
 <a name="gvEnk"></a>
-# Usage
+# 2. Usage
 <a name="OI8t6"></a>
-## Interface
+## 2.1 Interface
 The sampling operator takes meta-path and sampling number as input which supports for sampling any heterogeneous graph and arbitrary hops. The sampling results are organized into `Layers` where the n-th `Layer` contains the sampling result from the n-th hop. One can access the `Nodes` and `Edges` in each `Layer` object. A sampling operation can be divided into the following three steps:
 
 - Define the sampling operator by invoking `g.neighbor_sampler()` to get the `NeighborSampler` object `S`
@@ -60,7 +60,7 @@ g.V().outV().sample(count).by(strategy).outV().sample(count).by(strategy)
 ```
 
 <a name="j0egY"></a>
-## Example
+## 2.2 Example
 The figure below shows a query that samples the 2-hop neighbors of a given "user" vertex. The returned result contains two layers, where layer1 is one-hop neighbors and layer2 is two-hop neighbors.
 
 <div align=center><img src ="images/2-hop-sampling.png" /> </div>
@@ -81,7 +81,7 @@ l.layer_edges(2).float_attrs
 ```
 
 <a name="UpHHt"></a>
-# Sampling Strategy
+# 3. Sampling Strategy
 GL currently supports the following sampling `strategy` options when creating the `NeighborSampler` object.
 
 | **strategy** | **Description** |

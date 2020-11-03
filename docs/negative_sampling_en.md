@@ -1,13 +1,13 @@
 # Negative Sampling
 
 <a name="znmkl"></a>
-# Introduction
+# 1. Introduction
 As an important method of unsupervised training, negative sampling refers to sample the vertices that have no direct edge connected the given vertex. Similar to neighbor sampling, negative sampling also has different sampling strategies, such as random sampling and sampling by in-degree of input vertex. As a common operator of GNN, negative sampling supports expansion and scene-oriented customization.
 
 <a name="6WYEX"></a>
-# Usage
+# 2. Usage
 <a name="keU3J"></a>
-## Interface
+## 2.1 Interface
 The input of the negative sampling operator can be an edge or vertex type. When the input is an edge type, the operator refers to "under certain edge type, sample vertices that are not directly connected to a given vertex, from a candidate vertices set". The candidate vertices set contains all vertices that are connected by the certain edge type and are not connected to the given vertex.
 
 When the input is a vertex type, the operator refers to "sample vertices of a certain type that are not directly connected to a given vertex, from a candidate vertices set". Here, the user needs to specify the candidate vertex set to sample from. The sampling results are organized into `Nodes` objects (similar to 1-hop neighbor sampling, but there is no `Edges` object). 
@@ -41,7 +41,7 @@ Return:
 ```
 
 <a name="B3CYq"></a>
-## Example
+## 2.2 Example
 ```python
 es = g.edge_sampler("buy", batch_size=3, strategy="random")
 ns = g.negative_sampler("buy", 5, strategy="random")
@@ -69,7 +69,7 @@ g.V().Neg(node_type).sample(count).by("node_weight")
 ```
 
 <a name="ePTLM"></a>
-# Negative Sampling Strategies
+# 3. Negative Sampling Strategies
 GL currently supports the following negative sampling strategies. They are also possible values of the `strategy` parameter when creating the `NegativeSampler` object.
 
 | **strategy** | **Description** |

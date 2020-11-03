@@ -15,14 +15,14 @@ Usually three steps are essential to create a graph object:
 
 • Initialize data
 
-# Declare the Graph object
+# 1. Declare the Graph object
 The declaration of a Graph object is simple, as listed below. All subsequent operations are performed based on `g`.
 ```python
 import graphlearn as gl
 g = gl.Graph()
 ```
 
-# Describe the topology
+# 2. Describe the topology
 Graph topology describes the relationship between edges and nodes in the graph. The topology here refers to the relationship of meta information of the graph, not data records.
 
 For example, for a homogeneous graph that represents "item-item" relationship, its topology is shown in Figure 1.
@@ -50,7 +50,7 @@ The types and connections of those nodes and edges are the basic primitives of t
 
 In practice, the number of edges in the graph is much larger than the nodes. Moreover, nodes usually are embedded with rich attribute information. To save memory, we separate the storage of edges and nodes in graph object.
 
-### Add node data source
+## 2.1 Add node data source
 `Graph` provides `node()` API for adding node data sources. 
 
 `node()` function returns the `Graph` object itself, which allows user to call `node()` multiple times to add multiple node data sources. 
@@ -74,7 +74,7 @@ g = g.node(source="user_path", node_type="user", decoder=gl.Decoder(attr_types=[
      .node(source="item_path", node_type="item", decoder=gl.Decoder(attr_types=["int", "float"]))
 ```
 
-### Add edge data source
+## 2.2 Add edge data source
 `Graph` provides `edge()` API for adding edge data sources. 
 
 `edge()` returns a Graph object itself, which means that you can call `edge()` multiple times to add multiple edge data sources.
@@ -108,7 +108,7 @@ g.edge(source="buy_path", edge_type=("user", "item", "buy"), decoder=buy_decoder
  .edge(source="similar_to_path", edge_type=("item", "item", "similar-to"), decoder=similar_to_decoder)
 ```
 
-# Initialize data
+# 3. Initialize data
 After adding the node data sources and edge data sources to Graph, we finish the description of topology and data source format of our graph. 
 
 Calling the `init()` interface can finalize the declared `Graph` object as `g`. 

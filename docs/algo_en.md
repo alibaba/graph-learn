@@ -5,7 +5,7 @@ We demonstrate the GCN model as an example which is the most popular model in gr
 In [Algorithm Programming Paradigm](model_programming_cn.md), we introduced some basic concepts used in developing algorithms, such as ʻEgoGraph`, ʻEgoTensor` encoder, etc.
 Please understand these basic concepts before continuing to read.
 
-# How to Build a Graph Learning Algorithm
+# 1. How to Build a Graph Learning Algorithm
 
 In general, it requires the following four steps to build an algorithm
 
@@ -33,7 +33,7 @@ In general, it requires the following four steps to build an algorithm
 Next, we introduce how to implement a GCN model using the above 4 steps.
 
 
-### Sampling
+## 1.1 Sampling
 
 We use the Cora dataset as the node classification example. We provide a simple data conversion script `cora.py` to convert the original Cora to the format required by **GL**. The script generates following 5 files: node_table, edge_table_with_self_loop, train_table, val_table and test_table.
 They are the node table, the edge table, and the nodes tables used to distinguish training, validation, and testing sets.
@@ -98,7 +98,7 @@ class GCN(gl.LearningBasedModel):
  `OutV` returns one-hop neighbors so the above code samples two-hop neighbors. Users can choose different neighbor sampling methods.
  For the original GCN, it requires all neighbors of each node are so we use 'full' for sampling. We aggregate the sampling results in `EgoGraph` which is the return value.
 
- ### Graph Data Flow
+ ## 1.2 Graph Data Flow
 
  In `build` function, we convert `EgoGraph` to `EgoTensor` using `EgoFlow`. `EgoFlow` contains an data flow iterator and several `EgoTensor`s.
 
@@ -116,7 +116,7 @@ class GCN(gl.LearningBasedModel):
 
 We can get the `EgoTensor` corresponding to the previous `EgoGraph` from `EgoFlow`.
 
-### Encoder
+## 1.3 Encoder
 
 Next, we first use the feature encoder to encode the original features.
 In this example, we use `IdentityEncoder` that returns itself, because
@@ -143,7 +143,7 @@ class GCN(gl.LearningBasedModel):
     return {"src": encoder, "edge": None, "dst": None}
 ```
 
-### Loss Function and Training Process
+## 1.4 Loss Function and Training Process
 
 For the Cora node classification model, we can select the corresponding classification loss function in TensorFlow.
 Then, we combine the encoder and loss function in the `build` function, and finally return a data iterator and a loss function.

@@ -5,7 +5,7 @@ This tutorial has three parts:
 - How to import data into **GL**, and use the graph data, graph sampling and negative sampling APIs.
 - How to develop your own GNN models using **GL** and Tensorflow using **GraphSAGE** as an example.
 
-# Trying out the built-in models
+# 1. Trying out the built-in models
 
 We have implemented in **GL** a set of popular GNN models, such as **GCN**, **GraphSAGE**,
 and some datasets, such as **cora**, **ppi**.
@@ -22,7 +22,7 @@ python cora.py
 python train_supervised.py
 ```
 
-# How to use the **GL** APIs
+# 2. How to use the **GL** APIs
 
 **GL** provides a large collection of basic APIs for developing GNN models.
 In this part, we will go through how to use them to (1) construct graphs,
@@ -135,12 +135,12 @@ python $HERE/test.py \
   --job_name="client" --task_index=1
 ```
 
-# Developing a GNN model
+# 3. Developing a GNN model
 
 Next we will go through how to develop a supervised **GraphSAGE** model using **GL** and **TensorFlow**, and train it on the Cora dataset.
 Please refer to [Developing Your Own Model](algo_en.md) for details. <br />
 
-## Data Preparation
+## 3.1 Data Preparation
 
 We use the open-source dataset Cora as an example. The Cora dataset contains papers
 from the machine learning field, and the citation relationship between these papers.
@@ -191,7 +191,7 @@ edge_decoder = gl.Decoder(weighted=True)
 ```
 
 
-## Graph Construction
+## 3.2 Graph Construction
 
 Graph construction is the process of loading the vertex and edge data into memory.
 After construction, the graph can be queries and sampled. <br />
@@ -225,7 +225,7 @@ g.node("examples/data/cora/node_table",
 g.init()
 ```
 
-## Graph Sampling
+## 3.3 Graph Sampling
 
 GraphSAGE requires graph sampling to generate input for the neural network.
 Here, we use the following sampling steps: <br />
@@ -252,7 +252,7 @@ def sample_gen():
       break
 ```
 
-## GNN Model
+## 3.4 GNN Model
 
 In this part, we use the TensorFlow Estimator as an example to demonstrate
 developing a GNN model on **GL**.
