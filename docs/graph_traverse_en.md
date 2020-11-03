@@ -57,7 +57,7 @@ for i in range(5):
 ```
 
 <a name="8lRI5"></a>
-# 3 Edge Traversal
+# 3. Edge Traversal
 <a name="EWBuj"></a>
 ## 3.1 Usages
  Edge traversal is implemented by the `EdgeSampler` operation. The `edge_sampler()` API of `Graph` object returns a `EdgeSampler` object, and then invokes `get()` API of this object to return `Edges` data.

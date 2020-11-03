@@ -1,7 +1,7 @@
 # Graph Sampling Language（GSL）
 
 <a name="TUTVl"></a>
-# 1 简介
+# 1. 简介
 GNN发展至今，有一套相对成熟的编程范式。我们将一个GNN模型的开发分为两个阶段：图模式的数据处理部分和神经网络部分。
 神经网络部分，我们可以借助成熟的DL框架，如TensorFlow、PyTorch。
 如何简单高效的描述和实现适合GNN的图数据访问模式，以及如何与主流的深度学习框架对接，是GL重点关注的。<br />
@@ -18,7 +18,7 @@ GNN发展至今，有一套相对成熟的编程范式。我们将一个GNN模�
 <br />**GSL**考虑实际图数据的特点，覆盖了对超大图、异构图、属性图的支持，语法设计贴近[Gremlin](http://tinkerpop.apache.org/docs/current/reference/#_tinkerpop_documentation)形式，便于理解。<br />
 
 <a name="KFXRf"></a>
-# 2 GSL语法
+# 2. GSL语法
 我们把一个由**GSL**描述的语句称为**Query**，一个**Query**通常由**SOURCE**、**STEP**和**SINK**三种类型的操作组成。
 其中，**SOURCE**为查询语句的入口，表示从哪些数据出发；**STEP**为查询过程中游走和采样的路径，**SINK**为对执行结果的封装。
 在GSL中，一条Query必须包含**一个SOURCE**和**一个SINK**操作。<br />
@@ -445,7 +445,7 @@ print(res[1].ids)
 <br />需要注意的是，当Query只有Soure（ `g.V()`  / `g.E()` ）时，`emit()`直接返回list[0]的数据。<br />
 
 <a name="dF3l2"></a>
-# 3 Query执行
+# 3. Query执行
 <a name="Cmqcj"></a>
 ## 3.1 run
 `run()` 接口用于执行Query，得到最终的结果，结果形式由`values()`接口的func函数定义。可以参考[`values`](#FOeWa)一节的使用示例。

@@ -8,7 +8,7 @@ Graph对象是将原始数据组织起来、供上层算子进行操作的本体
 
 
 <a name="2Kpiz"></a>
-# 1 声明Graph对象
+# 1. 声明Graph对象
 声明Graph对象很简单，代码如下。后续所有相关操作都基于`g`来进行。
 ```python
 import graphlearn as gl
@@ -16,7 +16,7 @@ g = gl.Graph()
 ```
 <br />
 
-# 2 描述拓扑结构
+# 2. 描述拓扑结构
 拓扑结构描述的是图中的边与顶点的关联关系。这里的拓扑指的是“一类”数据的关系，而非“一条”数据。拓扑关系都是有向的，即有向图。<br />
 <br />例如，对于一个“商品-商品”同构图，其拓扑结构图1所示。图中只有item到item类型的数据关联，边类型为swing，表示通过swing算法生成的item关联关系，源顶点和目的顶点类型均为item。
 
@@ -109,7 +109,7 @@ g.edge(source="table_3", edge_type=("user", "item", "click"), decoder=ui_decoder
 
 
 <a name="HNiIP"></a>
-# 3 初始化
+# 3. 初始化
 
 顶点与边添加完成后，需要调用初始化接口，完成从原始数据到内存索引的构建。初始化过程决定了图数据被Serving的情况，单机的还是分布式的。若为分布式的，还要区分Server Mode和Client-Server Mode。初始化完成后，便可对Graph对象进行操作了。<br />
 
@@ -144,7 +144,6 @@ else:
 ```
 <br />
 <a name="xgEg9"></a>
-
 ## 3.3 分布式--Client/Server Mode
 
 该模式下，与Server Mode类似，数据分布式存在于各个Server上，Server之间两两互联。此时，Graph对象的入口位于Client端，而非Server端。每个Client都与唯一一个Server连接，该Server作为Client的响应Server（类似于Server Mode里的本地Server）。Client与Server的对应关系由负载均衡算法决定。Client作为入口，提交请求到其响应Server，由该Server决定如何分布式处理。<br />

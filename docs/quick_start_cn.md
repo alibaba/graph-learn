@@ -9,7 +9,7 @@
 - 以**GraphSAGE**为例，说明如何基于**GL**和TensorFlow开发一个自己的GNN模型
 
 
-# 1 跑通内置模型
+# 1. 跑通内置模型
 
 **GL**内置了一些常见模型，如**GCN**，**GraphSAGE**，以及数据集**cora、ppi**等。
 我们从跑通**core**数据的顶点分类任务开始接触**GL**。完整模型代码请参考[模型示例](model_examples.md)。<br />
@@ -25,7 +25,7 @@ python train_supervised.py
 ```
 
 
-# 2 **GL**接口使用
+# 2. **GL**接口使用
 
 **GL**为GNN的开发提供了大量基础接口，下面将会展示如何基于**GL**来构图、查询、采样、负采样。
 
@@ -133,7 +133,7 @@ python $HERE/test.py \
   --job_name="client" --task_index=1
 ```
 
-# 3 开发一个GNN模型
+# 3. 开发一个GNN模型
 
 下面将基于**GL**和**TensorFlow**开发一个有监督的**GraphSAGE**模型，并在Cora数据上训练，更详细的参考[模型的开发](algo_cn.md)。<br />
 

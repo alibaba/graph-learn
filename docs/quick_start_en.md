@@ -5,7 +5,7 @@ This tutorial has three parts:
 - How to import data into **GL**, and use the graph data, graph sampling and negative sampling APIs.
 - How to develop your own GNN models using **GL** and Tensorflow using **GraphSAGE** as an example.
 
-# 1 Trying out the built-in models
+# 1. Trying out the built-in models
 
 We have implemented in **GL** a set of popular GNN models, such as **GCN**, **GraphSAGE**,
 and some datasets, such as **cora**, **ppi**.
@@ -22,7 +22,7 @@ python cora.py
 python train_supervised.py
 ```
 
-# 2 How to use the **GL** APIs
+# 2. How to use the **GL** APIs
 
 **GL** provides a large collection of basic APIs for developing GNN models.
 In this part, we will go through how to use them to (1) construct graphs,
@@ -135,7 +135,7 @@ python $HERE/test.py \
   --job_name="client" --task_index=1
 ```
 
-# 3 Developing a GNN model
+# 3. Developing a GNN model
 
 Next we will go through how to develop a supervised **GraphSAGE** model using **GL** and **TensorFlow**, and train it on the Cora dataset.
 Please refer to [Developing Your Own Model](algo_en.md) for details. <br />

@@ -2,7 +2,7 @@
 
 This document is used to explain the data format supported by GraphLearn and the API to describe and parse it.<br />
 
-# 1 Data format
+# 1. Data format
 Graph data can be divided into **vertex data** and **edge data**. Generally, vertex data contains **vertex ID** and **attribute**, describing an entity. Edge data contains **source vertex ID** and **destination vertex ID**, describing the relationship between vertices. In heterogeneous graph settings, there are multiple types of vertices and edges. Therefore, we need the type of information of vertices and edges to distinguish different types.
 Type information is described through APIs. Both vertices and edges have attributes. For example, in "a user bought a certain product on Saturday morning", the time information "Saturday morning" is an edge attribute.
 Also, in many scenarios, users need the concept of “weight”---vertex weight or edge weight, as a measure of importance, such as “sample neighbor nodes by weight”. The sources of "weight" are diverse, varying from task to task. In supervised learning classification tasks, vertices or edges may also have labels. <br />
@@ -110,7 +110,7 @@ ID is required for the vertex and edge data source, while weight, label, and att
 
 <br /> We can choose zero or some optional information but must **guarantee the orders** as specified in the above tables. <br />
 
-# 2 Data source type
+# 2. Data source type
 
 <div align=center> <img height ='320' src ="images/data_source_en.png" /> </div>
 
@@ -191,7 +191,7 @@ node_source, edge_source = FLAGS.tables.split(',')
 ```
 <a name="eh1Rf"></a>
 
-# 3 User API
+# 3. User API
 <a name="IqJlv"></a>
 ## 3.1 Decoder type
 `Decoder` type is used to described the aforementioned data format as follows.

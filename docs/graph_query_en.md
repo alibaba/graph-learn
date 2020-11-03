@@ -3,7 +3,7 @@
 After constructing the graph object, we can query on the graph. Graph query refers to getting **meta information** and **data information** without complex calculation and sampling logic.
 
 <a name="WREbw"></a>
-# 1 Meta Query
+# 1. Meta Query
 Meta infomation refers to the graph structure and statistical data, including graph topology, number of vertices, distribution of edges and vertices, maximum in-and-out degrees and etc.<br />
 
 <a name="EyXMf"></a>
@@ -37,7 +37,7 @@ egde_type:swing, src_type:item, dst_type:item
 Coming soon...<br />
 
 <a name="FPU74"></a>
-#2 Data Query
+# 2. Data Query
 
 **GL** has two basic data types: `Nodes` and `Edges`. Graph raversal, query, and sampling operations all return a batch of vertices or edges. In particular, non-aligned sampling returns the sparse form of two basic data types, namely `SparseNodes` and `SparseEdges`.<br />
 <br /> The interface of `Nodes` is shown as follows.

@@ -5,7 +5,7 @@
 我们介绍了一些开发算法用到的基本概念，如`EgoGraph`, `EgoTensor` 编码器等，
 请先了解这些基本概念后再继续阅读。
 
-## 如何构建一个图学习算法
+## 1. 如何构建一个图学习算法
 
 通常来说，实现一个算法需要下面四个步骤
 
@@ -37,7 +37,7 @@
 下面我们按照上面介绍的4个步骤来介绍如何实现一个GCN模型。
 
 
-### 采样
+## 1.1 采样
 
 我们使用Cora数据集以点分类任务做为示例。我们提供了一个简单的数据转换脚本`cora.py`来
 将原始Cora转换成**GL**需要的格式。运行完这个脚本后你可以得到下面5个文件
@@ -106,7 +106,7 @@ class GCN(gl.LearningBasedModel):
  成`EgoGraph`返回。
  
 
-### 图数据流
+## 1.2 图数据流
 
 在`build`函数里我们使用封装的`EgoFlow`来把`EgoGraph`转换成对应的`EgoTensor`,
 `EgoFlow`包含一个数据流迭代器和若干`EgoTensor`。
@@ -124,7 +124,7 @@ class GCN(gl.LearningBasedModel):
 ```
 你可以从`EgoFlow`获取和前面`EgoGraph`对应的`EgoTensor`。
 
-### 编码器
+## 1.3 编码器
 
 接下来，首先使用特征编码器来编码原始特征。这里我们使用`IdentityEncoder`，即返回自身即可，因为
 Cora的特征已经是处理过的向量格式了。对于既有离散特征由于连续特征的情况，可以使用`WideNDeepEncoder`。
@@ -150,7 +150,7 @@ class GCN(gl.LearningBasedModel):
     return {"src": encoder, "edge": None, "dst": None}
 ```
 
-### 损失函数和训练过程
+## 1.4 损失函数和训练过程
 
 对于Cora点分类模型，我们选择对应的TensorFlow里的分类损失函数即可。
 然后在`build`函数里将编码器和损失函数组织起来，最终返回一个数据迭代器和损失函数。

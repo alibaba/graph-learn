@@ -39,11 +39,24 @@ sudo apt-get install autoconf automake libtool cmake python-numpy
 ```
 
 ## Compile
+First, get the source code:
 ```bash
 git clone https://github.com/alibaba/graph-learn.git
 cd graph-learn
 git submodule update --init
+```
+To build the project with tests, you can use one of the following options:
+1. Using Makefile:
+```bash
 make test
+```
+2. Using CMakeLists.txt:
+```bash
+mkdir cmake-build && cd cmake-build
+cmake -DTESTING=ON .. && make
+```
+To build python package:
+```bash
 make python
 ```
 

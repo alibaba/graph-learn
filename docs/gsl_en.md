@@ -21,14 +21,14 @@ g.V("user").batch(64).outV("click").sample(10).by("edge_weight")
 GSL supports super large graph, heterogeneous graph and property graph and has similar syntax like [Gremlin](http://tinkerpop.apache.org/docs/current/reference/#_tinkerpop_documentation) which is easy to understand.
 
 <a name="KFXRf"></a>
-# 2 GSL Syntax
+# 2. GSL Syntax
 
 We call a GSL statement a query, which consists of three types of operations: SOURCE, STEP and SINK. SOURCE is the entrance of a query, indicating which data to start from; STEP is the path to walk through and sample data during the query process, and SINK is the encapsulation of execution results. In GSL, a query must have  a SOURCE and SINK.
 
 <a name="5xWGq"></a>
 ## 2.1 SOURCE
 <a name="IHxBA"></a>
-#### 2.1.1 V/E
+### 2.1.1 V/E
 
 SOURCE is the entrance of a GSL query, supporting  `V()` 和 `E()` APIs, which represent querying from vertices and edges respectively.
 
@@ -473,7 +473,7 @@ print(res[1].ids)
 Worth noticing that when the query only contains Soure (`g.V()` / `g.E()`), `emit()` directly returns the data of list[0].<br />
 
 <a name="dF3l2"></a>
-# 3 Query execution
+# 3. Query execution
 <a name="Cmqcj"></a>
 ## 3.1 run
 `run()` interface is used to execute Query and get the final result. The result form is defined by the func function of the `values()` interface. You can refer to the example in the [`values`](#FOeWa) section.
