@@ -19,17 +19,19 @@ limitations under the License.
 namespace graphlearn {
 
 #define CREATE(Type)                                 \
-  if (io::IsCompressedStorageEnabled()) {            \
+  if (io::IsVineyardStorageEnabled()) {              \
+    return io::NewVineyard##Type##Storage(type);     \
+  } else if (io::IsCompressedStorageEnabled()) {     \
     return io::NewCompressedMemory##Type##Storage(); \
   } else {                                           \
     return io::NewMemory##Type##Storage();           \
   }
 
-io::GraphStorage* CreateGraphStorage() {
+io::GraphStorage* CreateGraphStorage(const std::string& type) {
   CREATE(Graph)
 }
 
-io::NodeStorage* CreateNodeStorage() {
+io::NodeStorage* CreateNodeStorage(const std::string& type) {
   CREATE(Node)
 }
 

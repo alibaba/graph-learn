@@ -70,6 +70,11 @@ GIT_BRANCH_NAME = check_output(shlex.split(
   'git rev-parse --abbrev-ref HEAD')).strip()
 GIT_HEAD_REV = check_output(shlex.split('git rev-parse --short HEAD')).strip()
 VERSION = check_output(shlex.split('cat {}/version.txt'.format(CUT_PATH))).strip()
+try:
+    # python 2 reads a string, but python 3 reads a bytes
+    VERSION = VERSION.decode('utf-8')
+except:
+    pass
 
 setup(
     name='graphlearn',

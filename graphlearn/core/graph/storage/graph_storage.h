@@ -57,6 +57,7 @@ public:
 
 GraphStorage* NewMemoryGraphStorage();
 GraphStorage* NewCompressedMemoryGraphStorage();
+GraphStorage* NewVineyardGraphStorage(const std::string& edge_type);
 
 }  // namespace io
 }  // namespace graphlearn

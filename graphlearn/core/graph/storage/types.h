@@ -16,6 +16,7 @@ limitations under the License.
 #ifndef GRAPHLEARN_CORE_GRAPH_STORAGE_TYPES_H_
 #define GRAPHLEARN_CORE_GRAPH_STORAGE_TYPES_H_
 
+#include <algorithm>
 #include <cstdint>
 #include <vector>
 
@@ -43,9 +44,58 @@ typedef std::tr1::unordered_map<IdType, IndexType> MAP;
 #endif
 
 template <class T>
+class MultiArray {
+public:
+  MultiArray(const std::vector<const T*>& values, const std::vector<int32_t> sizes,
+             int32_t element_size, int32_t element_offset=0)
+      : values_(values),
+        sizes_(sizes),
+        element_size_(element_size),
+        element_offset_(element_offset) {
+    offsets_.emplace_back(0);
+    for (size_t i = 1; i <= sizes.size(); ++i) {
+      offsets_.emplace_back(offsets_[i-1] + sizes[i-1]);
+    }
+  }
+  MultiArray(MultiArray&& rhs) {
+    values_ = rhs.values_;
+    sizes_ = rhs.sizes_;
+    offsets_ = rhs.offsets_;
+    element_size_ = rhs.element_size_;
+    element_offset_ = rhs.element_offset_;
+  }
+  operator bool () const {
+    return *offsets_.rbegin() > 0;
+  }
+  T operator[] (int32_t i) const {
+    auto p = std::upper_bound(offsets_.begin(), offsets_.end(), i);
+    if (p == offsets_.end()) {
+      throw std::out_of_range("Index out of range: " + std::to_string(i));
+    }
+    int idx = p - offsets_.begin();
+    auto target = reinterpret_cast<const uint8_t *>(values_[idx-1])
+                + (element_size_ * (i-offsets_[idx-1]))
+                + element_offset_;
+    return *reinterpret_cast<const T *>(target);
+  }
+  int32_t Size() const {
+    return *offsets_.rbegin();
+  }
+private:
+  std::vector<const T *> values_;
+  std::vector<int32_t> sizes_;
+  std::vector<int32_t> offsets_;
+  int32_t element_size_;
+  int32_t element_offset_;
+};
+
+template <class T>
 class Array {
 public:
-  Array() : value_(nullptr), size_(0) {
+  Array() : value_(nullptr), mvalue_(nullptr), size_(0) {
+  }
+  Array(std::shared_ptr<MultiArray<T>> const &mvalue)
+    : value_(nullptr), mvalue_(mvalue), size_(mvalue->Size()) {
   }
 
   Array(const T* value, int32_t size)
@@ -56,8 +106,15 @@ public:
     : value_(values.data()), size_(values.size()) {
   }
 
+  Array(const Array& rhs) {
+    value_ = rhs.value_;
+    mvalue_ = rhs.mvalue_;
+    size_ = rhs.size_;
+  }
+
   Array(Array&& rhs) {
     value_ = rhs.value_;
+    mvalue_ = rhs.mvalue_;
     size_ = rhs.size_;
   }
 
@@ -66,6 +123,9 @@ public:
   }
 
   T operator[] (int32_t i) const {
+    if (mvalue_) {
+      return mvalue_->operator[](i);
+    }
     return value_[i];
   }
 
@@ -75,6 +135,7 @@ public:
 
 private:
   const T* value_;
+  std::shared_ptr<MultiArray<T>> mvalue_;
   int32_t size_;
 };
 

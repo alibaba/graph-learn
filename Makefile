@@ -329,7 +329,7 @@ test:so gtest
 	$(CXX) $(CXXFLAGS) graphlearn/service/dist/test/service_unittest.cpp -o built/bin/service_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/service/dist/test/service_with_hosts_unittest.cpp -o built/bin/service_with_hosts_unittest $(TEST_FLAG)
 
-python: so pybind
+python: pybind
 	@rm -rf build
 	@rm -rf dist
 	@rm -rf graphlearn.egg-info
@@ -348,7 +348,7 @@ python: so pybind
 	@if [ ! -f "${PYTHON_LIB}/libupb.so" ]; then ln -s $(PYTHON_LIB)/libupb.so.9.0.0 $(PYTHON_LIB)/libupb.so; fi
 	@if [ ! -f "${PYTHON_LIB}/libupb.so.9" ]; then ln -s $(PYTHON_LIB)/libupb.so.9.0.0 $(PYTHON_LIB)/libupb.so.9; fi
 	@cp $(LIB_DIR)/libgraphlearn_shared.so $(PYTHON_LIB)
-	python $(SETUP_DIR)/setup.py bdist_wheel
+	python3 $(SETUP_DIR)/setup.py bdist_wheel
 	@mkdir -p $(BIN_DIR)/ge_data/data
 	@mkdir -p $(BIN_DIR)/ge_data/ckpt
 	@rm -rf $(PYTHON_DIR)/__init__.py*

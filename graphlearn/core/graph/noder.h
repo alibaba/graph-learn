@@ -45,8 +45,8 @@ public:
 #undef DECLARE_METHOD
 };
 
-Noder* CreateLocalNoder();
-Noder* CreateRemoteNoder();
+Noder* CreateLocalNoder(const std::string& type);
+Noder* CreateRemoteNoder(const std::string& type);
 
 }  // namespace graphlearn
 
