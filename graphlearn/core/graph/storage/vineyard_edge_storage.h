@@ -2,12 +2,14 @@
 #define GRAPHLEARN_CORE_GRAPH_STORAGE_VINEYARD_EDGE_STORAGE_H_
 
 #if defined(WITH_VINEYARD)
-
 #include "vineyard/graph/fragment/arrow_fragment.h"
+#endif
 
 #include "graphlearn/include/config.h"
 #include "graphlearn/core/graph/storage/edge_storage.h"
 #include "graphlearn/core/graph/storage/vineyard_storage_utils.h"
+
+#if defined(WITH_VINEYARD)
 
 namespace graphlearn {
 namespace io {

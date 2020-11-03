@@ -4,9 +4,10 @@
 #include <memory>
 
 #if defined(WITH_VINEYARD)
-
 #include "vineyard/graph/fragment/arrow_fragment.h"
+#endif
 
+#if defined(WITH_VINEYARD)
 #include "graphlearn/include/config.h"
 #include "graphlearn/core/graph/storage/edge_storage.h"
 #include "graphlearn/core/graph/storage/graph_storage.h"

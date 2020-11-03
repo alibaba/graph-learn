@@ -2,9 +2,10 @@
 #define GRAPHLEARN_CORE_GRAPH_STORAGE_VINEYARD_TOPO_STORAGE_H_
 
 #if defined(WITH_VINEYARD)
-
 #include "vineyard/graph/fragment/arrow_fragment.h"
+#endif
 
+#if defined(WITH_VINEYARD)
 #include "graphlearn/include/config.h"
 #include "graphlearn/core/graph/storage/topo_storage.h"
 #include "graphlearn/core/graph/storage/vineyard_storage_utils.h"
