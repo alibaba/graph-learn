@@ -101,6 +101,12 @@ GrpcChannel* ChannelManager::AutoSelect() {
   return ConnectTo(servers[0]);
 }
 
+std::vector<int32_t> ChannelManager::GetOwnServers() {
+  std::vector<int32_t> servers;
+  balancer_->GetPart(GLOBAL_FLAG(ClientId), &servers);
+  return servers;
+}
+
 std::string ChannelManager::GetEndpoint(int32_t server_id) {
   if (engine_->Size() < channels_.size()) {
     LOG(WARNING) << "Waiting for all servers started: "

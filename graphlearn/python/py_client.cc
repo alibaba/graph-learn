@@ -81,7 +81,11 @@ void init_client_module(py::module& m) {
            return self.RunOp(req, res);
          },
          py::arg("request"),
-         py::arg("response"));
+         py::arg("response"))
+    .def("get_own_servers",
+         [](Client & self) {
+           return py::cast(self.GetOwnServers());
+         });
 
   m.def("del_op_request", [](OpRequest* req) { delete req; });
   m.def("del_op_response", [](OpResponse* res) { delete res; });

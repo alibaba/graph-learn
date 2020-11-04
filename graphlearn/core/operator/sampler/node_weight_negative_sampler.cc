@@ -77,7 +77,7 @@ protected:
           }
         }
 
-        int64_t item = ids->at(indices[cursor++]);
+        int64_t item = ids[indices[cursor++]];
         if (sets.find(item) == sets.end()) {
           res->AppendNeighborId(item);
           ++count;
@@ -98,7 +98,10 @@ private:
     }
 
     auto weights = storage->GetWeights();
-    std::vector<float> probs(weights->begin(), weights->end());
+    std::vector<float> probs(weights.Size());
+    for (size_t idx = 0; idx < weights.Size(); ++idx) {
+      probs[idx] = weights[idx];
+    }
     am = new AliasMethod(&probs);
     factory->Put(type, am);
     factory->Unlock();

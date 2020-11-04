@@ -46,7 +46,7 @@ public:
     for (int32_t i = 0; i < batch_size; ++i) {
       int64_t src_id = src_ids[i];
       auto neighbor_ids = storage->GetNeighbors(src_id);
-      if (!neighbor_ids) {
+      if (neighbor_ids.Size() == 0) {
         res->FillWith(GLOBAL_FLAG(DefaultNeighborId), -1);
       } else {
         auto edge_ids = storage->GetOutEdges(src_id);

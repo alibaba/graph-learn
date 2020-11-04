@@ -72,6 +72,32 @@ class TFTrainer(Trainer):
                                     axis=1))
     return np.concatenate(emb_set, axis=0)
 
+  def get_node_embedding_fixed(self, node_type=None):
+    print('save embedding...')
+    ids, emb, iterator = self.model.node_embedding(node_type)
+    feed_dict = self.model.feed_evaluation_args()
+    emb_ids = []
+    emb_values = []
+    if iterator is not None:
+      self.sess.run(iterator.initializer)
+      while True:
+        try:
+          ids_np, emb_np = self.sess.run([ids, emb], feed_dict=feed_dict)
+          # emb_set.append(np.concatenate([np.reshape(ids_np, [-1, 1]), emb_np],
+          #                               axis=1))
+          emb_ids.append(ids_np)
+          emb_values.append(emb_np)
+        except tf.errors.OutOfRangeError:
+          break
+    else: # sample full graph in one batch
+      ids_np, emb_np = self.sess.run([ids, emb], feed_dict=feed_dict)
+      # emb_set.append(np.concatenate([np.reshape(ids_np, [-1, 1]), emb_np],
+      #                               axis=1))
+      emb_ids.append(ids_np)
+      emb_values.append(emb_np)
+    # return np.concatenate(emb_set, axis=0)
+    return np.concatenate(emb_ids), np.concatenate(emb_values)
+
   def _train_epoch(self, train_op, loss, iterator, idx):
     """train one epoch with given dataset(graph)"""
     total_loss = []

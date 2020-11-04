@@ -20,6 +20,7 @@ limitations under the License.
 #include "graphlearn/common/base/log.h"
 #include "graphlearn/common/base/progress.h"
 #include "graphlearn/common/threading/sync/cond.h"
+#include "graphlearn/core/graph/storage/storage_mode.h"
 #include "graphlearn/core/io/element_value.h"
 #include "graphlearn/core/io/edge_loader.h"
 #include "graphlearn/core/io/node_loader.h"
@@ -179,10 +180,14 @@ Status GraphStore::Load(
     const std::vector<io::NodeSource>& nodes) {
   for (const auto& e : edges) {
     topo_.Add(e.edge_type, e.src_id_type, e.dst_id_type);
-    graphs_->LookupOrCreate(e.edge_type);
+    graphs_->LookupOrCreate(e.edge_type, e.view_type, e.use_attrs);
   }
   for (const auto& n : nodes) {
-    noders_->LookupOrCreate(n.id_type);
+    noders_->LookupOrCreate(n.id_type, n.view_type, n.use_attrs);
+  }
+
+  if (io::IsVineyardStorageEnabled()) {
+    return Status::OK();
   }
 
   Initializer<io::EdgeSource,
