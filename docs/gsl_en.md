@@ -3,9 +3,9 @@
 <a name="TUTVl"></a>
 # 1. Introduction
 There has been a well-developed programming paradigm since Graph Neural Network (GNN) was introduced.
-Developing a GNN model contains two parts: graph data processing and neural network training.
-There are matured Deep Learning framework such as Tensorflow and Pytorch for neural network training.
-Therefore, how to express and implement graph data processing easily and efficiently, and how to work with the DL frameworks are the focuses of Graphlearn.<br />
+Developing a GNN model includes two parts: graph data processing and neural network training.
+For neural network training, there are matured deep learning frameworks such as Tensorflow and Pytorch.
+Therefore, how to process graph data easily and efficiently as well as cooperate with the existed DL frameworks are what Graphlearn focus on.<br />
 <br />In reality, sampling is necessary due to the sheer scale of graphs. There are several graph sampling techniques:
 
 - **Traversal based sampling** randomly selects a batch of vertices or edges from a graph.
@@ -23,7 +23,7 @@ GSL supports super large graph, heterogeneous graph and property graph and has s
 <a name="KFXRf"></a>
 # 2. GSL Syntax
 
-We call a GSL statement a query, which consists of three types of operations: SOURCE, STEP and SINK. SOURCE is the entrance of a query, indicating which data to start from; STEP is the path to walk through and sample data during the query process, and SINK is the encapsulation of execution results. In GSL, a query must have  a SOURCE and SINK.
+We call a GSL statement a query, which consists of three types of operations: `SOURCE`, `STEP` and `SINK`. `SOURCE` is the entrance of a query, indicating which data to start from; `STEP` is the path to walk through and sample data during the query process, and `SINK` is the encapsulation of execution results. In GSL, a query must have a `SOURCE` and `SINK`.
 
 <a name="5xWGq"></a>
 ## 2.1 SOURCE
@@ -90,19 +90,19 @@ Return:
 <a name="WQ5EP"></a>
 ### 2.1.4 examples
 
-Randomly sample 64 user type vertices.
+Randomly sample 64 vertices of "user" type.
 
 ```python
 g.V("user").shuffle().batch(64)
 ```
 
-Provide ids for the user type vertices.
+Provide ids for the "user" vertices.
 
 ```python
 g.V("user", feed=np.array([1, 2, 3]))
 ```
 
-Get user type vertices from a generator.
+Get "user" vertices from a generator.
 
 ```python
 def gen():
@@ -113,19 +113,19 @@ generator = gen()
 g.V("user", feed=generator)
 ```
 
-Get 64 buy type edges in order.
+Get 64 edges of "buy" type in order.
 
 ```python
 g.E("buy").shuffle(True).batch(64)
 ```
 
-Provide src_id and dst_ids for buy type edges.
+Provide `src_id` and `dst_ids` for "buy" edges.
 
 ```python
 g.E("buy", feed=(np.array([1, 2, 3]), np.array([4, 5, 6]))
 ```
 
-Get buy type edges from a generator.
+Get "buy" edges from a generator.
 
 ```python
 def gen():
@@ -140,7 +140,8 @@ g.E("buy", feed=generator)
 <a name="5kq55"></a>
 ## 2.2 STEP
 
-STEP is the path to walk through and sample data during the query process. A query can have zero or more steps. There are two types of steps, which are path steps and sampling steps.
+`STEP` is the path to walk through and sample data during the query process. A query can have zero or more `STEP`s.
+There are two kinds of types of `STEP`s, the path `STEP`s and sampling `STEP`s.
 <br />
 <br />A path step describes the movement of the current object. For example, with `g.V()`, the cursor starts at all the vertices in the graph. One can move the cursor to the outgoing edges of the vertices by `outE()` and the following operations will be on these edges. When the operations on the outgoing edges complete, the cursor moves to the target/source vertices by `inV()`/`outV()`.
 
@@ -390,13 +391,21 @@ Each Query must end with a **SINK** operation, which means that the current Quer
 
 
 <br />
+
 The **SINK** operation can receive a func parameter, which is used to post-process the returned result. Each **SOURCE** and **STEP** operation will return a **`Nodes`** object or **`Edges`** object (the sampling STEP with `full` as its sampling strategy returns **SparseNodes** or **SparseEdges** object). The returned object is related to the object of this operation.
 <br /> For example, the **SOURCE** or **STEP** of the `*V()` and `*Neg()` series corresponds to the `Nodes` object (the sampling STEP with `full` as its sampling strategy returns **SparseNodes**).
+
 <br />
-The **SOURCE** or **STEP** of the `*E()` series corresponds to the `Edges` object (the sampling STEP with `full` as its sampling strategy returns **SparseNodes**). For instruction on how to get the value of `Nodes`/`Edges`/`SparseNodes`/`SparseEdges` object, please refer to [API](graph_query_cn.md#FPU74).<br />
-<br />Before **SINK**, Query describs multiple operations. These operations may have `alias()`.
--For Query without `alias()`, the results of all operations will be returned, arranged in a list object according to the order in the Query. Each element in this returned list is either `Nodes` or `Edges`. One thing needs to pay attention is that the order here does not include cases where branches exist. If there exist branches, please use `alias()`.
--When there is `alias()`, the return result is a dict, where the key is the name passed in `alias()` and the value is the corresponding `Nodes` or `Edges`.
+
+The **SOURCE** or **STEP** of the `*E()` series corresponds to the `Edges` object (the sampling STEP with `full` as its sampling strategy returns **SparseNodes**). For instruction on how to get the value of `Nodes`/`Edges`/`SparseNodes`/`SparseEdges` object, please refer to [API](graph_query_cn.md#FPU74).
+
+<br />
+
+<br />
+
+Before **SINK**, Query describes multiple operations. These operations may have `alias()`.
+For Query without `alias()`, the results of all operations will be returned and arranged in a list object according to the order in the Query. Each element in this returned list is either `Nodes` or `Edges`. One thing needs to pay attention is that the order here does not include cases where branches exist. If there exist branches, please use `alias()`.
+When there is `alias()`, the return result is a dict, where the key is the name passed in `alias()` and the value is the corresponding `Nodes` or `Edges`.
 
 
 <a name="FOeWa"></a>
@@ -470,7 +479,9 @@ print(res[1].ids)
 ```
 
 <br />
-Worth noticing that when the query only contains Soure (`g.V()` / `g.E()`), `emit()` directly returns the data of list[0].<br />
+
+Worth noticing that when the query only contains Soure (`g.V()` / `g.E()`), `emit()` directly returns the data of list[0].
+<br />
 
 <a name="dF3l2"></a>
 # 3. Query execution
