@@ -98,7 +98,7 @@ class NeighborSampler(object):
     src_ids = ids
     current_batch_size = ids.size
     layers = Layers()
-    for i in xrange(len(self._meta_path)):
+    for i in range(len(self._meta_path)):
       req = self._make_req(i, src_ids)
       res = pywrap.new_sampling_response()
       status = self._client.sample_neighbor(req, res)
@@ -175,7 +175,7 @@ class FullNeighborSampler(NeighborSampler):
     src_ids = ids
     current_batch_size = ids.size
     layers = Layers()
-    for i in xrange(len(self._meta_path)):
+    for i in range(len(self._meta_path)):
       # req, res & call method.
       req = self._make_req(i, src_ids)
       res = pywrap.new_sampling_response()

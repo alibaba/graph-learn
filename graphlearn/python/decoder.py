@@ -57,7 +57,7 @@ class Decoder(object):
         raise ValueError("attr_types for Decoder must be a list, got {}."
                          .format(type(self._attr_types)))
       self._attributed = True
-      for i in xrange(len(self._attr_types)):
+      for i in range(len(self._attr_types)):
         hash_to_int = False
         t = self._attr_types[i]
         if isinstance(t, tuple):
@@ -123,4 +123,5 @@ class Decoder(object):
 
     if string_attrs is not None:
       string_attrs = string_attrs.reshape(-1, self._string_attr_num)
+      string_attrs = string_attrs.astype('U13')
     return int_attrs, float_attrs, string_attrs
