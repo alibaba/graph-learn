@@ -22,6 +22,7 @@ from graphlearn.python.errors import * # pylint: disable=wildcard-import
 from graphlearn.python.decoder import Decoder
 from graphlearn.python.topology import Topology
 from graphlearn.python.sampler import *
+from graphlearn.python.graphscope import *
 
 # model
 from graphlearn.python.model.base_encoder import *
