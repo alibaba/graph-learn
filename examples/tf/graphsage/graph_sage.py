@@ -68,7 +68,10 @@ class GraphSage(gl.LearningBasedModel):
                unsupervised=False,
                neg_num=10,
                node_type='item',
-               edge_type='relation'):
+               edge_type='relation',
+               train_node_type='train',
+               val_node_type='val',
+               test_node_type='test'):
 
     super(GraphSage, self).__init__(graph,
                                     batch_size,
@@ -85,6 +88,9 @@ class GraphSage(gl.LearningBasedModel):
     self.unsupervised = unsupervised
     self.neg_num = neg_num
     self.node_type = node_type
+    self.train_node_type = train_node_type
+    self.val_node_type = val_node_type
+    self.test_node_type = test_node_type
     self.edge_type = edge_type
 
     # construct EgoSpecs.
@@ -99,13 +105,13 @@ class GraphSage(gl.LearningBasedModel):
     self.encoders = self._encoders()
 
   def _sample_seed(self):
-    return self.graph.V('train').batch(self.batch_size).values()
+    return self.graph.V(self.train_node_type).batch(self.batch_size).values()
 
   def _val_sample_seed(self):
-    return self.graph.V('val').batch(self.val_batch_size).values()
+    return self.graph.V(self.val_node_type).batch(self.val_batch_size).values()
 
   def _test_sample_seed(self):
-    return self.graph.V('test').batch(self.test_batch_size).values()
+    return self.graph.V(self.test_node_type).batch(self.test_batch_size).values()
 
   def _positive_sample(self, t):
     return self.graph.V(self.node_type, feed=t.ids).outE(self.edge_type)\
@@ -179,6 +185,10 @@ class GraphSage(gl.LearningBasedModel):
       pos_dst_emb = self.encoders['dst'].encode(self.pos_dst_ego_tensor)
       neg_dst_emb = self.encoders['dst'].encode(self.neg_dst_ego_tensor)
 
+      self.pos_src_emb = pos_src_emb
+      self.pos_dst_emb = pos_dst_emb
+      self.neg_dst_emb = neg_dst_emb
+
       self.loss = self._unsupervised_loss(pos_src_emb, pos_dst_emb, neg_dst_emb)
       self.loss = self.loss[0]
     else:
@@ -221,8 +231,7 @@ class GraphSage(gl.LearningBasedModel):
 
   def node_embedding(self, type):
     iterator = self.ego_flow.iterator
-    ego_tensor = self.ego_flow.pos_src_ego_tensor
-    src_emb = self.encoders['src'].encode(ego_tensor)
+    src_emb = self.pos_src_emb
     src_ids = self.pos_src_ego_tensor.src.ids
     return src_ids, src_emb, iterator
 

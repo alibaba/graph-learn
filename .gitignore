@@ -1,5 +1,8 @@
+.vscode/
+
 built/*
 build/
+cmake-build/
 graphlearn/proto/service.pb*
 graphlearn/proto/service.grpc*
 graphlearn.egg-info/

@@ -34,6 +34,7 @@ public:
   ~ChannelManager();
 
   void SetCapacity(int32_t capacity);
+  std::vector<int32_t> GetOwnServers();
 
   /// Stop the background refresh thread.
   /// Be sure that ChannelManager shoud stop after NamingEngine.
