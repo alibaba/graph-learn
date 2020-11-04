@@ -40,6 +40,9 @@ struct NodeSource {
   // 0 means no need hash.
   std::vector<int64_t> hash_buckets;
 
+  std::string view_type;
+  std::string use_attrs;
+
   NodeSource()
       : format(kAttributed),
         ignore_invalid(false) {
@@ -53,6 +56,8 @@ struct NodeSource {
     delimiter = right.delimiter;
     types = right.types;
     hash_buckets = right.hash_buckets;
+    view_type = right.view_type;
+    use_attrs = right.use_attrs;
   }
 
   void AppendAttrType(DataType type) {
@@ -113,6 +118,9 @@ struct EdgeSource {
   // 0 means no need hash.
   std::vector<int64_t> hash_buckets;
 
+  std::string view_type;
+  std::string use_attrs;
+
   EdgeSource()
       : format(kWeighted),
         direction(kOrigin) {
@@ -129,6 +137,8 @@ struct EdgeSource {
     delimiter = right.delimiter;
     types = right.types;
     hash_buckets = right.hash_buckets;
+    view_type = right.view_type;
+    use_attrs = right.use_attrs;
   }
 
   inline void AppendAttrType(DataType type) {

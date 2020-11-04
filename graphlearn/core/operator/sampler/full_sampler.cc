@@ -66,7 +66,7 @@ public:
       int64_t src_id = src_ids[i];
       auto neighbor_ids = storage->GetNeighbors(src_id);
       auto edge_ids = storage->GetOutEdges(src_id);
-      if (neighbor_ids) {
+      if (neighbor_ids && edge_ids) {
         int32_t neighbor_size = neighbor_ids.Size();
         auto padder = GetPadder(neighbor_ids, edge_ids);
         s = padder->Pad(res, neighbor_size, neighbor_size);

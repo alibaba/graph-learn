@@ -55,11 +55,11 @@ public:
   /// [3 1]
   /// [3 2]
   /// GetAllSrcIds() --> {1, 2, 3}
-  virtual const IdList* GetAllSrcIds() const = 0;
+  virtual const IdArray GetAllSrcIds() const = 0;
 
   /// Get all the distinct ids that appear as the destination id of an edge.
   /// For the above example, GetAllDstIds() --> {2, 3, 4, 1}
-  virtual const IdList* GetAllDstIds() const = 0;
+  virtual const IdArray GetAllDstIds() const = 0;
 
   /// Get the out-degree values of all ids corresponding to GetAllSrcIds().
   /// For the above example, GetAllOutDegrees() --> {2, 2, 2}

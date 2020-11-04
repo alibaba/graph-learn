@@ -51,6 +51,8 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
   m.def("set_server_count", &SetGlobalFlagServerCount);
   m.def("set_tracker", &SetGlobalFlagTracker);
   m.def("set_server_hosts", &SetGlobalFlagServerHosts);
+  m.def("set_vineyard_graph_id", &SetGlobalFlagVineyardGraphID);
+  m.def("set_vineyard_ipc_socket", &SetGlobalFlagVineyardIPCSocket);
 
   py::enum_<error::Code>(m, "ErrorCode")
     .value("OK", error::Code::OK)
@@ -111,9 +113,11 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
     .def_readwrite("delimiter", &io::NodeSource::delimiter)
     .def_readwrite("hash_buckets", &io::NodeSource::hash_buckets)
     .def_readwrite("ignore_invalid", &io::NodeSource::ignore_invalid)
+    .def_readwrite("view_type", &io::NodeSource::view_type)
+    .def_readwrite("use_attrs", &io::NodeSource::use_attrs)
     .def("append_attr_type", &io::NodeSource::AppendAttrType)
     .def("append_hash_bucket", &io::NodeSource::AppendHashBucket);
- 
+
   py::class_<io::EdgeSource>(m, "EdgeSource")
     .def(py::init<>())
     .def_readwrite("path", &io::EdgeSource::path)
@@ -126,6 +130,8 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
     .def_readwrite("hash_buckets", &io::EdgeSource::hash_buckets)
     .def_readwrite("ignore_invalid", &io::EdgeSource::ignore_invalid)
     .def_readwrite("direction", &io::EdgeSource::direction)
+    .def_readwrite("view_type", &io::EdgeSource::view_type)
+    .def_readwrite("use_attrs", &io::EdgeSource::use_attrs)
     .def("append_attr_type", &io::EdgeSource::AppendAttrType)
     .def("append_hash_bucket", &io::EdgeSource::AppendHashBucket);
 
@@ -156,7 +162,8 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
         &NewRpcClient,
         py::return_value_policy::take_ownership,
         py::arg("server_id") = -1,
-        py::arg("server_own") = false);
+        py::arg("server_own") = false,
+        py::arg("client_own") = true);
 
   init_client_module(m);
 }  //NOLINT [readability/fn_size]

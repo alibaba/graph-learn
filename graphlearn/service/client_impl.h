@@ -31,6 +31,10 @@ public:
   virtual Status RunOp(const OpRequest* req, OpResponse* res) = 0;
   virtual Status Stop() = 0;
   virtual Status Report(const StateRequestPb* req, StateResponsePb* res) {}
+  virtual std::vector<int32_t> GetOwnServers() {
+    std::vector<int32_t> empty;
+    return empty;
+  }
 
 protected:
   ClientImpl() {}

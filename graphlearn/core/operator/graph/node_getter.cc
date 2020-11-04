@@ -105,7 +105,7 @@ public:
     }
   }
 
-  const ::graphlearn::io::IdList* GetIds() const {
+  const ::graphlearn::io::IdArray GetIds() const {
     if (node_from_ == NodeFrom::kNode) {
       return node_storage_->GetIds();
     } else {
@@ -153,8 +153,8 @@ private:
 
 class Generator {
 public:
-  explicit Generator(DataStorage* storage) : storage_(storage) {
-    ids_ = storage_->GetIds();
+  explicit Generator(DataStorage* storage) : storage_(storage),
+                                             ids_(storage->GetIds()) {
   }
   virtual ~Generator() {
     delete storage_;
@@ -168,13 +168,13 @@ public:
 
 protected:
   DataStorage*  storage_;
-  const ::graphlearn::io::IdList* ids_;
+  const ::graphlearn::io::IdArray ids_;
 };
 
 class RandomGenerator : public Generator {
 public:
   explicit RandomGenerator(DataStorage* storage)
-      : Generator(storage), dist_(0, ids_->size() - 1) {
+      : Generator(storage), dist_(0, ids_.Size() - 1) {
   }
   virtual ~RandomGenerator() = default;
 
@@ -182,7 +182,7 @@ public:
     thread_local static std::random_device rd;
     thread_local static std::mt19937 engine(rd());
     int32_t rand = dist_(engine);
-    *ret = (*ids_)[rand];
+    *ret = ids_[rand];
     return true;
   }
 
@@ -201,11 +201,11 @@ public:
   }
 
   bool Next(::graphlearn::io::IdType* ret) override {
-    if (state_->Now() >= ids_->size()) {
+    if (state_->Now() >= ids_.Size()) {
       return false;
     }
 
-    *ret = (*ids_)[state_->Now()];
+    *ret = ids_[state_->Now()];
     state_->Inc();
     return true;
   }
@@ -242,7 +242,7 @@ public:
 
   void Fill(::graphlearn::io::IdType start,
             ::graphlearn::io::IdType end,
-            const ::graphlearn::io::IdList* ids) {
+            const ::graphlearn::io::IdArray &ids) {
     buffer_.clear();
     cursor_ = 0;
     size_ = std::min(
@@ -253,7 +253,7 @@ public:
 
     buffer_.reserve(size_);
     for (int32_t i = 0; i < size_; ++i) {
-      buffer_.emplace_back((*ids)[start + i]);
+      buffer_.emplace_back(ids[start + i]);
     }
 
     thread_local static std::random_device rd;
@@ -282,7 +282,7 @@ public:
 
   bool Next(::graphlearn::io::IdType* ret) override {
     if (!shuffle_buffer_->HasNext()) {
-      shuffle_buffer_->Fill(state_->Now(), ids_->size(), ids_);
+      shuffle_buffer_->Fill(state_->Now(), ids_.Size(), ids_);
       state_->Inc(shuffle_buffer_->Size());
     }
     if (shuffle_buffer_->Size() == 0) {
