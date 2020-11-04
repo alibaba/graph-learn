@@ -13,9 +13,9 @@ Graph sampling is an effective way to deal with very large graphs, which has bee
 # 2. Usage
 <a name="OI8t6"></a>
 ## 2.1 Interface
-The sampling operator takes meta-path and sampling number as input which supports for sampling any heterogeneous graph and arbitrary hops. The sampling results are organized into `Layers` where the n-th `Layer` contains the sampling result from the n-th hop. One can access the `Nodes` and `Edges` in each `Layer` object. A sampling operation can be divided into the following three steps:
+The sampling operator takes meta-path and sampling number as input which supports for sampling any heterogeneous graph and arbitrary hops. The sampling results are organized into `Layers` where the n-th `Layer` contains the sampling result from the n-th hop. One can access the `Nodes` and `Edges` in each `Layer` object. A sampling operation can be divided into the following three steps:
 
-- Define the sampling operator by invoking `g.neighbor_sampler()` to get the `NeighborSampler` object `S`
+- Define the sampling operator by invoking `g.neighbor_sampler()` to get the `NeighborSampler` object `S`;
 - Invoke `S.get(ids)` to get the neighbor `Layers` object `L` of the vertex;
 - Invoke `L.layer_nodes(i)`, `L.layer_edges(i)` to get the vertices and edges of the i-th hop neighbors;
 
