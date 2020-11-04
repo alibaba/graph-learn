@@ -209,14 +209,15 @@ SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
   }
   side_info->format = kDefault;
   for (auto const &field: etable_schema->fields()) {
-    if (field->name() == "label") {
-      side_info->format |= kLabeled;
-    } else if (field->name() == "weight") {
-      side_info->format |= kWeighted;
-    } else {
-      // otherwise we have attributes
-      side_info->format |= kAttributed;
-    }
+    // if (field->name() == "label") {
+    //   side_info->format |= kLabeled;
+    // } else if (field->name() == "weight") {
+    //   side_info->format |= kWeighted;
+    // } else {
+    //   // otherwise we have attributes
+    //   side_info->format |= kAttributed;
+    // }
+    side_info->format |= kAttributed;
   }
   side_info->type = std::to_string(edge_label);
   // TODO: in vineyard's data model, edges of the same label can have arbitary kinds
@@ -271,14 +272,15 @@ SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
   }
   side_info->format = kDefault;
   for (auto const &field: vtable_schema->fields()) {
-    if (field->name() == "label") {
-      side_info->format |= kLabeled;
-    } else if (field->name() == "weight") {
-      side_info->format |= kWeighted;
-    } else {
-      // otherwise we have attributes
-      side_info->format |= kAttributed;
-    }
+    // if (field->name() == "label") {
+    //   side_info->format |= kLabeled;
+    // } else if (field->name() == "weight") {
+    //   side_info->format |= kWeighted;
+    // } else {
+    //   // otherwise we have attributes
+    //   side_info->format |= kAttributed;
+    // }
+    side_info->format |= kAttributed;
   }
   side_info->type = std::to_string(node_label);
   side_info_cache[frag->id()][node_label] = side_info;
