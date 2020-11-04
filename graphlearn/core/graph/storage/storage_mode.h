@@ -24,10 +24,13 @@ namespace io {
 /// 2 --> row mode & data distribution enabled
 /// 3 --> column mode & data distribution enabled
 //
+/// 8 --> vineyard storage
+///
 /// Default is 2, the same behavior like before.
 
 bool IsCompressedStorageEnabled();
 bool IsDataDistributionEnabled();
+bool IsVineyardStorageEnabled();
 
 }  // namespace io
 }  // namespace graphlearn
