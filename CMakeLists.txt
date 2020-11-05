@@ -22,6 +22,11 @@ option (TESTING "ENABLE testing" OFF)
 option (GL_DEBUG "Enable debug mode" OFF)
 option (PROFILING "Enable profiling" OFF)
 option (WITH_VINEYARD "Enable vineyard" OFF)
+set (PYTHON_VERSION
+    "python3"
+    CACHE
+    STRING
+    "python version")
 
 set (HERE ${CMAKE_CURRENT_SOURCE_DIR})
 set (ROOT ${HERE})
@@ -93,7 +98,7 @@ add_dependencies (grpc_target protobuf_target)
 include(cmake/FindGlog.cmake)
 if(GLOG_FOUND)
     set (GLOG_INCLUDE ${GLOG_INCLUDE_DIRS})
-    get_filename_component(GRPC_LIB ${GLOG_LIBRARIES} DIRECTORY)
+    get_filename_component(GLOG_LIB ${GLOG_LIBRARIES} DIRECTORY)
     add_custom_target (glog_target)
     add_custom_command (TARGET glog_target
         COMMAND ${CMAKE_COMMAND} -E echo "glog found"
@@ -289,8 +294,8 @@ if (TESTING)
             ${ROOT} ${PROTOBUF_INCLUDE} 
             ${GLOG_INCLUDE} ${GRPC_INCLUDE})
         target_link_libraries (${name}
-            -L${GTEST_LIB} -L${LIB_DIR} -L${GRPC_LIB} 
-            -L/lib64 -lgraphlearn_shared -lgtest 
+            -L${GTEST_LIB} -L${LIB_DIR} -L${GRPC_LIB} -L${PROTOBUF_LIB}
+            -L/lib64 -lgraphlearn_shared -lgtest -lprotobuf
             -lgtest_main -lstdc++ -lgrpc++ 
             -lgrpc -lgpr -lupb -lpthread)
         if(WITH_VINEYARD)
@@ -465,21 +470,14 @@ add_custom_command (TARGET python
     COMMAND /bin/sh -c "rm -rf graphlearn.egg-info"
     COMMAND /bin/sh -c "mkdir -p ${PYTHON_LIB}"
     COMMAND /bin/sh -c "cp ${SETUP_DIR}/gl.__init__.py ${PYTHON_DIR}/__init__.py"
-    COMMAND /bin/sh -c "echo '__version__ = ${VERSION}' > ${PYTHON_DIR}/__init__.py"
-    COMMAND /bin/sh -c "cp ${THIRD_PARTY_DIR}/grpc/build/lib/libgrpc++.so.1.26.0 ${PYTHON_LIB}/libgrpc++.so.1.26.0"
-    COMMAND /bin/sh -c "cp ${THIRD_PARTY_DIR}/grpc/build/lib/libgrpc.so.9.0.0 ${PYTHON_LIB}/libgrpc.so.9.0.0"
-    COMMAND /bin/sh -c "cp ${THIRD_PARTY_DIR}/grpc/build/lib/libgpr.so.9.0.0 ${PYTHON_LIB}/libgpr.so.9.0.0"
-    COMMAND /bin/sh -c "cp ${THIRD_PARTY_DIR}/grpc/build/lib/libupb.so.9.0.0 ${PYTHON_LIB}/libupb.so.9.0.0"
-    COMMAND /bin/sh -c "if [ ! -f '${PYTHON_LIB}/libgrpc++.so' ]; then ln -s ${PYTHON_LIB}/libgrpc++.so.1.26.0 ${PYTHON_LIB}/libgrpc++.so; fi"
-    COMMAND /bin/sh -c "if [ ! -f '${PYTHON_LIB}/libgrpc++.so.1' ]; then ln -s ${PYTHON_LIB}/libgrpc++.so.1.26.0 ${PYTHON_LIB}/libgrpc++.so.1; fi"
-    COMMAND /bin/sh -c "if [ ! -f '${PYTHON_LIB}/libgrpc.so' ]; then ln -s ${PYTHON_LIB}/libgrpc.so.9.0.0 ${PYTHON_LIB}/libgrpc.so; fi"
-    COMMAND /bin/sh -c "if [ ! -f '${PYTHON_LIB}/libgrpc.so.9' ]; then ln -s ${PYTHON_LIB}/libgrpc.so.9.0.0 ${PYTHON_LIB}/libgrpc.so.9; fi"
-    COMMAND /bin/sh -c "if [ ! -f '${PYTHON_LIB}/libgpr.so' ]; then ln -s ${PYTHON_LIB}/libgpr.so.9.0.0 ${PYTHON_LIB}/libgpr.so; fi"
-    COMMAND /bin/sh -c "if [ ! -f '${PYTHON_LIB}/libgpr.so.9' ]; then ln -s ${PYTHON_LIB}/libgpr.so.9.0.0 ${PYTHON_LIB}/libgpr.so.9; fi"
-    COMMAND /bin/sh -c "if [ ! -f '${PYTHON_LIB}/libupb.so' ]; then ln -s ${PYTHON_LIB}/libupb.so.9.0.0 ${PYTHON_LIB}/libupb.so; fi"
-    COMMAND /bin/sh -c "if [ ! -f '${PYTHON_LIB}/libupb.so.9' ]; then ln -s ${PYTHON_LIB}/libupb.so.9.0.0 ${PYTHON_LIB}/libupb.so.9; fi"
+    COMMAND /bin/sh -c "echo '__version__ = ${VERSION}' >> ${PYTHON_DIR}/__init__.py"
+    COMMAND /bin/sh -c "cp ${GRPC_LIB}/libgrpc++.so ${PYTHON_LIB}/libgrpc++.so"
+    COMMAND /bin/sh -c "cp ${GRPC_LIB}/libgrpc.so ${PYTHON_LIB}/libgrpc.so"
+    COMMAND /bin/sh -c "cp ${GRPC_LIB}/libgpr.so ${PYTHON_LIB}/libgpr.so"
+    COMMAND /bin/sh -c "cp ${GRPC_LIB}/libupb.so ${PYTHON_LIB}/libupb.so"
+    COMMAND /bin/sh -c "cp ${GLOG_LIB}/libglog.so ${PYTHON_LIB}/libglog.so"
     COMMAND /bin/sh -c "cp ${LIB_DIR}/libgraphlearn_shared.so ${PYTHON_LIB}"
-    COMMAND python ${SETUP_DIR}/setup.py bdist_wheel
+    COMMAND ${PYTHON_VERSION} ${SETUP_DIR}/setup.py bdist_wheel
     COMMAND /bin/sh -c "mkdir -p ${BIN_DIR}/ge_data/data"
     COMMAND /bin/sh -c "mkdir -p ${BIN_DIR}/ge_data/ckpt"
     COMMAND /bin/sh -c "rm -rf ${PYTHON_DIR}/__init__.py*"
