@@ -5,11 +5,12 @@
 
 #if defined(WITH_VINEYARD)
 #include "vineyard/graph/fragment/arrow_fragment.h"
+#include "vineyard/graph/fragment/arrow_fragment_group.h"
 #endif
 
-#include "graphlearn/include/config.h"
 #include "graphlearn/core/graph/storage/graph_storage.h"
 #include "graphlearn/core/graph/storage/vineyard_storage_utils.h"
+#include "graphlearn/include/config.h"
 
 #if defined(WITH_VINEYARD)
 
@@ -18,14 +19,24 @@ namespace io {
 
 class VineyardGraphStorage : public GraphStorage {
 public:
-  explicit VineyardGraphStorage(std::string const &edge_label="0")
-      : VineyardGraphStorage(std::stoi(edge_label)) {
-  }
+  explicit VineyardGraphStorage(std::string const &edge_label = "0")
+      : VineyardGraphStorage(std::stoi(edge_label)) {}
 
-  explicit VineyardGraphStorage(label_id_t const edge_label=0)
+  explicit VineyardGraphStorage(label_id_t const edge_label = 0)
       : edge_label_(edge_label) {
     VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
-    frag_ = client_.GetObject<gl_frag_t>(GLOBAL_FLAG(VineyardGraphID));
+    auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
+        GLOBAL_FLAG(VineyardGraphID));
+    // assume 1 worker per server
+    for (auto const &kv : fg->Fragments()) {
+      if (fg->FragmentLocations().at(kv.first) == client_.instance_id()) {
+        frag_ = client_.GetObject<gl_frag_t>(kv.second);
+        break;
+      }
+    }
+    if (frag_ == nullptr) {
+      throw std::runtime_error("Failed to find a local fragment");
+    }
   }
 
   virtual ~VineyardGraphStorage() = default;

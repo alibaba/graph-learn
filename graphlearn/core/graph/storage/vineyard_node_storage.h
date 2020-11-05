@@ -3,11 +3,12 @@
 
 #if defined(WITH_VINEYARD)
 #include "vineyard/graph/fragment/arrow_fragment.h"
+#include "vineyard/graph/fragment/arrow_fragment_group.h"
 #endif
 
-#include "graphlearn/include/config.h"
 #include "graphlearn/core/graph/storage/node_storage.h"
 #include "graphlearn/core/graph/storage/vineyard_storage_utils.h"
+#include "graphlearn/include/config.h"
 
 #if defined(WITH_VINEYARD)
 
@@ -16,15 +17,26 @@ namespace io {
 
 class VineyardNodeStorage : public graphlearn::io::NodeStorage {
 public:
-  explicit VineyardNodeStorage(std::string const &node_label="0")
-      : VineyardNodeStorage(std::stoi(node_label)) {
-  }
+  explicit VineyardNodeStorage(std::string const &node_label = "0")
+      : VineyardNodeStorage(std::stoi(node_label)) {}
 
-  explicit VineyardNodeStorage(label_id_t const node_label=0)
+  explicit VineyardNodeStorage(label_id_t const node_label = 0)
       : node_label_(node_label) {
-    std::cerr << "node_label = " << node_label << ", from " << GLOBAL_FLAG(VineyardGraphID) << std::endl;
+    std::cerr << "node_label = " << node_label << ", from "
+              << GLOBAL_FLAG(VineyardGraphID) << std::endl;
     VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
-    frag_ = client_.GetObject<gl_frag_t>(GLOBAL_FLAG(VineyardGraphID));
+    auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
+        GLOBAL_FLAG(VineyardGraphID));
+    // assume 1 worker per server
+    for (auto const &kv : fg->Fragments()) {
+      if (fg->FragmentLocations().at(kv.first) == client_.instance_id()) {
+        frag_ = client_.GetObject<gl_frag_t>(kv.second);
+        break;
+      }
+    }
+    if (frag_ == nullptr) {
+      throw std::runtime_error("Failed to find a local fragment");
+    }
   }
 
   virtual ~VineyardNodeStorage() = default;
@@ -43,7 +55,8 @@ public:
 
   /// Get the total node count after data fixed.
   virtual IdType Size() const override {
-    std::cerr << "node: get size = " << frag_->vertex_data_table(node_label_)->num_rows() << std::endl;
+    std::cerr << "node: get size = "
+              << frag_->vertex_data_table(node_label_)->num_rows() << std::endl;
     return frag_->vertex_data_table(node_label_)->num_rows();
   }
 
@@ -74,7 +87,8 @@ public:
       std::cerr << "label not available for node " << node_id << std::endl;
       return 0;
     }
-    return static_cast<float>(frag_->GetData<int64_t>(vertex_t{node_id}, index));
+    return static_cast<float>(
+        frag_->GetData<int64_t>(vertex_t{node_id}, index));
   }
 
   virtual Attribute GetAttribute(IdType node_id) const override {
@@ -116,7 +130,8 @@ public:
 
   /// Get all attributes if existed, the count of which is the same with Size().
   virtual const std::vector<Attribute> *GetAttributes() const override {
-    std::cerr << "node: get attributes: node_label = " << node_label_ << std::endl;
+    std::cerr << "node: get attributes: node_label = " << node_label_
+              << std::endl;
     size_t count = frag_->GetInnerVerticesNum(node_label_);
     std::cerr << "node: get attributes: count = " << count << std::endl;
 
@@ -127,14 +142,14 @@ public:
     auto vtable = frag_->vertex_data_table(node_label_);
     for (auto id = id_range.begin(); id < id_range.end(); ++id) {
       auto offset = frag_->vertex_offset(id);
-      value_list->emplace_back(
-          arrow_line_to_attribute_value(vtable, offset, 0), true);
+      value_list->emplace_back(arrow_line_to_attribute_value(vtable, offset, 0),
+                               true);
     }
     return value_list;
   }
 
 private:
-  template <typename T, typename RT=T>
+  template <typename T, typename RT = T>
   const std::vector<RT> *GetAttribute(std::string const &name) const {
     int attr_index = find_index_of_name(
         frag_->vertex_data_table(node_label_)->schema(), name);

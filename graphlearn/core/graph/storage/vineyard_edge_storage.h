@@ -3,11 +3,12 @@
 
 #if defined(WITH_VINEYARD)
 #include "vineyard/graph/fragment/arrow_fragment.h"
+#include "vineyard/graph/fragment/arrow_fragment_group.h"
 #endif
 
-#include "graphlearn/include/config.h"
 #include "graphlearn/core/graph/storage/edge_storage.h"
 #include "graphlearn/core/graph/storage/vineyard_storage_utils.h"
+#include "graphlearn/include/config.h"
 
 #if defined(WITH_VINEYARD)
 
@@ -16,14 +17,24 @@ namespace io {
 
 class VineyardEdgeStorage : public EdgeStorage {
 public:
-  explicit VineyardEdgeStorage(std::string const &edge_label="0")
-      : VineyardEdgeStorage(std::stoi(edge_label)) {
-  }
+  explicit VineyardEdgeStorage(std::string const &edge_label = "0")
+      : VineyardEdgeStorage(std::stoi(edge_label)) {}
 
-  explicit VineyardEdgeStorage(label_id_t const edge_label=0)
+  explicit VineyardEdgeStorage(label_id_t const edge_label = 0)
       : edge_label_(edge_label) {
     VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
-    frag_ = client_.GetObject<gl_frag_t>(GLOBAL_FLAG(VineyardGraphID));
+    auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
+        GLOBAL_FLAG(VineyardGraphID));
+    // assume 1 worker per server
+    for (auto const &kv: fg->Fragments()) {
+      if (fg->FragmentLocations().at(kv.first) == client_.instance_id()) {
+        frag_ = client_.GetObject<gl_frag_t>(kv.second);
+        break;
+      }
+    }
+    if (frag_ == nullptr) {
+      throw std::runtime_error("Failed to find a local fragment");
+    }
   }
 
   virtual ~VineyardEdgeStorage() = default;
@@ -75,11 +86,12 @@ public:
   /// These ids are not distinct.
   virtual const IdList *GetSrcIds() const override {
     auto src_id_list = new IdList();
-    for (label_id_t v_label = 0; v_label < frag_->vertex_label_num(); ++v_label) {
+    for (label_id_t v_label = 0; v_label < frag_->vertex_label_num();
+         ++v_label) {
       auto id_range = frag_->InnerVertices(v_label);
       for (auto vid = id_range.begin(); vid < id_range.end(); ++vid) {
         auto oes = frag_->GetOutgoingAdjList(vid, edge_label_);
-        for (auto &e: oes) {
+        for (auto &e : oes) {
           src_id_list->emplace_back(vid.GetValue());
         }
       }
@@ -90,11 +102,12 @@ public:
   /// Size(). These ids are not distinct.
   virtual const IdList *GetDstIds() const override {
     auto dst_id_list = new IdList();
-    for (label_id_t v_label = 0; v_label < frag_->vertex_label_num(); ++v_label) {
+    for (label_id_t v_label = 0; v_label < frag_->vertex_label_num();
+         ++v_label) {
       auto id_range = frag_->InnerVertices(v_label);
       for (auto vid = id_range.begin(); vid < id_range.end(); ++vid) {
         auto oes = frag_->GetOutgoingAdjList(vid, edge_label_);
-        for (auto &e: oes) {
+        for (auto &e : oes) {
           dst_id_list->emplace_back(e.get_neighbor().GetValue());
         }
       }
@@ -110,7 +123,7 @@ public:
     }
     auto weight_array = std::dynamic_pointer_cast<
         typename vineyard::ConvertToArrowType<double>::ArrayType>(
-            table->column(index)->chunk(0));
+        table->column(index)->chunk(0));
     auto weight_list = new std::vector<float>();
     weight_list->reserve(weight_array->length());
     for (size_t i = 0; i < weight_array->length(); ++i) {
@@ -127,7 +140,7 @@ public:
     }
     auto weight_array = std::dynamic_pointer_cast<
         typename vineyard::ConvertToArrowType<double>::ArrayType>(
-            table->column(index)->chunk(0));
+        table->column(index)->chunk(0));
     auto label_list = new std::vector<int32_t>();
     label_list->reserve(weight_array->length());
     for (size_t i = 0; i < weight_array->length(); ++i) {
@@ -142,7 +155,8 @@ public:
     auto attribute_list = new std::vector<Attribute>();
     attribute_list->reserve(table->num_rows());
     for (size_t i = 0; i < table->num_rows(); ++i) {
-      attribute_list->emplace_back(arrow_line_to_attribute_value(table, i, 2), true);
+      attribute_list->emplace_back(arrow_line_to_attribute_value(table, i, 2),
+                                   true);
     }
     return attribute_list;
   }
