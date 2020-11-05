@@ -17,14 +17,13 @@ namespace io {
 
 class VineyardTopoStorage : public graphlearn::io::TopoStorage {
 public:
-  explicit VineyardTopoStorage(std::string const &edge_label = "0")
-      : VineyardTopoStorage(std::stoi(edge_label)) {}
-
-  explicit VineyardTopoStorage(label_id_t const edge_label = 0)
-      : edge_label_(edge_label) {
+  explicit VineyardTopoStorage(std::string const &edge_label = "0") {
     VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
     auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
         GLOBAL_FLAG(VineyardGraphID));
+    if (fg == nullptr) {
+      throw std::runtime_error("Topo: failed to find the graph");
+    }
     // assume 1 worker per server
     for (auto const &kv : fg->Fragments()) {
       if (fg->FragmentLocations().at(kv.first) == client_.instance_id()) {
@@ -33,7 +32,35 @@ public:
       }
     }
     if (frag_ == nullptr) {
-      throw std::runtime_error("Failed to find a local fragment");
+      throw std::runtime_error("Topo: failed to find a local fragment");
+    }
+    auto elabels = frag_->schema().GetEdgeLabels();
+    auto elabel_index = std::find(elabels.begin(), elabels.end(), edge_label);
+    if (elabel_index == elabels.end()) {
+      throw std::runtime_error(
+          "Topo: failed to find edge label in local fragment: " + edge_label);
+    } else {
+      edge_label_ = elabel_index - elabels.begin();
+    }
+  }
+
+  explicit VineyardTopoStorage(label_id_t const edge_label = 0)
+      : edge_label_(edge_label) {
+    VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
+    auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
+        GLOBAL_FLAG(VineyardGraphID));
+    if (fg == nullptr) {
+      throw std::runtime_error("Topo: failed to find the graph");
+    }
+    // assume 1 worker per server
+    for (auto const &kv : fg->Fragments()) {
+      if (fg->FragmentLocations().at(kv.first) == client_.instance_id()) {
+        frag_ = client_.GetObject<gl_frag_t>(kv.second);
+        break;
+      }
+    }
+    if (frag_ == nullptr) {
+      throw std::runtime_error("Topo: failed to find a local fragment");
     }
   }
   virtual ~VineyardTopoStorage() = default;
@@ -56,12 +83,12 @@ public:
   }
   /// Get the in-degree value of a given id.
   virtual IndexType GetInDegree(IdType dst_id) const override {
-    auto v = vertex_t{dst_id};
+    auto v = vertex_t{static_cast<uint64_t>(dst_id)};
     return frag_->GetLocalInDegree(v, edge_label_);
   }
   /// Get the out-degree value of a given id.
   virtual IndexType GetOutDegree(IdType src_id) const override {
-    auto v = vertex_t{src_id};
+    auto v = vertex_t{static_cast<uint64_t>(src_id)};
     return frag_->GetLocalOutDegree(v, edge_label_);
   }
 

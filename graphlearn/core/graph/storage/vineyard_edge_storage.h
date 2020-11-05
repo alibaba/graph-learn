@@ -17,23 +17,51 @@ namespace io {
 
 class VineyardEdgeStorage : public EdgeStorage {
 public:
-  explicit VineyardEdgeStorage(std::string const &edge_label = "0")
-      : VineyardEdgeStorage(std::stoi(edge_label)) {}
+  explicit VineyardEdgeStorage(std::string const &edge_label = "0") {
+    VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
+    auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
+        GLOBAL_FLAG(VineyardGraphID));
+    if (fg == nullptr) {
+      throw std::runtime_error("Edge: failed to find the graph");
+    }
+    // assume 1 worker per server
+    for (auto const &kv : fg->Fragments()) {
+      if (fg->FragmentLocations().at(kv.first) == client_.instance_id()) {
+        LOG(INFO) << "get object: " << kv.second;
+        frag_ = client_.GetObject<gl_frag_t>(kv.second);
+        break;
+      }
+    }
+    if (frag_ == nullptr) {
+      throw std::runtime_error("Edge: failed to find a local fragment");
+    }
+    auto elabels = frag_->schema().GetEdgeLabels();
+    auto elabel_index = std::find(elabels.begin(), elabels.end(), edge_label);
+    if (elabel_index == elabels.end()) {
+      throw std::runtime_error(
+          "Edge: failed to find edge label in local fragment: " + edge_label);
+    } else {
+      edge_label_ = elabel_index - elabels.begin();
+    }
+  }
 
   explicit VineyardEdgeStorage(label_id_t const edge_label = 0)
       : edge_label_(edge_label) {
     VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
     auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
         GLOBAL_FLAG(VineyardGraphID));
+    if (fg == nullptr) {
+      throw std::runtime_error("Edge: failed to find the graph");
+    }
     // assume 1 worker per server
-    for (auto const &kv: fg->Fragments()) {
+    for (auto const &kv : fg->Fragments()) {
       if (fg->FragmentLocations().at(kv.first) == client_.instance_id()) {
         frag_ = client_.GetObject<gl_frag_t>(kv.second);
         break;
       }
     }
     if (frag_ == nullptr) {
-      throw std::runtime_error("Failed to find a local fragment");
+      throw std::runtime_error("Edge: failed to find a local fragment");
     }
   }
 

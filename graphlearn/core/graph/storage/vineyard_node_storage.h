@@ -17,16 +17,15 @@ namespace io {
 
 class VineyardNodeStorage : public graphlearn::io::NodeStorage {
 public:
-  explicit VineyardNodeStorage(std::string const &node_label = "0")
-      : VineyardNodeStorage(std::stoi(node_label)) {}
-
-  explicit VineyardNodeStorage(label_id_t const node_label = 0)
-      : node_label_(node_label) {
+  explicit VineyardNodeStorage(std::string const &node_label = "0") {
     std::cerr << "node_label = " << node_label << ", from "
               << GLOBAL_FLAG(VineyardGraphID) << std::endl;
     VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
     auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
         GLOBAL_FLAG(VineyardGraphID));
+    if (fg == nullptr) {
+      throw std::runtime_error("Node: failed to find the graph");
+    }
     // assume 1 worker per server
     for (auto const &kv : fg->Fragments()) {
       if (fg->FragmentLocations().at(kv.first) == client_.instance_id()) {
@@ -35,7 +34,37 @@ public:
       }
     }
     if (frag_ == nullptr) {
-      throw std::runtime_error("Failed to find a local fragment");
+      throw std::runtime_error("Node: failed to find a local fragment");
+    }
+    auto vlabels = frag_->schema().GetVextexLabels();
+    auto vlabel_index = std::find(vlabels.begin(), vlabels.end(), node_label);
+    if (vlabel_index == vlabels.end()) {
+      throw std::runtime_error(
+          "Node: failed to find node label in local fragment: " + node_label);
+    } else {
+      node_label_ = vlabel_index - vlabels.begin();
+    }
+  }
+
+  explicit VineyardNodeStorage(label_id_t const node_label = 0)
+      : node_label_(node_label) {
+    std::cerr << "node_label = " << node_label << ", from "
+              << GLOBAL_FLAG(VineyardGraphID) << std::endl;
+    VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
+    auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
+        GLOBAL_FLAG(VineyardGraphID));
+    if (fg == nullptr) {
+      throw std::runtime_error("Node: failed to find the graph");
+    }
+    // assume 1 worker per server
+    for (auto const &kv : fg->Fragments()) {
+      if (fg->FragmentLocations().at(kv.first) == client_.instance_id()) {
+        frag_ = client_.GetObject<gl_frag_t>(kv.second);
+        break;
+      }
+    }
+    if (frag_ == nullptr) {
+      throw std::runtime_error("Node: failed to find a local fragment");
     }
   }
 
@@ -69,30 +98,31 @@ public:
   ///    node label,
   ///    node attributes
   virtual float GetWeight(IdType node_id) const override {
-    auto v = vertex_t{node_id};
+    auto v = vertex_t{static_cast<uint64_t>(node_id)};
     auto table = frag_->vertex_data_table(frag_->vertex_label(v));
     int index = find_index_of_name(table->schema(), "weight");
     if (index == -1) {
       std::cerr << "weight not available for node " << node_id << std::endl;
       return 0.0;
     }
-    return static_cast<float>(frag_->GetData<double>(vertex_t{node_id}, index));
+    return static_cast<float>(frag_->GetData<double>(
+        vertex_t{static_cast<uint64_t>(node_id)}, index));
   }
 
   virtual int32_t GetLabel(IdType node_id) const override {
-    auto v = vertex_t{node_id};
+    auto v = vertex_t{static_cast<uint64_t>(node_id)};
     auto table = frag_->vertex_data_table(frag_->vertex_label(v));
     int index = find_index_of_name(table->schema(), "label");
     if (index == -1) {
       std::cerr << "label not available for node " << node_id << std::endl;
       return 0;
     }
-    return static_cast<float>(
-        frag_->GetData<int64_t>(vertex_t{node_id}, index));
+    return static_cast<float>(frag_->GetData<int64_t>(
+        vertex_t{static_cast<uint64_t>(node_id)}, index));
   }
 
   virtual Attribute GetAttribute(IdType node_id) const override {
-    auto v = vertex_t{node_id};
+    auto v = vertex_t{static_cast<uint64_t>(node_id)};
     auto label = frag_->vertex_label(v);
     auto offset = frag_->vertex_offset(v);
     auto table = frag_->vertex_data_table(label);

@@ -7,6 +7,11 @@
 #include <memory>
 #include <mutex>
 
+namespace vineyard {
+template class ArrowFragment<graphlearn::io::vineyard_oid_t,
+                             graphlearn::io::vineyard_vid_t>;
+}
+
 namespace graphlearn {
 namespace io {
 
@@ -21,35 +26,41 @@ arrow_line_to_attribute_value(std::shared_ptr<arrow::Table> table,
     auto arr = table->column(idx)->chunk(0);
     switch (arr->type()->id()) {
     case arrow::Type::INT64: {
-      int64_t value = std::dynamic_pointer_cast<
+      int64_t value =
+          std::dynamic_pointer_cast<
               typename vineyard::ConvertToArrowType<int64_t>::ArrayType>(arr)
               ->Value(row_index);
       std::cerr << "int64 value: " << value << std::endl;
       attr->Add(value);
     } break;
     case arrow::Type::FLOAT: {
-      float value = std::dynamic_pointer_cast<
+      float value =
+          std::dynamic_pointer_cast<
               typename vineyard::ConvertToArrowType<float>::ArrayType>(arr)
               ->Value(row_index);
       std::cerr << "float value: " << value << std::endl;
       attr->Add(value);
     } break;
     case arrow::Type::DOUBLE: {
-      double value = std::dynamic_pointer_cast<
+      double value =
+          std::dynamic_pointer_cast<
               typename vineyard::ConvertToArrowType<double>::ArrayType>(arr)
               ->Value(row_index);
       std::cerr << "double value: " << value << std::endl;
       attr->Add(static_cast<float>(value));
     } break;
     case arrow::Type::STRING: {
-      std::string value = std::dynamic_pointer_cast<
-              typename vineyard::ConvertToArrowType<std::string>::ArrayType>(arr)
+      std::string value =
+          std::dynamic_pointer_cast<
+              typename vineyard::ConvertToArrowType<std::string>::ArrayType>(
+              arr)
               ->GetString(row_index);
       std::cerr << "std::string value: " << value << std::endl;
       attr->Add(value);
     } break;
     default:
-      std::cerr << "Unsupported attribute type: " << arr->type()->ToString() << std::endl;
+      std::cerr << "Unsupported attribute type: " << arr->type()->ToString()
+                << std::endl;
     }
   }
   return attr;
@@ -120,14 +131,14 @@ const IndexList *get_all_out_degree(std::shared_ptr<gl_frag_t> const &frag,
 
 const Array<IdType>
 get_all_outgoing_neighbor_nodes(std::shared_ptr<gl_frag_t> const &frag,
-                                IdType src_id,
-                                const label_id_t edge_label) {
+                                IdType src_id, const label_id_t edge_label) {
   using nbr_unit_t = vineyard::property_graph_utils::NbrUnit<gl_frag_t::vid_t,
                                                              gl_frag_t::eid_t>;
   // FIXME extend Array to support element_size and element_offset.
   std::vector<const IdType *> values;
   std::vector<int32_t> sizes;
-  auto neighbor_list = frag->GetOutgoingAdjList(vertex_t{src_id}, edge_label);
+  auto neighbor_list = frag->GetOutgoingAdjList(
+      vertex_t{static_cast<uint64_t>(src_id)}, edge_label);
   values.emplace_back(
       reinterpret_cast<const IdType *>(neighbor_list.begin_unit()));
   sizes.emplace_back(neighbor_list.Size());
@@ -137,14 +148,14 @@ get_all_outgoing_neighbor_nodes(std::shared_ptr<gl_frag_t> const &frag,
 
 const Array<IdType>
 get_all_outgoing_neighbor_edges(std::shared_ptr<gl_frag_t> const &frag,
-                                IdType src_id,
-                                const label_id_t edge_label) {
+                                IdType src_id, const label_id_t edge_label) {
   using nbr_unit_t = vineyard::property_graph_utils::NbrUnit<gl_frag_t::vid_t,
                                                              gl_frag_t::eid_t>;
   // FIXME extend Array to support element_size and element_offset.
   std::vector<const IdType *> values;
   std::vector<int32_t> sizes;
-  auto neighbor_list = frag->GetOutgoingAdjList(vertex_t{src_id}, edge_label);
+  auto neighbor_list = frag->GetOutgoingAdjList(
+      vertex_t{static_cast<uint64_t>(src_id)}, edge_label);
   values.emplace_back(
       reinterpret_cast<const IdType *>(neighbor_list.begin_unit()));
   sizes.emplace_back(neighbor_list.Size());
@@ -176,8 +187,8 @@ Attribute get_edge_attribute(std::shared_ptr<gl_frag_t> const &frag,
 SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
                               label_id_t const edge_label) {
   static std::map<vineyard::ObjectID,
-                  std::map<label_id_t,
-                           std::shared_ptr<SideInfo>>> side_info_cache;
+                  std::map<label_id_t, std::shared_ptr<SideInfo>>>
+      side_info_cache;
 
   static std::mutex mutex;
   std::lock_guard<std::mutex> lexical_scope_lock(mutex);
@@ -208,7 +219,7 @@ SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
     }
   }
   side_info->format = kDefault;
-  for (auto const &field: etable_schema->fields()) {
+  for (auto const &field : etable_schema->fields()) {
     // if (field->name() == "label") {
     //   side_info->format |= kLabeled;
     // } else if (field->name() == "weight") {
@@ -220,8 +231,8 @@ SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
     side_info->format |= kAttributed;
   }
   side_info->type = std::to_string(edge_label);
-  // TODO: in vineyard's data model, edges of the same label can have arbitary kinds
-  // of sources and destinations.
+  // TODO: in vineyard's data model, edges of the same label can have arbitary
+  // kinds of sources and destinations.
   //
   // Thus we just inspect the label of first src/dst
   // gl_frag_t::vid_t first_src_id = frag->edge_srcs(edge_label)->Value(0);
@@ -239,8 +250,8 @@ SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
 SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
                               label_id_t const node_label) {
   static std::map<vineyard::ObjectID,
-                  std::map<label_id_t,
-                           std::shared_ptr<SideInfo>>> side_info_cache;
+                  std::map<label_id_t, std::shared_ptr<SideInfo>>>
+      side_info_cache;
 
   static std::mutex mutex;
   std::lock_guard<std::mutex> lexical_scope_lock(mutex);
@@ -271,7 +282,7 @@ SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
     }
   }
   side_info->format = kDefault;
-  for (auto const &field: vtable_schema->fields()) {
+  for (auto const &field : vtable_schema->fields()) {
     // if (field->name() == "label") {
     //   side_info->format |= kLabeled;
     // } else if (field->name() == "weight") {
@@ -298,7 +309,8 @@ int64_t find_index_of_name(std::shared_ptr<arrow::Schema> const &schema,
 }
 #endif
 
-GraphStorage* NewVineyardGraphStorage(const std::string& edge_type) {
+GraphStorage *NewVineyardGraphStorage(const std::string &edge_type) {
+  LOG(INFO) << "create vineyard graph storage: " << WITH_VINEYARD;
 #if defined(WITH_VINEYARD)
   return new VineyardGraphStorage(edge_type);
 #else
@@ -306,7 +318,8 @@ GraphStorage* NewVineyardGraphStorage(const std::string& edge_type) {
 #endif
 }
 
-NodeStorage* NewVineyardNodeStorage(const std::string& node_type) {
+NodeStorage *NewVineyardNodeStorage(const std::string &node_type) {
+  LOG(INFO) << "create vineyard node storage: " << WITH_VINEYARD;
 #if defined(WITH_VINEYARD)
   return new VineyardNodeStorage(node_type);
 #else

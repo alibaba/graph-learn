@@ -19,14 +19,13 @@ namespace io {
 
 class VineyardGraphStorage : public GraphStorage {
 public:
-  explicit VineyardGraphStorage(std::string const &edge_label = "0")
-      : VineyardGraphStorage(std::stoi(edge_label)) {}
-
-  explicit VineyardGraphStorage(label_id_t const edge_label = 0)
-      : edge_label_(edge_label) {
+  explicit VineyardGraphStorage(std::string const &edge_label = "0") {
     VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
     auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
         GLOBAL_FLAG(VineyardGraphID));
+    if (fg == nullptr) {
+      throw std::runtime_error("Graph: failed to find the graph");
+    }
     // assume 1 worker per server
     for (auto const &kv : fg->Fragments()) {
       if (fg->FragmentLocations().at(kv.first) == client_.instance_id()) {
@@ -35,7 +34,35 @@ public:
       }
     }
     if (frag_ == nullptr) {
-      throw std::runtime_error("Failed to find a local fragment");
+      throw std::runtime_error("Graph: failed to find a local fragment");
+    }
+    auto elabels = frag_->schema().GetEdgeLabels();
+    auto elabel_index = std::find(elabels.begin(), elabels.end(), edge_label);
+    if (elabel_index == elabels.end()) {
+      throw std::runtime_error(
+          "Graph: failed to find edge label in local fragment: " + edge_label);
+    } else {
+      edge_label_ = elabel_index - elabels.begin();
+    }
+  }
+
+  explicit VineyardGraphStorage(label_id_t const edge_label = 0)
+      : edge_label_(edge_label) {
+    VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
+    auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
+        GLOBAL_FLAG(VineyardGraphID));
+    if (fg == nullptr) {
+      throw std::runtime_error("Failed to find the graph");
+    }
+    // assume 1 worker per server
+    for (auto const &kv : fg->Fragments()) {
+      if (fg->FragmentLocations().at(kv.first) == client_.instance_id()) {
+        frag_ = client_.GetObject<gl_frag_t>(kv.second);
+        break;
+      }
+    }
+    if (frag_ == nullptr) {
+      throw std::runtime_error("Graph: failed to find a local fragment");
     }
   }
 
@@ -79,10 +106,12 @@ public:
   }
 
   virtual IndexType GetInDegree(IdType dst_id) const override {
-    return frag_->GetLocalInDegree(vertex_t{dst_id}, edge_label_);
+    return frag_->GetLocalInDegree(vertex_t{static_cast<uint64_t>(dst_id)},
+                                   edge_label_);
   }
   virtual IndexType GetOutDegree(IdType src_id) const override {
-    return frag_->GetLocalOutDegree(vertex_t{src_id}, edge_label_);
+    return frag_->GetLocalOutDegree(vertex_t{static_cast<uint64_t>(src_id)},
+                                    edge_label_);
   }
   virtual const IndexList *GetAllInDegrees() const override {
     return get_all_in_degree(frag_, edge_label_);

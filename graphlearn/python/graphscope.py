@@ -49,7 +49,7 @@ def get_graph_from_handle(handle, worker_index, worker_count):
   g = Graph()
   for node_info in obj['node_schema']:
     confs = node_info.split(':')
-    if len(confs) != 5:
+    if len(confs) != 6:
       continue
     else:
       node_type = confs[0]
@@ -63,7 +63,7 @@ def get_graph_from_handle(handle, worker_index, worker_count):
 
   for edge_info in obj['edge_schema']:
     confs = edge_info.split(':')
-    if len(confs) != 7:
+    if len(confs) != 8:
       continue
     else:
       src_node_type = confs[0]
