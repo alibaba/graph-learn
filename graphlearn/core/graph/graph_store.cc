@@ -186,6 +186,10 @@ Status GraphStore::Load(
     noders_->LookupOrCreate(n.id_type);
   }
 
+  if (io::IsVineyardStorageEnabled()) {
+    return Status::OK();
+  }
+
   Initializer<io::EdgeSource,
               io::EdgeLoader,
               io::EdgeValue,
@@ -200,10 +204,6 @@ Status GraphStore::Load(
     return s;
   } else {
     LOG(INFO) << "Load graph edges succeed.";
-  }
-
-  if (io::IsVineyardStorageEnabled()) {
-    return Status::OK();
   }
 
   Initializer<io::NodeSource,

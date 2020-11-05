@@ -85,10 +85,6 @@ int64_t find_index_of_name(std::shared_ptr<arrow::Schema> const &schema,
 } // namespace io
 } // namespace graphlearn
 
-namespace vineyard {
-    
-}
-
 #endif
 
 #endif // GRAPHLEARN_CORE_GRAPH_STORAGE_VINEYARD_STORAGE_UTILS_H_

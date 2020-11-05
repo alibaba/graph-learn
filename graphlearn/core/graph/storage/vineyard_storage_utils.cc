@@ -192,7 +192,6 @@ SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
 
   static std::mutex mutex;
   std::lock_guard<std::mutex> lexical_scope_lock(mutex);
-
   auto cache_entry = side_info_cache[frag->id()][edge_label];
   if (cache_entry) {
     return cache_entry.get();
@@ -201,18 +200,22 @@ SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
   // compute attribute numbers of i/f/s
   auto edge_table = frag->edge_data_table(edge_label);
   auto etable_schema = edge_table->schema();
-  for (size_t idx = 2; idx < etable_schema->fields().size(); ++idx) {
+  LOG(INFO) << "etable_schema: " << etable_schema->ToString();
+  for (size_t idx = 0; idx < etable_schema->fields().size(); ++idx) {
     auto field = etable_schema->fields()[idx];
     switch (field->type()->id()) {
     case arrow::Type::INT64:
       side_info->i_num += 1;
+      LOG(INFO) << "matched a int";
       break;
     case arrow::Type::FLOAT:
     case arrow::Type::DOUBLE:
       side_info->f_num += 1;
+      LOG(INFO) << "matched a float";
       break;
     case arrow::Type::STRING:
       side_info->s_num += 1;
+      LOG(INFO) << "matched a string";
       break;
     default:
       break;
@@ -269,13 +272,16 @@ SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
     switch (field->type()->id()) {
     case arrow::Type::INT64:
       side_info->i_num += 1;
+      LOG(INFO) << "matched a int";
       break;
     case arrow::Type::FLOAT:
     case arrow::Type::DOUBLE:
       side_info->f_num += 1;
+      LOG(INFO) << "matched a float";
       break;
     case arrow::Type::STRING:
       side_info->s_num += 1;
+      LOG(INFO) << "matched a string";
       break;
     default:
       break;
