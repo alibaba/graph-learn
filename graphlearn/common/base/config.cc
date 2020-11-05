@@ -71,7 +71,7 @@ DEFINE_INT32_GLOBAL_FLAG(RpcMessageMaxSize, std::numeric_limits<int32_t>::max())
 DEFINE_INT32_GLOBAL_FLAG(InterThreadNum, 32)
 DEFINE_INT32_GLOBAL_FLAG(IntraThreadNum, 32)
 DEFINE_INT32_GLOBAL_FLAG(PartitionMode, 1)
-DEFINE_INT32_GLOBAL_FLAG(StorageMode, 2)
+DEFINE_INT32_GLOBAL_FLAG(StorageMode, 8)
 DEFINE_INT32_GLOBAL_FLAG(PaddingMode, 0)
 DEFINE_INT32_GLOBAL_FLAG(TrackerMode, 1)
 DEFINE_INT64_GLOBAL_FLAG(AverageNodeCount, 10000)
@@ -82,6 +82,9 @@ DEFINE_FLOAT_GLOBAL_FLAG(DefaultFloatAttribute, 0.0)
 DEFINE_STRING_GLOBAL_FLAG(DefaultStringAttribute, "")
 DEFINE_STRING_GLOBAL_FLAG(Tracker, "/tmp/graphlearn/")
 DEFINE_STRING_GLOBAL_FLAG(ServerHosts, "")
+
+DEFINE_INT64_GLOBAL_FLAG(VineyardGraphID, 0)
+DEFINE_STRING_GLOBAL_FLAG(VineyardIPCSocket, "/tmp/vineyard.sock")
 
 // Define the setters
 DEFINE_SET_INT32_GLOBAL_FLAG(DeployMode)
@@ -109,5 +112,8 @@ DEFINE_SET_FLOAT_GLOBAL_FLAG(DefaultFloatAttribute)
 DEFINE_SET_STRING_GLOBAL_FLAG(DefaultStringAttribute)
 DEFINE_SET_STRING_GLOBAL_FLAG(Tracker)
 DEFINE_SET_STRING_GLOBAL_FLAG(ServerHosts)
+
+DEFINE_SET_INT64_GLOBAL_FLAG(VineyardGraphID)
+DEFINE_SET_STRING_GLOBAL_FLAG(VineyardIPCSocket)
 
 }  // namespace graphlearn

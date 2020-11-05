@@ -21,6 +21,7 @@ set (CMAKE_CXX_COMPILER g++)
 option (TESTING "ENABLE testing" OFF)
 option (GL_DEBUG "Enable debug mode" OFF)
 option (PROFILING "Enable profiling" OFF)
+option (WITH_VINEYARD "Enable vineyard" OFF)
 
 set (HERE ${CMAKE_CURRENT_SOURCE_DIR})
 set (ROOT ${HERE})
@@ -38,43 +39,78 @@ set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${LIB_DIR})
 set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${LIB_DIR})
 
 # protobuf
-set (PROTOBUF_DIR ${THIRD_PARTY_DIR}/protobuf)
-set (PROTOBUF_INCLUDE ${PROTOBUF_DIR}/build/include)
-set (PROTOBUF_LIB ${PROTOBUF_DIR}/build/lib)
-set (PROTOC ${PROTOBUF_DIR}/build/bin/protoc)
-add_custom_target (protobuf_target)
-add_custom_command (TARGET protobuf_target
-    COMMAND ${CMAKE_COMMAND} -E echo "prepare protobuf library ..."
-    COMMAND /bin/sh -c "if [ ! -d '${PROTOBUF_DIR}/build' ]; then cd '${PROTOBUF_DIR}'; ./build.sh; fi"
-    COMMAND ${CMAKE_COMMAND} -E echo "protobuf done"
-    VERBATIM
-)
+find_package(Protobuf)
+if(Protobuf_FOUND)
+    set (PROTOBUF_INCLUDE ${Protobuf_INCLUDE_DIRS})
+    get_filename_component(PROTOBUF_LIB ${Protobuf_LIBRARY} DIRECTORY)
+    set (PROTOC ${Protobuf_PROTOC_EXECUTABLE})
+    add_custom_target (protobuf_target)
+    add_custom_command (TARGET protobuf_target
+        COMMAND ${CMAKE_COMMAND} -E echo "protobuf found"
+        VERBATIM
+    )
+else()
+    set (PROTOBUF_DIR ${THIRD_PARTY_DIR}/protobuf)
+    set (PROTOBUF_INCLUDE ${PROTOBUF_DIR}/build/include)
+    set (PROTOBUF_LIB ${PROTOBUF_DIR}/build/lib)
+    set (PROTOC ${PROTOBUF_DIR}/build/bin/protoc)
+    add_custom_target (protobuf_target)
+    add_custom_command (TARGET protobuf_target
+        COMMAND ${CMAKE_COMMAND} -E echo "prepare protobuf library ..."
+        COMMAND /bin/sh -c "if [ ! -d '${PROTOBUF_DIR}/build' ]; then cd '${PROTOBUF_DIR}'; ./build.sh; fi"
+        COMMAND ${CMAKE_COMMAND} -E echo "protobuf done"
+        VERBATIM
+    )
+endif()
 
 # grpc
-set (GRPC_DIR ${THIRD_PARTY_DIR}/grpc)
-set (GRPC_INCLUDE ${GRPC_DIR}/build/include)
-set (GRPC_LIB ${GRPC_DIR}/build/lib)
-set (PROTOC_GRPC_PLUGIN ${GRPC_DIR}/build/bin/grpc_cpp_plugin)
-add_custom_target (grpc_target)
-add_custom_command (TARGET grpc_target
-    COMMAND ${CMAKE_COMMAND} -E echo "prepare grpc library ..."
-    COMMAND /bin/sh -c "if [ ! -d '${GRPC_DIR}/build' ]; then cd '${GRPC_DIR}'; ./build.sh; fi"
-    COMMAND ${CMAKE_COMMAND} -E echo "grpc done"
-    VERBATIM
-)
+include(cmake/FindGRPC.cmake)
+if(GRPC_LIBRARY)
+    set (GRPC_INCLUDE ${GRPC_INCLUDE_DIR})
+    get_filename_component(GRPC_LIB ${GRPC_LIBRARY} DIRECTORY)
+    set (PROTOC_GRPC_PLUGIN ${GRPC_CPP_PLUGIN})
+    add_custom_target (grpc_target)
+    add_custom_command (TARGET grpc_target
+        COMMAND ${CMAKE_COMMAND} -E echo "grpc found"
+        VERBATIM
+    )
+else()
+    set (GRPC_DIR ${THIRD_PARTY_DIR}/grpc)
+    set (GRPC_INCLUDE ${GRPC_DIR}/build/include)
+    set (GRPC_LIB ${GRPC_DIR}/build/lib)
+    set (PROTOC_GRPC_PLUGIN ${GRPC_DIR}/build/bin/grpc_cpp_plugin)
+    add_custom_target (grpc_target)
+    add_custom_command (TARGET grpc_target
+        COMMAND ${CMAKE_COMMAND} -E echo "prepare grpc library ..."
+        COMMAND /bin/sh -c "if [ ! -d '${GRPC_DIR}/build' ]; then cd '${GRPC_DIR}'; ./build.sh; fi"
+        COMMAND ${CMAKE_COMMAND} -E echo "grpc done"
+        VERBATIM
+    )
+endif()
 add_dependencies (grpc_target protobuf_target)
 
 # glog
-set (GLOG_DIR ${THIRD_PARTY_DIR}/glog)
-set (GLOG_INCLUDE ${GLOG_DIR}/build)
-set (GLOG_LIB ${GLOG_DIR}/build)
-add_custom_target (glog_target)
-add_custom_command (TARGET glog_target
-    COMMAND ${CMAKE_COMMAND} -E echo "prepare glog library ..."
-    COMMAND /bin/sh -c "if [ ! -d '${GLOG_DIR}/build' ]; then cd '${GLOG_DIR}'; ./build.sh; fi"
-    COMMAND ${CMAKE_COMMAND} -E echo "glog done"
-    VERBATIM
-)
+include(cmake/FindGlog.cmake)
+if(GLOG_FOUND)
+    set (GLOG_INCLUDE ${GLOG_INCLUDE_DIRS})
+    get_filename_component(GRPC_LIB ${GLOG_LIBRARIES} DIRECTORY)
+    add_custom_target (glog_target)
+    add_custom_command (TARGET glog_target
+        COMMAND ${CMAKE_COMMAND} -E echo "glog found"
+        VERBATIM
+    )
+else()
+    set (GLOG_DIR ${THIRD_PARTY_DIR}/glog)
+    set (GLOG_INCLUDE ${GLOG_DIR}/build)
+    set (GLOG_LIB ${GLOG_DIR}/build)
+    add_custom_target (glog_target)
+    add_custom_command (TARGET glog_target
+        COMMAND ${CMAKE_COMMAND} -E echo "prepare glog library ..."
+        COMMAND /bin/sh -c "if [ ! -d '${GLOG_DIR}/build' ]; then cd '${GLOG_DIR}'; ./build.sh; fi"
+        COMMAND ${CMAKE_COMMAND} -E echo "glog done"
+        VERBATIM
+    )
+endif()
 
 # pybind11
 set (PYBIND_DIR ${THIRD_PARTY_DIR}/pybind11)
@@ -88,27 +124,54 @@ add_custom_command (TARGET pybind_target
 )
 
 # gtest
-set (GTEST_DIR ${THIRD_PARTY_DIR}/googletest)
-set (GTEST_INCLUDE ${GTEST_DIR}/googletest/googletest/include)
-set (GTEST_LIB ${GTEST_DIR}/build/googlemock/gtest)
-add_custom_target (gtest_target)
-add_custom_command (TARGET gtest_target
-    COMMAND ${CMAKE_COMMAND} -E echo "prepare gtest library ..."
-    COMMAND /bin/sh -c "if [ ! -d '${GTEST_DIR}/build' ]; then cd '${GTEST_DIR}'; ./build.sh; fi"
-    COMMAND ${CMAKE_COMMAND} -E echo "gtest done"
-    VERBATIM
-)
+find_package(GTest)
+if(GTEST_FOUND)
+    set (GTEST_INCLUDE ${GTEST_INCLUDE_DIRS})
+    get_filename_component(GTEST_LIB ${GTEST_MAIN_LIBRARIES} DIRECTORY)
+    add_custom_target (gtest_target)
+    add_custom_command (TARGET gtest_target
+        COMMAND ${CMAKE_COMMAND} -E echo "gtest found"
+        VERBATIM
+    )
+else()
+    set (GTEST_DIR ${THIRD_PARTY_DIR}/googletest)
+    set (GTEST_INCLUDE ${GTEST_DIR}/googletest/googletest/include)
+    set (GTEST_LIB ${GTEST_DIR}/build/googlemock/gtest)
+    add_custom_target (gtest_target)
+    add_custom_command (TARGET gtest_target
+        COMMAND ${CMAKE_COMMAND} -E echo "prepare gtest library ..."
+        COMMAND /bin/sh -c "if [ ! -d '${GTEST_DIR}/build' ]; then cd '${GTEST_DIR}'; ./build.sh; fi"
+        COMMAND ${CMAKE_COMMAND} -E echo "gtest done"
+        VERBATIM
+    )
+endif()
 
 # gflags
-set (GFLAGS_DIR ${THIRD_PARTY_DIR}/gflags)
-set (GFLAGS_LIB ${GFLAGS_DIR}/build/lib)
-add_custom_target (gflags_target)
-add_custom_command (TARGET gflags_target
-    COMMAND ${CMAKE_COMMAND} -E echo "prepare gflags library ..."
-    COMMAND /bin/sh -c "if [ ! -d '${GFLAGS_DIR}/build' ]; then cd '${GFLAGS_DIR}'; ./build.sh; fi"
-    COMMAND ${CMAKE_COMMAND} -E echo "gflags done"
-    VERBATIM
-)
+if(GFLAGS_FOUND)
+    set (GFLAGS_INCLUDE ${GFLAGS_INCLUDE_DIR})
+    get_filename_component(GFLAGS_LIB ${GFLAGS_LIBRARY} DIRECTORY)
+    add_custom_target (gflags_target)
+    add_custom_command (TARGET gflags_target
+        COMMAND ${CMAKE_COMMAND} -E echo "gflags found"
+        VERBATIM
+    )
+else()
+    set (GFLAGS_DIR ${THIRD_PARTY_DIR}/gflags)
+    set (GFLAGS_LIB ${GFLAGS_DIR}/build/lib)
+    add_custom_target (gflags_target)
+    add_custom_command (TARGET gflags_target
+        COMMAND ${CMAKE_COMMAND} -E echo "prepare gflags library ..."
+        COMMAND /bin/sh -c "if [ ! -d '${GFLAGS_DIR}/build' ]; then cd '${GFLAGS_DIR}'; ./build.sh; fi"
+        COMMAND ${CMAKE_COMMAND} -E echo "gflags done"
+        VERBATIM
+    )
+endif()
+
+if(WITH_VINEYARD)
+    find_package(vineyard)
+    include_directories(SYSTEM ${VINEYARD_INCLUDE_DIRS})
+    add_definitions(-DWITH_VINEYARD)
+endif()
 
 # proto
 set (PROTO_DIR ${ROOT}/graphlearn/proto)
@@ -202,6 +265,10 @@ target_link_libraries (graphlearn_shared
     upb
     ${LINK_DIRS})
 
+if(WITH_VINEYARD)
+    target_link_libraries(graphlearn_shared PUBLIC ${VINEYARD_LIBRARIES})
+endif()
+
 add_dependencies (graphlearn_shared 
     protobuf_target
     grpc_target
@@ -226,6 +293,9 @@ if (TESTING)
             -L/lib64 -lgraphlearn_shared -lgtest 
             -lgtest_main -lstdc++ -lgrpc++ 
             -lgrpc -lgpr -lupb -lpthread)
+        if(WITH_VINEYARD)
+            target_link_libraries(${name} ${VINEYARD_LIBRARIES})
+        endif()
         target_compile_options (${name}
             PRIVATE ${GL_CXX_FLAGS})
         add_dependencies (${name}

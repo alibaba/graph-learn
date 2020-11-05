@@ -24,8 +24,8 @@ namespace graphlearn {
 
 class LocalNoder : public Noder {
 public:
-  LocalNoder() {
-    storage_ = CreateNodeStorage();
+  LocalNoder(const std::string& type) {
+    storage_ = CreateNodeStorage(type);
   }
 
   virtual ~LocalNoder() {
@@ -85,8 +85,8 @@ private:
   io::NodeStorage* storage_;
 };
 
-Noder* CreateLocalNoder() {
-  return new LocalNoder();
+Noder* CreateLocalNoder(const std::string& type) {
+  return new LocalNoder(type);
 }
 
 }  // namespace graphlearn

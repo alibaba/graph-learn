@@ -20,6 +20,7 @@ limitations under the License.
 #include "graphlearn/common/base/log.h"
 #include "graphlearn/common/base/progress.h"
 #include "graphlearn/common/threading/sync/cond.h"
+#include "graphlearn/core/graph/storage/storage_mode.h"
 #include "graphlearn/core/io/element_value.h"
 #include "graphlearn/core/io/edge_loader.h"
 #include "graphlearn/core/io/node_loader.h"
@@ -199,6 +200,10 @@ Status GraphStore::Load(
     return s;
   } else {
     LOG(INFO) << "Load graph edges succeed.";
+  }
+
+  if (io::IsVineyardStorageEnabled()) {
+    return Status::OK();
   }
 
   Initializer<io::NodeSource,
