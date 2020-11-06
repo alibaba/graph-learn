@@ -29,8 +29,11 @@ def init_graph_from_handle(handle, server_index):
   """ Used in server.
       Parse the handle passed from vineyard and return gl.Graph object.
   """
-  s = base64.b64decode(handle).decode('utf-8')
-  obj = json.loads(s)
+  if isinstance(handle, dict):
+    obj = handle
+  else:
+    s = base64.b64decode(handle).decode('utf-8')
+    obj = json.loads(s)
 
   g = Graph()
   set_tracker_mode(0)
@@ -43,8 +46,11 @@ def get_graph_from_handle(handle, worker_index, worker_count):
   """ Used in client.
       Parse the handle passed from vineyard and return gl.Graph object.
   """
-  s = base64.b64decode(handle).decode('utf-8')
-  obj = json.loads(s)
+  if isinstance(handle, dict):
+    obj = handle
+  else:
+    s = base64.b64decode(handle).decode('utf-8')
+    obj = json.loads(s)
 
   g = Graph()
   for node_info in obj['node_schema']:
