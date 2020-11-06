@@ -1,15 +1,15 @@
 # Graph Learning Model
 
 ## Overview
-There are two ways to develop a graph learning model. The first is to
-compute base on the whole graph directly. The examples are GCN and GAT
-that perform computations directly on an adjacency matrix. However, this
-method consumes a large amount of memory on large-scale graphs. As a
-result, it may cause poor performance of training. In some cases,
-training is even not possible. The second idea is to divide the whole
-graph into several subgraphs so that we can use batch training, which is
-a common technic in deep learning, for training. We can use
-GraphSAGE，FastGCN and GraphSAINT methods to train a subgraph.
+There are two ways to train a graph learning model. One is to
+compute based on the whole graph directly. The GCN and GAT are originally
+proposed using this approach, directly computing on the entire adjacency matrix. 
+However, this approach will consume huge amount of memory on large-scale graphs,
+limiting its applicability. 
+The other approach is to sample subgraphs from the whole
+graph, and use batch training that is
+commonly used in deep learning. The typical examples
+include GraphSAGE，FastGCN and GraphSAINT methods.
 
 
 **GL** is designed for large-scale graph neural
