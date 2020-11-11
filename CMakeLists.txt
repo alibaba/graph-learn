@@ -118,15 +118,26 @@ else()
 endif()
 
 # pybind11
-set (PYBIND_DIR ${THIRD_PARTY_DIR}/pybind11)
-set (PYBIND_INCLUDE ${PYBIND_DIR}/pybind11/include/)
-add_custom_target (pybind_target)
-add_custom_command (TARGET pybind_target
-    COMMAND ${CMAKE_COMMAND} -E echo "prepare pybind11 library ..."
-    COMMAND /bin/sh -c "if [ ! -d '${PYBIND_DIR}/build' ]; then cd '${PYBIND_DIR}'; ./build.sh; fi"
-    COMMAND ${CMAKE_COMMAND} -E echo "pybind11 done"
-    VERBATIM
-)
+find_package(pybind11)
+    if(pybind11_FOUND)
+    set (PYBIND_DIR ${pybind11_INCLUDE_DIR}/..)
+    set (PYBIND_INCLUDE ${pybind11_INCLUDE_DIR})
+    add_custom_target (pybind_target)
+    add_custom_command (TARGET pybind_target
+        COMMAND ${CMAKE_COMMAND} -E echo "pybind11 found"
+        VERBATIM
+    )
+else()
+    set (PYBIND_DIR ${THIRD_PARTY_DIR}/pybind11)
+    set (PYBIND_INCLUDE ${PYBIND_DIR}/pybind11/include/)
+    add_custom_target (pybind_target)
+    add_custom_command (TARGET pybind_target
+        COMMAND ${CMAKE_COMMAND} -E echo "prepare pybind11 library ..."
+        COMMAND /bin/sh -c "if [ ! -d '${PYBIND_DIR}/build' ]; then cd '${PYBIND_DIR}'; ./build.sh; fi"
+        COMMAND ${CMAKE_COMMAND} -E echo "pybind11 done"
+        VERBATIM
+    )
+endif()
 
 # gtest
 find_package(GTest)
