@@ -183,7 +183,7 @@ public:
     auto attribute_list = new std::vector<Attribute>();
     attribute_list->reserve(table->num_rows());
     for (size_t i = 0; i < table->num_rows(); ++i) {
-      attribute_list->emplace_back(arrow_line_to_attribute_value(table, i, 2),
+      attribute_list->emplace_back(arrow_line_to_attribute_value(table, i, 0),
                                    true);
     }
     return attribute_list;

@@ -84,8 +84,10 @@ public:
 
   /// Get the total node count after data fixed.
   virtual IdType Size() const override {
+#ifndef NDEBUG
     std::cerr << "node: get size = "
               << frag_->vertex_data_table(node_label_)->num_rows() << std::endl;
+#endif
     return frag_->vertex_data_table(node_label_)->num_rows();
   }
 
@@ -135,11 +137,15 @@ public:
   /// Get all the node ids, the count of which is the same with Size().
   /// These ids are distinct.
   virtual const IdList *GetIds() const override {
+#ifndef NDEBUG
     std::cerr << "node: get ids: " << node_label_ << std::endl;
+#endif
     size_t count = frag_->GetInnerVerticesNum(node_label_);
     auto id_list = new IdList();
     id_list->reserve(count);
+#ifndef NDEBUG
     std::cerr << "node: get ids: count = " << count << std::endl;
+#endif
 
     auto id_range = frag_->InnerVertices(node_label_);
     for (auto id = id_range.begin(); id < id_range.end(); ++id) {
@@ -160,10 +166,14 @@ public:
 
   /// Get all attributes if existed, the count of which is the same with Size().
   virtual const std::vector<Attribute> *GetAttributes() const override {
+#ifndef NDEBUG
     std::cerr << "node: get attributes: node_label = " << node_label_
               << std::endl;
+#endif
     size_t count = frag_->GetInnerVerticesNum(node_label_);
+#ifndef NDEBUG
     std::cerr << "node: get attributes: count = " << count << std::endl;
+#endif
 
     auto value_list = new std::vector<Attribute>();
     value_list->reserve(count);

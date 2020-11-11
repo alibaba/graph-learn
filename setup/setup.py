@@ -82,4 +82,4 @@ setup(
     packages=find_packages(exclude=["*.examples", "*.examples.*", "examples.*", "examples"]),
     package_dir={'graphlearn' : 'graphlearn'},
     package_data={'': ['python/lib/lib*.so*']},
-    )
+)

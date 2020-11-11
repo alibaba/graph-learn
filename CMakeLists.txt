@@ -152,6 +152,7 @@ else()
 endif()
 
 # gflags
+include(cmake/FindGFlags.cmake)
 if(GFLAGS_FOUND)
     set (GFLAGS_INCLUDE ${GFLAGS_INCLUDE_DIR})
     get_filename_component(GFLAGS_LIB ${GFLAGS_LIBRARY} DIRECTORY)

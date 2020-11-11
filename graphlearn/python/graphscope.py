@@ -35,6 +35,10 @@ def init_graph_from_handle(handle, server_index):
     s = base64.b64decode(handle).decode('utf-8')
     obj = json.loads(s)
 
+  gl.set_storage_mode(8)
+  gl.set_vineyard_graph_id(handle['vineyard_id'])
+  gl.set_vineyard_ipc_socket(handle['vineyard_socket'])
+
   g = Graph()
   set_tracker_mode(0)
   # here client_count is a placeholder without actual meaning
@@ -42,15 +46,23 @@ def init_graph_from_handle(handle, server_index):
   g.init(cluster=cluster, task_index=server_index, job_name="server")
   return g
 
-def get_graph_from_handle(handle, worker_index, worker_count):
+def get_graph_from_handle(handle, worker_index, worker_count, standalone=False):
   """ Used in client.
       Parse the handle passed from vineyard and return gl.Graph object.
+
+      Paramters
+      ---------
+      standalone: single machine mode
   """
   if isinstance(handle, dict):
     obj = handle
   else:
     s = base64.b64decode(handle).decode('utf-8')
     obj = json.loads(s)
+
+  gl.set_storage_mode(8)
+  gl.set_vineyard_graph_id(handle['vineyard_id'])
+  gl.set_vineyard_ipc_socket(handle['vineyard_socket'])
 
   g = Graph()
   for node_info in obj['node_schema']:
@@ -85,7 +97,10 @@ def get_graph_from_handle(handle, worker_index, worker_count):
   
   set_tracker_mode(0)
   cluster = {'server': obj['server'], 'client_count': worker_count}
-  g.init(cluster=cluster, task_index=worker_index, job_name="client")
+  if standalone:
+    g.init()
+  else:
+    g.init(cluster=cluster, task_index=worker_index, job_name="client")
   return g
 
 def get_decoder(weighted, labeled, n_int, n_float, n_string):
