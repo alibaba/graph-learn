@@ -24,7 +24,8 @@ arrow_line_to_attribute_value(std::shared_ptr<arrow::Table> table,
                               int row_index, int start_index) {
   auto attr = NewDataHeldAttributeValue();
   VINEYARD_ASSERT(row_index < table->num_rows());
-  for (int idx = start_index; idx < table->num_columns(); ++idx) {
+  // NOTE: the last column is id column, cast off
+  for (int idx = start_index; idx < table->num_columns() - 1; ++idx) {
     auto arr = table->column(idx)->chunk(0);
     switch (arr->type()->id()) {
     case arrow::Type::INT64: {
@@ -328,11 +329,12 @@ SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
   if (cache_entry) {
     return cache_entry.get();
   }
+  std::cerr << "init node sideinfo " << frag->id();
   auto side_info = std::make_shared<SideInfo>();
   // compute attribute numbers of i/f/s
   auto node_table = frag->vertex_data_table(node_label);
   auto vtable_schema = node_table->schema();
-  for (size_t idx = 0; idx < vtable_schema->fields().size(); ++idx) {
+  for (size_t idx = 0; idx < vtable_schema->fields().size() - 1; ++idx) {
     auto field = vtable_schema->fields()[idx];
     switch (field->type()->id()) {
     case arrow::Type::INT64:
@@ -353,7 +355,7 @@ SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
     }
   }
   side_info->format = kDefault;
-  for (auto const &field : vtable_schema->fields()) {
+  for (size_t idx = 0; idx < vtable_schema->fields().size() - 1; ++idx) {
     // if (field->name() == "label") {
     //   side_info->format |= kLabeled;
     // } else if (field->name() == "weight") {
