@@ -31,20 +31,6 @@ os.system('mkdir -p %s' % TRACKER_PATH)
 os.system('rm -rf %s*' % TRACKER_PATH)
 
 
-def load_graph(config):
-  dataset_folder = config['dataset_folder']
-  node_type = config['node_type']
-  edge_type = config['edge_type']
-  g = gl.Graph()\
-        .node(dataset_folder + "node_table", node_type=node_type,
-              decoder=gl.Decoder(attr_types=["float", "float", "string"]))\
-        .edge(dataset_folder + "edge_table_train",
-              edge_type=(node_type, node_type, edge_type),
-              decoder=gl.Decoder(weighted=True), directed=True)\
-        .node(dataset_folder + "node_table", node_type="train",
-              decoder=gl.Decoder(attr_types=["float", "float", "string"]))
-  return g
-
 def train(config, graph):
   print('start training....')
   def model_fn():
@@ -59,21 +45,19 @@ def train(config, graph):
                      full_graph_mode=config['full_graph_mode'],
                      unsupervised=config['unsupervised'],
                      neg_num=config['neg_num'],
-                     agg_type=config['agg_type'])
+                     agg_type=config['agg_type'],
+                     node_type=config['node_type'],
+                     edge_type=config['edge_type'],
+                     train_node_type=config['node_type'])
   trainer = gl.LocalTFTrainer(model_fn,
                               epoch=config['epoch'],
                               optimizer=gl.get_tf_optimizer(
                                   config['learning_algo'],
                                   config['learning_rate'],
                                   config['weight_decay']))
-  with open("topology.txt", "a") as f:
-    f.write("trainer successfully created\n")
+
   trainer.train()
-  with open("topology.txt", "a") as f:
-    f.write("training complete\n")
   embs = trainer.get_node_embedding()
-  with open("topology.txt", "a") as f:
-    f.write("embedding saved")
   # print(embs.shape)
   np.save(config['emb_save_dir'], embs)
 
@@ -91,9 +75,6 @@ def test(config, graph):
   node_id = {}
   for i in range(len(id_node)):
       node_id[id_node[i]] = i
-
-  # print(id_node)
-  # print(node_id)
 
   test_count = 1.0
   find_count = 0.0
@@ -113,66 +94,22 @@ def test(config, graph):
           test_count = test_count + 1
           if cos_sim >= 0.1:
               find_count = find_count + 1
-  
+
   acc = find_count/test_count
   print("Evaluation Results:")
   print("Predicted Edges in Dataset: %d / %d; Precision: %4f" %(find_count, test_count, acc))
 
-  '''
-  node_list = {}
-  id_list = {}
-  read_n = open(config['dataset_folder'] + 'node_map', 'r')
-  n_lines = read_n.readlines()
-  for i in range(1, len(n_lines)):
-      n_l  = n_lines[i].split('\t')
-      node_list[int(n_l[0])] = int(n_l[1])
-      id_list[int(n_l[1])] = int(n_l[0])
-  read_n.close()
-  node_num = len(node_list) - 1
-
-  embs = np.load(config['emb_save_dir'] + ".npy")
-  find_count = 0.0
-  read_e = open(config['dataset_folder'] + 'edge_table_test', 'r')
-  e_lines = read_e.readlines()
-  edge_count = float(len(e_lines))
-  for j in range(1, len(e_lines)):
-      e_l = e_lines[j].split('\t')
-      vec_a = embs[node_list[int(e_l[0])], :]
-      vec_b = embs[node_list[int(e_l[1])], :]
-      num = float(np.sum(vec_a * vec_b))
-      denom = np.linalg.norm(vec_a) * np.linalg.norm(vec_b)
-      cos = num / denom
-      cos_sim = 0.5 + 0.5 * cos
-      if cos_sim >= 0.98:
-          find_count = find_count + 1.0
-  read_e.close()
-
-  nofind_count = 0.0
-  noedge_count = 10000
-  for i in range(noedge_count):
-      n1 = np.random.randint(100, 9000)
-      n2 = np.random.randint(100, 9000)
-      vec_a = embs[n1, :]
-      vec_b = embs[n2, :]
-      num = float(np.sum(vec_a * vec_b))
-      denom = np.linalg.norm(vec_a) * np.linalg.norm(vec_b)
-      cos = num / denom
-      cos_sim = 0.5 + 0.5 * cos
-      if cos_sim <= 0.98:
-          nofind_count = nofind_count + 1.0
-
-  acc = (find_count + nofind_count) / (edge_count + noedge_count)
-  #acc = 2 * find_count / (node_num * (node_num - 1))
-  #fs = rec * acc / (rec + acc)
-  print("Evaluation Results:")
-  #print("Predicted Edges: %d / %d; Non-Predicted Edges: %d / %d" %(find_count, edge_count, nofind_count, noedge_count) )
-  print("Accurately Predicted Edges in Testing Dataset: %d / %d" %(find_count + nofind_count, edge_count + noedge_count) )
-  print("Precision: %2f" %(acc))
-  '''
 
 def main():
-  config = {'dataset_folder': '../../data/ldbc_10k_people/',
-            'class_num': 32,
+  handle = sys.argv[1]
+  task_index = 0
+  task_count = 1
+  s = base64.b64decode(handle).decode('utf-8')
+  obj = json.loads(s)
+  node_type = obj['node_schema'][0].split(':')[0]
+  edge_type = obj['edge_schema'][0].split(':')[1]
+
+  config = {'class_num': 32,
             'features_num': 2,
             'batch_size': 10, # 10
             'categorical_attrs_desc': '',
@@ -190,52 +127,17 @@ def main():
             'use_neg': True,
             'neg_num': 10,
             'emb_save_dir': './id_emb',
-            'node_type': 'item',
-            'edge_type': 'relation'}
-
-  #g = load_graph(config)
-  handle = sys.argv[1]
-  print("handle received")
-  task_index = 0
-  task_count = 1
-  s = base64.b64decode(handle).decode('utf-8')
-  obj = json.loads(s)
+            'node_type': node_type,
+            'edge_type': edge_type}
 
 
   gl.set_vineyard_graph_id(obj['vineyard_id'])
-  gl.set_vineyard_ipc_socket('/tmp/vineyard.sock')
+  gl.set_vineyard_ipc_socket(obj['vineyard_socket'])
   gl.set_storage_mode(8)
   g = gl.get_graph_from_handle(handle, worker_index=task_index, worker_count=task_count, standalone=True)
 
-  print("g = ", g)
-  """
-  # s = g.node_sampler("train", batch_size=64)
-  # nodes = s.get()
-  nodes = g.V("train").batch(4).emit()
-  print('nodes = ', nodes)
-  print(nodes.ids)
-  print(nodes.int_attrs)
-  print(nodes.float_attrs)
-  print(nodes.string_attrs)
-  print("Get Nodes Done...")
-  print(nodes.ids)
-  """
-
-  '''
-  top = g.get_topology()
-  res = "!!!!!!"
-  res += str(top.get_src_type("knows"))
-  for k, v in top._topology.items():
-    res += ("edge_type:" + k + ", src_type:" + v.src_type + \
-          ", dst_type:" + v.dst_type + "\n")
-  with open("topology.txt", "w") as f:
-    f.write(res)
-  #g.init(server_id=0, server_count=1, tracker=TRACKER_PATH)
-  '''
-
   train(config, g)
-  with open("topology.txt", "a") as f:
-    f.write("start testing")
+
   test(config, g)
 
 
