@@ -41,7 +41,7 @@ def init_graph_from_handle(handle, server_index):
   gl.set_vineyard_ipc_socket(obj['vineyard_socket'])
 
   g = Graph()
-  set_tracker_mode(0)
+  gl.set_tracker_mode(0)
   # here client_count is a placeholder without actual meaning
   cluster = {'server': obj['server'], 'client_count': 1}
   g.init(cluster=cluster, task_index=server_index, job_name="server")
@@ -96,7 +96,7 @@ def get_graph_from_handle(handle, worker_index, worker_count, standalone=False):
       g.edge(source='', edge_type=(src_node_type, dst_node_type, edge_type),
              decoder=get_decoder(weighted, labeled, n_int, n_float, n_string))
 
-  set_tracker_mode(0)
+  gl.set_tracker_mode(0)
   cluster = {'server': obj['server'], 'client_count': worker_count}
   if standalone:
     g.init()
