@@ -211,25 +211,25 @@ attr_delimiter: 当数据带有属性(被压缩为一个大string)时，需要�
 ```python
 import graphlearn as gl
 
-# schema = (src_id int64, dst_id int64, weight double)
+# schema = (id int64, weight double)
 gl.Decoder(weighted=True)
 
-# schema = (src_id int64, dst_id int64, label int32)
+# schema = (id int64, label int32)
 gl.Decoder(labeled=True)
 
-# schema = (src_id int64, dst_id int64, attributes string)
+# schema = (id int64, attributes string)
 gl.Decoder(attr_type={your_attr_types}, attr_delimiter={you_delimiter})
 
-# schema = (src_id int64, dst_id int64, weight float, attributes string)
-ag.Decoder(weightd=True, attr_type={your_attr_types}, attr_delimiter={you_delimiter})
-
-# schema = (src_id int64, dst_id int64, weight float, label int32)
+# schema = (id int64, weight float, label int32)
 gl.Decoder(weighted=True, labeled=True)
 
-# schema = (src_id int64, dst_id int64, label int32, attributes string)
+# schema = (id int64, weight float, attributes string)
+ag.Decoder(weightd=True, attr_type={your_attr_types}, attr_delimiter={you_delimiter})
+
+# schema = (id int64, label int32, attributes string)
 gl.Decoder(labeled=True, attr_type={your_attr_types}, attr_delimiter={you_delimiter})
 
-# schema = (src_id int64, dst_id int64, weight float, label int32 attributes string)
+# schema = (id int64, weight float, label int32, attributes string)
 gl.Decoder(weighted=True, labeled=True, attr_type={your_attr_types}, attr_delimiter={you_delimiter})
 ```
 
@@ -252,17 +252,17 @@ gl.Decoder(labeled=True)
 # schema = (src_id int64, dst_id int64, attributes string)
 gl.Decoder(attr_type={your_attr_types}, attr_delimiter={you_delimiter})
 
-# schema = (src_id int64, dst_id int64, weight float, attributes string)
-gl.Decoder(weightd=True, attr_type={your_attr_types}, attr_delimiter={you_delimiter})
-
 # schema = (src_id int64, dst_id int64, weight float, label int32)
 gl.Decoder(weighted=True, labeled=True)
 
-# schema = (src_id int64, dst_id int64, weight float, label int32, attributes string)
-gl.Decoder(weighted=True, labeled=True, attr_type={your_attr_types}, attr_delimiter={you_delimiter})
+# schema = (src_id int64, dst_id int64, weight float, attributes string)
+gl.Decoder(weightd=True, attr_type={your_attr_types}, attr_delimiter={you_delimiter})
 
 # schema = (src_id int64, dst_id int64, label int32, attributes string)
 gl.Decoder(labeled=True, attr_type={your_attr_types}, attr_delimiter={you_delimiter})
+
+# schema = (src_id int64, dst_id int64, weight float, label int32, attributes string)
+gl.Decoder(weighted=True, labeled=True, attr_type={your_attr_types}, attr_delimiter={you_delimiter})
 ```
 
 
