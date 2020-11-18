@@ -1,17 +1,16 @@
 # Data Source
 
-This document is used to explain the data format supported by GraphLearn and the API to describe and parse it.<br />
+Here we will describe the data formats and the corresponding APIs supported by `GL`.<br />
 
 # 1. Data format
-Graph data can be divided into **vertex data** and **edge data**. Generally, vertex data contains **vertex ID** and **attribute**, describing an entity. Edge data contains **source vertex ID** and **destination vertex ID**, describing the relationship between vertices. In heterogeneous graph settings, there are multiple types of vertices and edges. Therefore, we need the type of information of vertices and edges to distinguish different types.
-Type information is described through APIs. Both vertices and edges have attributes. For example, in "a user bought a certain product on Saturday morning", the time information "Saturday morning" is an edge attribute.
-Also, in many scenarios, users need the concept of “weight”---vertex weight or edge weight, as a measure of importance, such as “sample neighbor nodes by weight”. The sources of "weight" are diverse, varying from task to task. In supervised learning classification tasks, vertices or edges may also have labels. <br />
+Graph data includes **Vertex data** and **Edge data**. Generally, vertex data contains **id** and **attribute**, describing an entity. Edge data contains **source vertex id** and **destination vertex id**, describing the relationship between vertices. In heterogeneous graph settings, there are multiple types of vertices and edges. Therefore, we need the type information of vertices and edges to distinguish them.
+
+Besides, both vertices and edges have attributes. For example, in "a user bought a certain product on Saturday morning", the timestamp "Saturday morning" is an edge attribute. Also, in many scenarios, users need the concept of `weight`---vertex weight or edge weight, as a measure of importance, such as “sample neighbor nodes by weight”. How to define the `weight` depends on a specific task. In supervised classification tasks, vertices or edges may also have `labels`. <br />
 <br /> We abstract the data formats of these typical settings as **ATTRIBUTED**, **WEIGHTED, and LABELED**, which are used to represent vertex or edge containing attributes, weights, and labels. For vertex data sources and edge data sources, these three can co-exist or partially exist at the same time. <br />
 
 ## 1.1 Basic format
-The basic vertex data only contains the ID of a vertex. The type of ID is bigint and each ID uniquely represents one vertex. However, in many cases vertices with only IDs are far from enough. Therefore, they can also contain attributes, weights or labels. <br />
-<br /> The basic edge data only contains the source vertex ID and the destination vertex ID. The ID type of edge is also bigint and each ID uniquely represents one edge and the relationship between two vertices. The schema of the basic edge data source is shown below.
-The basic edge data format can be used independently, without attaching attributes, weights, and labels.<br />
+The basic vertex data only contains the `id` information. The type of `id` is `BIGINT` and each `id` uniquely represents one vertex. A vertex must contain at least one of the weight, label and attributes. <br />
+<br /> The basic edge data only contains the `source vertex id` and the `destination vertex id`, representing the relationship between two vertices. The schema of the basic edge data source is shown below. The basic edge data format can be used independently, without attaching attributes, weights, and labels.<br />
 
 The schema of the basic edge data format:
 
@@ -23,11 +22,12 @@ The schema of the basic edge data format:
 <br />
 
 ## 1.2 Attribute format（ATTRIBUTED）
-The attribute format is used to express the attribute information of a vertex or an edge. In general, vertices have attributes by default (otherwise only the edge table is sufficient). The attribute has only one column, which is of string type.
-Multiple attributes can be divided by custom separators inside the string. For example, if there are 3 attributes of a vertex, namely `shanghai, 10, 0.01` separated by the separator ‘:’, the attribute data corresponding to the vertex is `shanghai:10:0.01`.
-When the data format has attributes regardless of whether it is vertex data or edge data, it is necessary to display and specify **ATTRIBUTED** to inform the system in the API description.
+The `attribute` format is used to express the attribute information of a vertex or an edge. In general, vertices have attributes by default (otherwise only the edge table is sufficient). The attribute has only one column, the type of which is string.
+Multiple attributes can be divided by given separators inside the string. For example, if there are 3 attributes of a vertex, namely `shanghai, 10, 0.01` separated by the separator ‘:’, the attribute data corresponding to the vertex is `shanghai:10:0.01`.
+No matter the vertices or edges have attributes, please call the corresponding API and mark the parameters with **ATTRIBUTED**.
 
-The schema of the vertex data attribute format:
+
+The schema of attributed vertex data format:
 
 | source | data type | comments |
 | --- | --- | --- |
@@ -35,7 +35,8 @@ The schema of the vertex data attribute format:
 | attributes | STRING |  |
 
 <br />
-The schema of the edge data attribute format:
+
+The schema of attributed edge data format:
 
 | source | data type | comments |
 | --- | --- | --- |
@@ -45,9 +46,9 @@ The schema of the edge data attribute format:
 <br />
 
 ## 1.3 Weight format（WEIGHTED）
-The weight format is used to express a vertex or an edge with weight. Similar to attributes, the weight has only one column, which is of type **float**. When the data format has weights, it is necessary to display the specified **WEIGHTED** to inform the system, in the API description.
+The `weight` format indicates that the vertex or edge is weighted. Similar to attributes, the weight information is stored in a standalone column, the type of is **float**. No matter the vertices or edges have weights, please call the corresponding API and mark the parameters with **WEIGHTED**.
 
-The schema of the vertex data weight format:
+The schema of weighted vertex data format:
 
 | source | data type | comments |
 | --- | --- | --- |
@@ -56,7 +57,7 @@ The schema of the vertex data weight format:
 
 <br />
 
-The schema of the edge data weight format:
+The schema of weighted edge data format:
 
 | source | data type | comments |
 | --- | --- | --- |
@@ -66,9 +67,9 @@ The schema of the edge data weight format:
 <br />
 
 ## 1.4 Label format（LABELED）
-The label format is used to express the situation where the vertices or edges are labeled. The label has only one column, which is of type int. When the data format has labels, it is necessary to display and specify **LABELD** to inform the system, in the API description.
+The `label` format is used to express the situation where the vertices or edges are labeled. The label information is stored in a standalone column, the type of is **int**. No matter the vertices or edges are labeled, please call the corresponding API and mark the parameters with **LABELED**.
 
-The schema of the vertex data label format:
+The schema of labeled vertex data format:
 
 | source | data type | comments |
 | --- | --- | --- |
@@ -76,7 +77,7 @@ The schema of the vertex data label format:
 | label | INT |  |
 <br />
 
-The schema of the edge data weight format:
+The schema of labeled edge data format:
 
 | source | data type | comments |
 | --- | --- | --- |
@@ -85,8 +86,9 @@ The schema of the edge data weight format:
 | label | INT |  |
 <br />
 
-## 1.5 Putting together
-ID is required for the vertex and edge data source, while weight, label, and attribute are optional information. When there are one or more of **WEIGHTED, ATTRIBUTED, and LABELED** at the same time in the data source, the combination format of mandatory and optional information needs to follow a certain order.<br />
+## 1.5 Combination
+`id` is required for the vertex and edge data source, while weight, label, and attributes are optional. When these optional information appears more than one at the same time in the data source, the combination of them should follow a certain order.<br />
+
 <br />1）The order of the format schema for **vertex data source** is shown as follow.<br />
 
 | source | data type | comments |
@@ -97,7 +99,7 @@ ID is required for the vertex and edge data source, while weight, label, and att
 | attributes | STRING | optional: ATTRIBUTED |
 
 
-<br />2）The order of the format schema for **edge data source** is shown as follow<br />
+<br />2）The order of the format schema for **edge data source** is shown as follow.<br />
 
 | source | data type | comments |
 | --- | --- | --- |
@@ -108,13 +110,13 @@ ID is required for the vertex and edge data source, while weight, label, and att
 | attributes | STRING | optional: ATTRIBUTED |
 
 
-<br /> We can choose zero or some optional information but must **guarantee the orders** as specified in the above tables. <br />
+<br /> We can choose one or more optional information but must **guarantee the orders** as specified in the above tables. <br />
 
 # 2. Data source type
 
 <div align=center> <img height ='320' src ="images/data_source_en.png" /> </div>
 
-<br /> The system abstracts the data access layer to allow easy connection to multiple types of data sources. Currently, it supports LocalFileSystem. If it is used on the Alibaba Cloud PAI platform, you can directly read MaxCompute data tables. The data is represented as a two-dimensional structure, the row represents a vertex or an edge data, and the column represents a certain dimension of information of the vertex or edge.
+<br /> `GL` abstracts the data access layer to adapt to multiple types of data sources. Currently, `LocalFileSystem` is supported. When using Alibaba Cloud PAI platform, you can directly read `MaxCompute` tables. The data is represented as a two-dimensional structure, the row represents a vertex or an edge data, and the column represents a certain dimension of information of the vertex or edge.
 <br />
 
 
@@ -130,7 +132,8 @@ In the local file, the data types are specified as follows, where the column nam
 | features | string |
 
 <br />
-- Vertex file format is defined as follow, where the first line is the column name indicating the required information or extended information, separated by **tabs**, and each row element is "column name: data type". Each remaining row of data represents the information of a vertex, corresponding to the information name in the first column, separated by **tab**.
+
+Vertex file format is defined as follow, where the first line is the column name indicating the required information or extended information, separated by **tabs**, and each element is **"column name: data type"**. Each remaining row represents the data of a vertex, separated by **tab**.
 
 ```python
 # file://node_table
@@ -141,8 +144,9 @@ id:int64  feature:string
 3 shanghai:3:s2:13:0.1:0.5
 ```
 
-<br />2）Edge file format is defined as follow, where the first line is the column name indicating the required information or extended information, separated by **tabs**, and each element is "column name: data type".
-<br /> Each remaining row of data represents the information of an edge, corresponding to the information name in the first column, separated by **tab**.
+<br />
+
+Edge file format is defined as follow, where the first line is the column name indicating the required information or extended information, separated by **tabs**, and each element is **"column name: data type"**. Each remaining row of represents the data of an edge, separated by **tab**.
 
 ```python
 # file://edge_table
@@ -154,7 +158,8 @@ src_id:int64  dst_id:int64  weight:float  feature:string
 ```
 
 <br />
-By using local files as data sources, you can directly use file paths in scripts. See the next chapter "[graph object](graph_object_cn.md)" for details. <br />
+
+By using local files as data sources, you can directly use file paths in scripts. See the next chapter [graph object](graph_object_en.md) for details. <br />
 
 <a name="mzVG6"></a>
 
@@ -169,7 +174,8 @@ The data format of MaxCompute data table is described as follow, where column na
 | features | STRING |
 
 
-To use MaxCompute as a data source, the following two steps are required:<br />1) Submit a GL Job through the PAI command, and use the MaxCompute table as the input of the `tables` parameter. Multiple tables are separated by commas.
+To use MaxCompute as a data source, the following two steps are required:<br />1) Submit a `GL` Job through the PAI command, and use the MaxCompute table as the input of the `tables` parameter. Multiple tables are separated by commas.
+
 ```python
 pai -name graphlearn
 -Dscript=''
@@ -180,6 +186,7 @@ pai -name graphlearn
 
 <br />2）
 In the script, the MaxCompute table parameters are obtained through FLAG of TensorFlow in order to obtain the data source. The data source can be one or more.
+
 ```python
 import tensorflow as tf
 import graphlearn as gl
@@ -221,25 +228,25 @@ Vertex decoder can take the following formats.
 ```python
 import graphlearn as gl
 
-# schema = (src_id int64, dst_id int64, weight double)
+# schema = (id int64, weight double)
 gl.Decoder(weighted=True)
 
-# schema = (src_id int64, dst_id int64, label int32)
+# schema = (id int64, label int32)
 gl.Decoder(labeled=True)
 
-# schema = (src_id int64, dst_id int64, attributes string)
+# schema = (id int64, attributes string)
 gl.Decoder(attr_type={your_attr_types}, attr_delimiter={you_delimiter})
 
-# schema = (src_id int64, dst_id int64, weight float, attributes string)
-ag.Decoder(weightd=True, attr_type={your_attr_types}, attr_delimiter={you_delimiter})
-
-# schema = (src_id int64, dst_id int64, weight float, label int32)
+# schema = (id int64, weight float, label int32)
 gl.Decoder(weighted=True, labeled=True)
 
-# schema = (src_id int64, dst_id int64, label int32, attributes string)
+# schema = (id int64, weight float, attributes string)
+ag.Decoder(weightd=True, attr_type={your_attr_types}, attr_delimiter={you_delimiter})
+
+# schema = (id int64, label int32, attributes string)
 gl.Decoder(labeled=True, attr_type={your_attr_types}, attr_delimiter={you_delimiter})
 
-# schema = (src_id int64, dst_id int64, weight float, label int32 attributes string)
+# schema = (id int64, weight float, label int32, attributes string)
 gl.Decoder(weighted=True, labeled=True, attr_type={your_attr_types}, attr_delimiter={you_delimiter})
 ```
 
@@ -262,25 +269,24 @@ gl.Decoder(labeled=True)
 # schema = (src_id int64, dst_id int64, attributes string)
 gl.Decoder(attr_type={your_attr_types}, attr_delimiter={you_delimiter})
 
-# schema = (src_id int64, dst_id int64, weight float, attributes string)
-gl.Decoder(weightd=True, attr_type={your_attr_types}, attr_delimiter={you_delimiter})
-
 # schema = (src_id int64, dst_id int64, weight float, label int32)
 gl.Decoder(weighted=True, labeled=True)
 
-# schema = (src_id int64, dst_id int64, weight float, label int32, attributes string)
-gl.Decoder(weighted=True, labeled=True, attr_type={your_attr_types}, attr_delimiter={you_delimiter})
+# schema = (src_id int64, dst_id int64, weight float, attributes string)
+gl.Decoder(weightd=True, attr_type={your_attr_types}, attr_delimiter={you_delimiter})
 
 # schema = (src_id int64, dst_id int64, label int32, attributes string)
 gl.Decoder(labeled=True, attr_type={your_attr_types}, attr_delimiter={you_delimiter})
-```
 
+# schema = (src_id int64, dst_id int64, weight float, label int32, attributes string)
+gl.Decoder(weighted=True, labeled=True, attr_type={your_attr_types}, attr_delimiter={you_delimiter})
+```
 
 <a name="BdNad"></a>
 ## 3.4 Example
 Assume a data source shown in table 1, 2 and 3.<br />
 
-Table 1: item vertex table
+Table 1 item vertex table
 
 | id | feature |
 | --- | --- |
@@ -306,7 +312,8 @@ Table 3 user-item edge table
 | 124 | 10002 | 0.3 |
 
 <br />
-Here, we construct ʻitem_node_decoder` for item vertex table, ʻuser_node_decoder` for user vertex table and ʻedge_decoder` for edge table with the following code.
+
+Here, we construct `item_node_decoder` for item vertex table, `user_node_decoder` for user vertex table and `edge_decoder` for edge table with the following code.
 
 ```python
 import graphlearn as gl
@@ -317,5 +324,6 @@ edge_decoder = gl.Decoder(weighted=True)
 ```
 
 <br />
+
 After constructing the Decoder for each data source, we add the data source to the graph and specify the corresponding Decoder. Please refer to [graph_object](graph_object_en.md) for details.
 
