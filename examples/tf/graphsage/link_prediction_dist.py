@@ -192,7 +192,7 @@ def main():
             'emb_save_dir': './id_emb'}
 
     handle = sys.argv[1]
-    task_index = sys.argv[2]
+    task_index = int(sys.argv[2])
     debug = sys.argv[3]
     s = base64.b64decode(handle).decode('utf-8')
     obj = json.loads(s)
@@ -201,14 +201,16 @@ def main():
     config['node_type'] = node_type
     config['edge_type'] = edge_type
     config['train_node_type'] = node_type
-    config['task_count'] = obj['client_count']
+    config['client_count'] = obj['client_count']
     config['task_index'] = task_index
 
     # use the first half as worker, others as server
     servers = obj['server'].split(',')
-    mid = config['task_count'] / 2
+    mid = len(servers) // 2
     config['ps_hosts'] = servers[0:mid]
+    print('ps_hosts', config['ps_hosts'])
     config['worker_hosts'] = servers[mid:]
+    print('worker_hosts', config['worker_hosts'])
     if config['task_index'] < mid:
         config['job_name'] = 'worker'
     else:
@@ -217,11 +219,11 @@ def main():
     if config['job_name'] == 'server':
         g = gl.init_graph_from_handle(handle, task_index)
     else:
-        g = gl.get_graph_from_handle(handle, worker_index=task_index, worker_count=config['task_count'])
+        g = gl.get_graph_from_handle(handle, worker_index=task_index, worker_count=config['client_count'])
 
     gl.set_tracker_mode(0)
 
-    if debug:
+    if debug == 'True' and config['job_name'] == 'worker':
         # s = g.node_sampler("train", batch_size=64)
         # nodes = s.get()
         nodes = g.V(node_type).batch(4).emit()
