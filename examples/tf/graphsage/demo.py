@@ -288,7 +288,7 @@ def load_ldbc50_subgraph(sess, prefix):
 
     edges = {
         "relation": [
-            (   
+            (
                 os.path.join(prefix, "person_knows_person_0_0.csv") + "#header_row=true&delimiter=|",
                 ["eid_generated", "creationDate"],
                 ("Person.id", "item"),
@@ -321,7 +321,7 @@ if __name__ == '__main__':
     import os
     import sys
     import subprocess
-    proc = subprocess.Popen(['python3', '/root/graph-learn/examples/tf/graphsage/link_prediction.py', handle], stdout=sys.stdout, stderr=sys.stderr)
+    proc = subprocess.Popen(['python3', '/root/gsa/learning_engine/graph-learn/examples/tf/graphsage/link_prediction.py', handle], stdout=sys.stdout, stderr=sys.stderr)
     proc.wait()
     # p = os.popen("python3 /root/graph-learn/examples/tf/graphsage/link_prediction.py %s" % handle)
     # print('demo complete!')
