@@ -60,7 +60,7 @@ class GraphSage(gl.LearningBasedModel):
                neighs_num=None,
                agg_type='gcn',
                full_graph_mode=False,
-               unsupervised=True,
+               unsupervised=False,
                neg_num=10,
                node_type='item',
                edge_type='relation',
