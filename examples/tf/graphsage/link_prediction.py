@@ -128,6 +128,7 @@ def main():
 
   train(config, g)
   test(config, g)
+  g.close()
 
 
 if __name__ == "__main__":
