@@ -7,10 +7,12 @@
 #include <memory>
 #include <mutex>
 
+#if defined(WITH_VINEYARD)
 namespace vineyard {
 template class ArrowFragment<graphlearn::io::vineyard_oid_t,
                              graphlearn::io::vineyard_vid_t>;
 }
+#endif
 
 namespace graphlearn {
 namespace io {
@@ -332,8 +334,8 @@ int64_t find_index_of_name(std::shared_ptr<arrow::Schema> const &schema,
 #endif
 
 GraphStorage *NewVineyardGraphStorage(const std::string &edge_type) {
-  LOG(INFO) << "create vineyard graph storage: " << WITH_VINEYARD;
 #if defined(WITH_VINEYARD)
+  LOG(INFO) << "create vineyard graph storage: " << WITH_VINEYARD;
   return new VineyardGraphStorage(edge_type);
 #else
   return nullptr;
@@ -341,8 +343,8 @@ GraphStorage *NewVineyardGraphStorage(const std::string &edge_type) {
 }
 
 NodeStorage *NewVineyardNodeStorage(const std::string &node_type) {
-  LOG(INFO) << "create vineyard node storage: " << WITH_VINEYARD;
 #if defined(WITH_VINEYARD)
+  LOG(INFO) << "create vineyard node storage: " << WITH_VINEYARD;
   return new VineyardNodeStorage(node_type);
 #else
   return nullptr;

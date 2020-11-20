@@ -18,6 +18,7 @@ from __future__ import division
 from __future__ import print_function
 
 import base64
+import graphlearn as gl
 import json
 import numpy as np
 
@@ -36,11 +37,11 @@ def init_graph_from_handle(handle, server_index):
     obj = json.loads(s)
 
   gl.set_storage_mode(8)
-  gl.set_vineyard_graph_id(handle['vineyard_id'])
-  gl.set_vineyard_ipc_socket(handle['vineyard_socket'])
+  gl.set_vineyard_graph_id(obj['vineyard_id'])
+  gl.set_vineyard_ipc_socket(obj['vineyard_socket'])
 
   g = Graph()
-  set_tracker_mode(0)
+  gl.set_tracker_mode(0)
   # here client_count is a placeholder without actual meaning
   cluster = {'server': obj['server'], 'client_count': 1}
   g.init(cluster=cluster, task_index=server_index, job_name="server")
@@ -61,8 +62,8 @@ def get_graph_from_handle(handle, worker_index, worker_count, standalone=False):
     obj = json.loads(s)
 
   gl.set_storage_mode(8)
-  gl.set_vineyard_graph_id(handle['vineyard_id'])
-  gl.set_vineyard_ipc_socket(handle['vineyard_socket'])
+  gl.set_vineyard_graph_id(obj['vineyard_id'])
+  gl.set_vineyard_ipc_socket(obj['vineyard_socket'])
 
   g = Graph()
   for node_info in obj['node_schema']:
@@ -94,8 +95,8 @@ def get_graph_from_handle(handle, worker_index, worker_count, standalone=False):
       n_string = int(confs[7])
       g.edge(source='', edge_type=(src_node_type, dst_node_type, edge_type),
              decoder=get_decoder(weighted, labeled, n_int, n_float, n_string))
-  
-  set_tracker_mode(0)
+
+  gl.set_tracker_mode(0)
   cluster = {'server': obj['server'], 'client_count': worker_count}
   if standalone:
     g.init()
@@ -111,5 +112,5 @@ def get_decoder(weighted, labeled, n_int, n_float, n_string):
     attr_types.extend(["int"] * n_int)
     attr_types.extend(["float"] * n_float)
     attr_types.extend(["string"] * n_string)
-  
+
   return Decoder(weighted, labeled, attr_types)
