@@ -60,7 +60,7 @@ class GraphSage(gl.LearningBasedModel):
                neighs_num=None,
                agg_type='gcn',
                full_graph_mode=False,
-               unsupervised=False,
+               unsupervised=True,
                neg_num=10,
                node_type='item',
                edge_type='relation',
@@ -180,6 +180,11 @@ class GraphSage(gl.LearningBasedModel):
       pos_dst_emb = self.encoders['dst'].encode(self.pos_dst_ego_tensor)
       neg_dst_emb = self.encoders['dst'].encode(self.neg_dst_ego_tensor)
 
+      #FIXME
+      self.pos_src_emb = pos_src_emb
+      self.pos_dst_emb = pos_dst_emb
+      self.neg_dst_emb = neg_dst_emb
+
       self.loss = self._unsupervised_loss(pos_src_emb, pos_dst_emb, neg_dst_emb)
       self.loss = self.loss[0]
     else:
@@ -222,8 +227,9 @@ class GraphSage(gl.LearningBasedModel):
 
   def node_embedding(self, type):
     iterator = self.ego_flow.iterator
-    ego_tensor = self.ego_flow.pos_src_ego_tensor
-    src_emb = self.encoders['src'].encode(ego_tensor)
+    #ego_tensor = self.ego_flow.pos_src_ego_tensor
+    #src_emb = self.encoders['src'].encode(ego_tensor)
+    src_emb = self.pos_src_emb
     src_ids = self.pos_src_ego_tensor.src.ids
     return src_ids, src_emb, iterator
 
