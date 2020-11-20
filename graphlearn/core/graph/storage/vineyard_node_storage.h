@@ -104,7 +104,6 @@ public:
     auto table = frag_->vertex_data_table(frag_->vertex_label(v));
     int index = find_index_of_name(table->schema(), "weight");
     if (index == -1) {
-      std::cerr << "weight not available for node " << node_id << std::endl;
       return 0.0;
     }
     return static_cast<float>(frag_->GetData<double>(
@@ -116,8 +115,7 @@ public:
     auto table = frag_->vertex_data_table(frag_->vertex_label(v));
     int index = find_index_of_name(table->schema(), "label");
     if (index == -1) {
-      std::cerr << "label not available for node " << node_id << std::endl;
-      return 0;
+      return -1;
     }
     return static_cast<float>(frag_->GetData<int64_t>(
         vertex_t{static_cast<uint64_t>(node_id)}, index));
