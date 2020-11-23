@@ -23,15 +23,12 @@ import json
 import sys
 import numpy as np
 import graphlearn as gl
+import tensorflow as tf
 
 from graph_sage import GraphSage
 
-TRACKER_PATH  = './tracker/'
-os.system('mkdir -p %s' % TRACKER_PATH)
-os.system('rm -rf %s*' % TRACKER_PATH)
 
-
-def train(config, graph):
+def train_local(config, graph):
   def model_fn():
     return GraphSage(graph,
                      config['class_num'],
@@ -62,49 +59,131 @@ def train(config, graph):
 
 
 from sklearn.metrics.pairwise import cosine_similarity
-def test(config, graph):
+def test_local(config, graph):
   test_count = 0.0
   find_count = 0.0
   embs = np.load(config['emb_save_dir'] + ".npy")
   id_map = {}
   for i in range(embs.shape[0]):
-      id_map[embs[i][0]] = i
+    id_map[embs[i][0]] = i
   sampler_edge = graph.edge_sampler(config['edge_type'], 1000)
   edges_list = sampler_edge.get()
   src_ids = edges_list.src_ids
   dst_ids = edges_list.dst_ids
   for j in range(len(src_ids)):
-      if True:
-          vec_a = embs[id_map[src_ids[j]]][1:]
-          vec_b = embs[id_map[dst_ids[j]]][1:]
-          num = float(np.sum(vec_a * vec_b))
-          denom = np.linalg.norm(vec_a) * np.linalg.norm(vec_b)
-          if denom == 0:
-              cos = 0
-          else:
-              cos = num / denom
-          cos_sim = 0.5 + 0.5 * cos
-          test_count = test_count + 1
-          if cos_sim >= 0.7:
-              find_count = find_count + 1
+    vec_a = embs[id_map[src_ids[j]]][1:]
+    vec_b = embs[id_map[dst_ids[j]]][1:]
+    num = float(np.sum(vec_a * vec_b))
+    denom = np.linalg.norm(vec_a) * np.linalg.norm(vec_b)
+    if denom == 0:
+      cos = 0
+    else:
+      cos = num / denom
+      cos_sim = 0.5 + 0.5 * cos
+      test_count = test_count + 1
+    if cos_sim >= 0.7:
+      find_count = find_count + 1
 
   acc = find_count/test_count
   print("Evaluation Results:")
   print("Predicted Edges in Dataset: %d / %d; Precision: %4f" %(find_count, test_count, acc))
 
 
+def train_dist(config, graph):
+  def model_fn():
+    return GraphSage(graph,
+                     config['class_num'],
+                     config['features_num'],
+                     config['batch_size'],
+                     val_batch_size=config['val_batch_size'],
+                     test_batch_size=config['test_batch_size'],
+                     categorical_attrs_desc=config['categorical_attrs_desc'],
+                     hidden_dim=config['hidden_dim'],
+                     in_drop_rate=config['in_drop_rate'],
+                     neighs_num=config['neighs_num'],
+                     full_graph_mode=config['full_graph_mode'],
+                     unsupervised=config['unsupervised'],
+                     agg_type=config['agg_type'],
+                     node_type=config['node_type'],
+                     edge_type=config['edge_type'],
+                     train_node_type=config['node_type'])
+
+  cluster = tf.train.ClusterSpec(
+    {'ps': config['ps_hosts'], 'worker': config['worker_hosts']}
+  )
+  trainer = gl.DistTFTrainer(model_fn,
+                             cluster_spec=cluster,
+                             task_name=config['job_name'],
+                             task_index=config['task_index'],
+                             epoch=config['epoch'],
+                             optimizer=gl.get_tf_optimizer(
+                                 config['learning_algo'],
+                                 config['learning_rate'],
+                                 config['weight_decay']))
+  task_index = config['task_index']
+  if config['job_name'] == 'worker': # also graph-learn client in this example.
+    trainer.train()
+    embs = trainer.get_node_embedding()
+    np.save(config['emb_save_dir'] + str(task_index), embs)
+    print("embds shape:", embs.shape)
+  else:
+    trainer.join()
+
+
+def local_training(handle, config):
+  g = gl.get_graph_from_handle(handle, worker_index=0, worker_count=1, standalone=True)
+  train_local(config, g)
+  test_local(config, g)
+  g.close()
+
+
+def dist_training(handle, config):
+  hosts = handle['hosts'].split(',')
+  # use the first half as worker, others as server
+  # NOTE: gl_hosts and ps_hosts must has diff endpoint if tracker mode is 0.
+  mid = len(hosts) // 2
+  config['worker_hosts'] = [
+    "{}:{}".format(pod_name, 7000 + index) for index, pod_name in enumerate(hosts[0:mid])
+  ]
+  config['ps_hosts'] = [
+    "{}:{}".format(pod_name, 8000 + index) for index, pod_name in enumerate(hosts[mid:])
+  ]
+  config['gl_hosts'] = [
+    "{}:{}".format(pod_name, 9000 + index) for index, pod_name in enumerate(hosts[mid:])
+  ]
+  handle['server'] = ','.join(config['gl_hosts'])
+  handle['client'] = ','.join(config['worker_hosts'])
+
+  # check is worker or ps
+  pod_index = handle['pod_index']
+  if pod_index < mid:
+    config['job_name'] = 'worker'
+    config['task_index'] = pod_index
+    client_count = len(config['worker_hosts'])
+    g = gl.get_graph_from_handle(handle, worker_index=config['task_index'], worker_count=client_count)
+  else:
+    config['job_name'] = 'ps'
+    config['task_index'] = pod_index - mid
+    g = gl.init_graph_from_handle(handle, config['task_index'])
+
+  # training
+  train_dist(config, g)
+  g.close()
+
+
 def main():
-  handle = sys.argv[1]
-  task_index = 0
-  task_count = 1
-  s = base64.b64decode(handle).decode('utf-8')
-  obj = json.loads(s)
-  node_type = obj['node_schema'][0].split(':')[0]
-  edge_type = obj['edge_schema'][0].split(':')[1]
+  handle_str = sys.argv[1]
+  s = base64.b64decode(handle_str).decode('utf-8')
+  handle = json.loads(s)
+  handle['pod_index'] = int(sys.argv[2])
+  node_type = handle['node_schema'][0].split(':')[0]
+  edge_type = handle['edge_schema'][0].split(':')[1]
 
   config = {'class_num': 32,
             'features_num': 2,
             'batch_size': 10, # 10
+            'val_batch_size': 10,
+            'test_batch_size': 10,
             'categorical_attrs_desc': '',
             'hidden_dim': 256,
             'in_drop_rate': 0.5,
@@ -124,11 +203,13 @@ def main():
             'edge_type': edge_type,
             'train_node_type': node_type}
 
-  g = gl.get_graph_from_handle(handle, worker_index=task_index, worker_count=task_count, standalone=True)
-
-  train(config, g)
-  test(config, g)
-  g.close()
+  host_num = len(handle['hosts'].split(','))
+  if host_num  == 1:
+    local_training(handle, config)
+  elif host_num > 1:
+    dist_training(handle, config)
+  else:
+    raise ValueError('Not found hosts in handle.')
 
 
 if __name__ == "__main__":

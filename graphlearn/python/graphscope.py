@@ -43,7 +43,7 @@ def init_graph_from_handle(handle, server_index):
   g = Graph()
   gl.set_tracker_mode(0)
   # here client_count is a placeholder without actual meaning
-  cluster = {'server': obj['server'], 'client_count': 1}
+  cluster = {'server': obj['server'], 'client': obj['client']}
   g.init(cluster=cluster, task_index=server_index, job_name="server")
   return g
 
