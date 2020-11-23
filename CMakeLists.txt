@@ -249,7 +249,7 @@ else()
     set (PROFILING_FLAG CLOSE_PROFILING)
 endif()
 
-set (GL_CXX_FLAGS ${MODEFLAGS} -std=c++11 -fPIC 
+set (GL_CXX_FLAGS ${MODEFLAGS} -std=c++14 -fPIC
     -pthread -mavx -msse4.2 -msse4.1 
     -D${PROFILING_FLAG} 
     -I. -I${ROOT} -I${BUILT_DIR} 
@@ -474,8 +474,8 @@ execute_process (
 string(STRIP ${VERSION} VERSION)
 
 # python
-add_custom_target (python)
-add_dependencies (python pybind_target)
+add_custom_target (python ALL)
+add_dependencies (python pybind_target graphlearn_shared)
 add_custom_command (TARGET python
     COMMAND /bin/sh -c "rm -rf build"
     COMMAND /bin/sh -c "rm -rf dist"
@@ -483,12 +483,12 @@ add_custom_command (TARGET python
     COMMAND /bin/sh -c "mkdir -p ${PYTHON_LIB}"
     COMMAND /bin/sh -c "cp ${SETUP_DIR}/gl.__init__.py ${PYTHON_DIR}/__init__.py"
     COMMAND /bin/sh -c "echo '__version__ = ${VERSION}' >> ${PYTHON_DIR}/__init__.py"
-    COMMAND /bin/sh -c "cp ${GRPC_LIB}/libgrpc++.so ${PYTHON_LIB}/libgrpc++.so"
-    COMMAND /bin/sh -c "cp ${GRPC_LIB}/libgrpc.so ${PYTHON_LIB}/libgrpc.so"
-    COMMAND /bin/sh -c "cp ${GRPC_LIB}/libgpr.so ${PYTHON_LIB}/libgpr.so"
-    COMMAND /bin/sh -c "cp ${GRPC_LIB}/libupb.so ${PYTHON_LIB}/libupb.so"
-    COMMAND /bin/sh -c "cp ${GLOG_LIB}/libglog.so ${PYTHON_LIB}/libglog.so"
-    COMMAND /bin/sh -c "cp ${LIB_DIR}/libgraphlearn_shared.so ${PYTHON_LIB}"
+    COMMAND /bin/sh -c "cp ${GRPC_LIB}/libgrpc++${CMAKE_SHARED_LIBRARY_SUFFIX} ${PYTHON_LIB}/libgrpc++${CMAKE_SHARED_LIBRARY_SUFFIX} || true"
+    COMMAND /bin/sh -c "cp ${GRPC_LIB}/libgrpc${CMAKE_SHARED_LIBRARY_SUFFIX} ${PYTHON_LIB}/libgrpc${CMAKE_SHARED_LIBRARY_SUFFIX} || true"
+    COMMAND /bin/sh -c "cp ${GRPC_LIB}/libgpr${CMAKE_SHARED_LIBRARY_SUFFIX} ${PYTHON_LIB}/libgpr${CMAKE_SHARED_LIBRARY_SUFFIX} || true"
+    COMMAND /bin/sh -c "cp ${GRPC_LIB}/libupb${CMAKE_SHARED_LIBRARY_SUFFIX} ${PYTHON_LIB}/libupb${CMAKE_SHARED_LIBRARY_SUFFIX} || true"
+    COMMAND /bin/sh -c "cp ${GLOG_LIB}/libglog${CMAKE_SHARED_LIBRARY_SUFFIX} ${PYTHON_LIB}/libglog${CMAKE_SHARED_LIBRARY_SUFFIX} || true"
+    COMMAND /bin/sh -c "cp ${LIB_DIR}/libgraphlearn_shared${CMAKE_SHARED_LIBRARY_SUFFIX} ${PYTHON_LIB}"
     COMMAND ${PYTHON_VERSION} ${SETUP_DIR}/setup.py bdist_wheel
     COMMAND /bin/sh -c "mkdir -p ${BIN_DIR}/ge_data/data"
     COMMAND /bin/sh -c "mkdir -p ${BIN_DIR}/ge_data/ckpt"
