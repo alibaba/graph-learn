@@ -135,11 +135,14 @@ public:
   /// Get all the node ids, the count of which is the same with Size().
   /// These ids are distinct.
   virtual const IdArray GetIds() const override {
-#ifndef NDEBUG
-    std::cerr << "node: get ids: " << node_label_ << std::endl;
-#endif
     auto range = frag_->InnerVertices(node_label_);
-    return RangeArray<IdType>(range.begin().GetValue(), range.end().GetValue());
+#ifndef NDEBUG
+    std::cerr << "node: get ids: " << node_label_
+              << ", range begin = " << range.begin().GetValue()
+              << ", range end = " << range.end().GetValue()
+              << std::endl;
+#endif
+    return IdArray(range.begin().GetValue(), range.end().GetValue());
   }
 
   /// Get all weights if existed, the count of which is the same with Size().
