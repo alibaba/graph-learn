@@ -165,6 +165,10 @@ public:
     return value_[i];
   }
 
+  T at(int32_t i) const {
+    return this->operator[](i);
+  }
+
   virtual int32_t Size() const {
     return size_;
   }

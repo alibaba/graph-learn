@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
     LOG(INFO) << "edge size = " << size;
     auto &src_ids = *store->GetSrcIds();
     auto &dst_ids = *store->GetDstIds();
-    auto &weights_ids = *store->GetWeights();
+    auto weights_ids = store->GetWeights();
     for (int i = 0; i < size; ++i) {
       LOG(INFO) << src_ids[i] << " -> " << dst_ids[i] << ": " << weights_ids[i];
     }
@@ -109,16 +109,16 @@ int main(int argc, char **argv) {
     auto store = std::make_shared<VineyardNodeStorage>(0);
     auto size = store->Size(); // edge size
     LOG(INFO) << "node size = " << size;
-    auto &node_ids = *store->GetIds();
-    auto &label_ids = *store->GetLabels();
-    auto &weights_ids = *store->GetWeights();
+    auto node_ids = store->GetIds();
+    auto label_ids = store->GetLabels();
+    auto weights_ids = store->GetWeights();
     for (int i = 0; i < size; ++i) {
       std::stringstream ss;
       ss << node_ids[i];
-      if (&label_ids != nullptr) {
+      if (label_ids) {
         ss << "(" << label_ids[i] << ")";
       }
-      if (&weights_ids != nullptr) {
+      if (weights_ids) {
         ss << ": " << weights_ids[i];
       }
       LOG(INFO) << ss.str();
@@ -132,11 +132,11 @@ int main(int argc, char **argv) {
     LOG(INFO) << "edge size = " << size;
     auto src_ids = store->GetAllSrcIds();
     auto dst_ids = store->GetAllDstIds();
-    for (size_t idx = 0; idx < src_ids.size(); ++idx) {
+    for (size_t idx = 0; idx < src_ids.Size(); ++idx) {
       LOG(INFO) << "src = " << src_ids.at(idx)
                 << ", out degree = " << store->GetOutDegree(src);
     }
-    for (size_t idx = 0; idx < dst_ids.size(); ++idx) {
+    for (size_t idx = 0; idx < dst_ids.Size(); ++idx) {
       LOG(INFO) << "dst = " << dst_ids.at(idx)
                 << ", in degree = " << store->GetInDegree(dst);
     }
@@ -146,7 +146,7 @@ int main(int argc, char **argv) {
   {
     auto store = std::make_shared<VineyardTopoStorage>(0);
     auto src_ids = store->GetAllSrcIds();
-    for (size_t idx = 0; idx < src_ids.size(); ++idx) {
+    for (size_t idx = 0; idx < src_ids.Size(); ++idx) {
       auto src = src_ids.at(idx);
       auto nbrs = store->GetNeighbors(src);
       auto edges = store->GetOutEdges(src);

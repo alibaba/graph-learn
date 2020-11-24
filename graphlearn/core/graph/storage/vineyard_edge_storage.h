@@ -123,39 +123,31 @@ public:
     return IdArray(dst_lists_.data(), dst_lists_.size());
   }
   /// Get all weights if existed, the count of which is the same with Size().
-  virtual const std::vector<float> *GetWeights() const override {
+  virtual const Array<float> GetWeights() const override {
     auto table = frag_->edge_data_table(edge_label_);
     auto index = find_index_of_name(table->schema(), "weight");
     if (index == -1) {
-      return nullptr;
+      return Array<float>();
     }
     auto weight_array = std::dynamic_pointer_cast<
-        typename vineyard::ConvertToArrowType<double>::ArrayType>(
+        typename vineyard::ConvertToArrowType<float>::ArrayType>(
         table->column(index)->chunk(0));
-    auto weight_list = new std::vector<float>();
-    weight_list->reserve(weight_array->length());
-    for (size_t i = 0; i < weight_array->length(); ++i) {
-      weight_list->emplace_back(static_cast<float>(weight_array->Value(i)));
-    }
-    return weight_list;
+    return Array<float>(weight_array->raw_values(), weight_array->length());
   }
+
   /// Get all labels if existed, the count of which is the same with Size().
-  virtual const std::vector<int32_t> *GetLabels() const override {
+  virtual const Array<int32_t> GetLabels() const override {
     auto table = frag_->edge_data_table(edge_label_);
     auto index = find_index_of_name(table->schema(), "label");
     if (index == -1) {
-      return nullptr;
+      return Array<int32_t>();
     }
-    auto weight_array = std::dynamic_pointer_cast<
-        typename vineyard::ConvertToArrowType<double>::ArrayType>(
+    auto label_array = std::dynamic_pointer_cast<
+        typename vineyard::ConvertToArrowType<int32_t>::ArrayType>(
         table->column(index)->chunk(0));
-    auto label_list = new std::vector<int32_t>();
-    label_list->reserve(weight_array->length());
-    for (size_t i = 0; i < weight_array->length(); ++i) {
-      label_list->emplace_back(static_cast<int32_t>(weight_array->Value(i)));
-    }
-    return label_list;
+    return Array<int32_t>(label_array->raw_values(), label_array->length());
   }
+
   /// Get all attributes if existed, the count of which is the same with Size().
   virtual const std::vector<Attribute> *GetAttributes() const override {
     auto table = frag_->edge_data_table(edge_label_);

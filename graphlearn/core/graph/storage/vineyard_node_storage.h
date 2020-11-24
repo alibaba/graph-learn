@@ -146,13 +146,29 @@ public:
   }
 
   /// Get all weights if existed, the count of which is the same with Size().
-  virtual const std::vector<float> *GetWeights() const override {
-    return GetAttribute<double, float>("weight");
+  virtual const Array<float> GetWeights() const override {
+    auto table = frag_->vertex_data_table(node_label_);
+    auto index = find_index_of_name(table->schema(), "weight");
+    if (index == -1) {
+      return Array<float>();
+    }
+    auto weight_array = std::dynamic_pointer_cast<
+        typename vineyard::ConvertToArrowType<float>::ArrayType>(
+        table->column(index)->chunk(0));
+    return Array<float>(weight_array->raw_values(), weight_array->length());
   }
 
   /// Get all labels if existed, the count of which is the same with Size().
-  virtual const std::vector<int32_t> *GetLabels() const override {
-    return GetAttribute<int64_t, int32_t>("label");
+  virtual const Array<int32_t> GetLabels() const override {
+    auto table = frag_->vertex_data_table(node_label_);
+    auto index = find_index_of_name(table->schema(), "label");
+    if (index == -1) {
+      return Array<int32_t>();
+    }
+    auto label_array = std::dynamic_pointer_cast<
+        typename vineyard::ConvertToArrowType<int32_t>::ArrayType>(
+        table->column(index)->chunk(0));
+    return Array<int32_t>(label_array->raw_values(), label_array->length());
   }
 
   /// Get all attributes if existed, the count of which is the same with Size().
@@ -181,7 +197,7 @@ public:
 
 private:
   template <typename T, typename RT = T>
-  const std::vector<RT> *GetAttribute(std::string const &name) const {
+  const Array<RT> GetAttribute(std::string const &name) const {
     int attr_index = find_index_of_name(
         frag_->vertex_data_table(node_label_)->schema(), name);
     if (attr_index == -1) {

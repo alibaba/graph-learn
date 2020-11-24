@@ -125,12 +125,12 @@ public:
     return IdArray(ids_.data(), ids_.size());
   }
 
-  const std::vector<int32_t>* GetLabels() const override {
-    return &labels_;
+  const Array<int32_t> GetLabels() const override {
+    return Array<int32_t>(labels_);
   }
 
-  const std::vector<float>* GetWeights() const override {
-    return &weights_;
+  const Array<float> GetWeights() const override {
+    return Array<float>(weights_);
   }
 
   const std::vector<Attribute>* GetAttributes() const override {

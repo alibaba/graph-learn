@@ -188,7 +188,7 @@ protected:
     IdType dst_id_count = 100 + dst_offset;
 
     const IdArray src_ids = storage->GetAllSrcIds();
-    EXPECT_EQ(src_ids.size(), src_id_count);
+    EXPECT_EQ(src_ids.Size(), src_id_count);
     for (IdType i = 0; i < src_id_count; ++i) {
       IdType src_id = src_ids.at(i);
       EXPECT_EQ(src_id, i);
@@ -221,7 +221,7 @@ protected:
     }
 
     const IdArray dst_ids = storage->GetAllDstIds();
-    EXPECT_EQ(dst_ids.size(), dst_id_count);
+    EXPECT_EQ(dst_ids.Size(), dst_id_count);
     for (IdType i = 0; i < dst_id_count; ++i) {
       EXPECT_EQ(dst_ids.at(i), i);
       EXPECT_EQ(storage->GetInDegree(i), 1);

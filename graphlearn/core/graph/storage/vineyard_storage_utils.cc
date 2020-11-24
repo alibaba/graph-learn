@@ -148,7 +148,7 @@ IdType get_edge_src_id(std::shared_ptr<gl_frag_t> const &frag,
                        label_id_t const edge_label,
                        std::vector<IdType> const &src_ids, IdType edge_id) {
 #ifndef NDEBUG
-  if (edge_id < src_ids.size()) {
+  if (edge_id < src_ids.Size()) {
     return src_ids[edge_id];
   } else {
     throw std::runtime_error("Not implemented since unused");
@@ -162,7 +162,7 @@ IdType get_edge_dst_id(std::shared_ptr<gl_frag_t> const &frag,
                        label_id_t const edge_label,
                        std::vector<IdType> const &dst_ids, IdType edge_id) {
 #ifndef NDEBUG
-  if (edge_id < dst_ids.size()) {
+  if (edge_id < dst_ids.Size()) {
     return dst_ids[edge_id];
   } else {
     throw std::runtime_error("Not implemented since unused");

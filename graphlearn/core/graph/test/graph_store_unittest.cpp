@@ -224,8 +224,8 @@ protected:
     EXPECT_TRUE(graph != nullptr);
     GraphStorage* storage = graph->GetLocalStorage();
     EXPECT_EQ(storage->GetEdgeCount(), 100);
-    EXPECT_EQ(storage->GetAllSrcIds().size(), 100);
-    EXPECT_EQ(storage->GetAllDstIds().size(), 100);
+    EXPECT_EQ(storage->GetAllSrcIds().Size(), 100);
+    EXPECT_EQ(storage->GetAllDstIds().Size(), 100);
     const SideInfo* info = storage->GetSideInfo();
     EXPECT_EQ(info->format, int32_t(kWeighted));
     EXPECT_EQ(info->i_num, 0);
@@ -239,8 +239,8 @@ protected:
     EXPECT_TRUE(graph != nullptr);
     storage = graph->GetLocalStorage();
     EXPECT_EQ(storage->GetEdgeCount(), 100);
-    EXPECT_EQ(storage->GetAllSrcIds().size(), 100);
-    EXPECT_EQ(storage->GetAllDstIds().size(), 100);
+    EXPECT_EQ(storage->GetAllSrcIds().Size(), 100);
+    EXPECT_EQ(storage->GetAllDstIds().Size(), 100);
     info = storage->GetSideInfo();
     EXPECT_EQ(info->format, int32_t(kLabeled));
     EXPECT_EQ(info->i_num, 0);
@@ -254,8 +254,8 @@ protected:
     EXPECT_TRUE(graph != nullptr);
     storage = graph->GetLocalStorage();
     EXPECT_EQ(storage->GetEdgeCount(), 100);
-    EXPECT_EQ(storage->GetAllSrcIds().size(), 100);
-    EXPECT_EQ(storage->GetAllDstIds().size(), 100);
+    EXPECT_EQ(storage->GetAllSrcIds().Size(), 100);
+    EXPECT_EQ(storage->GetAllDstIds().Size(), 100);
     info = storage->GetSideInfo();
     EXPECT_EQ(info->format, int32_t(kAttributed));
     EXPECT_EQ(info->i_num, 1);
@@ -271,9 +271,9 @@ protected:
     EXPECT_TRUE(noder != nullptr);
     NodeStorage* storage = noder->GetLocalStorage();
     EXPECT_EQ(storage->Size(), 100);
-    EXPECT_EQ(storage->GetIds()->size(), 100);
-    EXPECT_EQ(storage->GetWeights()->size(), 100);
-    EXPECT_EQ(storage->GetLabels()->size(), 0);
+    EXPECT_EQ(storage->GetIds().Size(), 100);
+    EXPECT_EQ(storage->GetWeights().Size(), 100);
+    EXPECT_EQ(storage->GetLabels().Size(), 0);
     if (storage->GetAttributes() != nullptr) {
       EXPECT_EQ(storage->GetAttributes()->size(), 0);
     }
@@ -288,9 +288,9 @@ protected:
     EXPECT_TRUE(noder != nullptr);
     storage = noder->GetLocalStorage();
     EXPECT_EQ(storage->Size(), 100);
-    EXPECT_EQ(storage->GetIds()->size(), 100);
-    EXPECT_EQ(storage->GetWeights()->size(), 0);
-    EXPECT_EQ(storage->GetLabels()->size(), 100);
+    EXPECT_EQ(storage->GetIds().Size(), 100);
+    EXPECT_EQ(storage->GetWeights().Size(), 0);
+    EXPECT_EQ(storage->GetLabels().Size(), 100);
     if (storage->GetAttributes() != nullptr) {
       EXPECT_EQ(storage->GetAttributes()->size(), 0);
     }
@@ -305,9 +305,9 @@ protected:
     EXPECT_TRUE(noder != nullptr);
     storage = noder->GetLocalStorage();
     EXPECT_EQ(storage->Size(), 100);
-    EXPECT_EQ(storage->GetIds()->size(), 100);
-    EXPECT_EQ(storage->GetWeights()->size(), 0);
-    EXPECT_EQ(storage->GetLabels()->size(), 0);
+    EXPECT_EQ(storage->GetIds().Size(), 100);
+    EXPECT_EQ(storage->GetWeights().Size(), 0);
+    EXPECT_EQ(storage->GetLabels().Size(), 0);
     if (storage->GetAttributes() != nullptr) {
       EXPECT_EQ(storage->GetAttributes()->size(), 100);
     }
