@@ -134,22 +134,12 @@ public:
   ///
   /// Get all the node ids, the count of which is the same with Size().
   /// These ids are distinct.
-  virtual const IdList *GetIds() const override {
+  virtual const IdArray GetIds() const override {
 #ifndef NDEBUG
     std::cerr << "node: get ids: " << node_label_ << std::endl;
 #endif
-    size_t count = frag_->GetInnerVerticesNum(node_label_);
-    auto id_list = new IdList();
-    id_list->reserve(count);
-#ifndef NDEBUG
-    std::cerr << "node: get ids: count = " << count << std::endl;
-#endif
-
-    auto id_range = frag_->InnerVertices(node_label_);
-    for (auto id = id_range.begin(); id < id_range.end(); ++id) {
-      id_list->emplace_back(id.GetValue());
-    }
-    return id_list;
+    auto range = frag_->InnerVertices(node_label_);
+    return RangeArray<IdType>(range.begin().GetValue(), range.end().GetValue());
   }
 
   /// Get all weights if existed, the count of which is the same with Size().

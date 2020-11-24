@@ -42,10 +42,10 @@ AttributeValue *
 arrow_line_to_attribute_value(std::shared_ptr<arrow::Table> table,
                               int row_index, int start_index = 0);
 
-const IdList *get_all_src_ids(std::shared_ptr<gl_frag_t> const &frag,
+const IdArray get_all_src_ids(std::shared_ptr<gl_frag_t> const &frag,
                               const label_id_t edge_label);
 
-const IdList *get_all_dst_ids(std::shared_ptr<gl_frag_t> const &frag,
+const IdArray get_all_dst_ids(std::shared_ptr<gl_frag_t> const &frag,
                               const label_id_t edge_label);
 
 const IndexList *get_all_in_degree(std::shared_ptr<gl_frag_t> const &frag,

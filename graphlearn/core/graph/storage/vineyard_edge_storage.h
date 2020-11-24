@@ -113,35 +113,14 @@ public:
   ///
   /// Get all the source node ids, the count of which is the same with Size().
   /// These ids are not distinct.
-  virtual const IdList *GetSrcIds() const override {
-    auto src_id_list = new IdList();
-    for (label_id_t v_label = 0; v_label < frag_->vertex_label_num();
-         ++v_label) {
-      auto id_range = frag_->InnerVertices(v_label);
-      for (auto vid = id_range.begin(); vid < id_range.end(); ++vid) {
-        auto oes = frag_->GetOutgoingAdjList(vid, edge_label_);
-        for (auto &e : oes) {
-          src_id_list->emplace_back(vid.GetValue());
-        }
-      }
-    }
-    return src_id_list;
+  virtual const IdArray GetSrcIds() const override {
+    return IdArray(src_lists_.data(), src_lists_.size());
   }
+
   /// Get all the destination node ids, the count of which is the same with
   /// Size(). These ids are not distinct.
-  virtual const IdList *GetDstIds() const override {
-    auto dst_id_list = new IdList();
-    for (label_id_t v_label = 0; v_label < frag_->vertex_label_num();
-         ++v_label) {
-      auto id_range = frag_->InnerVertices(v_label);
-      for (auto vid = id_range.begin(); vid < id_range.end(); ++vid) {
-        auto oes = frag_->GetOutgoingAdjList(vid, edge_label_);
-        for (auto &e : oes) {
-          dst_id_list->emplace_back(e.get_neighbor().GetValue());
-        }
-      }
-    }
-    return dst_id_list;
+  virtual const IdArray GetDstIds() const override {
+    return IdArray(dst_lists_.data(), dst_lists_.size());
   }
   /// Get all weights if existed, the count of which is the same with Size().
   virtual const std::vector<float> *GetWeights() const override {

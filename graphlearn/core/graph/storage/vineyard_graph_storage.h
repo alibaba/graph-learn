@@ -120,11 +120,11 @@ public:
   virtual const IndexList *GetAllOutDegrees() const override {
     return get_all_out_degree(frag_, edge_label_);
   }
-  virtual const IdList *GetAllSrcIds() const override {
-    return get_all_src_ids(frag_, edge_label_);
+  virtual const IdArray GetAllSrcIds() const override {
+    return IdArray(src_lists_.data(), src_lists_.size());
   }
-  virtual const IdList *GetAllDstIds() const override {
-    return get_all_dst_ids(frag_, edge_label_);
+  virtual const IdArray GetAllDstIds() const override {
+    return IdArray(dst_lists_.data(), dst_lists_.size());
   }
 
 private:

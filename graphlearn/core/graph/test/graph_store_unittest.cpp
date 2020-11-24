@@ -224,8 +224,8 @@ protected:
     EXPECT_TRUE(graph != nullptr);
     GraphStorage* storage = graph->GetLocalStorage();
     EXPECT_EQ(storage->GetEdgeCount(), 100);
-    EXPECT_EQ(storage->GetAllSrcIds()->size(), 100);
-    EXPECT_EQ(storage->GetAllDstIds()->size(), 100);
+    EXPECT_EQ(storage->GetAllSrcIds().size(), 100);
+    EXPECT_EQ(storage->GetAllDstIds().size(), 100);
     const SideInfo* info = storage->GetSideInfo();
     EXPECT_EQ(info->format, int32_t(kWeighted));
     EXPECT_EQ(info->i_num, 0);
@@ -239,8 +239,8 @@ protected:
     EXPECT_TRUE(graph != nullptr);
     storage = graph->GetLocalStorage();
     EXPECT_EQ(storage->GetEdgeCount(), 100);
-    EXPECT_EQ(storage->GetAllSrcIds()->size(), 100);
-    EXPECT_EQ(storage->GetAllDstIds()->size(), 100);
+    EXPECT_EQ(storage->GetAllSrcIds().size(), 100);
+    EXPECT_EQ(storage->GetAllDstIds().size(), 100);
     info = storage->GetSideInfo();
     EXPECT_EQ(info->format, int32_t(kLabeled));
     EXPECT_EQ(info->i_num, 0);
@@ -254,8 +254,8 @@ protected:
     EXPECT_TRUE(graph != nullptr);
     storage = graph->GetLocalStorage();
     EXPECT_EQ(storage->GetEdgeCount(), 100);
-    EXPECT_EQ(storage->GetAllSrcIds()->size(), 100);
-    EXPECT_EQ(storage->GetAllDstIds()->size(), 100);
+    EXPECT_EQ(storage->GetAllSrcIds().size(), 100);
+    EXPECT_EQ(storage->GetAllDstIds().size(), 100);
     info = storage->GetSideInfo();
     EXPECT_EQ(info->format, int32_t(kAttributed));
     EXPECT_EQ(info->i_num, 1);

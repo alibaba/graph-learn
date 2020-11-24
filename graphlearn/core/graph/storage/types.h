@@ -118,18 +118,21 @@ public:
     size_ = rhs.size_;
   }
 
-  operator bool () const {
+  virtual ~Array() {
+  }
+
+  virtual operator bool () const {
     return value_ != nullptr && size_ != 0;
   }
 
-  T operator[] (int32_t i) const {
+  virtual T operator[] (int32_t i) const {
     if (mvalue_) {
       return mvalue_->operator[](i);
     }
     return value_[i];
   }
 
-  int32_t Size() const {
+  virtual int32_t Size() const {
     return size_;
   }
 
@@ -137,6 +140,28 @@ private:
   const T* value_;
   std::shared_ptr<MultiArray<T>> mvalue_;
   int32_t size_;
+};
+
+template <typename T>
+class RangeArray: public Array<T> {
+public:
+  RangeArray(T const &begin, T const &end): begin_(begin), end_(end) {}
+
+  virtual operator bool () const {
+    return begin_ == end_;
+  }
+
+  virtual T operator[] (int32_t i) const {
+    return begin_ + i;
+  }
+
+  virtual int32_t Size() const {
+    return end_ - begin_;
+  }
+
+private:
+  T const begin_;
+  T const end_;
 };
 
 typedef Array<IdType> IdArray;

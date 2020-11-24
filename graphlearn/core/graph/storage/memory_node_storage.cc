@@ -121,8 +121,8 @@ public:
     }
   }
 
-  const IdList* GetIds() const override {
-    return &ids_;
+  const IdArray GetIds() const override {
+    return IdArray(ids_.data(), ids_.size());
   }
 
   const std::vector<int32_t>* GetLabels() const override {

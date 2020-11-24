@@ -130,14 +130,14 @@ int main(int argc, char **argv) {
     auto store = std::make_shared<VineyardGraphStorage>(0);
     auto size = store->GetEdgeCount(); // edge size
     LOG(INFO) << "edge size = " << size;
-    auto &src_ids = *store->GetAllSrcIds();
-    auto &dst_ids = *store->GetAllDstIds();
-    for (auto const &src : src_ids) {
-      LOG(INFO) << "src = " << src
+    auto src_ids = store->GetAllSrcIds();
+    auto dst_ids = store->GetAllDstIds();
+    for (size_t idx = 0; idx < src_ids.size(); ++idx) {
+      LOG(INFO) << "src = " << src_ids.at(idx)
                 << ", out degree = " << store->GetOutDegree(src);
     }
-    for (auto const &dst : dst_ids) {
-      LOG(INFO) << "dst = " << dst
+    for (size_t idx = 0; idx < dst_ids.size(); ++idx) {
+      LOG(INFO) << "dst = " << dst_ids.at(idx)
                 << ", in degree = " << store->GetInDegree(dst);
     }
   }
@@ -145,8 +145,9 @@ int main(int argc, char **argv) {
 
   {
     auto store = std::make_shared<VineyardTopoStorage>(0);
-    auto &src_ids = *store->GetAllSrcIds();
-    for (auto const &src : src_ids) {
+    auto src_ids = store->GetAllSrcIds();
+    for (size_t idx = 0; idx < src_ids.size(); ++idx) {
+      auto src = src_ids.at(idx);
       auto nbrs = store->GetNeighbors(src);
       auto edges = store->GetOutEdges(src);
       CHECK_EQ(nbrs.Size(), edges.Size());

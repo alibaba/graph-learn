@@ -102,14 +102,14 @@ public:
   /// [3 1]
   /// [3 2]
   /// GetAllSrcIds() --> {1, 2, 3}
-  virtual const IdList *GetAllSrcIds() const override {
-    return get_all_src_ids(frag_, edge_label_);
+  virtual const IdArray GetAllSrcIds() const override {
+    return IdArray(src_lists_.data(), src_lists_.size());
   }
 
   /// Get all the distinct ids that appear as the destination id of an edge.
   /// For the above example, GetAllDstIds() --> {2, 3, 4, 1}
-  virtual const IdList *GetAllDstIds() const override {
-    return get_all_dst_ids(frag_, edge_label_);
+  virtual const IdArray GetAllDstIds() const override {
+    return IdArray(dst_lists_.data(), dst_lists_.size());
   }
 
   /// Get the out-degree values of all ids corresponding to GetAllSrcIds().

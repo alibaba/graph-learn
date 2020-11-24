@@ -77,36 +77,6 @@ arrow_line_to_attribute_value(std::shared_ptr<arrow::Table> table,
   return attr;
 }
 
-const IdList *get_all_src_ids(std::shared_ptr<gl_frag_t> const &frag,
-                              const label_id_t edge_label) {
-  int v_label_num = frag->vertex_label_num();
-  auto src_id_list = new IdList();
-  for (int label_id = 0; label_id < v_label_num; ++label_id) {
-    auto id_range = frag->InnerVertices(label_id);
-    for (auto id = id_range.begin(); id < id_range.end(); ++id) {
-      if (frag->HasChild(id, edge_label)) {
-        src_id_list->emplace_back(id.GetValue());
-      }
-    }
-  }
-  return src_id_list;
-}
-
-const IdList *get_all_dst_ids(std::shared_ptr<gl_frag_t> const &frag,
-                              const label_id_t edge_label) {
-  int v_label_num = frag->vertex_label_num();
-  auto dst_id_list = new IdList();
-  for (int label_id = 0; label_id < v_label_num; ++label_id) {
-    auto id_range = frag->InnerVertices(label_id);
-    for (auto id = id_range.begin(); id < id_range.end(); ++id) {
-      if (frag->HasParent(id, edge_label)) {
-        dst_id_list->emplace_back(id.GetValue());
-      }
-    }
-  }
-  return dst_id_list;
-}
-
 const IndexList *get_all_in_degree(std::shared_ptr<gl_frag_t> const &frag,
                                    const label_id_t edge_label) {
   int v_label_num = frag->vertex_label_num();

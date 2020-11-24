@@ -118,12 +118,12 @@ public:
     }
   }
 
-  const IdList* GetSrcIds() const override {
-    return &src_ids_;
+  const IdArray GetSrcIds() const override {
+    return IdArray(src_ids_.data(), src_ids_.size());
   }
 
-  const IdList* GetDstIds() const override {
-    return &dst_ids_;
+  const IdArray GetDstIds() const override {
+    return IdArray(dst_ids_.data(), dst_ids_.size());
   }
 
   const std::vector<float>* GetWeights() const override {

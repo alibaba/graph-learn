@@ -136,7 +136,7 @@ protected:
       }
     }
 
-    const IdList* node_ids = storage->GetIds();
+    const IdArray node_ids = storage->GetIds();
     EXPECT_EQ(node_ids->size(), node_count);
     for (IdType index = 0; index < node_count; ++index) {
       EXPECT_EQ(node_ids->at(index), index);
