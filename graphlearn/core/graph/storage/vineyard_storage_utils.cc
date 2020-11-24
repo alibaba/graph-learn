@@ -173,33 +173,80 @@ get_all_outgoing_neighbor_edges(std::shared_ptr<gl_frag_t> const &frag,
       values, sizes, sizeof(nbr_unit_t), __builtin_offsetof(nbr_unit_t, eid)));
 }
 
-IdType get_edge_src_id(std::shared_ptr<gl_frag_t> const &frag, IdType edge_id) {
+IdType get_edge_src_id(std::shared_ptr<gl_frag_t> const &frag,
+                       label_id_t const edge_label,
+                       std::vector<IdType> const &src_ids, IdType edge_id) {
 #ifndef NDEBUG
-  throw std::runtime_error("Not implemented since unused");
+  if (edge_id < src_ids.size()) {
+    return src_ids[edge_id];
+  } else {
+    throw std::runtime_error("Not implemented since unused");
+  }
 #else
-  return 0;
+  return src_ids[edge_id];
 #endif
 }
 
-IdType get_edge_dst_id(std::shared_ptr<gl_frag_t> const &frag, IdType edge_id) {
+IdType get_edge_dst_id(std::shared_ptr<gl_frag_t> const &frag,
+                       label_id_t const edge_label,
+                       std::vector<IdType> const &dst_ids, IdType edge_id) {
 #ifndef NDEBUG
-  throw std::runtime_error("Not implemented since unused");
+  if (edge_id < dst_ids.size()) {
+    return dst_ids[edge_id];
+  } else {
+    throw std::runtime_error("Not implemented since unused");
+  }
 #else
-  return 0;
+  return dst_ids[edge_id];
 #endif
 }
 
-float get_edge_weight(std::shared_ptr<gl_frag_t> const &frag, IdType edge_id) {
-  throw std::runtime_error("Not implemented since unused");
+float get_edge_weight(std::shared_ptr<gl_frag_t> const &frag,
+                      label_id_t const edge_label, IdType edge_id) {
+  auto table = frag->edge_data_table(edge_label);
+  int index = find_index_of_name(table->schema(), "weight");
+  if (index == -1) {
+    return 0.0;
+  }
+  auto const &array = frag->edge_data_table(edge_label)->column(index)->chunk(0);
+  return static_cast<float>(
+      std::dynamic_pointer_cast<arrow::DoubleArray>(array)->GetView(edge_id));
 }
 
-int32_t get_edge_label(std::shared_ptr<gl_frag_t> const &frag, IdType edge_id) {
-  throw std::runtime_error("Not implemented since unused");
+int32_t get_edge_label(std::shared_ptr<gl_frag_t> const &frag,
+                       label_id_t const edge_label, IdType edge_id) {
+  auto table = frag->edge_data_table(edge_label);
+  int index = find_index_of_name(table->schema(), "label");
+  if (index == -1) {
+    return 0.0;
+  }
+  auto const &array = frag->edge_data_table(edge_label)->column(index)->chunk(0);
+  return static_cast<int32_t>(
+      std::dynamic_pointer_cast<arrow::Int64Array>(array)->GetView(edge_id));
 }
 
 Attribute get_edge_attribute(std::shared_ptr<gl_frag_t> const &frag,
-                             IdType edge_id) {
-  throw std::runtime_error("Not implemented since unused");
+                             label_id_t const edge_label, IdType edge_id) {
+  auto table = frag->edge_data_table(edge_label);
+  return Attribute(arrow_line_to_attribute_value(table, edge_id, 0), true);
+}
+
+void initSrcDstList(std::shared_ptr<gl_frag_t> const &frag,
+                    label_id_t const edge_label, std::vector<IdType> &src_lists,
+                    std::vector<IdType> &dst_lists) {
+  src_lists.resize(frag->edge_data_table(edge_label)->num_rows());
+  dst_lists.resize(frag->edge_data_table(edge_label)->num_rows());
+  for (label_id_t node_label = 0; node_label < frag->vertex_label_num();
+       ++node_label) {
+    auto id_range = frag->InnerVertices(node_label);
+    for (auto id = id_range.begin(); id < id_range.end(); ++id) {
+      auto oes = frag->GetOutgoingAdjList(id, edge_label);
+      for (auto &e : oes) {
+        src_lists[e.edge_id()] = id.GetValue();
+        dst_lists[e.edge_id()] = e.neighbor().GetValue();
+      }
+    }
+  }
 }
 
 SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,

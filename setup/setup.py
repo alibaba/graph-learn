@@ -18,10 +18,12 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy
-import os, sys
+import os
+import platform
 from setuptools import setup, Extension, find_packages
 import shlex
 from subprocess import check_output
+import sys
 
 # This version string should be updated when releasing a new version.
 _VERSION = '0.1'
@@ -50,7 +52,8 @@ library_dirs.append(ROOT_PATH + '/built/lib')
 extra_compile_args.append('-D__USE_XOPEN2K8')
 extra_compile_args.append('-std=c++11')
 extra_compile_args.append('-fvisibility=hidden')
-extra_link_args.append('-Wl,-rpath=$ORIGIN/python/lib/')
+if platform.system() == 'Linux':
+    extra_link_args.append('-Wl,-rpath=$ORIGIN/python/lib/')
 
 
 libraries.append('graphlearn_shared')

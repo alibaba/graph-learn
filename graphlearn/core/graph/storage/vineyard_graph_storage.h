@@ -44,6 +44,7 @@ public:
     } else {
       edge_label_ = elabel_index - elabels.begin();
     }
+    initSrcDstList(frag_, edge_label_, src_lists_, dst_lists_);
   }
 
   explicit VineyardGraphStorage(label_id_t const edge_label = 0)
@@ -83,19 +84,19 @@ public:
     return frag_->edge_data_table(edge_label_)->num_rows();
   }
   virtual IdType GetSrcId(IdType edge_id) const override {
-    return get_edge_src_id(frag_, edge_id);
+    return get_edge_src_id(frag_, edge_label_, src_lists_, edge_id);
   }
   virtual IdType GetDstId(IdType edge_id) const override {
-    return get_edge_dst_id(frag_, edge_id);
+    return get_edge_dst_id(frag_, edge_label_, dst_lists_, edge_id);
   }
   virtual float GetEdgeWeight(IdType edge_id) const override {
-    return get_edge_weight(frag_, edge_id);
+    return get_edge_weight(frag_, edge_label_, edge_id);
   }
   virtual int32_t GetEdgeLabel(IdType edge_id) const override {
-    return get_edge_label(frag_, edge_id);
+    return get_edge_label(frag_, edge_label_, edge_id);
   }
   virtual Attribute GetEdgeAttribute(IdType edge_id) const override {
-    return get_edge_attribute(frag_, edge_id);
+    return get_edge_attribute(frag_, edge_label_, edge_id);
   }
 
   virtual Array<IdType> GetNeighbors(IdType src_id) const override {
@@ -130,6 +131,9 @@ private:
   vineyard::Client client_;
   std::shared_ptr<gl_frag_t> frag_;
   label_id_t edge_label_;
+
+  std::vector<IdType> src_lists_;
+  std::vector<IdType> dst_lists_;
 };
 
 } // namespace io

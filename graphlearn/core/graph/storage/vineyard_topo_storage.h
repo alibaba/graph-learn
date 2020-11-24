@@ -42,6 +42,7 @@ public:
     } else {
       edge_label_ = elabel_index - elabels.begin();
     }
+    initSrcDstList(frag_, edge_label_, src_lists_, dst_lists_);
   }
 
   explicit VineyardTopoStorage(label_id_t const edge_label = 0)
@@ -127,6 +128,9 @@ private:
   vineyard::Client client_;
   std::shared_ptr<gl_frag_t> frag_;
   label_id_t edge_label_;
+
+  std::vector<IdType> src_lists_;
+  std::vector<IdType> dst_lists_;
 };
 
 } // namespace io

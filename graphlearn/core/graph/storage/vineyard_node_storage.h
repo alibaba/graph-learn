@@ -117,7 +117,7 @@ public:
     if (index == -1) {
       return -1;
     }
-    return static_cast<float>(frag_->GetData<int64_t>(
+    return static_cast<int32_t>(frag_->GetData<int64_t>(
         vertex_t{static_cast<uint64_t>(node_id)}, index));
   }
 
