@@ -43,11 +43,11 @@ public:
     thread_local static std::mt19937 engine(rd());
 
     auto dst_ids = storage->GetAllDstIds();
-    std::uniform_int_distribution<> dist(0, dst_ids->size() - 1);
+    std::uniform_int_distribution<> dist(0, dst_ids.Size() - 1);
     for (int32_t i = 0; i < batch_size; ++i) {
       for (int32_t j = 0; j < count; ++j) {
         int32_t idx = dist(engine);
-        res->AppendNeighborId((*dst_ids)[idx]);
+        res->AppendNeighborId(dst_ids[idx]);
       }
     }
 

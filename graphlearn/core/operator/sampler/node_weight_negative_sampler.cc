@@ -77,7 +77,7 @@ protected:
           }
         }
 
-        int64_t item = ids->at(indices[cursor++]);
+        int64_t item = ids[indices[cursor++]];
         if (sets.find(item) == sets.end()) {
           res->AppendNeighborId(item);
           ++count;
