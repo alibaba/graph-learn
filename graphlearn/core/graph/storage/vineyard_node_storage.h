@@ -44,6 +44,7 @@ public:
     } else {
       node_label_ = vlabel_index - vlabels.begin();
     }
+    side_info_ = frag_node_side_info(frag_, node_label_);
   }
 
   explicit VineyardNodeStorage(label_id_t const node_label = 0)
@@ -66,6 +67,7 @@ public:
     if (frag_ == nullptr) {
       throw std::runtime_error("Node: failed to find a local fragment");
     }
+    side_info_ = frag_node_side_info(frag_, node_label_);
   }
 
   virtual ~VineyardNodeStorage() = default;
@@ -75,7 +77,7 @@ public:
 
   virtual void SetSideInfo(const SideInfo *info) override {}
   virtual const SideInfo *GetSideInfo() const override {
-    return frag_node_side_info(frag_, node_label_);
+    return side_info_;
   }
 
   /// Do some re-organization after data fixed.
@@ -99,6 +101,9 @@ public:
   ///    node label,
   ///    node attributes
   virtual float GetWeight(IdType node_id) const override {
+    if (!side_info_->IsWeighted()) {
+      return -1;
+    }
     auto v = vertex_t{static_cast<uint64_t>(node_id)};
     auto table = frag_->vertex_data_table(frag_->vertex_label(v));
     int index = find_index_of_name(table->schema(), "weight");
@@ -110,6 +115,9 @@ public:
   }
 
   virtual int32_t GetLabel(IdType node_id) const override {
+    if (!side_info_->IsLabeled()) {
+      return -1;
+    }
     auto v = vertex_t{static_cast<uint64_t>(node_id)};
     auto table = frag_->vertex_data_table(frag_->vertex_label(v));
     int index = find_index_of_name(table->schema(), "label");
@@ -121,9 +129,12 @@ public:
   }
 
   virtual Attribute GetAttribute(IdType node_id) const override {
+    if (!side_info_->IsAttributed()) {
+      return Attribute();
+    }
     auto v = vertex_t{static_cast<uint64_t>(node_id)};
     if (!frag_->IsInnerVertex(v)) {
-      return Attribute(AttributeValue::Default(GetSideInfo()), false);
+      return Attribute(AttributeValue::Default(side_info_), false);
     }
     auto label = frag_->vertex_label(v);
     auto offset = frag_->vertex_offset(v);
@@ -150,6 +161,9 @@ public:
 
   /// Get all weights if existed, the count of which is the same with Size().
   virtual const Array<float> GetWeights() const override {
+    if (!side_info_->IsWeighted()) {
+      return Array<float>();
+    }
     auto table = frag_->vertex_data_table(node_label_);
     auto index = find_index_of_name(table->schema(), "weight");
     if (index == -1) {
@@ -163,6 +177,9 @@ public:
 
   /// Get all labels if existed, the count of which is the same with Size().
   virtual const Array<int32_t> GetLabels() const override {
+    if (!side_info_->IsLabeled()) {
+      return Array<int32_t>();
+    }
     auto table = frag_->vertex_data_table(node_label_);
     auto index = find_index_of_name(table->schema(), "label");
     if (index == -1) {
@@ -176,6 +193,9 @@ public:
 
   /// Get all attributes if existed, the count of which is the same with Size().
   virtual const std::vector<Attribute> *GetAttributes() const override {
+    if (!side_info_->IsAttributed()) {
+      return nullptr;
+    }
 #ifndef NDEBUG
     std::cerr << "node: get attributes: node_label = " << node_label_
               << std::endl;
@@ -220,6 +240,7 @@ private:
   vineyard::Client client_;
   std::shared_ptr<gl_frag_t> frag_;
   label_id_t node_label_;
+  SideInfo *side_info_ = nullptr;
 };
 
 } // namespace io

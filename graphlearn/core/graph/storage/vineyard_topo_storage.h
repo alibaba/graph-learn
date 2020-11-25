@@ -63,6 +63,7 @@ public:
     if (frag_ == nullptr) {
       throw std::runtime_error("Topo: failed to find a local fragment");
     }
+    initSrcDstList(frag_, edge_label_, src_lists_, dst_lists_);
   }
   virtual ~VineyardTopoStorage() = default;
 

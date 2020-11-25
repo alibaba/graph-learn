@@ -33,9 +33,6 @@ arrow_line_to_attribute_value(std::shared_ptr<arrow::Table> table,
           std::dynamic_pointer_cast<
               typename vineyard::ConvertToArrowType<int64_t>::ArrayType>(arr)
               ->Value(row_index);
-#ifndef NDEBUG
-      std::cerr << "int64 value: " << value << std::endl;
-#endif
       attr->Add(value);
     } break;
     case arrow::Type::FLOAT: {
@@ -43,9 +40,6 @@ arrow_line_to_attribute_value(std::shared_ptr<arrow::Table> table,
           std::dynamic_pointer_cast<
               typename vineyard::ConvertToArrowType<float>::ArrayType>(arr)
               ->Value(row_index);
-#ifndef NDEBUG
-      std::cerr << "float value: " << value << std::endl;
-#endif
       attr->Add(value);
     } break;
     case arrow::Type::DOUBLE: {
@@ -53,9 +47,6 @@ arrow_line_to_attribute_value(std::shared_ptr<arrow::Table> table,
           std::dynamic_pointer_cast<
               typename vineyard::ConvertToArrowType<double>::ArrayType>(arr)
               ->Value(row_index);
-#ifndef NDEBUG
-      std::cerr << "double value: " << value << std::endl;
-#endif
       attr->Add(static_cast<float>(value));
     } break;
     case arrow::Type::STRING: {
