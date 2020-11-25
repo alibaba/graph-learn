@@ -213,8 +213,8 @@ void initSrcDstList(std::shared_ptr<gl_frag_t> const &frag,
     for (auto id = id_range.begin(); id < id_range.end(); ++id) {
       auto oes = frag->GetOutgoingAdjList(id, edge_label);
       for (auto &e : oes) {
-        src_lists[e.edge_id()] = id.GetValue();
-        dst_lists[e.edge_id()] = e.neighbor().GetValue();
+        src_lists[e.edge_id()] = frag->GetInnerVertexGid(id);
+        dst_lists[e.edge_id()] = frag->Vertex2Gid(e.neighbor());
       }
     }
   }

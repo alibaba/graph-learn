@@ -142,7 +142,8 @@ public:
               << ", range end = " << range.end().GetValue()
               << std::endl;
 #endif
-    return IdArray(range.begin().GetValue(), range.end().GetValue());
+    return IdArray(frag_->GetInnerVertexGid(range.begin()),
+                   frag_->GetInnerVertexGid(range.end()));
   }
 
   /// Get all weights if existed, the count of which is the same with Size().
