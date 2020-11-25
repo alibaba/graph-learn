@@ -66,18 +66,13 @@ def test_local(config, graph):
   emb_ids = np.load(config['emb_save_dir'] + "_ids.npy")
   emb_values = np.load(config['emb_save_dir'] + "_values.npy")
   id_map = {}
-  with np.printoptions(threshold=np.inf, suppress=True):
-    print('emb_ids = ', emb_ids)
-    print('emb_values = ', emb_values)
   for idx, vid in enumerate(emb_ids):
     id_map[vid] = idx
-  print('id_map = ', id_map)
   sampler_edge = graph.edge_sampler(config['edge_type'], 1000)
   edges_list = sampler_edge.get()
   src_ids = edges_list.src_ids
   dst_ids = edges_list.dst_ids
   for j in range(len(src_ids)):
-    print('src-dst = ', src_ids[j], dst_ids[j])
     vec_a = emb_values[id_map[src_ids[j]]]
     vec_b = emb_values[id_map[dst_ids[j]]]
     num = float(np.sum(vec_a * vec_b))
@@ -190,7 +185,6 @@ def main():
   s = base64.b64decode(handle_str).decode('utf-8')
   handle = json.loads(s)
   handle['pod_index'] = int(sys.argv[2])
-  handle['node_schema'] = ['person:false:false:2:0:6']
   node_type = handle['node_schema'][0].split(':')[0]
   edge_type = handle['edge_schema'][0].split(':')[1]
 

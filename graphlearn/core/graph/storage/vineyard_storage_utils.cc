@@ -344,7 +344,6 @@ SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
   }
   side_info->type = std::to_string(node_label);
   side_info_cache[frag->id()][node_label] = side_info;
-  std::cerr << "finish node sideinfo " << frag->id();
   return side_info.get();
 }
 

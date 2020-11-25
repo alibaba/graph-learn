@@ -75,7 +75,6 @@ public:
 
   virtual void SetSideInfo(const SideInfo *info) override {}
   virtual const SideInfo *GetSideInfo() const override {
-    std::cerr << "node: get sideinfo" << std::endl;
     return frag_node_side_info(frag_, node_label_);
   }
 
