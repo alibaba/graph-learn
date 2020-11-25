@@ -17,8 +17,10 @@ limitations under the License.
 #define GRAPHLEARN_CORE_GRAPH_STORAGE_TYPES_H_
 
 #include <algorithm>
+#include <iostream>
 #include <cstdint>
 #include <vector>
+#include <cstdio>
 
 #if __cplusplus >= 201103L
 #include <unordered_map>
@@ -56,6 +58,9 @@ public:
     for (size_t i = 1; i <= sizes.size(); ++i) {
       offsets_.emplace_back(offsets_[i-1] + sizes[i-1]);
     }
+    for (size_t i = 0; i < offsets_.size(); ++i) {
+      std::cerr << "offset[" << i << "] = " << offsets_[i] << std::endl;
+    }
   }
   MultiArray(MultiArray&& rhs) {
     values_ = rhs.values_;
@@ -79,6 +84,7 @@ public:
     return *reinterpret_cast<const T *>(target);
   }
   int32_t Size() const {
+    std::cerr << "marray size = " << (*offsets_.rbegin()) << std::endl;
     return *offsets_.rbegin();
   }
 private:
@@ -119,6 +125,7 @@ public:
 
   Array(std::shared_ptr<MultiArray<T>> const &mvalue)
     : value_(nullptr), mvalue_(mvalue), size_(mvalue->Size()) {
+    std::cerr << "ctor: " << size_ << std::endl;
   }
 
   Array(const T* value, int32_t size)
@@ -139,23 +146,24 @@ public:
   Array(const Array& rhs) {
     value_ = rhs.value_;
     mvalue_ = rhs.mvalue_;
+    rangevalue_ = rhs.rangevalue_;
     size_ = rhs.size_;
   }
 
   Array(Array&& rhs) {
     value_ = rhs.value_;
     mvalue_ = rhs.mvalue_;
+    rangevalue_ = rhs.rangevalue_;
     size_ = rhs.size_;
   }
 
-  virtual ~Array() {
+  operator bool () const {
+    std::cerr << "empty = " << value_ << " -- " << mvalue_ << " -- " << rangevalue_ << " -- " << size_ << std::endl;
+    std::cerr << "decision = " << ((value_ != nullptr || mvalue_ != nullptr || rangevalue_ != nullptr) && size_ != 0) << std::endl;
+    return (value_ != nullptr || mvalue_ != nullptr || rangevalue_ != nullptr) && size_ != 0;
   }
 
-  virtual operator bool () const {
-    return value_ != nullptr && size_ != 0;
-  }
-
-  virtual T operator[] (int32_t i) const {
+  T operator[] (int32_t i) const {
     if (mvalue_) {
       return mvalue_->operator[](i);
     }
@@ -169,7 +177,8 @@ public:
     return this->operator[](i);
   }
 
-  virtual int32_t Size() const {
+  int32_t Size() const {
+    std::cerr << "array size = " << size_ << std::endl;
     return size_;
   }
 

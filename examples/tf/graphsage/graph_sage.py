@@ -100,7 +100,8 @@ class GraphSage(gl.LearningBasedModel):
     self.encoders = self._encoders()
 
   def _sample_seed(self):
-    return self.graph.V(self.train_node_type).batch(self.batch_size).values()
+    batch = self.graph.V(self.train_node_type).batch(self.batch_size).values()
+    return batch
 
   def _val_sample_seed(self):
     return self.graph.V(self.val_node_type).batch(self.val_batch_size).values()
@@ -228,6 +229,7 @@ class GraphSage(gl.LearningBasedModel):
     iterator = self.ego_flow.iterator
     src_emb = self.pos_src_emb
     src_ids = self.pos_src_ego_tensor.src.ids
+    print('xxxxxids', src_ids) 
     return src_ids, src_emb, iterator
 
   def feed_training_args(self):

@@ -16,7 +16,7 @@ def preprocess(dataset):
             new_line = line[0]
             attrs = line[1].split(":")
             for a in attrs:
-                new_line = new_line + "|" + a
+                new_line = new_line + "|" + a + '.0'
             f.write(new_line + "\n")
 
 

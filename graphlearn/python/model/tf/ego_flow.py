@@ -181,7 +181,10 @@ class EgoFlow(object):
     while True:
       try:
         batch_seed = self._sample_seed().next()
+        print('batch_seed', batch_seed.ids)
         pos_edge = self._positive_sample(batch_seed)
+        print("pos_edge src_ids", pos_edge.src_ids)
+        print("pos_edge dst_ids", pos_edge.dst_ids)
         # pos src
         pos_src_recept = self._receptive_fn(pos_edge.src_nodes)
 

@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include <iostream>
+
 #include <vector>
 #include "graphlearn/common/base/errors.h"
 #include "graphlearn/common/base/log.h"
@@ -45,6 +47,8 @@ public:
       int64_t src_id = src_ids[i];
       auto neighbor_ids = storage->GetNeighbors(src_id);
       auto edge_ids = storage->GetOutEdges(src_id);
+      std::cerr << "neighbor_ids = " << neighbor_ids.Size() << std::endl;
+      std::cerr << "edge_ids = " << edge_ids.Size() << std::endl;
       if (neighbor_ids && edge_ids) {
         if (neighbor_ids.Size() != edge_ids.Size()) {
           LOG(FATAL) << "Inconsistent size of neighbors and edges.";
@@ -66,7 +70,9 @@ public:
       int64_t src_id = src_ids[i];
       auto neighbor_ids = storage->GetNeighbors(src_id);
       auto edge_ids = storage->GetOutEdges(src_id);
-      if (neighbor_ids) {
+      std::cerr << "neighbor_ids = " << neighbor_ids.Size() << std::endl;
+      std::cerr << "edge_ids = " << edge_ids.Size() << std::endl;
+      if (neighbor_ids && edge_ids) {
         int32_t neighbor_size = neighbor_ids.Size();
         auto padder = GetPadder(neighbor_ids, edge_ids);
         s = padder->Pad(res, neighbor_size, neighbor_size);

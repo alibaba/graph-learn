@@ -53,26 +53,33 @@ def train_local(config, graph):
                                   config['weight_decay']))
   print("start to train...")
   trainer.train()
-  embs = trainer.get_node_embedding()
-  print("shape:", embs.shape)
-  np.save(config['emb_save_dir'], embs)
+  emb_ids, emb_values = trainer.get_node_embedding()
+  print('shape: ', emb_ids.shape, emb_values.shape)
+  np.save(config['emb_save_dir'] + '_ids', emb_ids)
+  np.save(config['emb_save_dir'] + '_values', emb_values)
 
 
 from sklearn.metrics.pairwise import cosine_similarity
 def test_local(config, graph):
   test_count = 0.0
   find_count = 0.0
-  embs = np.load(config['emb_save_dir'] + ".npy")
+  emb_ids = np.load(config['emb_save_dir'] + "_ids.npy")
+  emb_values = np.load(config['emb_save_dir'] + "_values.npy")
   id_map = {}
-  for i in range(embs.shape[0]):
-    id_map[embs[i][0]] = i
+  with np.printoptions(threshold=np.inf, suppress=True):
+    print('emb_ids = ', emb_ids)
+    print('emb_values = ', emb_values)
+  for idx, vid in enumerate(emb_ids):
+    id_map[vid] = idx
+  print('id_map = ', id_map)
   sampler_edge = graph.edge_sampler(config['edge_type'], 1000)
   edges_list = sampler_edge.get()
   src_ids = edges_list.src_ids
   dst_ids = edges_list.dst_ids
   for j in range(len(src_ids)):
-    vec_a = embs[id_map[src_ids[j]]][1:]
-    vec_b = embs[id_map[dst_ids[j]]][1:]
+    print('src-dst = ', src_ids[j], dst_ids[j])
+    vec_a = emb_values[id_map[src_ids[j]]]
+    vec_b = emb_values[id_map[dst_ids[j]]]
     num = float(np.sum(vec_a * vec_b))
     denom = np.linalg.norm(vec_a) * np.linalg.norm(vec_b)
     if denom == 0:
@@ -132,6 +139,13 @@ def train_dist(config, graph):
 
 def local_training(handle, config):
   g = gl.get_graph_from_handle(handle, worker_index=0, worker_count=1, standalone=True)
+  gl.set_default_neighbor_id(1)
+  nodes = g.V('person').batch(1).emit()
+  print(nodes.ids)
+  edges = g.V('person', feed=nodes.ids).outE('knows').sample(30).by('random').emit(lambda x: x[1])
+  print('srcs', edges.src_ids)
+  print('dsts', edges.dst_ids)
+  print(nodes.ids)
   train_local(config, g)
   test_local(config, g)
   g.close()
@@ -176,6 +190,7 @@ def main():
   s = base64.b64decode(handle_str).decode('utf-8')
   handle = json.loads(s)
   handle['pod_index'] = int(sys.argv[2])
+  handle['node_schema'] = ['person:false:false:2:0:6']
   node_type = handle['node_schema'][0].split(':')[0]
   edge_type = handle['edge_schema'][0].split(':')[1]
 

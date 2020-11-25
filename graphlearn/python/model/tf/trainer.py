@@ -78,7 +78,9 @@ class TFTrainer(Trainer):
     dur = []
     feed_dict = self.model.feed_training_args()
     if iterator is not None:
+      print('start run iterator initializer.')
       self.sess.run(iterator.initializer)
+      print('start run iterator.')
       iter = 0
       while True:
         try:
@@ -95,6 +97,7 @@ class TFTrainer(Trainer):
         except tf.errors.OutOfRangeError:
           break
     else:  # sample full graph in one batch
+      print('start run not iterator.')
       start_time = time.time()
       outs = self.sess.run([train_op, loss],
                            feed_dict=feed_dict)

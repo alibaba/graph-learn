@@ -75,7 +75,7 @@ public:
 
   virtual void SetSideInfo(const SideInfo *info) override {}
   virtual const SideInfo *GetSideInfo() const override {
-    // std::cerr << "node: get sideinfo" << std::endl;
+    std::cerr << "node: get sideinfo" << std::endl;
     return frag_node_side_info(frag_, node_label_);
   }
 
@@ -123,6 +123,9 @@ public:
 
   virtual Attribute GetAttribute(IdType node_id) const override {
     auto v = vertex_t{static_cast<uint64_t>(node_id)};
+    if (!frag_->IsInnerVertex(v)) {
+      return Attribute(AttributeValue::Default(GetSideInfo()), false);
+    }
     auto label = frag_->vertex_label(v);
     auto offset = frag_->vertex_offset(v);
     auto table = frag_->vertex_data_table(label);

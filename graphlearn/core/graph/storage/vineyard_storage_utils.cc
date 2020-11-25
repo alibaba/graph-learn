@@ -116,10 +116,13 @@ get_all_outgoing_neighbor_nodes(std::shared_ptr<gl_frag_t> const &frag,
   using nbr_unit_t = vineyard::property_graph_utils::NbrUnit<gl_frag_t::vid_t,
                                                              gl_frag_t::eid_t>;
   // FIXME extend Array to support element_size and element_offset.
+  auto v = vertex_t{static_cast<uint64_t>(src_id)};
+  if (!frag->IsInnerVertex(v)) {
+    return Array<IdType>();
+  }
   std::vector<const IdType *> values;
   std::vector<int32_t> sizes;
-  auto neighbor_list = frag->GetOutgoingAdjList(
-      vertex_t{static_cast<uint64_t>(src_id)}, edge_label);
+  auto neighbor_list = frag->GetOutgoingAdjList(v, edge_label);
   values.emplace_back(
       reinterpret_cast<const IdType *>(neighbor_list.begin_unit()));
   sizes.emplace_back(neighbor_list.Size());
@@ -133,10 +136,13 @@ get_all_outgoing_neighbor_edges(std::shared_ptr<gl_frag_t> const &frag,
   using nbr_unit_t = vineyard::property_graph_utils::NbrUnit<gl_frag_t::vid_t,
                                                              gl_frag_t::eid_t>;
   // FIXME extend Array to support element_size and element_offset.
+  auto v = vertex_t{static_cast<uint64_t>(src_id)};
+  if (!frag->IsInnerVertex(v)) {
+    return Array<IdType>();
+  }
   std::vector<const IdType *> values;
   std::vector<int32_t> sizes;
-  auto neighbor_list = frag->GetOutgoingAdjList(
-      vertex_t{static_cast<uint64_t>(src_id)}, edge_label);
+  auto neighbor_list = frag->GetOutgoingAdjList(v, edge_label);
   values.emplace_back(
       reinterpret_cast<const IdType *>(neighbor_list.begin_unit()));
   sizes.emplace_back(neighbor_list.Size());
@@ -338,6 +344,7 @@ SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
   }
   side_info->type = std::to_string(node_label);
   side_info_cache[frag->id()][node_label] = side_info;
+  std::cerr << "finish node sideinfo " << frag->id();
   return side_info.get();
 }
 
