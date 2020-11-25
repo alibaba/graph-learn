@@ -105,7 +105,11 @@ public:
       return -1;
     }
     auto v = vertex_t{static_cast<uint64_t>(node_id)};
-    auto table = frag_->vertex_data_table(frag_->vertex_label(v));
+    auto label = frag_->vertex_label(v);
+    if (label != node_label_) {
+      return -1;
+    }
+    auto table = frag_->vertex_data_table(node_label_);
     int index = find_index_of_name(table->schema(), "weight");
     if (index == -1) {
       return 0.0;
@@ -119,7 +123,11 @@ public:
       return -1;
     }
     auto v = vertex_t{static_cast<uint64_t>(node_id)};
-    auto table = frag_->vertex_data_table(frag_->vertex_label(v));
+    auto label = frag_->vertex_label(v);
+    if (label != node_label_) {
+      return -1;
+    }
+    auto table = frag_->vertex_data_table(node_label_);
     int index = find_index_of_name(table->schema(), "label");
     if (index == -1) {
       return -1;
@@ -137,6 +145,14 @@ public:
       return Attribute(AttributeValue::Default(side_info_), false);
     }
     auto label = frag_->vertex_label(v);
+    if (label != node_label_) {
+      return Attribute(AttributeValue::Default(side_info_), false);
+    }
+#ifndef NDEBUG
+    std::cerr << "node: get attribute: node_id = " << node_id
+              << ", label -> " << label << ", offset -> " << offset
+              << std::endl;
++#endif
     auto offset = frag_->vertex_offset(v);
     auto table = frag_->vertex_data_table(label);
     return Attribute(arrow_line_to_attribute_value(table, offset, 0), true);
