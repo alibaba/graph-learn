@@ -53,7 +53,7 @@ def train_local(config, graph):
                                   config['weight_decay']))
   print("start to train...")
   trainer.train()
-  emb_ids, emb_values = trainer.get_node_embedding()
+  emb_ids, emb_values = trainer.get_node_embedding_fixed()
   print('shape: ', emb_ids.shape, emb_values.shape)
   np.save(config['emb_save_dir'] + '_ids', emb_ids)
   np.save(config['emb_save_dir'] + '_values', emb_values)
