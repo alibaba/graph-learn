@@ -49,6 +49,7 @@ void init_table_accessors(std::shared_ptr<arrow::Table> const &table,
     } else {
       LOG(ERROR) << "Unsupported column type: " << array->type()->ToString();
     }
+    attr_index += 1;
   }
 }
 
