@@ -53,6 +53,8 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
   m.def("set_server_hosts", &SetGlobalFlagServerHosts);
   m.def("set_vineyard_graph_id", &SetGlobalFlagVineyardGraphID);
   m.def("set_vineyard_ipc_socket", &SetGlobalFlagVineyardIPCSocket);
+  m.def("set_attr_start_index", &SetGlobalFlagAttrStartIndex);
+  m.def("set_attr_end_index", &SetGlobalFlagAttrEndIndex);
 
   py::enum_<error::Code>(m, "ErrorCode")
     .value("OK", error::Code::OK)
@@ -116,7 +118,7 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
     .def_readwrite("view_type", &io::NodeSource::view_type)
     .def("append_attr_type", &io::NodeSource::AppendAttrType)
     .def("append_hash_bucket", &io::NodeSource::AppendHashBucket);
- 
+
   py::class_<io::EdgeSource>(m, "EdgeSource")
     .def(py::init<>())
     .def_readwrite("path", &io::EdgeSource::path)
@@ -160,7 +162,8 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
         &NewRpcClient,
         py::return_value_policy::take_ownership,
         py::arg("server_id") = -1,
-        py::arg("server_own") = false);
+        py::arg("server_own") = false,
+        py::arg("client_own") = true);
 
   init_client_module(m);
 }  //NOLINT [readability/fn_size]

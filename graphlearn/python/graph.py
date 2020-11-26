@@ -26,6 +26,7 @@ import warnings
 
 from graphlearn import pywrap_graphlearn as pywrap
 from graphlearn.python import sampler as samplers
+from graphlearn.python.client import Client
 from graphlearn.python.decoder import Decoder
 from graphlearn.python.errors import raise_exception_on_not_ok_status
 from graphlearn.python.query import VertexQuery, EdgeQuery, QueryEngine
@@ -325,7 +326,7 @@ class Graph(object):
         pywrap.set_tracker(tracker)
         pywrap.set_client_id(task_index)
 
-      self._client = pywrap.in_memory_client()
+      self._client = Client(client_id=task_index)
       self._server = Server(task_index, task_count, host, tracker)
       self._server.start()
       self._server.init(self._edge_sources, self._node_sources)
@@ -362,7 +363,7 @@ class Graph(object):
       if job_name == "client":
         pywrap.set_tracker(tracker)
         pywrap.set_client_id(task_index)
-        self._client = pywrap.rpc_client()
+        self._client = Client(client_id=task_index, in_memory=False)
         self._server = None
       elif job_name == "server":
         self._client = None
