@@ -178,8 +178,14 @@ def main():
   s = base64.b64decode(handle_str).decode('utf-8')
   handle = json.loads(s)
   handle['pod_index'] = int(sys.argv[2])
-  node_type = handle['node_schema'][0].split(':')[0]
-  edge_type = handle['edge_schema'][0].split(':')[1]
+  node_type = sys.argv[3]
+  edge_type = sys.argv[4]
+  for node_info in handle['node_schema']:
+    if node_info.split(':')[0] == node_type:
+      handle['node_schema'] = [node_info]
+  for edge_info in handle['edge_schema']:
+    if edge_info.split(':')[1] == edge_type:
+      handle['edge_schema'] = [edge_info]
 
   config = {'class_num': 32,
             'features_num': 2,
