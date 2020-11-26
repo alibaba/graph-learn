@@ -45,6 +45,11 @@ public:
       node_label_ = vlabel_index - vlabels.begin();
     }
     side_info_ = frag_node_side_info(frag_, node_label_);
+
+    auto vtable = frag_->vertex_data_table(node_label_);
+    init_table_accessors(vtable, 0, vtable->num_columns(), i32_indexes_,
+                         i64_indexes_, f32_indexes_, f64_indexes_, s_indexes_,
+                         ls_indexes_, vertex_table_accessors_);
   }
 
   explicit VineyardNodeStorage(label_id_t const node_label = 0)
@@ -68,6 +73,11 @@ public:
       throw std::runtime_error("Node: failed to find a local fragment");
     }
     side_info_ = frag_node_side_info(frag_, node_label_);
+
+    auto vtable = frag_->vertex_data_table(node_label_);
+    init_table_accessors(vtable, 0, vtable->num_columns(), i32_indexes_,
+                         i64_indexes_, f32_indexes_, f64_indexes_, s_indexes_,
+                         ls_indexes_, vertex_table_accessors_);
   }
 
   virtual ~VineyardNodeStorage() = default;
@@ -76,9 +86,7 @@ public:
   virtual void Unlock() override {}
 
   virtual void SetSideInfo(const SideInfo *info) override {}
-  virtual const SideInfo *GetSideInfo() const override {
-    return side_info_;
-  }
+  virtual const SideInfo *GetSideInfo() const override { return side_info_; }
 
   /// Do some re-organization after data fixed.
   virtual void Build() override {}
@@ -150,12 +158,20 @@ public:
     }
     auto offset = frag_->vertex_offset(v);
 #ifndef NDEBUG
-    std::cerr << "node: get attribute: node_id = " << node_id
-              << ", label -> " << label << ", offset -> " << offset
-              << std::endl;
+    std::cerr << "node: get attribute: node_id = " << node_id << ", label -> "
+              << label << ", offset -> " << offset << std::endl;
 #endif
+
+#if 0
     auto table = frag_->vertex_data_table(label);
-    return Attribute(arrow_line_to_attribute_value(table, offset, 0), true);
+    return Attribute(arrow_line_to_attribute_value(table, offset, 0,
+                                                   table->num_columns() - 1),
+                     true);
+#else
+    return Attribute(arrow_line_to_attribute_value_fast(
+        offset, i32_indexes_, i64_indexes_, f32_indexes_, f64_indexes_,
+        s_indexes_, ls_indexes_, vertex_table_accessors_), true);
+#endif
   }
 
   /// For the needs of traversal and sampling, the data distribution is
@@ -168,8 +184,7 @@ public:
 #ifndef NDEBUG
     std::cerr << "node: get ids: " << node_label_
               << ", range begin = " << range.begin().GetValue()
-              << ", range end = " << range.end().GetValue()
-              << std::endl;
+              << ", range end = " << range.end().GetValue() << std::endl;
 #endif
     return IdArray(frag_->GetInnerVertexGid(range.begin()),
                    frag_->GetInnerVertexGid(range.end()));
@@ -228,7 +243,8 @@ public:
     auto vtable = frag_->vertex_data_table(node_label_);
     for (auto id = id_range.begin(); id < id_range.end(); ++id) {
       auto offset = frag_->vertex_offset(id);
-      value_list->emplace_back(arrow_line_to_attribute_value(vtable, offset, 0),
+      value_list->emplace_back(arrow_line_to_attribute_value(
+                                   vtable, offset, 0, vtable->num_columns() - 1),
                                true);
     }
     return value_list;
@@ -257,6 +273,11 @@ private:
   std::shared_ptr<gl_frag_t> frag_;
   label_id_t node_label_;
   SideInfo *side_info_ = nullptr;
+
+  // for fast attribute access
+  std::vector<int> i32_indexes_, i64_indexes_, f32_indexes_, f64_indexes_,
+      s_indexes_, ls_indexes_;
+  std::vector<const void *> vertex_table_accessors_;
 };
 
 } // namespace io

@@ -38,9 +38,29 @@ using graphlearn::io::IndexType;
 using graphlearn::io::NewDataHeldAttributeValue;
 using graphlearn::io::SideInfo;
 
+void init_table_accessors(std::shared_ptr<arrow::Table> const &table,
+                          size_t start_index, size_t end_index,
+                          std::vector<int> &i32_indexes,
+                          std::vector<int> &i64_indexes,
+                          std::vector<int> &f32_indexes,
+                          std::vector<int> &f64_indexes,
+                          std::vector<int> &s_indexes,
+                          std::vector<int> &ls_indexes,
+                          std::vector<const void*> &table_accessors);
+
 AttributeValue *
 arrow_line_to_attribute_value(std::shared_ptr<arrow::Table> table,
-                              int row_index, int start_index = 0);
+                              int row_index, int start_index, int end_index);
+
+AttributeValue *arrow_line_to_attribute_value_fast(
+                          const int row_index,
+                          const std::vector<int> &i32_indexes,
+                          const std::vector<int> &i64_indexes,
+                          const std::vector<int> &f32_indexes,
+                          const std::vector<int> &f64_indexes,
+                          const std::vector<int> &s_indexes,
+                          const std::vector<int> &ls_indexes,
+                          const std::vector<const void*> &table_accessors);
 
 const IdArray get_all_src_ids(std::shared_ptr<gl_frag_t> const &frag,
                               const label_id_t edge_label);
@@ -79,7 +99,7 @@ int32_t get_edge_label(std::shared_ptr<gl_frag_t> const &frag,
 Attribute get_edge_attribute(std::shared_ptr<gl_frag_t> const &frag,
                              label_id_t const edge_label, IdType edge_id);
 
-void initSrcDstList(std::shared_ptr<gl_frag_t> const &frag,
+void init_src_dst_list(std::shared_ptr<gl_frag_t> const &frag,
                     label_id_t const edge_label, std::vector<IdType> &src_lists,
                     std::vector<IdType> &dst_lists);
 

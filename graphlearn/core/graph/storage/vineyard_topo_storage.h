@@ -42,7 +42,7 @@ public:
     } else {
       edge_label_ = elabel_index - elabels.begin();
     }
-    initSrcDstList(frag_, edge_label_, src_lists_, dst_lists_);
+    init_src_dst_list(frag_, edge_label_, src_lists_, dst_lists_);
   }
 
   explicit VineyardTopoStorage(label_id_t const edge_label = 0)
@@ -63,7 +63,7 @@ public:
     if (frag_ == nullptr) {
       throw std::runtime_error("Topo: failed to find a local fragment");
     }
-    initSrcDstList(frag_, edge_label_, src_lists_, dst_lists_);
+    init_src_dst_list(frag_, edge_label_, src_lists_, dst_lists_);
   }
   virtual ~VineyardTopoStorage() = default;
 

@@ -43,7 +43,7 @@ public:
     } else {
       edge_label_ = elabel_index - elabels.begin();
     }
-    initSrcDstList(frag_, edge_label_, src_lists_, dst_lists_);
+    init_src_dst_list(frag_, edge_label_, src_lists_, dst_lists_);
     side_info_ = frag_edge_side_info(frag_, edge_label_);
   }
 
@@ -65,7 +65,7 @@ public:
     if (frag_ == nullptr) {
       throw std::runtime_error("Edge: failed to find a local fragment");
     }
-    initSrcDstList(frag_, edge_label_, src_lists_, dst_lists_);
+    init_src_dst_list(frag_, edge_label_, src_lists_, dst_lists_);
     side_info_ = frag_edge_side_info(frag_, edge_label_);
   }
 
@@ -175,7 +175,7 @@ public:
     auto attribute_list = new std::vector<Attribute>();
     attribute_list->reserve(table->num_rows());
     for (size_t i = 0; i < table->num_rows(); ++i) {
-      attribute_list->emplace_back(arrow_line_to_attribute_value(table, i, 0),
+      attribute_list->emplace_back(arrow_line_to_attribute_value(table, i, 0, table->num_columns()),
                                    true);
     }
     return attribute_list;

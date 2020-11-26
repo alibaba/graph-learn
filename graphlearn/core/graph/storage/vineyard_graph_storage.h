@@ -44,7 +44,7 @@ public:
     } else {
       edge_label_ = elabel_index - elabels.begin();
     }
-    initSrcDstList(frag_, edge_label_, src_lists_, dst_lists_);
+    init_src_dst_list(frag_, edge_label_, src_lists_, dst_lists_);
     side_info_ = frag_edge_side_info(frag_, edge_label_);
   }
 
@@ -66,7 +66,7 @@ public:
     if (frag_ == nullptr) {
       throw std::runtime_error("Graph: failed to find a local fragment");
     }
-    initSrcDstList(frag_, edge_label_, src_lists_, dst_lists_);
+    init_src_dst_list(frag_, edge_label_, src_lists_, dst_lists_);
     side_info_ = frag_edge_side_info(frag_, edge_label_);
   }
 
