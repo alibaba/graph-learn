@@ -134,13 +134,6 @@ def train_dist(config, graph):
 
 def local_training(handle, config):
   g = gl.get_graph_from_handle(handle, worker_index=0, worker_count=1, standalone=True)
-  gl.set_default_neighbor_id(1)
-  nodes = g.V('person').batch(1).emit()
-  print(nodes.ids)
-  edges = g.V('person', feed=nodes.ids).outE('knows').sample(30).by('random').emit(lambda x: x[1])
-  print('srcs', edges.src_ids)
-  print('dsts', edges.dst_ids)
-  print(nodes.ids)
   train_local(config, g)
   test_local(config, g)
   g.close()
