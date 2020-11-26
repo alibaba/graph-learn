@@ -89,17 +89,47 @@ private:
   int32_t element_offset_;
 };
 
+template <typename T>
+class RangeArray {
+public:
+  RangeArray(T const &begin, T const &end): begin_(begin), end_(end) {}
+
+  virtual operator bool () const {
+    return begin_ == end_;
+  }
+
+  virtual T operator[] (int32_t i) const {
+    return begin_ + i;
+  }
+
+  virtual int32_t Size() const {
+    return end_ - begin_;
+  }
+
+private:
+  T const begin_;
+  T const end_;
+};
+
 template <class T>
 class Array {
 public:
   Array() : value_(nullptr), mvalue_(nullptr), size_(0) {
   }
+
   Array(std::shared_ptr<MultiArray<T>> const &mvalue)
     : value_(nullptr), mvalue_(mvalue), size_(mvalue->Size()) {
   }
 
   Array(const T* value, int32_t size)
     : value_(value), size_(size) {
+  }
+
+  Array(T const &begin, T const &end) :
+      value_(nullptr),
+      mvalue_(nullptr),
+      rangevalue_(std::make_shared<RangeArray<T>>(begin, end)),
+      size_(end - begin) {
   }
 
   explicit Array(const std::vector<T>& values)
@@ -109,24 +139,33 @@ public:
   Array(const Array& rhs) {
     value_ = rhs.value_;
     mvalue_ = rhs.mvalue_;
+    rangevalue_ = rhs.rangevalue_;
     size_ = rhs.size_;
   }
 
   Array(Array&& rhs) {
     value_ = rhs.value_;
     mvalue_ = rhs.mvalue_;
+    rangevalue_ = rhs.rangevalue_;
     size_ = rhs.size_;
   }
 
   operator bool () const {
-    return value_ != nullptr && size_ != 0;
+    return (value_ != nullptr || mvalue_ != nullptr || rangevalue_ != nullptr) && size_ != 0;
   }
 
   T operator[] (int32_t i) const {
     if (mvalue_) {
       return mvalue_->operator[](i);
     }
+    if (rangevalue_) {
+      return rangevalue_->operator[](i);
+    }
     return value_[i];
+  }
+
+  T at(int32_t i) const {
+    return this->operator[](i);
   }
 
   int32_t Size() const {
@@ -136,6 +175,7 @@ public:
 private:
   const T* value_;
   std::shared_ptr<MultiArray<T>> mvalue_;
+  std::shared_ptr<RangeArray<T>> rangevalue_;
   int32_t size_;
 };
 

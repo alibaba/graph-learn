@@ -24,7 +24,8 @@ arrow_line_to_attribute_value(std::shared_ptr<arrow::Table> table,
                               int row_index, int start_index) {
   auto attr = NewDataHeldAttributeValue();
   VINEYARD_ASSERT(row_index < table->num_rows());
-  for (int idx = start_index; idx < table->num_columns(); ++idx) {
+  // NOTE: the last column is id column, cast off
+  for (int idx = start_index; idx < table->num_columns() - 1; ++idx) {
     auto arr = table->column(idx)->chunk(0);
     switch (arr->type()->id()) {
     case arrow::Type::INT64: {
@@ -32,9 +33,6 @@ arrow_line_to_attribute_value(std::shared_ptr<arrow::Table> table,
           std::dynamic_pointer_cast<
               typename vineyard::ConvertToArrowType<int64_t>::ArrayType>(arr)
               ->Value(row_index);
-#ifndef NDEBUG
-      std::cerr << "int64 value: " << value << std::endl;
-#endif
       attr->Add(value);
     } break;
     case arrow::Type::FLOAT: {
@@ -42,9 +40,6 @@ arrow_line_to_attribute_value(std::shared_ptr<arrow::Table> table,
           std::dynamic_pointer_cast<
               typename vineyard::ConvertToArrowType<float>::ArrayType>(arr)
               ->Value(row_index);
-#ifndef NDEBUG
-      std::cerr << "float value: " << value << std::endl;
-#endif
       attr->Add(value);
     } break;
     case arrow::Type::DOUBLE: {
@@ -52,9 +47,6 @@ arrow_line_to_attribute_value(std::shared_ptr<arrow::Table> table,
           std::dynamic_pointer_cast<
               typename vineyard::ConvertToArrowType<double>::ArrayType>(arr)
               ->Value(row_index);
-#ifndef NDEBUG
-      std::cerr << "double value: " << value << std::endl;
-#endif
       attr->Add(static_cast<float>(value));
     } break;
     case arrow::Type::STRING: {
@@ -74,36 +66,6 @@ arrow_line_to_attribute_value(std::shared_ptr<arrow::Table> table,
     }
   }
   return attr;
-}
-
-const IdList *get_all_src_ids(std::shared_ptr<gl_frag_t> const &frag,
-                              const label_id_t edge_label) {
-  int v_label_num = frag->vertex_label_num();
-  auto src_id_list = new IdList();
-  for (int label_id = 0; label_id < v_label_num; ++label_id) {
-    auto id_range = frag->InnerVertices(label_id);
-    for (auto id = id_range.begin(); id < id_range.end(); ++id) {
-      if (frag->HasChild(id, edge_label)) {
-        src_id_list->emplace_back(id.GetValue());
-      }
-    }
-  }
-  return src_id_list;
-}
-
-const IdList *get_all_dst_ids(std::shared_ptr<gl_frag_t> const &frag,
-                              const label_id_t edge_label) {
-  int v_label_num = frag->vertex_label_num();
-  auto dst_id_list = new IdList();
-  for (int label_id = 0; label_id < v_label_num; ++label_id) {
-    auto id_range = frag->InnerVertices(label_id);
-    for (auto id = id_range.begin(); id < id_range.end(); ++id) {
-      if (frag->HasParent(id, edge_label)) {
-        dst_id_list->emplace_back(id.GetValue());
-      }
-    }
-  }
-  return dst_id_list;
 }
 
 const IndexList *get_all_in_degree(std::shared_ptr<gl_frag_t> const &frag,
@@ -145,10 +107,13 @@ get_all_outgoing_neighbor_nodes(std::shared_ptr<gl_frag_t> const &frag,
   using nbr_unit_t = vineyard::property_graph_utils::NbrUnit<gl_frag_t::vid_t,
                                                              gl_frag_t::eid_t>;
   // FIXME extend Array to support element_size and element_offset.
+  auto v = vertex_t{static_cast<uint64_t>(src_id)};
+  if (!frag->IsInnerVertex(v)) {
+    return Array<IdType>();
+  }
   std::vector<const IdType *> values;
   std::vector<int32_t> sizes;
-  auto neighbor_list = frag->GetOutgoingAdjList(
-      vertex_t{static_cast<uint64_t>(src_id)}, edge_label);
+  auto neighbor_list = frag->GetOutgoingAdjList(v, edge_label);
   values.emplace_back(
       reinterpret_cast<const IdType *>(neighbor_list.begin_unit()));
   sizes.emplace_back(neighbor_list.Size());
@@ -162,10 +127,13 @@ get_all_outgoing_neighbor_edges(std::shared_ptr<gl_frag_t> const &frag,
   using nbr_unit_t = vineyard::property_graph_utils::NbrUnit<gl_frag_t::vid_t,
                                                              gl_frag_t::eid_t>;
   // FIXME extend Array to support element_size and element_offset.
+  auto v = vertex_t{static_cast<uint64_t>(src_id)};
+  if (!frag->IsInnerVertex(v)) {
+    return Array<IdType>();
+  }
   std::vector<const IdType *> values;
   std::vector<int32_t> sizes;
-  auto neighbor_list = frag->GetOutgoingAdjList(
-      vertex_t{static_cast<uint64_t>(src_id)}, edge_label);
+  auto neighbor_list = frag->GetOutgoingAdjList(v, edge_label);
   values.emplace_back(
       reinterpret_cast<const IdType *>(neighbor_list.begin_unit()));
   sizes.emplace_back(neighbor_list.Size());
@@ -242,8 +210,8 @@ void initSrcDstList(std::shared_ptr<gl_frag_t> const &frag,
     for (auto id = id_range.begin(); id < id_range.end(); ++id) {
       auto oes = frag->GetOutgoingAdjList(id, edge_label);
       for (auto &e : oes) {
-        src_lists[e.edge_id()] = id.GetValue();
-        dst_lists[e.edge_id()] = e.neighbor().GetValue();
+        src_lists[e.edge_id()] = frag->GetInnerVertexGid(id);
+        dst_lists[e.edge_id()] = frag->Vertex2Gid(e.neighbor());
       }
     }
   }
@@ -328,11 +296,12 @@ SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
   if (cache_entry) {
     return cache_entry.get();
   }
+  std::cerr << "init node sideinfo " << frag->id();
   auto side_info = std::make_shared<SideInfo>();
   // compute attribute numbers of i/f/s
   auto node_table = frag->vertex_data_table(node_label);
   auto vtable_schema = node_table->schema();
-  for (size_t idx = 0; idx < vtable_schema->fields().size(); ++idx) {
+  for (size_t idx = 0; idx < vtable_schema->fields().size() - 1; ++idx) {
     auto field = vtable_schema->fields()[idx];
     switch (field->type()->id()) {
     case arrow::Type::INT64:
@@ -353,7 +322,7 @@ SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
     }
   }
   side_info->format = kDefault;
-  for (auto const &field : vtable_schema->fields()) {
+  for (size_t idx = 0; idx < vtable_schema->fields().size() - 1; ++idx) {
     // if (field->name() == "label") {
     //   side_info->format |= kLabeled;
     // } else if (field->name() == "weight") {

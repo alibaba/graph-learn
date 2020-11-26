@@ -45,6 +45,7 @@ public:
       edge_label_ = elabel_index - elabels.begin();
     }
     initSrcDstList(frag_, edge_label_, src_lists_, dst_lists_);
+    side_info_ = frag_edge_side_info(frag_, edge_label_);
   }
 
   explicit VineyardGraphStorage(label_id_t const edge_label = 0)
@@ -65,6 +66,8 @@ public:
     if (frag_ == nullptr) {
       throw std::runtime_error("Graph: failed to find a local fragment");
     }
+    initSrcDstList(frag_, edge_label_, src_lists_, dst_lists_);
+    side_info_ = frag_edge_side_info(frag_, edge_label_);
   }
 
   virtual ~VineyardGraphStorage() = default;
@@ -74,7 +77,7 @@ public:
 
   virtual void SetSideInfo(const SideInfo *info) override {}
   virtual const SideInfo *GetSideInfo() const override {
-    return frag_edge_side_info(frag_, edge_label_);
+    return side_info_;
   }
 
   virtual void Add(EdgeValue *value) override {}
@@ -90,12 +93,21 @@ public:
     return get_edge_dst_id(frag_, edge_label_, dst_lists_, edge_id);
   }
   virtual float GetEdgeWeight(IdType edge_id) const override {
+    if (!side_info_->IsWeighted()) {
+      return -1;
+    }
     return get_edge_weight(frag_, edge_label_, edge_id);
   }
   virtual int32_t GetEdgeLabel(IdType edge_id) const override {
+    if (!side_info_->IsLabeled()) {
+      return -1;
+    }
     return get_edge_label(frag_, edge_label_, edge_id);
   }
   virtual Attribute GetEdgeAttribute(IdType edge_id) const override {
+    if (!side_info_->IsAttributed()) {
+      return Attribute();
+    }
     return get_edge_attribute(frag_, edge_label_, edge_id);
   }
 
@@ -120,17 +132,18 @@ public:
   virtual const IndexList *GetAllOutDegrees() const override {
     return get_all_out_degree(frag_, edge_label_);
   }
-  virtual const IdList *GetAllSrcIds() const override {
-    return get_all_src_ids(frag_, edge_label_);
+  virtual const IdArray GetAllSrcIds() const override {
+    return IdArray(src_lists_.data(), src_lists_.size());
   }
-  virtual const IdList *GetAllDstIds() const override {
-    return get_all_dst_ids(frag_, edge_label_);
+  virtual const IdArray GetAllDstIds() const override {
+    return IdArray(dst_lists_.data(), dst_lists_.size());
   }
 
 private:
   vineyard::Client client_;
   std::shared_ptr<gl_frag_t> frag_;
   label_id_t edge_label_;
+  SideInfo *side_info_ = nullptr;
 
   std::vector<IdType> src_lists_;
   std::vector<IdType> dst_lists_;

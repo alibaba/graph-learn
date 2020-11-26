@@ -97,10 +97,10 @@ def get_graph_from_handle(handle, worker_index, worker_count, standalone=False):
              decoder=get_decoder(weighted, labeled, n_int, n_float, n_string))
 
   gl.set_tracker_mode(0)
-  cluster = {'server': obj['server'], 'client_count': worker_count}
   if standalone:
     g.init()
   else:
+    cluster = {'server': obj['server'], 'client': obj['client']}
     g.init(cluster=cluster, task_index=worker_index, job_name="client")
   return g
 

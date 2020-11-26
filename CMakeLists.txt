@@ -296,6 +296,7 @@ add_dependencies (graphlearn_shared
     proto_target)
 
 if (TESTING)
+    add_custom_target(gl_tests)
     function (gl_add_test name)
         cmake_parse_arguments (args
         "" "" "SOURCES" ${ARGN})
@@ -317,6 +318,7 @@ if (TESTING)
             PRIVATE ${GL_CXX_FLAGS})
         add_dependencies (${name}
             gtest_target graphlearn_shared)
+        add_dependencies(gl_tests ${name})
     endfunction()
 
     gl_add_test (closure_unittest

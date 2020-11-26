@@ -51,8 +51,8 @@ public:
   virtual IndexType GetOutDegree(IdType src_id) const = 0;
   virtual const IndexList* GetAllInDegrees() const = 0;
   virtual const IndexList* GetAllOutDegrees() const = 0;
-  virtual const IdList* GetAllSrcIds() const = 0;
-  virtual const IdList* GetAllDstIds() const = 0;
+  virtual const IdArray GetAllSrcIds() const = 0;
+  virtual const IdArray GetAllDstIds() const = 0;
 };
 
 GraphStorage* NewMemoryGraphStorage();

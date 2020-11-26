@@ -44,6 +44,7 @@ public:
       edge_label_ = elabel_index - elabels.begin();
     }
     initSrcDstList(frag_, edge_label_, src_lists_, dst_lists_);
+    side_info_ = frag_edge_side_info(frag_, edge_label_);
   }
 
   explicit VineyardEdgeStorage(label_id_t const edge_label = 0)
@@ -64,13 +65,15 @@ public:
     if (frag_ == nullptr) {
       throw std::runtime_error("Edge: failed to find a local fragment");
     }
+    initSrcDstList(frag_, edge_label_, src_lists_, dst_lists_);
+    side_info_ = frag_edge_side_info(frag_, edge_label_);
   }
 
   virtual ~VineyardEdgeStorage() = default;
 
   virtual void SetSideInfo(const SideInfo *info) override {}
   virtual const SideInfo *GetSideInfo() const override {
-    return frag_edge_side_info(frag_, edge_label_);
+    return side_info_;
   }
 
   /// Do some re-organization after data fixed.
@@ -99,12 +102,21 @@ public:
     return get_edge_dst_id(frag_, edge_label_, dst_lists_, edge_id);
   }
   virtual float GetWeight(IdType edge_id) const override {
+    if (!side_info_->IsWeighted()) {
+      return -1;
+    }
     return get_edge_weight(frag_, edge_label_, edge_id);
   }
   virtual int32_t GetLabel(IdType edge_id) const override {
+    if (!side_info_->IsLabeled()) {
+      return -1;
+    }
     return get_edge_label(frag_, edge_label_, edge_id);
   }
   virtual Attribute GetAttribute(IdType edge_id) const override {
+    if (!side_info_->IsAttributed()) {
+      return Attribute();
+    }
     return get_edge_attribute(frag_, edge_label_, edge_id);
   }
 
@@ -113,74 +125,53 @@ public:
   ///
   /// Get all the source node ids, the count of which is the same with Size().
   /// These ids are not distinct.
-  virtual const IdList *GetSrcIds() const override {
-    auto src_id_list = new IdList();
-    for (label_id_t v_label = 0; v_label < frag_->vertex_label_num();
-         ++v_label) {
-      auto id_range = frag_->InnerVertices(v_label);
-      for (auto vid = id_range.begin(); vid < id_range.end(); ++vid) {
-        auto oes = frag_->GetOutgoingAdjList(vid, edge_label_);
-        for (auto &e : oes) {
-          src_id_list->emplace_back(vid.GetValue());
-        }
-      }
-    }
-    return src_id_list;
+  virtual const IdArray GetSrcIds() const override {
+    return IdArray(src_lists_.data(), src_lists_.size());
   }
+
   /// Get all the destination node ids, the count of which is the same with
   /// Size(). These ids are not distinct.
-  virtual const IdList *GetDstIds() const override {
-    auto dst_id_list = new IdList();
-    for (label_id_t v_label = 0; v_label < frag_->vertex_label_num();
-         ++v_label) {
-      auto id_range = frag_->InnerVertices(v_label);
-      for (auto vid = id_range.begin(); vid < id_range.end(); ++vid) {
-        auto oes = frag_->GetOutgoingAdjList(vid, edge_label_);
-        for (auto &e : oes) {
-          dst_id_list->emplace_back(e.get_neighbor().GetValue());
-        }
-      }
-    }
-    return dst_id_list;
+  virtual const IdArray GetDstIds() const override {
+    return IdArray(dst_lists_.data(), dst_lists_.size());
   }
   /// Get all weights if existed, the count of which is the same with Size().
-  virtual const std::vector<float> *GetWeights() const override {
+  virtual const Array<float> GetWeights() const override {
+    if (!side_info_->IsWeighted()) {
+      return Array<float>();
+    }
     auto table = frag_->edge_data_table(edge_label_);
     auto index = find_index_of_name(table->schema(), "weight");
     if (index == -1) {
-      return nullptr;
+      return Array<float>();
     }
     auto weight_array = std::dynamic_pointer_cast<
-        typename vineyard::ConvertToArrowType<double>::ArrayType>(
+        typename vineyard::ConvertToArrowType<float>::ArrayType>(
         table->column(index)->chunk(0));
-    auto weight_list = new std::vector<float>();
-    weight_list->reserve(weight_array->length());
-    for (size_t i = 0; i < weight_array->length(); ++i) {
-      weight_list->emplace_back(static_cast<float>(weight_array->Value(i)));
-    }
-    return weight_list;
+    return Array<float>(weight_array->raw_values(), weight_array->length());
   }
+
   /// Get all labels if existed, the count of which is the same with Size().
-  virtual const std::vector<int32_t> *GetLabels() const override {
+  virtual const Array<int32_t> GetLabels() const override {
+    if (!side_info_->IsLabeled()) {
+      return Array<int32_t>();
+    }
     auto table = frag_->edge_data_table(edge_label_);
     auto index = find_index_of_name(table->schema(), "label");
     if (index == -1) {
-      return nullptr;
+      return Array<int32_t>();
     }
-    auto weight_array = std::dynamic_pointer_cast<
-        typename vineyard::ConvertToArrowType<double>::ArrayType>(
+    auto label_array = std::dynamic_pointer_cast<
+        typename vineyard::ConvertToArrowType<int32_t>::ArrayType>(
         table->column(index)->chunk(0));
-    auto label_list = new std::vector<int32_t>();
-    label_list->reserve(weight_array->length());
-    for (size_t i = 0; i < weight_array->length(); ++i) {
-      label_list->emplace_back(static_cast<int32_t>(weight_array->Value(i)));
-    }
-    return label_list;
+    return Array<int32_t>(label_array->raw_values(), label_array->length());
   }
+
   /// Get all attributes if existed, the count of which is the same with Size().
   virtual const std::vector<Attribute> *GetAttributes() const override {
+    if (!side_info_->IsAttributed()) {
+      return nullptr;
+    }
     auto table = frag_->edge_data_table(edge_label_);
-    std::cerr << "table = " << table->schema()->ToString() << std::endl;
     auto attribute_list = new std::vector<Attribute>();
     attribute_list->reserve(table->num_rows());
     for (size_t i = 0; i < table->num_rows(); ++i) {
@@ -194,6 +185,7 @@ private:
   vineyard::Client client_;
   std::shared_ptr<gl_frag_t> frag_;
   label_id_t edge_label_;
+  SideInfo *side_info_ = nullptr;
 
   std::vector<IdType> src_lists_;
   std::vector<IdType> dst_lists_;

@@ -44,6 +44,7 @@ public:
     } else {
       node_label_ = vlabel_index - vlabels.begin();
     }
+    side_info_ = frag_node_side_info(frag_, node_label_);
   }
 
   explicit VineyardNodeStorage(label_id_t const node_label = 0)
@@ -66,6 +67,7 @@ public:
     if (frag_ == nullptr) {
       throw std::runtime_error("Node: failed to find a local fragment");
     }
+    side_info_ = frag_node_side_info(frag_, node_label_);
   }
 
   virtual ~VineyardNodeStorage() = default;
@@ -75,8 +77,7 @@ public:
 
   virtual void SetSideInfo(const SideInfo *info) override {}
   virtual const SideInfo *GetSideInfo() const override {
-    std::cerr << "node: get sideinfo" << std::endl;
-    return frag_node_side_info(frag_, node_label_);
+    return side_info_;
   }
 
   /// Do some re-organization after data fixed.
@@ -100,8 +101,15 @@ public:
   ///    node label,
   ///    node attributes
   virtual float GetWeight(IdType node_id) const override {
+    if (!side_info_->IsWeighted()) {
+      return -1;
+    }
     auto v = vertex_t{static_cast<uint64_t>(node_id)};
-    auto table = frag_->vertex_data_table(frag_->vertex_label(v));
+    auto label = frag_->vertex_label(v);
+    if (label != node_label_) {
+      return -1;
+    }
+    auto table = frag_->vertex_data_table(node_label_);
     int index = find_index_of_name(table->schema(), "weight");
     if (index == -1) {
       return 0.0;
@@ -111,8 +119,15 @@ public:
   }
 
   virtual int32_t GetLabel(IdType node_id) const override {
+    if (!side_info_->IsLabeled()) {
+      return -1;
+    }
     auto v = vertex_t{static_cast<uint64_t>(node_id)};
-    auto table = frag_->vertex_data_table(frag_->vertex_label(v));
+    auto label = frag_->vertex_label(v);
+    if (label != node_label_) {
+      return -1;
+    }
+    auto table = frag_->vertex_data_table(node_label_);
     int index = find_index_of_name(table->schema(), "label");
     if (index == -1) {
       return -1;
@@ -122,9 +137,23 @@ public:
   }
 
   virtual Attribute GetAttribute(IdType node_id) const override {
+    if (!side_info_->IsAttributed()) {
+      return Attribute();
+    }
     auto v = vertex_t{static_cast<uint64_t>(node_id)};
+    if (!frag_->IsInnerVertex(v)) {
+      return Attribute(AttributeValue::Default(side_info_), false);
+    }
     auto label = frag_->vertex_label(v);
+    if (label != node_label_) {
+      return Attribute(AttributeValue::Default(side_info_), false);
+    }
     auto offset = frag_->vertex_offset(v);
+#ifndef NDEBUG
+    std::cerr << "node: get attribute: node_id = " << node_id
+              << ", label -> " << label << ", offset -> " << offset
+              << std::endl;
+#endif
     auto table = frag_->vertex_data_table(label);
     return Attribute(arrow_line_to_attribute_value(table, offset, 0), true);
   }
@@ -134,36 +163,55 @@ public:
   ///
   /// Get all the node ids, the count of which is the same with Size().
   /// These ids are distinct.
-  virtual const IdList *GetIds() const override {
+  virtual const IdArray GetIds() const override {
+    auto range = frag_->InnerVertices(node_label_);
 #ifndef NDEBUG
-    std::cerr << "node: get ids: " << node_label_ << std::endl;
+    std::cerr << "node: get ids: " << node_label_
+              << ", range begin = " << range.begin().GetValue()
+              << ", range end = " << range.end().GetValue()
+              << std::endl;
 #endif
-    size_t count = frag_->GetInnerVerticesNum(node_label_);
-    auto id_list = new IdList();
-    id_list->reserve(count);
-#ifndef NDEBUG
-    std::cerr << "node: get ids: count = " << count << std::endl;
-#endif
-
-    auto id_range = frag_->InnerVertices(node_label_);
-    for (auto id = id_range.begin(); id < id_range.end(); ++id) {
-      id_list->emplace_back(id.GetValue());
-    }
-    return id_list;
+    return IdArray(frag_->GetInnerVertexGid(range.begin()),
+                   frag_->GetInnerVertexGid(range.end()));
   }
 
   /// Get all weights if existed, the count of which is the same with Size().
-  virtual const std::vector<float> *GetWeights() const override {
-    return GetAttribute<double, float>("weight");
+  virtual const Array<float> GetWeights() const override {
+    if (!side_info_->IsWeighted()) {
+      return Array<float>();
+    }
+    auto table = frag_->vertex_data_table(node_label_);
+    auto index = find_index_of_name(table->schema(), "weight");
+    if (index == -1) {
+      return Array<float>();
+    }
+    auto weight_array = std::dynamic_pointer_cast<
+        typename vineyard::ConvertToArrowType<float>::ArrayType>(
+        table->column(index)->chunk(0));
+    return Array<float>(weight_array->raw_values(), weight_array->length());
   }
 
   /// Get all labels if existed, the count of which is the same with Size().
-  virtual const std::vector<int32_t> *GetLabels() const override {
-    return GetAttribute<int64_t, int32_t>("label");
+  virtual const Array<int32_t> GetLabels() const override {
+    if (!side_info_->IsLabeled()) {
+      return Array<int32_t>();
+    }
+    auto table = frag_->vertex_data_table(node_label_);
+    auto index = find_index_of_name(table->schema(), "label");
+    if (index == -1) {
+      return Array<int32_t>();
+    }
+    auto label_array = std::dynamic_pointer_cast<
+        typename vineyard::ConvertToArrowType<int32_t>::ArrayType>(
+        table->column(index)->chunk(0));
+    return Array<int32_t>(label_array->raw_values(), label_array->length());
   }
 
   /// Get all attributes if existed, the count of which is the same with Size().
   virtual const std::vector<Attribute> *GetAttributes() const override {
+    if (!side_info_->IsAttributed()) {
+      return nullptr;
+    }
 #ifndef NDEBUG
     std::cerr << "node: get attributes: node_label = " << node_label_
               << std::endl;
@@ -188,7 +236,7 @@ public:
 
 private:
   template <typename T, typename RT = T>
-  const std::vector<RT> *GetAttribute(std::string const &name) const {
+  const Array<RT> GetAttribute(std::string const &name) const {
     int attr_index = find_index_of_name(
         frag_->vertex_data_table(node_label_)->schema(), name);
     if (attr_index == -1) {
@@ -208,6 +256,7 @@ private:
   vineyard::Client client_;
   std::shared_ptr<gl_frag_t> frag_;
   label_id_t node_label_;
+  SideInfo *side_info_ = nullptr;
 };
 
 } // namespace io

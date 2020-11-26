@@ -53,26 +53,28 @@ def train_local(config, graph):
                                   config['weight_decay']))
   print("start to train...")
   trainer.train()
-  embs = trainer.get_node_embedding()
-  print("shape:", embs.shape)
-  np.save(config['emb_save_dir'], embs)
+  emb_ids, emb_values = trainer.get_node_embedding_fixed()
+  print('shape: ', emb_ids.shape, emb_values.shape)
+  np.save(config['emb_save_dir'] + '_ids', emb_ids)
+  np.save(config['emb_save_dir'] + '_values', emb_values)
 
 
 from sklearn.metrics.pairwise import cosine_similarity
 def test_local(config, graph):
   test_count = 0.0
   find_count = 0.0
-  embs = np.load(config['emb_save_dir'] + ".npy")
+  emb_ids = np.load(config['emb_save_dir'] + "_ids.npy")
+  emb_values = np.load(config['emb_save_dir'] + "_values.npy")
   id_map = {}
-  for i in range(embs.shape[0]):
-    id_map[embs[i][0]] = i
+  for idx, vid in enumerate(emb_ids):
+    id_map[vid] = idx
   sampler_edge = graph.edge_sampler(config['edge_type'], 1000)
   edges_list = sampler_edge.get()
   src_ids = edges_list.src_ids
   dst_ids = edges_list.dst_ids
   for j in range(len(src_ids)):
-    vec_a = embs[id_map[src_ids[j]]][1:]
-    vec_b = embs[id_map[dst_ids[j]]][1:]
+    vec_a = emb_values[id_map[src_ids[j]]]
+    vec_b = emb_values[id_map[dst_ids[j]]]
     num = float(np.sum(vec_a * vec_b))
     denom = np.linalg.norm(vec_a) * np.linalg.norm(vec_b)
     if denom == 0:
