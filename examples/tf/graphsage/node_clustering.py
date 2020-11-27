@@ -127,35 +127,41 @@ def main():
 
   config = {'dataset_folder': '',
             'class_num': 16, # output dimension
-            'features_num': 130, # 128 dimension + kcore + page_rank
+            'features_num': 132, # 128 dimension + year + id + kcore + page_rank
             'batch_size': 500,
             'categorical_attrs_desc': '',
             'hidden_dim': 256,
             'in_drop_rate': 0.5,
             'hops_num': 2,
-            'neighs_num': [1, 1],
+            'neighs_num': [1, 1],  # [1, 1] to make it fase, origin is [10, 20]
             'full_graph_mode': False,
             'agg_type': 'gcn',  # mean, sum
             'learning_algo': 'adam',
             'learning_rate': 0.005,
             'weight_decay': 0.0005,
-            'epoch': 20,
+            'epoch': 1, # 1 to make it fase in ci, origin is 20
             'unsupervised': True,
             'use_neg': True,
             'neg_num': 10,
             'node_type': node_type,
             'edge_type': edge_type}
 
-  g = gl.get_graph_from_handle(
-    handle,
-    worker_index=0,
-    worker_count=1,
-    standalone=True
-  )
-
-  node_ids, clusters = train(config, g, n_clusters=40)
-  # TODO: uncomment after we use oid ad output ids
-  # test(config, node_ids, clusters)
+  try:
+    g = gl.get_graph_from_handle(
+      handle,
+      worker_index=0,
+      worker_count=1,
+      standalone=True
+    )
+    node_ids, clusters = train(config, g, n_clusters=40)  # 40 for test
+    # TODO: uncomment after we use oid as output ids
+    # test(config, node_ids, clusters)
+    g.close()
+  except Exception as e:
+    g.close()
+    raise RuntimeError() from e
+  except KeyboardInterrupt:
+    g.close()
 
 
 if __name__ == "__main__":
