@@ -208,11 +208,12 @@ get_all_outgoing_neighbor_nodes(std::shared_ptr<gl_frag_t> const &frag,
   std::vector<const IdType *> values;
   std::vector<int32_t> sizes;
   auto neighbor_list = frag->GetOutgoingAdjList(v, edge_label);
+  auto gid_value_offset = frag->GetInnerVertexGid(vertex_t{0});
   values.emplace_back(
       reinterpret_cast<const IdType *>(neighbor_list.begin_unit()));
   sizes.emplace_back(neighbor_list.Size());
   return Array<IdType>(std::make_shared<MultiArray<IdType>>(
-      values, sizes, sizeof(nbr_unit_t), __builtin_offsetof(nbr_unit_t, vid)));
+      values, sizes, sizeof(nbr_unit_t), __builtin_offsetof(nbr_unit_t, vid), gid_value_offset));
 }
 
 const Array<IdType>

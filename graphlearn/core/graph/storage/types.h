@@ -47,11 +47,13 @@ template <class T>
 class MultiArray {
 public:
   MultiArray(const std::vector<const T*>& values, const std::vector<int32_t> sizes,
-             int32_t element_size, int32_t element_offset=0)
+             int32_t element_size, int32_t element_offset=0,
+             T const value_offset=0)
       : values_(values),
         sizes_(sizes),
         element_size_(element_size),
-        element_offset_(element_offset) {
+        element_offset_(element_offset),
+        value_offset_(value_offset) {
     offsets_.emplace_back(0);
     for (size_t i = 1; i <= sizes.size(); ++i) {
       offsets_.emplace_back(offsets_[i-1] + sizes[i-1]);
@@ -63,6 +65,7 @@ public:
     offsets_ = rhs.offsets_;
     element_size_ = rhs.element_size_;
     element_offset_ = rhs.element_offset_;
+    value_offset_ = rhs.value_offset_;
   }
   operator bool () const {
     return *offsets_.rbegin() > 0;
@@ -76,7 +79,7 @@ public:
     auto target = reinterpret_cast<const uint8_t *>(values_[idx-1])
                 + (element_size_ * (i-offsets_[idx-1]))
                 + element_offset_;
-    return *reinterpret_cast<const T *>(target);
+    return *reinterpret_cast<const T *>(target) + value_offset_;
   }
   int32_t Size() const {
     return *offsets_.rbegin();
@@ -87,6 +90,7 @@ private:
   std::vector<int32_t> offsets_;
   int32_t element_size_;
   int32_t element_offset_;
+  T const value_offset_ = 0;
 };
 
 template <typename T>
