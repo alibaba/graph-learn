@@ -127,7 +127,7 @@ def main():
 
   config = {'dataset_folder': '',
             'class_num': 16, # output dimension
-            'features_num': 128, # 128 dimension + kcore + page_rank
+            'features_num': 130, # 128 dimension + kcore + page_rank
             'batch_size': 500,
             'categorical_attrs_desc': '',
             'hidden_dim': 256,
@@ -143,11 +143,9 @@ def main():
             'unsupervised': True,
             'use_neg': True,
             'neg_num': 10,
-            'node_type': node_type, #Node_type needs to change accordingly
-            'edge_type': edge_type} #Edge_type needs to change accordingly
+            'node_type': node_type,
+            'edge_type': edge_type}
 
-  # change the load_graph with loading from Vineyard
-  # g = load_graph(config)
   g = gl.get_graph_from_handle(
     handle,
     worker_index=0,
@@ -155,8 +153,9 @@ def main():
     standalone=True
   )
 
-  node_ids, clusters = train(config, g)
-  test(config, node_ids, clusters)
+  node_ids, clusters = train(config, g, n_clusters=40)
+  # TODO: uncomment after we use oid ad output ids
+  # test(config, node_ids, clusters)
 
 
 if __name__ == "__main__":
