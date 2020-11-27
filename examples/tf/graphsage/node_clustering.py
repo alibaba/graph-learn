@@ -17,7 +17,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import base64
+import json
 import os
+import sys
 
 import numpy as np
 import graphlearn as gl
@@ -46,7 +49,10 @@ def train(config, graph, n_clusters=7, seed=0):
                      full_graph_mode=config['full_graph_mode'],
                      unsupervised=config['unsupervised'],
                      neg_num=config['neg_num'],
-                     agg_type=config['agg_type'])
+                     agg_type=config['agg_type'],
+                     node_type=config['node_type'],
+                     edge_type=config['edge_type'],
+                     train_node_type=config['node_type'])
 
   trainer = gl.LocalTFTrainer(model_fn,
                               epoch=config['epoch'],
@@ -54,9 +60,10 @@ def train(config, graph, n_clusters=7, seed=0):
                                   config['learning_algo'],
                                   config['learning_rate'],
                                   config['weight_decay']))
+  print("start to train...")
   trainer.train()
-  embs = trainer.get_node_embedding()
-  ids = trainer.get_node_id() #I'm not sure what function is it to get node id.
+  ids, embs = trainer.get_node_embedding_fixed()
+  print('shape: ', ids.shape, embs.shape)
 
   data = StandardScaler().fit_transform(embs)
   pca = PCA(n_components=4)
@@ -82,7 +89,7 @@ def test(config, node_ids, clusters, num_sample=10000):
   predicted = dict()
   for i in range(len(node_ids)):
     predicted[node_ids[i]] = clusters[i]
-  
+
   #randomly generate pairs of ids for testing
   test_id1 = np.random.choice(node_ids, size=num_sample, replace=True)
   test_id2 = np.random.choice(node_ids, size=num_sample, replace=True)
@@ -102,20 +109,31 @@ def test(config, node_ids, clusters, num_sample=10000):
 
   print(f"Clustering accuracy is approaximately: {correct_num/total_num}")
   return correct_num/total_num
-  
-    
 
 
 def main():
+  handle_str = sys.argv[1]
+  s = base64.b64decode(handle_str).decode('utf-8')
+  handle = json.loads(s)
+  handle['pod_index'] = int(sys.argv[2])
+  node_type = sys.argv[3]
+  edge_type = sys.argv[4]
+  for node_info in handle['node_schema']:
+    if node_info.split(':')[0] == node_type:
+      handle['node_schema'] = [node_info]
+  for edge_info in handle['edge_schema']:
+    if edge_info.split(':')[1] == edge_type:
+      handle['edge_schema'] = [edge_info]
+
   config = {'dataset_folder': '',
-            'class_num': 16, #output dimension
-            'features_num': 130, #128 dimension + kcore + page_rank
-            'batch_size': 32, 
+            'class_num': 16, # output dimension
+            'features_num': 128, # 128 dimension + kcore + page_rank
+            'batch_size': 500,
             'categorical_attrs_desc': '',
-            'hidden_dim': 256, 
+            'hidden_dim': 256,
             'in_drop_rate': 0.5,
             'hops_num': 2,
-            'neighs_num': [10, 20],
+            'neighs_num': [1, 1],
             'full_graph_mode': False,
             'agg_type': 'gcn',  # mean, sum
             'learning_algo': 'adam',
@@ -125,11 +143,17 @@ def main():
             'unsupervised': True,
             'use_neg': True,
             'neg_num': 10,
-            'node_type': 'paper', #Node_type needs to change accordingly
-            'edge_type': 'citation'} #Edge_type needs to change accordingly
-  
-  #change the load_graph with loading from Vineyard
-  g = load_graph(config)
+            'node_type': node_type, #Node_type needs to change accordingly
+            'edge_type': edge_type} #Edge_type needs to change accordingly
+
+  # change the load_graph with loading from Vineyard
+  # g = load_graph(config)
+  g = gl.get_graph_from_handle(
+    handle,
+    worker_index=0,
+    worker_count=1,
+    standalone=True
+  )
 
   node_ids, clusters = train(config, g)
   test(config, node_ids, clusters)
