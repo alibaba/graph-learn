@@ -85,6 +85,8 @@ DEFINE_STRING_GLOBAL_FLAG(ServerHosts, "")
 
 DEFINE_INT64_GLOBAL_FLAG(VineyardGraphID, 0)
 DEFINE_STRING_GLOBAL_FLAG(VineyardIPCSocket, "/tmp/vineyard.sock")
+DEFINE_INT32_GLOBAL_FLAG(AttrStartIndex, 0)
+DEFINE_INT32_GLOBAL_FLAG(AttrEndIndex, -1)
 
 // Define the setters
 DEFINE_SET_INT32_GLOBAL_FLAG(DeployMode)
@@ -115,5 +117,7 @@ DEFINE_SET_STRING_GLOBAL_FLAG(ServerHosts)
 
 DEFINE_SET_INT64_GLOBAL_FLAG(VineyardGraphID)
 DEFINE_SET_STRING_GLOBAL_FLAG(VineyardIPCSocket)
+DEFINE_SET_INT32_GLOBAL_FLAG(AttrStartIndex)
+DEFINE_SET_INT32_GLOBAL_FLAG(AttrEndIndex)
 
 }  // namespace graphlearn

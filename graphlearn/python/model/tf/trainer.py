@@ -83,8 +83,6 @@ class TFTrainer(Trainer):
       while True:
         try:
           ids_np, emb_np = self.sess.run([ids, emb], feed_dict=feed_dict)
-          with np.printoptions(threshold=np.inf, suppress=True):
-            print('in trainer: ', ids_np.dtype, emb_np.dtype)
           # emb_set.append(np.concatenate([np.reshape(ids_np, [-1, 1]), emb_np],
           #                               axis=1))
           emb_ids.append(ids_np)

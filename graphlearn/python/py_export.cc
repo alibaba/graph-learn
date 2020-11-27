@@ -53,6 +53,8 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
   m.def("set_server_hosts", &SetGlobalFlagServerHosts);
   m.def("set_vineyard_graph_id", &SetGlobalFlagVineyardGraphID);
   m.def("set_vineyard_ipc_socket", &SetGlobalFlagVineyardIPCSocket);
+  m.def("set_attr_start_index", &SetGlobalAttrStartIndex);
+  m.def("set_attr_end_index", &SetGlobalAttrEndIndex);
 
   py::enum_<error::Code>(m, "ErrorCode")
     .value("OK", error::Code::OK)
@@ -115,7 +117,7 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
     .def_readwrite("ignore_invalid", &io::NodeSource::ignore_invalid)
     .def("append_attr_type", &io::NodeSource::AppendAttrType)
     .def("append_hash_bucket", &io::NodeSource::AppendHashBucket);
- 
+
   py::class_<io::EdgeSource>(m, "EdgeSource")
     .def(py::init<>())
     .def_readwrite("path", &io::EdgeSource::path)

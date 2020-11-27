@@ -47,7 +47,13 @@ public:
     side_info_ = frag_node_side_info(frag_, node_label_);
 
     auto vtable = frag_->vertex_data_table(node_label_);
-    init_table_accessors(vtable, 0, vtable->num_columns(), i32_indexes_,
+    size_t start_index = GLOBAL_FLAG(AttrStartIndex);
+    size_t end_index = GLOBAL_FLAG(AttrStartIndex) == -1 ?
+        vtable->num_columns() : GLOBAL_FLAG(AttrStartIndex);
+    if (end_index > vtable->num_columns()) {
+      end_index = vtable->num_columns();
+    }
+    init_table_accessors(vtable, start_index, end_index, i32_indexes_,
                          i64_indexes_, f32_indexes_, f64_indexes_, s_indexes_,
                          ls_indexes_, vertex_table_accessors_);
   }
@@ -75,7 +81,13 @@ public:
     side_info_ = frag_node_side_info(frag_, node_label_);
 
     auto vtable = frag_->vertex_data_table(node_label_);
-    init_table_accessors(vtable, 0, vtable->num_columns(), i32_indexes_,
+    size_t start_index = GLOBAL_FLAG(AttrStartIndex);
+    size_t end_index = GLOBAL_FLAG(AttrStartIndex) == -1 ?
+        vtable->num_columns() : GLOBAL_FLAG(AttrStartIndex);
+    if (end_index > vtable->num_columns()) {
+      end_index = vtable->num_columns();
+    }
+    init_table_accessors(vtable, start_index, end_index, i32_indexes_,
                          i64_indexes_, f32_indexes_, f64_indexes_, s_indexes_,
                          ls_indexes_, vertex_table_accessors_);
   }

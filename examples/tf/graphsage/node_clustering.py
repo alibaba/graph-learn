@@ -124,10 +124,14 @@ def main():
   for edge_info in handle['edge_schema']:
     if edge_info.split(':')[1] == edge_type:
       handle['edge_schema'] = [edge_info]
+  # FIXME: hard code here.
+  handle['node_schema'] = ['paper:false:false:0:128:0']
+  gl.set_attr_start_index(0)
+  gl.set_attr_end_index(128)
 
   config = {'dataset_folder': '',
             'class_num': 16, # output dimension
-            'features_num': 132, # 128 dimension + year + id + kcore + page_rank
+            'features_num': 128, # 128 dimension + year + id + kcore + page_rank
             'batch_size': 500,
             'categorical_attrs_desc': '',
             'hidden_dim': 256,
