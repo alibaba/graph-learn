@@ -74,6 +74,8 @@ class AttributeValue {
 public:
   static AttributeValue* Default(const SideInfo* info);
 
+  virtual ~AttributeValue() {}
+
   virtual void Clear() = 0;
   virtual void Shrink() = 0;
   virtual void Swap(AttributeValue* rhs) = 0;
