@@ -48,8 +48,8 @@ public:
 
     auto vtable = frag_->vertex_data_table(node_label_);
     size_t start_index = GLOBAL_FLAG(AttrStartIndex);
-    size_t end_index = GLOBAL_FLAG(AttrStartIndex) == -1 ?
-        vtable->num_columns() : GLOBAL_FLAG(AttrStartIndex);
+    size_t end_index = GLOBAL_FLAG(AttrEndIndex) == -1 ?
+        vtable->num_columns() : GLOBAL_FLAG(AttrEndIndex);
     if (end_index > vtable->num_columns()) {
       end_index = vtable->num_columns();
     }
@@ -82,8 +82,8 @@ public:
 
     auto vtable = frag_->vertex_data_table(node_label_);
     size_t start_index = GLOBAL_FLAG(AttrStartIndex);
-    size_t end_index = GLOBAL_FLAG(AttrStartIndex) == -1 ?
-        vtable->num_columns() : GLOBAL_FLAG(AttrStartIndex);
+    size_t end_index = GLOBAL_FLAG(AttrEndIndex) == -1 ?
+        vtable->num_columns() : GLOBAL_FLAG(AttrEndIndex);
     if (end_index > vtable->num_columns()) {
       end_index = vtable->num_columns();
     }
