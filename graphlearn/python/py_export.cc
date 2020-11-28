@@ -53,8 +53,8 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
   m.def("set_server_hosts", &SetGlobalFlagServerHosts);
   m.def("set_vineyard_graph_id", &SetGlobalFlagVineyardGraphID);
   m.def("set_vineyard_ipc_socket", &SetGlobalFlagVineyardIPCSocket);
-  m.def("set_attr_start_index", &SetGlobalAttrStartIndex);
-  m.def("set_attr_end_index", &SetGlobalAttrEndIndex);
+  m.def("set_attr_start_index", &SetGlobalFlagAttrStartIndex);
+  m.def("set_attr_end_index", &SetGlobalFlagAttrEndIndex);
 
   py::enum_<error::Code>(m, "ErrorCode")
     .value("OK", error::Code::OK)
