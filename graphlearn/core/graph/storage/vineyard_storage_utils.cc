@@ -442,23 +442,66 @@ int64_t find_index_of_name(std::shared_ptr<arrow::Schema> const &schema,
   }
   return -1;
 }
+
+void ArrowRefAttributeValue::FillInts(Tensor *tensor) const {
+  for (auto const &idx: i32_indexes_) {
+    auto value = vineyard::property_graph_utils::ValueGetter<int32_t>::Value(
+        table_accessors_[idx], row_index_);
+    tensor->AddInt64(static_cast<int64_t>(value));
+  }
+  for (auto const &idx: i64_indexes_) {
+    auto value = vineyard::property_graph_utils::ValueGetter<int64_t>::Value(
+        table_accessors_[idx], row_index_);
+    tensor->AddInt64(value);
+  }
+}
+
+void ArrowRefAttributeValue::FillFloats(Tensor *tensor) const {
+  for (auto const &idx: f32_indexes_) {
+    auto value = vineyard::property_graph_utils::ValueGetter<float>::Value(
+        table_accessors_[idx], row_index_);
+    tensor->AddFloat(value);
+  }
+  for (auto const &idx: f64_indexes_) {
+    auto value = vineyard::property_graph_utils::ValueGetter<double>::Value(
+        table_accessors_[idx], row_index_);
+    tensor->AddFloat(static_cast<float>(value));
+  }
+}
+
+void ArrowRefAttributeValue::FillStrings(Tensor *tensor) const {
+  for (auto const &idx: s_indexes_) {
+    auto value = std::string(
+        reinterpret_cast<const arrow::StringArray*>(table_accessors_[idx])->GetView(
+            row_index_));
+    tensor->AddString(value);
+  }
+  for (auto const &idx: ls_indexes_) {
+    auto value = vineyard::property_graph_utils::ValueGetter<std::string>::Value(
+        table_accessors_[idx], row_index_);
+    tensor->AddString(value);
+  }
+}
+
 #endif
 
-GraphStorage *NewVineyardGraphStorage(const std::string &edge_type) {
+GraphStorage *NewVineyardGraphStorage(const std::string &edge_type,
+    const std::string &view_type) {
 #if defined(WITH_VINEYARD)
   LOG(INFO) << "create vineyard graph storage: " << WITH_VINEYARD;
-  return new VineyardGraphStorage(edge_type);
+  return new VineyardGraphStorage(view_type);
 #else
-  return nullptr;
+  throw std::runtime_error("create graph stroage: vineyard is not enabled");
 #endif
 }
 
-NodeStorage *NewVineyardNodeStorage(const std::string &node_type) {
+NodeStorage *NewVineyardNodeStorage(const std::string &node_type,
+    const std::string &view_type) {
 #if defined(WITH_VINEYARD)
   LOG(INFO) << "create vineyard node storage: " << WITH_VINEYARD;
-  return new VineyardNodeStorage(node_type);
+  return new VineyardNodeStorage(view_type);
 #else
-  return nullptr;
+  throw std::runtime_error("create node storage: vineyard is not enabled");
 #endif
 }
 

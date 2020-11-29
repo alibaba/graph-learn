@@ -17,9 +17,15 @@ namespace io {
 
 class VineyardNodeStorage : public graphlearn::io::NodeStorage {
 public:
-  explicit VineyardNodeStorage(std::string const &node_label = "0") {
+  explicit VineyardNodeStorage(std::string node_label = "0",
+                               std::string const &node_view = "") {
     std::cerr << "node_label = " << node_label << ", from "
-              << GLOBAL_FLAG(VineyardGraphID) << std::endl;
+              << GLOBAL_FLAG(VineyardGraphID);
+    if (!node_view.empty()) {
+      std::cerr << ", view on " << node_view;
+    }
+    std::cerr << std::endl;
+
     VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
     auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
         GLOBAL_FLAG(VineyardGraphID));
@@ -36,6 +42,17 @@ public:
     if (frag_ == nullptr) {
       throw std::runtime_error("Node: failed to find a local fragment");
     }
+
+    if (!node_view.empty()) {
+      std::vector<std::string> args;
+      boost::algorithm::split(args, node_view, boost::is_any_of(":"));
+      node_label = args[0];
+      seed = stoi(args[1]);
+      nsplit = stoi(args[2]);
+      split_begin = stoi(args[3]);
+      split_end = stoi(args[4]);
+    }
+
     auto vlabels = frag_->schema().GetVextexLabels();
     auto vlabel_index = std::find(vlabels.begin(), vlabels.end(), node_label);
     if (vlabel_index == vlabels.end()) {
@@ -43,34 +60,6 @@ public:
           "Node: failed to find node label in local fragment: " + node_label);
     } else {
       node_label_ = vlabel_index - vlabels.begin();
-    }
-    side_info_ = frag_node_side_info(frag_, node_label_);
-
-    auto vtable = frag_->vertex_data_table(node_label_);
-    init_table_accessors(vtable, 0, vtable->num_columns(), i32_indexes_,
-                         i64_indexes_, f32_indexes_, f64_indexes_, s_indexes_,
-                         ls_indexes_, vertex_table_accessors_);
-  }
-
-  explicit VineyardNodeStorage(label_id_t const node_label = 0)
-      : node_label_(node_label) {
-    std::cerr << "node_label = " << node_label << ", from "
-              << GLOBAL_FLAG(VineyardGraphID) << std::endl;
-    VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
-    auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
-        GLOBAL_FLAG(VineyardGraphID));
-    if (fg == nullptr) {
-      throw std::runtime_error("Node: failed to find the graph");
-    }
-    // assume 1 worker per server
-    for (auto const &kv : fg->Fragments()) {
-      if (fg->FragmentLocations().at(kv.first) == client_.instance_id()) {
-        frag_ = client_.GetObject<gl_frag_t>(kv.second);
-        break;
-      }
-    }
-    if (frag_ == nullptr) {
-      throw std::runtime_error("Node: failed to find a local fragment");
     }
     side_info_ = frag_node_side_info(frag_, node_label_);
 
@@ -167,8 +156,12 @@ public:
     return Attribute(arrow_line_to_attribute_value(table, offset, 0,
                                                    table->num_columns() - 1),
                      true);
-#else
+#elif 0
     return Attribute(arrow_line_to_attribute_value_fast(
+        offset, i32_indexes_, i64_indexes_, f32_indexes_, f64_indexes_,
+        s_indexes_, ls_indexes_, vertex_table_accessors_), true);
+#else
+    return Attribute(new ArrowRefAttributeValue(
         offset, i32_indexes_, i64_indexes_, f32_indexes_, f64_indexes_,
         s_indexes_, ls_indexes_, vertex_table_accessors_), true);
 #endif
@@ -273,6 +266,10 @@ private:
   std::shared_ptr<gl_frag_t> frag_;
   label_id_t node_label_;
   SideInfo *side_info_ = nullptr;
+
+  // for node view
+  std::string view_label;
+  int32_t seed, nsplit, split_begin, split_end;
 
   // for fast attribute access
   std::vector<int> i32_indexes_, i64_indexes_, f32_indexes_, f64_indexes_,

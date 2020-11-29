@@ -113,6 +113,7 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
     .def_readwrite("delimiter", &io::NodeSource::delimiter)
     .def_readwrite("hash_buckets", &io::NodeSource::hash_buckets)
     .def_readwrite("ignore_invalid", &io::NodeSource::ignore_invalid)
+    .def_readwrite("view_type", &io::NodeSource::view_type)
     .def("append_attr_type", &io::NodeSource::AppendAttrType)
     .def("append_hash_bucket", &io::NodeSource::AppendHashBucket);
  
@@ -128,6 +129,7 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
     .def_readwrite("hash_buckets", &io::EdgeSource::hash_buckets)
     .def_readwrite("ignore_invalid", &io::EdgeSource::ignore_invalid)
     .def_readwrite("direction", &io::EdgeSource::direction)
+    .def_readwrite("view_type", &io::EdgeSource::view_type)
     .def("append_attr_type", &io::EdgeSource::AppendAttrType)
     .def("append_hash_bucket", &io::EdgeSource::AppendHashBucket);
 

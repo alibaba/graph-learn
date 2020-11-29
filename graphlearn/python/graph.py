@@ -18,9 +18,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
 import atexit
+import copy
 import json
+import os
 import warnings
 
 from graphlearn import pywrap_graphlearn as pywrap
@@ -75,6 +76,64 @@ class Graph(object):
     self.node_state = State()
     self.edge_state = State()
 
+    self._with_vineyard = False
+    self._vineyard_handle = None
+
+  def vineyard(self, handle, nodes=None, edges=None):
+    self._with_vineyard = True
+    self._vineyard_handle = handle
+    gl.set_vineyard_graph_id(handle['vineyard_id'])
+    gl.set_vineyard_ipc_socket(handle['vineyard_socket'])
+
+    for node_info in handle['node_schema']:
+      confs = node_info.split(':')
+      if len(confs) != 6:
+        continue
+      node_type = confs[0]
+      if nodes is not None and node_type not in nodes:
+        continue
+      weighted = confs[1] == 'true'
+      labeled = confs[2] == 'true'
+      n_int = int(confs[3])
+      n_float = int(confs[4])
+      n_string = int(confs[5])
+      g.node(source='',
+             node_type=node_type,
+             decoder=self._make_vineyard_decoder(
+               weighted, labeled, n_int, n_float, n_string))
+
+    for edge_info in obj['edge_schema']:
+      confs = edge_info.split(':')
+      if len(confs) != 8:
+        continue
+      src_node_type = confs[0]
+      edge_type = confs[1]
+      dst_node_type = confs[2]
+      if edges is not None and (src_node_type, edge_type, dst_node_type) not in edges:
+        continue
+      weighted = confs[3] == 'true'
+      labeled = confs[4] == 'true'
+      n_int = int(confs[5])
+      n_float = int(confs[6])
+      n_string = int(confs[7])
+      g.edge(source='',
+             edge_type=(src_node_type, dst_node_type, edge_type),
+             decoder=self._make_vineyard_decoder(
+               weighted, labeled, n_int, n_float, n_string))
+
+    return self
+
+  def _make_vineyard_decoder(self,
+      weighted, labeled, n_int, n_float, n_string):
+    attr_types = []
+    if n_int == 0 and n_float == 0 and n_string == 0:
+      attr_types = None
+    else:
+      attr_types.extend(["int"] * n_int)
+      attr_types.extend(["float"] * n_float)
+      attr_types.extend(["string"] * n_string)
+    return Decoder(weighted, labeled, attr_types)
+
   def node(self,
            source,
            node_type,
@@ -95,6 +154,17 @@ class Graph(object):
     node_source = self._construct_node_source(source, node_type, decoder)
     self._node_sources.append(node_source)
     return self
+
+  def node_view(self, node_view_type, node_type, seed=0, nsplit=1, split_range=(0, 1)):
+    node_source = None
+    for node in self._node_sources:
+      if node.id_type == node_type:
+        node_source = copy.copy(node)
+        break
+    if node_source is None:
+      raise ValueError('Node type "%s" doesn\'t exist.' % (node_type,))
+    node_source.view_type = '%s:%d:%d:%d:%d' % (node_view_type, seed, nsplit,
+                                                split_range[0], split_range[1])
 
   def edge(self,
            source,
@@ -157,8 +227,25 @@ class Graph(object):
         self._edge_sources.append(edge_source_reverse)
     return self
 
+  def edge_view(self, edge_view_type, edge_type, seed=0, nsplit=1, split_range=(0, 1)):
+    edge_source = None
+    for edge in self._edge_sources:
+      if (edge.src_id_type, edge.dst_id_type, edge.edge_type) == edge_type:
+        edge_source = copy.copy(edge)
+        break
+    if edge_source is None:
+      raise ValueError('edge type "%s" doesn\'t exist.' % (edge_type,))
+    edge_source.view_type = '%s:%d:%d:%d:%d' % (edge_view_type, seed, nsplit,
+                                                split_range[0], split_range[1])
+
   def init(self, task_index=0, task_count=1,
            cluster="", job_name="", **kwargs):
+    stroage_mode = gl.get_storage_mode()
+    tracker_mode = gl.get_tracker_mode()
+    if self._with_vineyard:
+      gl.set_storage_mode(8)
+      gl.set_tracker_mode(0)
+
     """ Initialize the graph with creating graph server instance with
     given cluster env info.
 
@@ -250,6 +337,12 @@ class Graph(object):
         self._server.init(self._edge_sources, self._node_sources)
       else:
         raise ValueError("Only support client and server for GL.")
+
+    # restore the settings
+    if self._with_vineyard:
+      gl.set_storage_mode(stroage_mode)
+      gl.set_tracker_mode(tracker_mode)
+
     return self
 
   def close(self):
