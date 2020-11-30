@@ -21,6 +21,13 @@ class VineyardGraphStorage : public GraphStorage {
 public:
   explicit VineyardGraphStorage(std::string edge_label = "0",
                                 std::string const &edge_view = "") {
+    std::cerr << "edge_label = " << edge_label << ", from "
+              << GLOBAL_FLAG(VineyardGraphID);
+    if (!edge_view.empty()) {
+      std::cerr << ", view on '" << edge_view << "'";
+    }
+    std::cerr << std::endl;
+
     VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
     auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
         GLOBAL_FLAG(VineyardGraphID));

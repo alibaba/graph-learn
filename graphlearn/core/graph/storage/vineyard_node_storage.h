@@ -22,7 +22,7 @@ public:
     std::cerr << "node_label = " << node_label << ", from "
               << GLOBAL_FLAG(VineyardGraphID);
     if (!node_view.empty()) {
-      std::cerr << ", view on " << node_view;
+      std::cerr << ", view on '" << node_view << "'";
     }
     std::cerr << std::endl;
 

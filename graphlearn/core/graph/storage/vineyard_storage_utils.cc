@@ -489,7 +489,7 @@ GraphStorage *NewVineyardGraphStorage(const std::string &edge_type,
     const std::string &view_type) {
 #if defined(WITH_VINEYARD)
   LOG(INFO) << "create vineyard graph storage: " << WITH_VINEYARD;
-  return new VineyardGraphStorage(view_type);
+  return new VineyardGraphStorage(edge_type, view_type);
 #else
   throw std::runtime_error("create graph stroage: vineyard is not enabled");
 #endif
@@ -499,7 +499,7 @@ NodeStorage *NewVineyardNodeStorage(const std::string &node_type,
     const std::string &view_type) {
 #if defined(WITH_VINEYARD)
   LOG(INFO) << "create vineyard node storage: " << WITH_VINEYARD;
-  return new VineyardNodeStorage(view_type);
+  return new VineyardNodeStorage(node_type, view_type);
 #else
   throw std::runtime_error("create node storage: vineyard is not enabled");
 #endif

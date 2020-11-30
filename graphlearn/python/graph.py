@@ -240,8 +240,6 @@ class Graph(object):
 
   def init(self, task_index=0, task_count=1,
            cluster="", job_name="", **kwargs):
-    stroage_mode = pywrap.get_storage_mode()
-    tracker_mode = pywrap.get_tracker_mode()
     if self._with_vineyard:
       pywrap.set_storage_mode(8)
       pywrap.set_tracker_mode(0)
@@ -337,11 +335,6 @@ class Graph(object):
         self._server.init(self._edge_sources, self._node_sources)
       else:
         raise ValueError("Only support client and server for GL.")
-
-    # restore the settings
-    if self._with_vineyard:
-      pywrap.set_storage_mode(stroage_mode)
-      pywrap.set_tracker_mode(tracker_mode)
 
     return self
 
