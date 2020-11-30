@@ -19,6 +19,7 @@ from __future__ import division
 from __future__ import print_function
 
 import atexit
+import base64
 import copy
 import json
 import os
@@ -81,6 +82,8 @@ class Graph(object):
 
   def vineyard(self, handle, nodes=None, edges=None):
     self._with_vineyard = True
+    if not isinstance(handle, dict):
+      handle = json.loads(base64.b64decode(handle).decode('utf-8'))
     self._vineyard_handle = handle
     pywrap.set_vineyard_graph_id(handle['vineyard_id'])
     pywrap.set_vineyard_ipc_socket(handle['vineyard_socket'])
@@ -336,6 +339,28 @@ class Graph(object):
       else:
         raise ValueError("Only support client and server for GL.")
 
+    return self
+
+  def init_vineyard(self, server_index=None, worker_index=None, worker_count=None,
+                    standalone=False):
+    if not self._with_vineyard:
+      raise ValueError('Not a vineyard graph')
+
+    if standalone:
+      self.init()
+      return self
+
+    if server_index is None and worker_index is None:
+      raise ValueError('Cannot decide to launch a server or a worker')
+    if server_index is not None and worker_index is not None:
+      raise ValueError('Cannot be a server and a worker at the same unless standalone is True')
+
+    cluster = {'server': self._vineyard_handle['server'],
+               'client': self._vineyard_handle['client']}
+    if server_index is not None:
+      self.init(cluster=cluster, task_index=server_index, job_name="server")
+    else:
+      self.init(cluster=cluster, task_index=worker_index, job_name="client")
     return self
 
   def close(self):
