@@ -20,7 +20,6 @@ from __future__ import print_function
 
 import atexit
 import base64
-import copy
 import json
 import os
 import warnings
@@ -100,12 +99,12 @@ class Graph(object):
       n_int = int(confs[3])
       n_float = int(confs[4])
       n_string = int(confs[5])
-      g.node(source='',
-             node_type=node_type,
-             decoder=self._make_vineyard_decoder(
-               weighted, labeled, n_int, n_float, n_string))
+      self.node(source='',
+                node_type=node_type,
+                decoder=self._make_vineyard_decoder(
+                  weighted, labeled, n_int, n_float, n_string))
 
-    for edge_info in obj['edge_schema']:
+    for edge_info in handle['edge_schema']:
       confs = edge_info.split(':')
       if len(confs) != 8:
         continue
@@ -119,10 +118,10 @@ class Graph(object):
       n_int = int(confs[5])
       n_float = int(confs[6])
       n_string = int(confs[7])
-      g.edge(source='',
-             edge_type=(src_node_type, dst_node_type, edge_type),
-             decoder=self._make_vineyard_decoder(
-               weighted, labeled, n_int, n_float, n_string))
+      self.edge(source='',
+                edge_type=(src_node_type, dst_node_type, edge_type),
+                decoder=self._make_vineyard_decoder(
+                  weighted, labeled, n_int, n_float, n_string))
 
     return self
 
@@ -158,11 +157,23 @@ class Graph(object):
     self._node_sources.append(node_source)
     return self
 
+  def _copy_node_source(self, node):
+    result = pywrap.NodeSource()
+    result.path = node.path
+    result.format = node.format
+    result.id_type = node.id_type
+    result.attr_types = node.types
+    result.delimiter = node.delimiter
+    result.hash_buckets = node.hash_buckets
+    result.ignore_invalid = node.ignore_invalid
+    result.view_type = node.view_type
+    return result
+
   def node_view(self, node_view_type, node_type, seed=0, nsplit=1, split_range=(0, 1)):
     node_source = None
     for node in self._node_sources:
       if node.id_type == node_type:
-        node_source = copy.copy(node)
+        node_source = self._copy_node_source(node)
         break
     if node_source is None:
       raise ValueError('Node type "%s" doesn\'t exist.' % (node_type,))
@@ -230,11 +241,26 @@ class Graph(object):
         self._edge_sources.append(edge_source_reverse)
     return self
 
+  def _copy_edge_source(self, edge):
+    result = pywrap.EdgeSource()
+    result.path = edge.path
+    result.format = edge.format
+    result.edge_type = edge.edge_type
+    result.src_id_type = edge.src_id_type
+    result.dst_id_type = edge.dst_id_type
+    result.attr_types = edge.types
+    result.delimiter = edge.delimiter
+    result.hash_buckets = edge.hash_buckets
+    result.ignore_invalid = edge.ignore_invalid
+    result.direction = edge.direction
+    result.view_type = edge.view_type
+    return result
+
   def edge_view(self, edge_view_type, edge_type, seed=0, nsplit=1, split_range=(0, 1)):
     edge_source = None
     for edge in self._edge_sources:
       if (edge.src_id_type, edge.dst_id_type, edge.edge_type) == edge_type:
-        edge_source = copy.copy(edge)
+        edge_source = self._copy_edge_source(edge)
         break
     if edge_source is None:
       raise ValueError('edge type "%s" doesn\'t exist.' % (edge_type,))
