@@ -379,7 +379,8 @@ SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
 }
 
 SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
-                              label_id_t const node_label) {
+                              label_id_t const node_label,
+                              size_t start_index, size_t end_index) {
   static std::map<vineyard::ObjectID,
                   std::map<label_id_t, std::shared_ptr<SideInfo>>>
       side_info_cache;
@@ -396,7 +397,7 @@ SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
   // compute attribute numbers of i/f/s
   auto node_table = frag->vertex_data_table(node_label);
   auto vtable_schema = node_table->schema();
-  for (size_t idx = 0; idx < vtable_schema->fields().size() - 5; ++idx) {
+  for (size_t idx = start_index; idx < end_index; ++idx) {
     auto field = vtable_schema->fields()[idx];
     switch (field->type()->id()) {
     case arrow::Type::INT64:
@@ -417,7 +418,7 @@ SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
     }
   }
   side_info->format = kDefault;
-  for (size_t idx = 0; idx < vtable_schema->fields().size() - 5; ++idx) {
+  for (size_t idx = start_index; idx < end_index; ++idx) {
     // if (field->name() == "label") {
     //   side_info->format |= kLabeled;
     // } else if (field->name() == "weight") {

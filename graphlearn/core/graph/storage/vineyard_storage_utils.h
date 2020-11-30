@@ -107,7 +107,8 @@ SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
                               label_id_t const edge_label);
 
 SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
-                              label_id_t const node_label);
+                              label_id_t const node_label,
+                              size_t start_index, size_t end_index);
 
 int64_t find_index_of_name(std::shared_ptr<arrow::Schema> const &schema,
                            std::string const &name);

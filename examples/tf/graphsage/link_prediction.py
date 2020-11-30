@@ -186,6 +186,8 @@ def main():
   for edge_info in handle['edge_schema']:
     if edge_info.split(':')[1] == edge_type:
       handle['edge_schema'] = [edge_info]
+  gl.set_attr_start_index(0)
+  gl.set_attr_end_index(2)
 
   config = {'class_num': 32,
             'features_num': 2,

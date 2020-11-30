@@ -44,7 +44,6 @@ public:
     } else {
       node_label_ = vlabel_index - vlabels.begin();
     }
-    side_info_ = frag_node_side_info(frag_, node_label_);
 
     auto vtable = frag_->vertex_data_table(node_label_);
     size_t start_index = GLOBAL_FLAG(AttrStartIndex);
@@ -53,6 +52,7 @@ public:
     if (end_index > vtable->num_columns()) {
       end_index = vtable->num_columns();
     }
+    side_info_ = frag_node_side_info(frag_, node_label_, start_index, end_index);
     init_table_accessors(vtable, start_index, end_index, i32_indexes_,
                          i64_indexes_, f32_indexes_, f64_indexes_, s_indexes_,
                          ls_indexes_, vertex_table_accessors_);
@@ -78,7 +78,6 @@ public:
     if (frag_ == nullptr) {
       throw std::runtime_error("Node: failed to find a local fragment");
     }
-    side_info_ = frag_node_side_info(frag_, node_label_);
 
     auto vtable = frag_->vertex_data_table(node_label_);
     size_t start_index = GLOBAL_FLAG(AttrStartIndex);
@@ -87,6 +86,7 @@ public:
     if (end_index > vtable->num_columns()) {
       end_index = vtable->num_columns();
     }
+    side_info_ = frag_node_side_info(frag_, node_label_, start_index, end_index);
     init_table_accessors(vtable, start_index, end_index, i32_indexes_,
                          i64_indexes_, f32_indexes_, f64_indexes_, s_indexes_,
                          ls_indexes_, vertex_table_accessors_);
