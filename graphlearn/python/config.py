@@ -96,9 +96,3 @@ def set_vineyard_ipc_socket(ipc_socket):
   pywrap.set_vineyard_ipc_socket(ipc_socket)
 
 
-def set_attr_start_index(start_index):
-  pywrap.set_attr_start_index(start_index)
-
-
-def set_attr_end_index(end_index):
-  pywrap.set_attr_end_index(end_index)
