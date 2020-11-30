@@ -167,6 +167,7 @@ class Graph(object):
     result.hash_buckets = node.hash_buckets
     result.ignore_invalid = node.ignore_invalid
     result.view_type = node.view_type
+    result.use_attrs = node.use_attrs
     return result
 
   def node_view(self, node_view_type, node_type, seed=0, nsplit=1, split_range=(0, 1)):
@@ -272,6 +273,7 @@ class Graph(object):
     result.ignore_invalid = edge.ignore_invalid
     result.direction = edge.direction
     result.view_type = edge.view_type
+    result.use_attrs = edge.use_attrs
     return result
 
   def edge_view(self, edge_view_type, edge_type, seed=0, nsplit=1, split_range=(0, 1)):
