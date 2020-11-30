@@ -82,8 +82,8 @@ class Graph(object):
   def vineyard(self, handle, nodes=None, edges=None):
     self._with_vineyard = True
     self._vineyard_handle = handle
-    gl.set_vineyard_graph_id(handle['vineyard_id'])
-    gl.set_vineyard_ipc_socket(handle['vineyard_socket'])
+    pywrap.set_vineyard_graph_id(handle['vineyard_id'])
+    pywrap.set_vineyard_ipc_socket(handle['vineyard_socket'])
 
     for node_info in handle['node_schema']:
       confs = node_info.split(':')
@@ -240,11 +240,11 @@ class Graph(object):
 
   def init(self, task_index=0, task_count=1,
            cluster="", job_name="", **kwargs):
-    stroage_mode = gl.get_storage_mode()
-    tracker_mode = gl.get_tracker_mode()
+    stroage_mode = pywrap.get_storage_mode()
+    tracker_mode = pywrap.get_tracker_mode()
     if self._with_vineyard:
-      gl.set_storage_mode(8)
-      gl.set_tracker_mode(0)
+      pywrap.set_storage_mode(8)
+      pywrap.set_tracker_mode(0)
 
     """ Initialize the graph with creating graph server instance with
     given cluster env info.
@@ -340,8 +340,8 @@ class Graph(object):
 
     # restore the settings
     if self._with_vineyard:
-      gl.set_storage_mode(stroage_mode)
-      gl.set_tracker_mode(tracker_mode)
+      pywrap.set_storage_mode(stroage_mode)
+      pywrap.set_tracker_mode(tracker_mode)
 
     return self
 
