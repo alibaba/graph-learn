@@ -162,7 +162,7 @@ class Graph(object):
     result.path = node.path
     result.format = node.format
     result.id_type = node.id_type
-    result.attr_types = node.types
+    result.attr_types = node.attr_types
     result.delimiter = node.delimiter
     result.hash_buckets = node.hash_buckets
     result.ignore_invalid = node.ignore_invalid
@@ -177,8 +177,10 @@ class Graph(object):
         break
     if node_source is None:
       raise ValueError('Node type "%s" doesn\'t exist.' % (node_type,))
-    node_source.view_type = '%s:%d:%d:%d:%d' % (node_view_type, seed, nsplit,
+    node_source.id_type = node_view_type
+    node_source.view_type = '%s:%d:%d:%d:%d' % (node_type, seed, nsplit,
                                                 split_range[0], split_range[1])
+    return self
 
   def edge(self,
            source,
@@ -248,7 +250,7 @@ class Graph(object):
     result.edge_type = edge.edge_type
     result.src_id_type = edge.src_id_type
     result.dst_id_type = edge.dst_id_type
-    result.attr_types = edge.types
+    result.attr_types = edge.attr_types
     result.delimiter = edge.delimiter
     result.hash_buckets = edge.hash_buckets
     result.ignore_invalid = edge.ignore_invalid
@@ -264,8 +266,10 @@ class Graph(object):
         break
     if edge_source is None:
       raise ValueError('edge type "%s" doesn\'t exist.' % (edge_type,))
-    edge_source.view_type = '%s:%d:%d:%d:%d' % (edge_view_type, seed, nsplit,
+    edge_source.edge_type = edge_view_type
+    edge_source.view_type = '%s:%d:%d:%d:%d' % (edge_type, seed, nsplit,
                                                 split_range[0], split_range[1])
+    return self
 
   def init(self, task_index=0, task_count=1,
            cluster="", job_name="", **kwargs):
