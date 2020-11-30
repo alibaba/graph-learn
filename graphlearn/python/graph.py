@@ -180,6 +180,8 @@ class Graph(object):
     node_source.id_type = node_view_type
     node_source.view_type = '%s:%d:%d:%d:%d' % (node_type, seed, nsplit,
                                                 split_range[0], split_range[1])
+    self._node_decoders[node_view_type] = self._node_decoders[node_type]
+    self._node_sources.append(node_source)
     return self
 
   def edge(self,
@@ -269,6 +271,8 @@ class Graph(object):
     edge_source.edge_type = edge_view_type
     edge_source.view_type = '%s:%d:%d:%d:%d' % (edge_type, seed, nsplit,
                                                 split_range[0], split_range[1])
+    self._edge_decoders[edge_view_type] = self._edge_decoders[edge_type]
+    self._edge_sources.append(edge_source)
     return self
 
   def init(self, task_index=0, task_count=1,
