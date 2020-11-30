@@ -29,31 +29,29 @@ void init_table_accessors(std::shared_ptr<arrow::Table> const &table,
                           std::vector<int> &s_indexes,
                           std::vector<int> &ls_indexes,
                           std::vector<const void*> &table_accessors) {
-  table_accessors.resize(attrs.size());
-  size_t attr_index = 0;
   auto const &fields = table->schema()->fields();
+  table_accessors.resize(fields.size(), -1);
   for (int idx = 0; idx < fields.size(); ++idx) {
     if (attrs.find(fields[idx]->name()) == attrs.end()) {
       continue;
     }
     auto array = table->column(idx)->chunk(0);
-    table_accessors[attr_index] = vineyard::get_arrow_array_ptr(array);
+    table_accessors[idx] = vineyard::get_arrow_array_ptr(array);
     if (array->type()->Equals(arrow::int32())) {
-      i32_indexes.emplace_back(attr_index);
+      i32_indexes.emplace_back(idx);
     } else if (array->type()->Equals(arrow::int64())) {
-      i64_indexes.emplace_back(attr_index);
+      i64_indexes.emplace_back(idx);
     } else if (array->type()->Equals(arrow::float32())) {
-      f32_indexes.emplace_back(attr_index);
+      f32_indexes.emplace_back(idx);
     } else if (array->type()->Equals(arrow::float64())) {
-      f64_indexes.emplace_back(attr_index);
+      f64_indexes.emplace_back(idx);
     } else if (array->type()->Equals(arrow::utf8())) {
-      s_indexes.emplace_back(attr_index);
+      s_indexes.emplace_back(idx);
     } else if (array->type()->Equals(arrow::large_utf8())) {
-      ls_indexes.emplace_back(attr_index);
+      ls_indexes.emplace_back(idx);
     } else {
       LOG(ERROR) << "Unsupported column type: " << array->type()->ToString();
     }
-    attr_index += 1;
   }
 }
 

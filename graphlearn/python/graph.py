@@ -193,8 +193,8 @@ class Graph(object):
     if node_source is None:
       raise ValueError('Node type "%s" doesn\'t exist.' % (node_type,))
     node_source.use_attrs = ';'.join(attrs)
-    decoder = self.node_decoders[node_type]
-    self.node_decoders[node_type] = self._make_vineyard_decoder(
+    decoder = self._node_decoders[node_type]
+    self._node_decoders[node_type] = self._make_vineyard_decoder(
       decoder.weighted, decoder.labeled, n_int, n_float, n_string)
     return self
 
