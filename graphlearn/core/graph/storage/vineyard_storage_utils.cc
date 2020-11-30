@@ -30,7 +30,7 @@ void init_table_accessors(std::shared_ptr<arrow::Table> const &table,
                           std::vector<int> &ls_indexes,
                           std::vector<const void*> &table_accessors) {
   auto const &fields = table->schema()->fields();
-  table_accessors.resize(fields.size(), -1);
+  table_accessors.resize(fields.size(), nullptr);
   for (int idx = 0; idx < fields.size(); ++idx) {
     if (attrs.find(fields[idx]->name()) == attrs.end()) {
       continue;
