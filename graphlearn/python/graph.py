@@ -189,7 +189,7 @@ class Graph(object):
     node_source = None
     for node in self._node_sources:
       if node.id_type == node_type:
-        node_source = self._copy_node_source(node)
+        node_source = node
         break
     if node_source is None:
       raise ValueError('Node type "%s" doesn\'t exist.' % (node_type,))
@@ -295,7 +295,7 @@ class Graph(object):
     edge_source = None
     for edge in self._edge_sources:
       if (edge.src_id_type, edge.dst_id_type, edge.edge_type) == edge_type:
-        edge_source = self._copy_edge_source(edge)
+        edge_source = edge
         break
     if edge_source is None:
       raise ValueError('edge type "%s" doesn\'t exist.' % (edge_type,))
