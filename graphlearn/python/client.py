@@ -22,7 +22,7 @@ from graphlearn import pywrap_graphlearn as pywrap
 
 
 class Client(object):
-  """ A class managing a GraphLearn client, including start, init and stop.
+  """ A class managing a GraphLearn client.
   """
 
   def __init__(self,
@@ -32,10 +32,8 @@ class Client(object):
     """ Create GraphLearn server instance with given cluster env info.
 
     Args:
-      server_id: An int, server index in the cluster, starts from 0.
-      server_count: An int, server instance number in the cluster.
-      tracker: A string where the tracker will be stored, and dynamic
-        address will be registered to.
+      client_id: An int, client index, starts from 0.
+      in_memory: An bool, is in memory client or rpc client.
     """
     self._client_id = client_id
     self._in_memory = in_memory
@@ -53,23 +51,25 @@ class Client(object):
   def own_servers(self):
     return self._own_servers
 
-  def connect_to_next(self):
+  def connect_to_next_server(self):
     if self._in_memory:
       return False
 
     next_index = (self._cur_index + 1) % len(self._own_servers)
     if next_index == self._cur_index:
-      return False   # only one own server
+      return False   # the client has only one own server
     elif next_index < self._cur_index:
-      self._cur_index = next_index
-      self._client.stop
-      self._client = pywrap.rpc_client(self._own_servers[next_index], True, True)
-      return True
-    else:
+      # one epoch finish, start next epoch
       self._cur_index = next_index
       self._client.stop
       self._client = pywrap.rpc_client(self._own_servers[next_index], True, True)
       return False
+    else:
+      # one server finish, start to connect next server
+      self._cur_index = next_index
+      self._client.stop
+      self._client = pywrap.rpc_client(self._own_servers[next_index], True, True)
+      return True
 
   def stop(self):
     self._client.stop()
