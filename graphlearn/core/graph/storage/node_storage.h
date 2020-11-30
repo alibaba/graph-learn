@@ -70,7 +70,8 @@ NodeStorage* NewMemoryNodeStorage();
 NodeStorage* NewCompressedMemoryNodeStorage();
 NodeStorage* NewVineyardNodeStorage(
     const std::string& node_type,
-    const std::string& view_type);
+    const std::string& view_type,
+    const std::string &use_attrs);
 
 }  // namespace io
 }  // namespace graphlearn

@@ -2,6 +2,7 @@
 #define GRAPHLEARN_CORE_GRAPH_STORAGE_VINEYARD_NODE_STORAGE_H_
 
 #include <random>
+#include <set>
 
 #if defined(WITH_VINEYARD)
 #include "vineyard/graph/fragment/arrow_fragment.h"
@@ -20,7 +21,8 @@ namespace io {
 class VineyardNodeStorage : public graphlearn::io::NodeStorage {
 public:
   explicit VineyardNodeStorage(std::string node_label = "0",
-                               std::string const &node_view = "") {
+                               std::string const &node_view = "",
+                               std::string const &use_attrs = "") {
     std::cerr << "node_label = " << node_label << ", from "
               << GLOBAL_FLAG(VineyardGraphID);
     if (!node_view.empty()) {
@@ -63,10 +65,17 @@ public:
     } else {
       node_label_ = vlabel_index - vlabels.begin();
     }
-    side_info_ = frag_node_side_info(frag_, node_label_);
-
     auto vtable = frag_->vertex_data_table(node_label_);
-    init_table_accessors(vtable, 0, vtable->num_columns() - 1, i32_indexes_,
+    if (use_attrs.empty()) {
+      for (auto const &field: vtable->schema()->fields()) {
+        attrs_.emplace(field->name());
+      }
+    } else {
+      boost::algorithm::split(attrs_, use_attrs, boost::is_any_of(";"));
+    }
+
+    side_info_ = frag_node_side_info(frag_, attrs_, node_label_);
+    init_table_accessors(vtable, attrs_, i32_indexes_,
                          i64_indexes_, f32_indexes_, f64_indexes_, s_indexes_,
                          ls_indexes_, vertex_table_accessors_);
 
@@ -182,8 +191,7 @@ public:
 
 #if 0
     auto table = frag_->vertex_data_table(label);
-    return Attribute(arrow_line_to_attribute_value(table, offset, 0,
-                                                   table->num_columns() - 1),
+    return Attribute(arrow_line_to_attribute_value(table, offset, attrs_),
                      true);
 #elif 0
     return Attribute(arrow_line_to_attribute_value_fast(
@@ -259,7 +267,7 @@ public:
     for (auto id = id_range.begin(); id < id_range.end(); ++id) {
       auto offset = frag_->vertex_offset(id);
       value_list->emplace_back(arrow_line_to_attribute_value(
-                                   vtable, offset, 0, vtable->num_columns() - 1),
+                                   vtable, offset, attrs_),
                                true);
     }
     return value_list;
@@ -282,6 +290,8 @@ private:
   std::vector<int> i32_indexes_, i64_indexes_, f32_indexes_, f64_indexes_,
       s_indexes_, ls_indexes_;
   std::vector<const void *> vertex_table_accessors_;
+
+  std::set<std::string> attrs_;
 };
 
 } // namespace io

@@ -2,6 +2,7 @@
 #define GRAPHLEARN_CORE_GRAPH_STORAGE_VINEYARD_STORAGE_UTILS_H_
 
 #include <memory>
+#include <set>
 
 #if defined(WITH_VINEYARD)
 #include "vineyard/graph/fragment/arrow_fragment.h"
@@ -39,7 +40,7 @@ using graphlearn::io::NewDataHeldAttributeValue;
 using graphlearn::io::SideInfo;
 
 void init_table_accessors(std::shared_ptr<arrow::Table> const &table,
-                          size_t start_index, size_t end_index,
+                          std::set<std::string> const &attrs,
                           std::vector<int> &i32_indexes,
                           std::vector<int> &i64_indexes,
                           std::vector<int> &f32_indexes,
@@ -50,7 +51,8 @@ void init_table_accessors(std::shared_ptr<arrow::Table> const &table,
 
 AttributeValue *
 arrow_line_to_attribute_value(std::shared_ptr<arrow::Table> table,
-                              int row_index, int start_index, int end_index);
+                              int row_index,
+                              std::set<std::string> const &attrs);
 
 AttributeValue *arrow_line_to_attribute_value_fast(
                           const int row_index,
@@ -97,16 +99,20 @@ int32_t get_edge_label(std::shared_ptr<gl_frag_t> const &frag,
                        label_id_t const edge_label, IdType edge_id);
 
 Attribute get_edge_attribute(std::shared_ptr<gl_frag_t> const &frag,
-                             label_id_t const edge_label, IdType edge_id);
+                             label_id_t const edge_label,
+                             IdType edge_id,
+                             std::set<std::string> const &attrs);
 
 void init_src_dst_list(std::shared_ptr<gl_frag_t> const &frag,
                     label_id_t const edge_label, std::vector<IdType> &src_lists,
                     std::vector<IdType> &dst_lists);
 
 SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
+                              std::set<std::string> const &attrs,
                               label_id_t const edge_label);
 
 SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
+                              std::set<std::string> const &attrs,
                               label_id_t const node_label);
 
 int64_t find_index_of_name(std::shared_ptr<arrow::Schema> const &schema,

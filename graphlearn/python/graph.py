@@ -168,6 +168,7 @@ class Graph(object):
     result.hash_buckets = node.hash_buckets
     result.ignore_invalid = node.ignore_invalid
     result.view_type = node.view_type
+    result.use_attrs = node.use_attrs
     return result
 
   def node_view(self, node_view_type, node_type, seed=0, nsplit=1, split_range=(0, 1)):
@@ -183,6 +184,20 @@ class Graph(object):
                                                 split_range[0], split_range[1])
     self._node_decoders[node_view_type] = self._node_decoders[node_type]
     self._node_sources.append(node_source)
+    return self
+
+  def node_attributes(self, node_type, attrs, n_int, n_float, n_string):
+    node_source = None
+    for node in self._node_sources:
+      if node.id_type == node_type:
+        node_source = node
+        break
+    if node_source is None:
+      raise ValueError('Node type "%s" doesn\'t exist.' % (node_type,))
+    node_source.use_attrs = ';'.join(attrs)
+    decoder = self._node_decoders[node_type]
+    self._node_decoders[node_type] = self._make_vineyard_decoder(
+      decoder.weighted, decoder.labeled, n_int, n_float, n_string)
     return self
 
   def edge(self,
@@ -259,6 +274,7 @@ class Graph(object):
     result.ignore_invalid = edge.ignore_invalid
     result.direction = edge.direction
     result.view_type = edge.view_type
+    result.use_attrs = edge.use_attrs
     return result
 
   def edge_view(self, edge_view_type, edge_type, seed=0, nsplit=1, split_range=(0, 1)):
@@ -274,6 +290,19 @@ class Graph(object):
                                                 split_range[0], split_range[1])
     self._edge_decoders[edge_view_type] = self._edge_decoders[edge_type]
     self._edge_sources.append(edge_source)
+    return self
+
+  def edge_attributes(self, node_type, attrs, n_int, n_float, n_string):
+    edge_source = None
+    for edge in self._edge_sources:
+      if (edge.src_id_type, edge.dst_id_type, edge.edge_type) == edge_type:
+        edge_source = edge
+        break
+    if edge_source is None:
+      raise ValueError('edge type "%s" doesn\'t exist.' % (edge_type,))
+    edge_source.use_attrs = ';'.join(attrs)
+    self.edge_decoders[edge_type] = self._make_vineyard_decoder(
+      decoder.weighted, decoder.labeled, n_int, n_float, n_string)
     return self
 
   def init(self, task_index=0, task_count=1,

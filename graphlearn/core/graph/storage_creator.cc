@@ -20,7 +20,7 @@ namespace graphlearn {
 
 #define CREATE(Type)                                 \
   if (io::IsVineyardStorageEnabled()) {              \
-    return io::NewVineyard##Type##Storage(type, view_type);     \
+    return io::NewVineyard##Type##Storage(type, view_type, use_attrs);     \
   } else if (io::IsCompressedStorageEnabled()) {     \
     return io::NewCompressedMemory##Type##Storage(); \
   } else {                                           \
@@ -28,12 +28,14 @@ namespace graphlearn {
   }
 
 io::GraphStorage* CreateGraphStorage(const std::string& type,
-    const std::string& view_type) {
+    const std::string& view_type,
+    const std::string &use_attrs) {
   CREATE(Graph)
 }
 
 io::NodeStorage* CreateNodeStorage(const std::string& type,
-    const std::string& view_type) {
+    const std::string& view_type,
+    const std::string &use_attrs) {
   CREATE(Node)
 }
 

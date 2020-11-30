@@ -41,6 +41,7 @@ struct NodeSource {
   std::vector<int64_t> hash_buckets;
 
   std::string view_type;
+  std::string use_attrs;
 
   NodeSource()
       : format(kAttributed),
@@ -56,6 +57,7 @@ struct NodeSource {
     types = right.types;
     hash_buckets = right.hash_buckets;
     view_type = right.view_type;
+    use_attrs = right.use_attrs;
   }
 
   void AppendAttrType(DataType type) {
@@ -117,6 +119,7 @@ struct EdgeSource {
   std::vector<int64_t> hash_buckets;
 
   std::string view_type;
+  std::string use_attrs;
 
   EdgeSource()
       : format(kWeighted),
@@ -135,6 +138,7 @@ struct EdgeSource {
     types = right.types;
     hash_buckets = right.hash_buckets;
     view_type = right.view_type;
+    use_attrs = right.use_attrs;
   }
 
   inline void AppendAttrType(DataType type) {

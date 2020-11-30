@@ -20,7 +20,8 @@ namespace io {
 class VineyardGraphStorage : public GraphStorage {
 public:
   explicit VineyardGraphStorage(std::string edge_label = "0",
-                                std::string const &edge_view = "") {
+                                std::string const &edge_view = "",
+                                std::string const &use_attrs = "") {
     std::cerr << "edge_label = " << edge_label << ", from "
               << GLOBAL_FLAG(VineyardGraphID);
     if (!edge_view.empty()) {
@@ -63,8 +64,18 @@ public:
     } else {
       edge_label_ = elabel_index - elabels.begin();
     }
+
+    auto etable = frag_->edge_data_table(edge_label_);
+    if (use_attrs.empty()) {
+      for (auto const &field: etable->schema()->fields()) {
+        attrs_.emplace(field->name());
+      }
+    } else {
+      boost::algorithm::split(attrs_, use_attrs, boost::is_any_of(";"));
+    }
+
     init_src_dst_list(frag_, edge_label_, src_lists_, dst_lists_);
-    side_info_ = frag_edge_side_info(frag_, edge_label_);
+    side_info_ = frag_edge_side_info(frag_, attrs_, edge_label_);
   }
 
   virtual ~VineyardGraphStorage() = default;
@@ -105,7 +116,7 @@ public:
     if (!side_info_->IsAttributed()) {
       return Attribute();
     }
-    return get_edge_attribute(frag_, edge_label_, edge_id);
+    return get_edge_attribute(frag_, edge_label_, edge_id, attrs_);
   }
 
   virtual Array<IdType> GetNeighbors(IdType src_id) const override {
@@ -145,6 +156,8 @@ private:
   // for edge view
   std::string view_label;
   int32_t seed, nsplit, split_begin, split_end;
+
+  std::set<std::string> attrs_;
 
   std::vector<IdType> src_lists_;
   std::vector<IdType> dst_lists_;

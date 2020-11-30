@@ -21,7 +21,7 @@ namespace io {
 #if defined(WITH_VINEYARD)
 
 void init_table_accessors(std::shared_ptr<arrow::Table> const &table,
-                          size_t start_index, size_t end_index,
+                          std::set<std::string> const &attrs,
                           std::vector<int> &i32_indexes,
                           std::vector<int> &i64_indexes,
                           std::vector<int> &f32_indexes,
@@ -29,37 +29,43 @@ void init_table_accessors(std::shared_ptr<arrow::Table> const &table,
                           std::vector<int> &s_indexes,
                           std::vector<int> &ls_indexes,
                           std::vector<const void*> &table_accessors) {
-  table_accessors.resize(end_index - start_index);
-  size_t attr_index = 0;
-  for (int idx = start_index; idx < end_index; ++idx) {
+  auto const &fields = table->schema()->fields();
+  table_accessors.resize(fields.size(), nullptr);
+  for (int idx = 0; idx < fields.size(); ++idx) {
+    if (attrs.find(fields[idx]->name()) == attrs.end()) {
+      continue;
+    }
     auto array = table->column(idx)->chunk(0);
-    table_accessors[attr_index] = vineyard::get_arrow_array_ptr(array);
+    table_accessors[idx] = vineyard::get_arrow_array_ptr(array);
     if (array->type()->Equals(arrow::int32())) {
-      i32_indexes.emplace_back(attr_index);
+      i32_indexes.emplace_back(idx);
     } else if (array->type()->Equals(arrow::int64())) {
-      i64_indexes.emplace_back(attr_index);
+      i64_indexes.emplace_back(idx);
     } else if (array->type()->Equals(arrow::float32())) {
-      f32_indexes.emplace_back(attr_index);
+      f32_indexes.emplace_back(idx);
     } else if (array->type()->Equals(arrow::float64())) {
-      f64_indexes.emplace_back(attr_index);
+      f64_indexes.emplace_back(idx);
     } else if (array->type()->Equals(arrow::utf8())) {
-      s_indexes.emplace_back(attr_index);
+      s_indexes.emplace_back(idx);
     } else if (array->type()->Equals(arrow::large_utf8())) {
-      ls_indexes.emplace_back(attr_index);
+      ls_indexes.emplace_back(idx);
     } else {
       LOG(ERROR) << "Unsupported column type: " << array->type()->ToString();
     }
-    attr_index += 1;
   }
 }
 
 AttributeValue *
 arrow_line_to_attribute_value(std::shared_ptr<arrow::Table> table,
-                              int row_index, int start_index, int end_index) {
+                              int row_index, std::set<std::string> const &attrs) {
   auto attr = NewDataHeldAttributeValue();
   VINEYARD_ASSERT(row_index < table->num_rows());
   // NOTE: the last column is id column, cast off
-  for (int idx = start_index; idx < end_index; ++idx) {
+  auto const &fields = table->schema()->fields();
+  for (int idx = 0; idx < fields.size(); ++idx) {
+    if (attrs.find(fields[idx]->name()) == attrs.end()) {
+      continue;
+    }
     auto arr = table->column(idx)->chunk(0);
     switch (arr->type()->id()) {
     case arrow::Type::INT32: {
@@ -289,9 +295,11 @@ int32_t get_edge_label(std::shared_ptr<gl_frag_t> const &frag,
 }
 
 Attribute get_edge_attribute(std::shared_ptr<gl_frag_t> const &frag,
-                             label_id_t const edge_label, IdType edge_id) {
+                             label_id_t const edge_label,
+                             IdType edge_id,
+                             std::set<std::string> const &attrs) {
   auto table = frag->edge_data_table(edge_label);
-  return Attribute(arrow_line_to_attribute_value(table, edge_id, 0, table->num_columns()), true);
+  return Attribute(arrow_line_to_attribute_value(table, edge_id, attrs), true);
 }
 
 void init_src_dst_list(std::shared_ptr<gl_frag_t> const &frag,
@@ -313,6 +321,7 @@ void init_src_dst_list(std::shared_ptr<gl_frag_t> const &frag,
 }
 
 SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
+                              std::set<std::string> const &attrs,
                               label_id_t const edge_label) {
   static std::map<vineyard::ObjectID,
                   std::map<label_id_t, std::shared_ptr<SideInfo>>>
@@ -329,9 +338,14 @@ SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
   auto edge_table = frag->edge_data_table(edge_label);
   auto etable_schema = edge_table->schema();
   LOG(INFO) << "etable_schema: " << etable_schema->ToString();
-  for (size_t idx = 0; idx < etable_schema->fields().size(); ++idx) {
-    auto field = etable_schema->fields()[idx];
+  auto const &fields = etable_schema->fields();
+  for (size_t idx = 0; idx < fields.size(); ++idx) {
+    auto field = fields[idx];
+    if (attrs.find(fields[idx]->name()) == attrs.end()) {
+      continue;
+    }
     switch (field->type()->id()) {
+    case arrow::Type::INT32:
     case arrow::Type::INT64:
       side_info->i_num += 1;
       LOG(INFO) << "matched a int";
@@ -342,6 +356,7 @@ SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
       LOG(INFO) << "matched a float";
       break;
     case arrow::Type::STRING:
+    case arrow::Type::LARGE_STRING:
       side_info->s_num += 1;
       LOG(INFO) << "matched a string";
       break;
@@ -379,6 +394,7 @@ SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
 }
 
 SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
+                              std::set<std::string> const &attrs,
                               label_id_t const node_label) {
   static std::map<vineyard::ObjectID,
                   std::map<label_id_t, std::shared_ptr<SideInfo>>>
@@ -396,9 +412,14 @@ SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
   // compute attribute numbers of i/f/s
   auto node_table = frag->vertex_data_table(node_label);
   auto vtable_schema = node_table->schema();
-  for (size_t idx = 0; idx < vtable_schema->fields().size() - 1; ++idx) {
-    auto field = vtable_schema->fields()[idx];
+  auto const &fields = vtable_schema->fields();
+  for (size_t idx = 0; idx < fields.size() - 1; ++idx) {
+    auto field = fields[idx];
+    if (attrs.find(fields[idx]->name()) == attrs.end()) {
+      continue;
+    }
     switch (field->type()->id()) {
+    case arrow::Type::INT32:
     case arrow::Type::INT64:
       side_info->i_num += 1;
       LOG(INFO) << "matched a int";
@@ -409,6 +430,7 @@ SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
       LOG(INFO) << "matched a float";
       break;
     case arrow::Type::STRING:
+    case arrow::Type::LARGE_STRING:
       side_info->s_num += 1;
       LOG(INFO) << "matched a string";
       break;
@@ -486,20 +508,22 @@ void ArrowRefAttributeValue::FillStrings(Tensor *tensor) const {
 #endif
 
 GraphStorage *NewVineyardGraphStorage(const std::string &edge_type,
-    const std::string &view_type) {
+    const std::string &view_type,
+    const std::string &use_attrs) {
 #if defined(WITH_VINEYARD)
   LOG(INFO) << "create vineyard graph storage: " << WITH_VINEYARD;
-  return new VineyardGraphStorage(edge_type, view_type);
+  return new VineyardGraphStorage(edge_type, view_type, use_attrs);
 #else
   throw std::runtime_error("create graph stroage: vineyard is not enabled");
 #endif
 }
 
 NodeStorage *NewVineyardNodeStorage(const std::string &node_type,
-    const std::string &view_type) {
+    const std::string &view_type,
+    const std::string &use_attrs) {
 #if defined(WITH_VINEYARD)
   LOG(INFO) << "create vineyard node storage: " << WITH_VINEYARD;
-  return new VineyardNodeStorage(node_type, view_type);
+  return new VineyardNodeStorage(node_type, view_type, use_attrs);
 #else
   throw std::runtime_error("create node storage: vineyard is not enabled");
 #endif
