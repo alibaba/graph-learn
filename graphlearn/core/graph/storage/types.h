@@ -147,6 +147,14 @@ public:
     size_ = rhs.size_;
   }
 
+  Array& operator=(const Array& rhs) {
+    value_ = rhs.value_;
+    mvalue_ = rhs.mvalue_;
+    rangevalue_ = rhs.rangevalue_;
+    size_ = rhs.size_;
+    return *this;
+  }
+
   Array(Array&& rhs) {
     value_ = rhs.value_;
     mvalue_ = rhs.mvalue_;

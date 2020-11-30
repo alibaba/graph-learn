@@ -1,6 +1,8 @@
 #ifndef GRAPHLEARN_CORE_GRAPH_STORAGE_VINEYARD_NODE_STORAGE_H_
 #define GRAPHLEARN_CORE_GRAPH_STORAGE_VINEYARD_NODE_STORAGE_H_
 
+#include <random>
+
 #if defined(WITH_VINEYARD)
 #include "vineyard/graph/fragment/arrow_fragment.h"
 #include "vineyard/graph/fragment/arrow_fragment_group.h"
@@ -64,9 +66,36 @@ public:
     side_info_ = frag_node_side_info(frag_, node_label_);
 
     auto vtable = frag_->vertex_data_table(node_label_);
-    init_table_accessors(vtable, 0, vtable->num_columns(), i32_indexes_,
+    init_table_accessors(vtable, 0, vtable->num_columns() - 1, i32_indexes_,
                          i64_indexes_, f32_indexes_, f64_indexes_, s_indexes_,
                          ls_indexes_, vertex_table_accessors_);
+
+    if (node_view.empty()) {
+      auto range = frag_->InnerVertices(node_label_);
+      #ifndef NDEBUG
+          std::cerr << "node: get ids (no view): " << node_label_
+                    << ", range begin = " << range.begin().GetValue()
+                    << ", range end = " << range.end().GetValue() << std::endl;
+      #endif
+      all_ids_ = IdArray(frag_->GetInnerVertexGid(range.begin()),
+                                   frag_->GetInnerVertexGid(range.end()));
+    } else {
+      auto range = frag_->InnerVertices(node_label_);
+      #ifndef NDEBUG
+          std::cerr << "node: get ids: " << node_label_ << " with view '" << node_view << "'"
+                    << ", range begin = " << range.begin().GetValue()
+                    << ", range end = " << range.end().GetValue() << std::endl;
+      #endif
+      std::mt19937 rng(seed);
+      std::uniform_int_distribution<> rng_gen(0, nsplit);
+      for (auto v: range) {
+        int rng_number = rng_gen(rng);
+        if (rng_number >= split_begin && rng_number < split_end) {
+          selected_ids_.emplace_back(frag_->GetInnerVertexGid(v));
+        }
+      }
+      all_ids_ = IdArray(selected_ids_.data(), selected_ids_.size());
+    }
   }
 
   virtual ~VineyardNodeStorage() = default;
@@ -173,14 +202,7 @@ public:
   /// Get all the node ids, the count of which is the same with Size().
   /// These ids are distinct.
   virtual const IdArray GetIds() const override {
-    auto range = frag_->InnerVertices(node_label_);
-#ifndef NDEBUG
-    std::cerr << "node: get ids: " << node_label_
-              << ", range begin = " << range.begin().GetValue()
-              << ", range end = " << range.end().GetValue() << std::endl;
-#endif
-    return IdArray(frag_->GetInnerVertexGid(range.begin()),
-                   frag_->GetInnerVertexGid(range.end()));
+    return all_ids_;
   }
 
   /// Get all weights if existed, the count of which is the same with Size().
@@ -244,32 +266,17 @@ public:
   }
 
 private:
-  template <typename T, typename RT = T>
-  const Array<RT> GetAttribute(std::string const &name) const {
-    int attr_index = find_index_of_name(
-        frag_->vertex_data_table(node_label_)->schema(), name);
-    if (attr_index == -1) {
-      return nullptr;
-    }
-    size_t count = frag_->GetInnerVerticesNum(node_label_);
-    auto value_list = new std::vector<RT>();
-    value_list->reserve(count);
-
-    auto id_range = frag_->InnerVertices(node_label_);
-    for (auto id = id_range.begin(); id < id_range.end(); ++id) {
-      value_list->emplace_back(frag_->GetData<T>(id, attr_index));
-    }
-    return value_list;
-  }
-
   vineyard::Client client_;
   std::shared_ptr<gl_frag_t> frag_;
   label_id_t node_label_;
   SideInfo *side_info_ = nullptr;
 
   // for node view
-  std::string view_label;
+  std::string view_label_;
   int32_t seed, nsplit, split_begin, split_end;
+
+  IdArray all_ids_;
+  std::vector<IdType> selected_ids_;
 
   // for fast attribute access
   std::vector<int> i32_indexes_, i64_indexes_, f32_indexes_, f64_indexes_,
