@@ -18,7 +18,8 @@ namespace io {
 class VineyardEdgeStorage : public EdgeStorage {
 public:
   explicit VineyardEdgeStorage(std::string edge_label = "0",
-                               std::string const &edge_view = "") {
+                               std::string const &edge_view = "",
+                               std::string const &use_attrs = "") {
     VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
     auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
         GLOBAL_FLAG(VineyardGraphID));
@@ -55,8 +56,18 @@ public:
     } else {
       edge_label_ = elabel_index - elabels.begin();
     }
+
+    auto etable = frag_->edge_data_table(edge_label_);
+    if (use_attrs.empty()) {
+      for (auto const &field: etable->schema()->fields()) {
+        attrs_.emplace(field->name());
+      }
+    } else {
+      boost::algorithm::split(attrs_, use_attrs, boost::is_any_of(";"));
+    }
+
     init_src_dst_list(frag_, edge_label_, src_lists_, dst_lists_);
-    side_info_ = frag_edge_side_info(frag_, edge_label_);
+    side_info_ = frag_edge_side_info(frag_, attrs_, edge_label_);
   }
 
   virtual ~VineyardEdgeStorage() = default;
@@ -107,7 +118,7 @@ public:
     if (!side_info_->IsAttributed()) {
       return Attribute();
     }
-    return get_edge_attribute(frag_, edge_label_, edge_id);
+    return get_edge_attribute(frag_, edge_label_, edge_id, attrs_);
   }
 
   /// For the needs of traversal and sampling, the data distribution is
@@ -165,7 +176,7 @@ public:
     auto attribute_list = new std::vector<Attribute>();
     attribute_list->reserve(table->num_rows());
     for (size_t i = 0; i < table->num_rows(); ++i) {
-      attribute_list->emplace_back(arrow_line_to_attribute_value(table, i, 0, table->num_columns()),
+      attribute_list->emplace_back(arrow_line_to_attribute_value(table, i, attrs_),
                                    true);
     }
     return attribute_list;
@@ -180,6 +191,8 @@ private:
   // for edge view
   std::string view_label;
   int32_t seed, nsplit, split_begin, split_end;
+
+  std::set<std::string> attrs_;
 
   std::vector<IdType> src_lists_;
   std::vector<IdType> dst_lists_;

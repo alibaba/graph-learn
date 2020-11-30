@@ -18,7 +18,8 @@ namespace io {
 class VineyardTopoStorage : public graphlearn::io::TopoStorage {
 public:
   explicit VineyardTopoStorage(std::string edge_label = "0",
-                               std::string const &edge_view = "") {
+                               std::string const &edge_view = "",
+                               std::string const &use_attrs = "") {
     VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
     auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
         GLOBAL_FLAG(VineyardGraphID));
@@ -54,6 +55,16 @@ public:
     } else {
       edge_label_ = elabel_index - elabels.begin();
     }
+
+    auto etable = frag_->edge_data_table(edge_label_);
+    if (use_attrs.empty()) {
+      for (auto const &field: etable->schema()->fields()) {
+        attrs_.emplace(field->name());
+      }
+    } else {
+      boost::algorithm::split(attrs_, use_attrs, boost::is_any_of(";"));
+    }
+
     init_src_dst_list(frag_, edge_label_, src_lists_, dst_lists_);
   }
 
@@ -125,6 +136,8 @@ private:
   // for edge view
   std::string view_label;
   int32_t seed, nsplit, split_begin, split_end;
+
+  std::set<std::string> attrs_;
 
   std::vector<IdType> src_lists_;
   std::vector<IdType> dst_lists_;
