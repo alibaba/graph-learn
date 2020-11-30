@@ -26,7 +26,7 @@ namespace graphlearn {
 template <class T>
 class HeterDispatcher {
 public:
-  typedef T* (*TypeCreator)(const std::string& type);
+  typedef T* (*TypeCreator)(const std::string& type, const std::string &view_type);
 
 public:
   explicit HeterDispatcher(TypeCreator creator)
@@ -39,14 +39,14 @@ public:
     }
   }
 
-  T* LookupOrCreate(const std::string& type) {
+  T* LookupOrCreate(const std::string& type, const std::string &view_type="") {
     ScopedLocker<std::mutex> _(&mtx_);
     auto it = holder_.find(type);
     if (it != holder_.end()) {
       return it->second;
     }
 
-    T* t = creator_(type);
+    T* t = creator_(type, view_type);
     holder_[type] = t;
     return t;
   }

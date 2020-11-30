@@ -1,6 +1,8 @@
 #ifndef GRAPHLEARN_CORE_GRAPH_STORAGE_VINEYARD_NODE_STORAGE_H_
 #define GRAPHLEARN_CORE_GRAPH_STORAGE_VINEYARD_NODE_STORAGE_H_
 
+#include <random>
+
 #if defined(WITH_VINEYARD)
 #include "vineyard/graph/fragment/arrow_fragment.h"
 #include "vineyard/graph/fragment/arrow_fragment_group.h"
@@ -17,9 +19,15 @@ namespace io {
 
 class VineyardNodeStorage : public graphlearn::io::NodeStorage {
 public:
-  explicit VineyardNodeStorage(std::string const &node_label = "0") {
+  explicit VineyardNodeStorage(std::string node_label = "0",
+                               std::string const &node_view = "") {
     std::cerr << "node_label = " << node_label << ", from "
-              << GLOBAL_FLAG(VineyardGraphID) << std::endl;
+              << GLOBAL_FLAG(VineyardGraphID);
+    if (!node_view.empty()) {
+      std::cerr << ", view on '" << node_view << "'";
+    }
+    std::cerr << std::endl;
+
     VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
     auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
         GLOBAL_FLAG(VineyardGraphID));
@@ -36,6 +44,17 @@ public:
     if (frag_ == nullptr) {
       throw std::runtime_error("Node: failed to find a local fragment");
     }
+
+    if (!node_view.empty()) {
+      std::vector<std::string> args;
+      boost::algorithm::split(args, node_view, boost::is_any_of(":"));
+      node_label = args[0];
+      seed = stoi(args[1]);
+      nsplit = stoi(args[2]);
+      split_begin = stoi(args[3]);
+      split_end = stoi(args[4]);
+    }
+
     auto vlabels = frag_->schema().GetVextexLabels();
     auto vlabel_index = std::find(vlabels.begin(), vlabels.end(), node_label);
     if (vlabel_index == vlabels.end()) {
@@ -45,29 +64,38 @@ public:
       node_label_ = vlabel_index - vlabels.begin();
     }
     side_info_ = frag_node_side_info(frag_, node_label_);
-  }
 
-  explicit VineyardNodeStorage(label_id_t const node_label = 0)
-      : node_label_(node_label) {
-    std::cerr << "node_label = " << node_label << ", from "
-              << GLOBAL_FLAG(VineyardGraphID) << std::endl;
-    VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
-    auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
-        GLOBAL_FLAG(VineyardGraphID));
-    if (fg == nullptr) {
-      throw std::runtime_error("Node: failed to find the graph");
-    }
-    // assume 1 worker per server
-    for (auto const &kv : fg->Fragments()) {
-      if (fg->FragmentLocations().at(kv.first) == client_.instance_id()) {
-        frag_ = client_.GetObject<gl_frag_t>(kv.second);
-        break;
+    auto vtable = frag_->vertex_data_table(node_label_);
+    init_table_accessors(vtable, 0, vtable->num_columns() - 1, i32_indexes_,
+                         i64_indexes_, f32_indexes_, f64_indexes_, s_indexes_,
+                         ls_indexes_, vertex_table_accessors_);
+
+    if (node_view.empty()) {
+      auto range = frag_->InnerVertices(node_label_);
+      #ifndef NDEBUG
+          std::cerr << "node: get ids (no view): " << node_label_
+                    << ", range begin = " << range.begin().GetValue()
+                    << ", range end = " << range.end().GetValue() << std::endl;
+      #endif
+      all_ids_ = IdArray(frag_->GetInnerVertexGid(range.begin()),
+                                   frag_->GetInnerVertexGid(range.end()));
+    } else {
+      auto range = frag_->InnerVertices(node_label_);
+      #ifndef NDEBUG
+          std::cerr << "node: get ids: " << node_label_ << " with view '" << node_view << "'"
+                    << ", range begin = " << range.begin().GetValue()
+                    << ", range end = " << range.end().GetValue() << std::endl;
+      #endif
+      std::mt19937 rng(seed);
+      std::uniform_int_distribution<> rng_gen(0, nsplit);
+      for (auto v: range) {
+        int rng_number = rng_gen(rng);
+        if (rng_number >= split_begin && rng_number < split_end) {
+          selected_ids_.emplace_back(frag_->GetInnerVertexGid(v));
+        }
       }
+      all_ids_ = IdArray(selected_ids_.data(), selected_ids_.size());
     }
-    if (frag_ == nullptr) {
-      throw std::runtime_error("Node: failed to find a local fragment");
-    }
-    side_info_ = frag_node_side_info(frag_, node_label_);
   }
 
   virtual ~VineyardNodeStorage() = default;
@@ -76,9 +104,7 @@ public:
   virtual void Unlock() override {}
 
   virtual void SetSideInfo(const SideInfo *info) override {}
-  virtual const SideInfo *GetSideInfo() const override {
-    return side_info_;
-  }
+  virtual const SideInfo *GetSideInfo() const override { return side_info_; }
 
   /// Do some re-organization after data fixed.
   virtual void Build() override {}
@@ -150,12 +176,24 @@ public:
     }
     auto offset = frag_->vertex_offset(v);
 #ifndef NDEBUG
-    std::cerr << "node: get attribute: node_id = " << node_id
-              << ", label -> " << label << ", offset -> " << offset
-              << std::endl;
+    std::cerr << "node: get attribute: node_id = " << node_id << ", label -> "
+              << label << ", offset -> " << offset << std::endl;
 #endif
+
+#if 0
     auto table = frag_->vertex_data_table(label);
-    return Attribute(arrow_line_to_attribute_value(table, offset, 0), true);
+    return Attribute(arrow_line_to_attribute_value(table, offset, 0,
+                                                   table->num_columns() - 1),
+                     true);
+#elif 0
+    return Attribute(arrow_line_to_attribute_value_fast(
+        offset, i32_indexes_, i64_indexes_, f32_indexes_, f64_indexes_,
+        s_indexes_, ls_indexes_, vertex_table_accessors_), true);
+#else
+    return Attribute(new ArrowRefAttributeValue(
+        offset, i32_indexes_, i64_indexes_, f32_indexes_, f64_indexes_,
+        s_indexes_, ls_indexes_, vertex_table_accessors_), true);
+#endif
   }
 
   /// For the needs of traversal and sampling, the data distribution is
@@ -164,15 +202,7 @@ public:
   /// Get all the node ids, the count of which is the same with Size().
   /// These ids are distinct.
   virtual const IdArray GetIds() const override {
-    auto range = frag_->InnerVertices(node_label_);
-#ifndef NDEBUG
-    std::cerr << "node: get ids: " << node_label_
-              << ", range begin = " << range.begin().GetValue()
-              << ", range end = " << range.end().GetValue()
-              << std::endl;
-#endif
-    return IdArray(frag_->GetInnerVertexGid(range.begin()),
-                   frag_->GetInnerVertexGid(range.end()));
+    return all_ids_;
   }
 
   /// Get all weights if existed, the count of which is the same with Size().
@@ -228,35 +258,30 @@ public:
     auto vtable = frag_->vertex_data_table(node_label_);
     for (auto id = id_range.begin(); id < id_range.end(); ++id) {
       auto offset = frag_->vertex_offset(id);
-      value_list->emplace_back(arrow_line_to_attribute_value(vtable, offset, 0),
+      value_list->emplace_back(arrow_line_to_attribute_value(
+                                   vtable, offset, 0, vtable->num_columns() - 1),
                                true);
     }
     return value_list;
   }
 
 private:
-  template <typename T, typename RT = T>
-  const Array<RT> GetAttribute(std::string const &name) const {
-    int attr_index = find_index_of_name(
-        frag_->vertex_data_table(node_label_)->schema(), name);
-    if (attr_index == -1) {
-      return nullptr;
-    }
-    size_t count = frag_->GetInnerVerticesNum(node_label_);
-    auto value_list = new std::vector<RT>();
-    value_list->reserve(count);
-
-    auto id_range = frag_->InnerVertices(node_label_);
-    for (auto id = id_range.begin(); id < id_range.end(); ++id) {
-      value_list->emplace_back(frag_->GetData<T>(id, attr_index));
-    }
-    return value_list;
-  }
-
   vineyard::Client client_;
   std::shared_ptr<gl_frag_t> frag_;
   label_id_t node_label_;
   SideInfo *side_info_ = nullptr;
+
+  // for node view
+  std::string view_label_;
+  int32_t seed, nsplit, split_begin, split_end;
+
+  IdArray all_ids_;
+  std::vector<IdType> selected_ids_;
+
+  // for fast attribute access
+  std::vector<int> i32_indexes_, i64_indexes_, f32_indexes_, f64_indexes_,
+      s_indexes_, ls_indexes_;
+  std::vector<const void *> vertex_table_accessors_;
 };
 
 } // namespace io

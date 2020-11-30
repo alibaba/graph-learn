@@ -22,6 +22,7 @@ limitations under the License.
 #include <vector>
 #include "graphlearn/common/io/value.h"
 #include "graphlearn/common/string/lite_string.h"
+#include "graphlearn/include/tensor.h"
 
 namespace graphlearn {
 namespace io {
@@ -74,6 +75,8 @@ class AttributeValue {
 public:
   static AttributeValue* Default(const SideInfo* info);
 
+  virtual ~AttributeValue() {}
+
   virtual void Clear() = 0;
   virtual void Shrink() = 0;
   virtual void Swap(AttributeValue* rhs) = 0;
@@ -90,10 +93,33 @@ public:
   virtual const float* GetFloats(int32_t* len) const = 0;
   virtual const std::string* GetStrings(int32_t* len) const = 0;
   virtual const LiteString* GetLiteStrings(int32_t* len) const = 0;
+
+  virtual void FillInts(Tensor* tensor) const {
+    int i32_len = 0;
+    const int64_t *ints = GetInts(&i32_len);
+    for (size_t i = 0; i < i32_len; ++i) {
+      tensor->AddInt64(ints[i]);
+    }
+  }
+  virtual void FillFloats(Tensor* tensor) const {
+    int f32_len = 0;
+    const float *floats = GetFloats(&f32_len);
+    for (size_t i = 0; i < f32_len; ++i) {
+      tensor->AddFloat(floats[i]);
+    }
+  }
+  virtual void FillStrings(Tensor* tensor) const {
+    int s_len = 0;
+    const std::string *strings = GetStrings(&s_len);
+    for (size_t i = 0; i < s_len; ++i) {
+      tensor->AddString(strings[i]);
+    }
+  }
 };
 
 AttributeValue* NewDataHeldAttributeValue();
 AttributeValue* NewDataRefAttributeValue();
+AttributeValue* NewDataArrowRefAttributeValue();
 
 struct EdgeValue {
   int64_t src_id;

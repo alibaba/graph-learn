@@ -18,9 +18,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
 import atexit
+import base64
 import json
+import os
 import warnings
 
 from graphlearn import pywrap_graphlearn as pywrap
@@ -75,6 +76,66 @@ class Graph(object):
     self.node_state = State()
     self.edge_state = State()
 
+    self._with_vineyard = False
+    self._vineyard_handle = None
+
+  def vineyard(self, handle, nodes=None, edges=None):
+    self._with_vineyard = True
+    if not isinstance(handle, dict):
+      handle = json.loads(base64.b64decode(handle).decode('utf-8'))
+    self._vineyard_handle = handle
+    pywrap.set_vineyard_graph_id(handle['vineyard_id'])
+    pywrap.set_vineyard_ipc_socket(handle['vineyard_socket'])
+
+    for node_info in handle['node_schema']:
+      confs = node_info.split(':')
+      if len(confs) != 6:
+        continue
+      node_type = confs[0]
+      if nodes is not None and node_type not in nodes:
+        continue
+      weighted = confs[1] == 'true'
+      labeled = confs[2] == 'true'
+      n_int = int(confs[3])
+      n_float = int(confs[4])
+      n_string = int(confs[5])
+      self.node(source='',
+                node_type=node_type,
+                decoder=self._make_vineyard_decoder(
+                  weighted, labeled, n_int, n_float, n_string))
+
+    for edge_info in handle['edge_schema']:
+      confs = edge_info.split(':')
+      if len(confs) != 8:
+        continue
+      src_node_type = confs[0]
+      edge_type = confs[1]
+      dst_node_type = confs[2]
+      if edges is not None and (src_node_type, edge_type, dst_node_type) not in edges:
+        continue
+      weighted = confs[3] == 'true'
+      labeled = confs[4] == 'true'
+      n_int = int(confs[5])
+      n_float = int(confs[6])
+      n_string = int(confs[7])
+      self.edge(source='',
+                edge_type=(src_node_type, dst_node_type, edge_type),
+                decoder=self._make_vineyard_decoder(
+                  weighted, labeled, n_int, n_float, n_string))
+
+    return self
+
+  def _make_vineyard_decoder(self,
+      weighted, labeled, n_int, n_float, n_string):
+    attr_types = []
+    if n_int == 0 and n_float == 0 and n_string == 0:
+      attr_types = None
+    else:
+      attr_types.extend(["int"] * n_int)
+      attr_types.extend(["float"] * n_float)
+      attr_types.extend(["string"] * n_string)
+    return Decoder(weighted, labeled, attr_types)
+
   def node(self,
            source,
            node_type,
@@ -93,6 +154,33 @@ class Graph(object):
 
     self._node_decoders[node_type] = decoder
     node_source = self._construct_node_source(source, node_type, decoder)
+    self._node_sources.append(node_source)
+    return self
+
+  def _copy_node_source(self, node):
+    result = pywrap.NodeSource()
+    result.path = node.path
+    result.format = node.format
+    result.id_type = node.id_type
+    result.attr_types = node.attr_types
+    result.delimiter = node.delimiter
+    result.hash_buckets = node.hash_buckets
+    result.ignore_invalid = node.ignore_invalid
+    result.view_type = node.view_type
+    return result
+
+  def node_view(self, node_view_type, node_type, seed=0, nsplit=1, split_range=(0, 1)):
+    node_source = None
+    for node in self._node_sources:
+      if node.id_type == node_type:
+        node_source = self._copy_node_source(node)
+        break
+    if node_source is None:
+      raise ValueError('Node type "%s" doesn\'t exist.' % (node_type,))
+    node_source.id_type = node_view_type
+    node_source.view_type = '%s:%d:%d:%d:%d' % (node_type, seed, nsplit,
+                                                split_range[0], split_range[1])
+    self._node_decoders[node_view_type] = self._node_decoders[node_type]
     self._node_sources.append(node_source)
     return self
 
@@ -157,8 +245,42 @@ class Graph(object):
         self._edge_sources.append(edge_source_reverse)
     return self
 
+  def _copy_edge_source(self, edge):
+    result = pywrap.EdgeSource()
+    result.path = edge.path
+    result.format = edge.format
+    result.edge_type = edge.edge_type
+    result.src_id_type = edge.src_id_type
+    result.dst_id_type = edge.dst_id_type
+    result.attr_types = edge.attr_types
+    result.delimiter = edge.delimiter
+    result.hash_buckets = edge.hash_buckets
+    result.ignore_invalid = edge.ignore_invalid
+    result.direction = edge.direction
+    result.view_type = edge.view_type
+    return result
+
+  def edge_view(self, edge_view_type, edge_type, seed=0, nsplit=1, split_range=(0, 1)):
+    edge_source = None
+    for edge in self._edge_sources:
+      if (edge.src_id_type, edge.dst_id_type, edge.edge_type) == edge_type:
+        edge_source = self._copy_edge_source(edge)
+        break
+    if edge_source is None:
+      raise ValueError('edge type "%s" doesn\'t exist.' % (edge_type,))
+    edge_source.edge_type = edge_view_type
+    edge_source.view_type = '%s:%d:%d:%d:%d' % (edge_type, seed, nsplit,
+                                                split_range[0], split_range[1])
+    self._edge_decoders[edge_view_type] = self._edge_decoders[edge_type]
+    self._edge_sources.append(edge_source)
+    return self
+
   def init(self, task_index=0, task_count=1,
            cluster="", job_name="", **kwargs):
+    if self._with_vineyard:
+      pywrap.set_storage_mode(8)
+      pywrap.set_tracker_mode(0)
+
     """ Initialize the graph with creating graph server instance with
     given cluster env info.
 
@@ -250,6 +372,29 @@ class Graph(object):
         self._server.init(self._edge_sources, self._node_sources)
       else:
         raise ValueError("Only support client and server for GL.")
+
+    return self
+
+  def init_vineyard(self, server_index=None, worker_index=None, worker_count=None,
+                    standalone=False):
+    if not self._with_vineyard:
+      raise ValueError('Not a vineyard graph')
+
+    if standalone:
+      self.init()
+      return self
+
+    if server_index is None and worker_index is None:
+      raise ValueError('Cannot decide to launch a server or a worker')
+    if server_index is not None and worker_index is not None:
+      raise ValueError('Cannot be a server and a worker at the same unless standalone is True')
+
+    cluster = {'server': self._vineyard_handle['server'],
+               'client': self._vineyard_handle['client']}
+    if server_index is not None:
+      self.init(cluster=cluster, task_index=server_index, job_name="server")
+    else:
+      self.init(cluster=cluster, task_index=worker_index, job_name="client")
     return self
 
   def close(self):

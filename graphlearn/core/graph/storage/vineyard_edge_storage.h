@@ -17,7 +17,8 @@ namespace io {
 
 class VineyardEdgeStorage : public EdgeStorage {
 public:
-  explicit VineyardEdgeStorage(std::string const &edge_label = "0") {
+  explicit VineyardEdgeStorage(std::string edge_label = "0",
+                               std::string const &edge_view = "") {
     VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
     auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
         GLOBAL_FLAG(VineyardGraphID));
@@ -35,6 +36,17 @@ public:
     if (frag_ == nullptr) {
       throw std::runtime_error("Edge: failed to find a local fragment");
     }
+
+    if (!edge_view.empty()) {
+      std::vector<std::string> args;
+      boost::algorithm::split(args, edge_view, boost::is_any_of(":"));
+      edge_label = args[0];
+      seed = stoi(args[1]);
+      nsplit = stoi(args[2]);
+      split_begin = stoi(args[3]);
+      split_end = stoi(args[4]);
+    }
+
     auto elabels = frag_->schema().GetEdgeLabels();
     auto elabel_index = std::find(elabels.begin(), elabels.end(), edge_label);
     if (elabel_index == elabels.end()) {
@@ -43,29 +55,7 @@ public:
     } else {
       edge_label_ = elabel_index - elabels.begin();
     }
-    initSrcDstList(frag_, edge_label_, src_lists_, dst_lists_);
-    side_info_ = frag_edge_side_info(frag_, edge_label_);
-  }
-
-  explicit VineyardEdgeStorage(label_id_t const edge_label = 0)
-      : edge_label_(edge_label) {
-    VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
-    auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
-        GLOBAL_FLAG(VineyardGraphID));
-    if (fg == nullptr) {
-      throw std::runtime_error("Edge: failed to find the graph");
-    }
-    // assume 1 worker per server
-    for (auto const &kv : fg->Fragments()) {
-      if (fg->FragmentLocations().at(kv.first) == client_.instance_id()) {
-        frag_ = client_.GetObject<gl_frag_t>(kv.second);
-        break;
-      }
-    }
-    if (frag_ == nullptr) {
-      throw std::runtime_error("Edge: failed to find a local fragment");
-    }
-    initSrcDstList(frag_, edge_label_, src_lists_, dst_lists_);
+    init_src_dst_list(frag_, edge_label_, src_lists_, dst_lists_);
     side_info_ = frag_edge_side_info(frag_, edge_label_);
   }
 
@@ -175,7 +165,7 @@ public:
     auto attribute_list = new std::vector<Attribute>();
     attribute_list->reserve(table->num_rows());
     for (size_t i = 0; i < table->num_rows(); ++i) {
-      attribute_list->emplace_back(arrow_line_to_attribute_value(table, i, 0),
+      attribute_list->emplace_back(arrow_line_to_attribute_value(table, i, 0, table->num_columns()),
                                    true);
     }
     return attribute_list;
@@ -186,6 +176,10 @@ private:
   std::shared_ptr<gl_frag_t> frag_;
   label_id_t edge_label_;
   SideInfo *side_info_ = nullptr;
+
+  // for edge view
+  std::string view_label;
+  int32_t seed, nsplit, split_begin, split_end;
 
   std::vector<IdType> src_lists_;
   std::vector<IdType> dst_lists_;

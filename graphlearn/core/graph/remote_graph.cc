@@ -23,8 +23,8 @@ namespace graphlearn {
 
 class RemoteGraph : public Graph {
 public:
-  RemoteGraph(const std::string& type) {
-    local_ = CreateLocalGraph(type);
+  RemoteGraph(const std::string& type, const std::string& view_type) {
+    local_ = CreateLocalGraph(type, view_type);
   }
 
   virtual ~RemoteGraph() {
@@ -67,8 +67,8 @@ private:
   Graph* local_;
 };
 
-Graph* CreateRemoteGraph(const std::string& type) {
-  return new RemoteGraph(type);
+Graph* CreateRemoteGraph(const std::string& type, const std::string& view_type) {
+  return new RemoteGraph(type, view_type);
 }
 
 }  // namespace graphlearn

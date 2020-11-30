@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <mutex>
+#include <type_traits>
 
 #if defined(WITH_VINEYARD)
 namespace vineyard {
@@ -19,51 +20,144 @@ namespace io {
 
 #if defined(WITH_VINEYARD)
 
+void init_table_accessors(std::shared_ptr<arrow::Table> const &table,
+                          size_t start_index, size_t end_index,
+                          std::vector<int> &i32_indexes,
+                          std::vector<int> &i64_indexes,
+                          std::vector<int> &f32_indexes,
+                          std::vector<int> &f64_indexes,
+                          std::vector<int> &s_indexes,
+                          std::vector<int> &ls_indexes,
+                          std::vector<const void*> &table_accessors) {
+  table_accessors.resize(end_index - start_index);
+  size_t attr_index = 0;
+  for (int idx = start_index; idx < end_index; ++idx) {
+    auto array = table->column(idx)->chunk(0);
+    table_accessors[attr_index] = vineyard::get_arrow_array_ptr(array);
+    if (array->type()->Equals(arrow::int32())) {
+      i32_indexes.emplace_back(attr_index);
+    } else if (array->type()->Equals(arrow::int64())) {
+      i64_indexes.emplace_back(attr_index);
+    } else if (array->type()->Equals(arrow::float32())) {
+      f32_indexes.emplace_back(attr_index);
+    } else if (array->type()->Equals(arrow::float64())) {
+      f64_indexes.emplace_back(attr_index);
+    } else if (array->type()->Equals(arrow::utf8())) {
+      s_indexes.emplace_back(attr_index);
+    } else if (array->type()->Equals(arrow::large_utf8())) {
+      ls_indexes.emplace_back(attr_index);
+    } else {
+      LOG(ERROR) << "Unsupported column type: " << array->type()->ToString();
+    }
+    attr_index += 1;
+  }
+}
+
 AttributeValue *
 arrow_line_to_attribute_value(std::shared_ptr<arrow::Table> table,
-                              int row_index, int start_index) {
+                              int row_index, int start_index, int end_index) {
   auto attr = NewDataHeldAttributeValue();
   VINEYARD_ASSERT(row_index < table->num_rows());
   // NOTE: the last column is id column, cast off
-  for (int idx = start_index; idx < table->num_columns() - 1; ++idx) {
+  for (int idx = start_index; idx < end_index; ++idx) {
     auto arr = table->column(idx)->chunk(0);
     switch (arr->type()->id()) {
+    case arrow::Type::INT32: {
+      int32_t value =
+          dynamic_cast<
+              std::add_pointer<
+                  typename vineyard::ConvertToArrowType<int32_t>::ArrayType>::type>(arr.get())
+              ->Value(row_index);
+      attr->Add(static_cast<int64_t>(value));
+    } break;
     case arrow::Type::INT64: {
       int64_t value =
-          std::dynamic_pointer_cast<
-              typename vineyard::ConvertToArrowType<int64_t>::ArrayType>(arr)
+          dynamic_cast<
+              std::add_pointer<
+                  typename vineyard::ConvertToArrowType<int64_t>::ArrayType>::type>(arr.get())
               ->Value(row_index);
       attr->Add(value);
     } break;
     case arrow::Type::FLOAT: {
       float value =
-          std::dynamic_pointer_cast<
-              typename vineyard::ConvertToArrowType<float>::ArrayType>(arr)
+          dynamic_cast<
+              std::add_pointer<
+                  typename vineyard::ConvertToArrowType<float>::ArrayType>::type>(arr.get())
               ->Value(row_index);
       attr->Add(value);
     } break;
     case arrow::Type::DOUBLE: {
       double value =
-          std::dynamic_pointer_cast<
-              typename vineyard::ConvertToArrowType<double>::ArrayType>(arr)
+          dynamic_cast<
+              std::add_pointer<
+                  typename vineyard::ConvertToArrowType<double>::ArrayType>::type>(arr.get())
               ->Value(row_index);
       attr->Add(static_cast<float>(value));
     } break;
     case arrow::Type::STRING: {
       std::string value =
-          std::dynamic_pointer_cast<
-              typename vineyard::ConvertToArrowType<std::string>::ArrayType>(
-              arr)
+          dynamic_cast<
+              std::add_pointer<arrow::StringArray>::type>(
+              arr.get())
               ->GetString(row_index);
-#ifndef NDEBUG
-      std::cerr << "std::string value: " << value << std::endl;
-#endif
+      attr->Add(value);
+    } break;
+    case arrow::Type::LARGE_STRING: {
+      std::string value =
+          dynamic_cast<
+              std::add_pointer<arrow::LargeStringArray>::type>(
+              arr.get())
+              ->GetString(row_index);
       attr->Add(value);
     } break;
     default:
       std::cerr << "Unsupported attribute type: " << arr->type()->ToString()
                 << std::endl;
     }
+  }
+  return attr;
+}
+
+AttributeValue *arrow_line_to_attribute_value_fast(
+                          const int row_index,
+                          const std::vector<int> &i32_indexes,
+                          const std::vector<int> &i64_indexes,
+                          const std::vector<int> &f32_indexes,
+                          const std::vector<int> &f64_indexes,
+                          const std::vector<int> &s_indexes,
+                          const std::vector<int> &ls_indexes,
+                          const std::vector<const void*> &table_accessors) {
+  auto attr = NewDataHeldAttributeValue();
+  for (auto const &idx: i32_indexes) {
+    auto value = vineyard::property_graph_utils::ValueGetter<int32_t>::Value(
+        table_accessors[idx], row_index);
+    attr->Add(static_cast<int64_t>(value));
+  }
+  for (auto const &idx: i64_indexes) {
+    auto value = vineyard::property_graph_utils::ValueGetter<int64_t>::Value(
+        table_accessors[idx], row_index);
+    attr->Add(value);
+  }
+  for (auto const &idx: f32_indexes) {
+    auto value = vineyard::property_graph_utils::ValueGetter<float>::Value(
+        table_accessors[idx], row_index);
+    attr->Add(value);
+  }
+  for (auto const &idx: f64_indexes) {
+    auto value = vineyard::property_graph_utils::ValueGetter<double>::Value(
+        table_accessors[idx], row_index);
+    attr->Add(static_cast<float>(value));
+  }
+  for (auto const &idx: s_indexes) {
+    auto value = std::string(
+        reinterpret_cast<const arrow::StringArray*>(table_accessors[idx])->GetView(
+            row_index));
+    attr->Add(value);
+  }
+  for (auto const &idx: ls_indexes) {
+    auto value = vineyard::property_graph_utils::ValueGetter<std::string>::Value(
+        table_accessors[idx], row_index);
+    attr->Add(value);
   }
   return attr;
 }
@@ -114,11 +208,12 @@ get_all_outgoing_neighbor_nodes(std::shared_ptr<gl_frag_t> const &frag,
   std::vector<const IdType *> values;
   std::vector<int32_t> sizes;
   auto neighbor_list = frag->GetOutgoingAdjList(v, edge_label);
+  auto gid_value_offset = frag->GetInnerVertexGid(vertex_t{0});
   values.emplace_back(
       reinterpret_cast<const IdType *>(neighbor_list.begin_unit()));
   sizes.emplace_back(neighbor_list.Size());
   return Array<IdType>(std::make_shared<MultiArray<IdType>>(
-      values, sizes, sizeof(nbr_unit_t), __builtin_offsetof(nbr_unit_t, vid)));
+      values, sizes, sizeof(nbr_unit_t), __builtin_offsetof(nbr_unit_t, vid), gid_value_offset));
 }
 
 const Array<IdType>
@@ -196,10 +291,10 @@ int32_t get_edge_label(std::shared_ptr<gl_frag_t> const &frag,
 Attribute get_edge_attribute(std::shared_ptr<gl_frag_t> const &frag,
                              label_id_t const edge_label, IdType edge_id) {
   auto table = frag->edge_data_table(edge_label);
-  return Attribute(arrow_line_to_attribute_value(table, edge_id, 0), true);
+  return Attribute(arrow_line_to_attribute_value(table, edge_id, 0, table->num_columns()), true);
 }
 
-void initSrcDstList(std::shared_ptr<gl_frag_t> const &frag,
+void init_src_dst_list(std::shared_ptr<gl_frag_t> const &frag,
                     label_id_t const edge_label, std::vector<IdType> &src_lists,
                     std::vector<IdType> &dst_lists) {
   src_lists.resize(frag->edge_data_table(edge_label)->num_rows());
@@ -347,23 +442,66 @@ int64_t find_index_of_name(std::shared_ptr<arrow::Schema> const &schema,
   }
   return -1;
 }
+
+void ArrowRefAttributeValue::FillInts(Tensor *tensor) const {
+  for (auto const &idx: i32_indexes_) {
+    auto value = vineyard::property_graph_utils::ValueGetter<int32_t>::Value(
+        table_accessors_[idx], row_index_);
+    tensor->AddInt64(static_cast<int64_t>(value));
+  }
+  for (auto const &idx: i64_indexes_) {
+    auto value = vineyard::property_graph_utils::ValueGetter<int64_t>::Value(
+        table_accessors_[idx], row_index_);
+    tensor->AddInt64(value);
+  }
+}
+
+void ArrowRefAttributeValue::FillFloats(Tensor *tensor) const {
+  for (auto const &idx: f32_indexes_) {
+    auto value = vineyard::property_graph_utils::ValueGetter<float>::Value(
+        table_accessors_[idx], row_index_);
+    tensor->AddFloat(value);
+  }
+  for (auto const &idx: f64_indexes_) {
+    auto value = vineyard::property_graph_utils::ValueGetter<double>::Value(
+        table_accessors_[idx], row_index_);
+    tensor->AddFloat(static_cast<float>(value));
+  }
+}
+
+void ArrowRefAttributeValue::FillStrings(Tensor *tensor) const {
+  for (auto const &idx: s_indexes_) {
+    auto value = std::string(
+        reinterpret_cast<const arrow::StringArray*>(table_accessors_[idx])->GetView(
+            row_index_));
+    tensor->AddString(value);
+  }
+  for (auto const &idx: ls_indexes_) {
+    auto value = vineyard::property_graph_utils::ValueGetter<std::string>::Value(
+        table_accessors_[idx], row_index_);
+    tensor->AddString(value);
+  }
+}
+
 #endif
 
-GraphStorage *NewVineyardGraphStorage(const std::string &edge_type) {
+GraphStorage *NewVineyardGraphStorage(const std::string &edge_type,
+    const std::string &view_type) {
 #if defined(WITH_VINEYARD)
   LOG(INFO) << "create vineyard graph storage: " << WITH_VINEYARD;
-  return new VineyardGraphStorage(edge_type);
+  return new VineyardGraphStorage(edge_type, view_type);
 #else
-  return nullptr;
+  throw std::runtime_error("create graph stroage: vineyard is not enabled");
 #endif
 }
 
-NodeStorage *NewVineyardNodeStorage(const std::string &node_type) {
+NodeStorage *NewVineyardNodeStorage(const std::string &node_type,
+    const std::string &view_type) {
 #if defined(WITH_VINEYARD)
   LOG(INFO) << "create vineyard node storage: " << WITH_VINEYARD;
-  return new VineyardNodeStorage(node_type);
+  return new VineyardNodeStorage(node_type, view_type);
 #else
-  return nullptr;
+  throw std::runtime_error("create node storage: vineyard is not enabled");
 #endif
 }
 

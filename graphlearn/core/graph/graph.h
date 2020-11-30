@@ -45,8 +45,8 @@ public:
 #undef DECLARE_METHOD
 };
 
-Graph* CreateLocalGraph(const std::string& type);
-Graph* CreateRemoteGraph(const std::string& type);
+Graph* CreateLocalGraph(const std::string& type, std::string const &view_type);
+Graph* CreateRemoteGraph(const std::string& type, std::string const &view_type);
 
 }  // namespace graphlearn
 
