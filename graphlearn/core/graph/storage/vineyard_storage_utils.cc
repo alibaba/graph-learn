@@ -413,7 +413,7 @@ SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
   auto node_table = frag->vertex_data_table(node_label);
   auto vtable_schema = node_table->schema();
   auto const &fields = vtable_schema->fields();
-  for (size_t idx = 0; idx < fields.size() - 1; ++idx) {
+  for (size_t idx = 0; idx < fields.size(); ++idx) {
     auto field = fields[idx];
     if (attrs.find(fields[idx]->name()) == attrs.end()) {
       continue;
@@ -439,7 +439,7 @@ SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
     }
   }
   side_info->format = kDefault;
-  for (size_t idx = 0; idx < vtable_schema->fields().size() - 1; ++idx) {
+  for (size_t idx = 0; idx < vtable_schema->fields().size(); ++idx) {
     // if (field->name() == "label") {
     //   side_info->format |= kLabeled;
     // } else if (field->name() == "weight") {

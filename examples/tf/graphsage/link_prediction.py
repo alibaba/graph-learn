@@ -133,7 +133,10 @@ def train_dist(config, graph):
 
 
 def local_training(handle, config):
-  g = gl.get_graph_from_handle(handle, worker_index=0, worker_count=1, standalone=True)
+  features = ["creationDate"]
+  g = gl.Graph().vineyard(handle, nodes=["person"], edges=["knows"]) \
+      .node_attributes("person", features, n_int=1, n_float=0, n_string=0) \
+      .init_vineyard(standalone=True)
   train_local(config, g)
   test_local(config, g)
   g.close()
@@ -158,15 +161,20 @@ def dist_training(handle, config):
 
   # check is worker or ps
   pod_index = handle['pod_index']
+  features = ['creationDate']
   if pod_index < mid:
     config['job_name'] = 'worker'
     config['task_index'] = pod_index
     client_count = len(config['worker_hosts'])
-    g = gl.get_graph_from_handle(handle, worker_index=config['task_index'], worker_count=client_count)
+    g = gl.Graph().vineyard(handle, nodes=["person"], edges=["knows"]) \
+        .node_attributes("person", features, n_int=1, n_float=0, n_string=0) \
+        .init_vineyard(worker_index=config['task_index'], worker_count=client_count)
   else:
     config['job_name'] = 'ps'
     config['task_index'] = pod_index - mid
-    g = gl.init_graph_from_handle(handle, config['task_index'])
+    g = gl.Graph().vineyard(handle, nodes=["person"], edges=["knows"]) \
+        .node_attributes("person", features, n_int=1, n_float=0, n_string=0) \
+        .init_vineyard(server_index=config['task_index'], worker_count=client_count)
 
   # training
   train_dist(config, g)
@@ -178,14 +186,6 @@ def main():
   s = base64.b64decode(handle_str).decode('utf-8')
   handle = json.loads(s)
   handle['pod_index'] = int(sys.argv[2])
-  node_type = sys.argv[3]
-  edge_type = sys.argv[4]
-  for node_info in handle['node_schema']:
-    if node_info.split(':')[0] == node_type:
-      handle['node_schema'] = [node_info]
-  for edge_info in handle['edge_schema']:
-    if edge_info.split(':')[1] == edge_type:
-      handle['edge_schema'] = [edge_info]
 
   config = {'class_num': 32,
             'features_num': 2,
@@ -207,9 +207,9 @@ def main():
             'use_neg': True,
             'neg_num': 10,
             'emb_save_dir': './id_emb',
-            'node_type': node_type,
-            'edge_type': edge_type,
-            'train_node_type': node_type}
+            'node_type': "person",
+            'edge_type': "knows",
+            'train_node_type': "person"}
 
   host_num = len(handle['hosts'].split(','))
   if host_num  == 1:
