@@ -117,7 +117,7 @@ def main():
   handle = json.loads(s)
 
   config = {'class_num': 16, # output dimension
-            'features_num': 128, # 128 dimension + year + id + kcore + page_rank
+            'features_num': 130, # 128 dimension + kcore + page_rank
             'batch_size': 1000,
             'categorical_attrs_desc': '',
             'hidden_dim': 256,
