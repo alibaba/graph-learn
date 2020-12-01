@@ -27,6 +27,9 @@ public:
     if (!edge_view.empty()) {
       std::cerr << ", view on '" << edge_view << "'";
     }
+    if (!use_attrs.empty()) {
+      std::cerr << "select attributes: '" << use_attrs << "'";
+    }
     std::cerr << std::endl;
 
     VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));

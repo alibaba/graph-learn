@@ -29,6 +29,9 @@ void init_table_accessors(std::shared_ptr<arrow::Table> const &table,
                           std::vector<int> &s_indexes,
                           std::vector<int> &ls_indexes,
                           std::vector<const void*> &table_accessors) {
+  if (table->num_rows() == 0 || table->num_columns() == 0) {
+    return;
+  }
   auto const &fields = table->schema()->fields();
   table_accessors.resize(fields.size(), nullptr);
   for (int idx = 0; idx < fields.size(); ++idx) {
