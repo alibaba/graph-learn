@@ -22,6 +22,7 @@ option (TESTING "ENABLE testing" OFF)
 option (GL_DEBUG "Enable debug mode" OFF)
 option (PROFILING "Enable profiling" OFF)
 option (WITH_VINEYARD "Enable vineyard" OFF)
+option (VINEYARD_USE_OID "Use OID when work with vineyard graphs" ON)
 set (PYTHON_VERSION
     "python3"
     CACHE
@@ -190,6 +191,9 @@ if(WITH_VINEYARD)
     find_package(vineyard)
     include_directories(SYSTEM ${VINEYARD_INCLUDE_DIRS})
     add_definitions(-DWITH_VINEYARD)
+    if (VINEYARD_USE_OID)
+        add_definitions(-DVINEYARD_USE_OID)
+    endif()
 endif()
 
 # proto
@@ -240,8 +244,10 @@ file (GLOB_RECURSE SERVICE_FILES
 
 
 if (GL_DEBUG)
+    set (CMAKE_BUILD_TYPE "Debug")
     set (MODEFLAGS -DDEBUG -g)
 else()
+    set (CMAKE_BUILD_TYPE "Release")
     set (MODEFLAGS -DNDEBUG -O2)
 endif()
 

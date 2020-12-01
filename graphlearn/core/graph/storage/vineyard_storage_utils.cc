@@ -245,6 +245,34 @@ get_all_outgoing_neighbor_edges(std::shared_ptr<gl_frag_t> const &frag,
       values, sizes, sizeof(nbr_unit_t), __builtin_offsetof(nbr_unit_t, eid)));
 }
 
+const Array<IdType>
+get_all_outgoing_neighbor_nodes(std::shared_ptr<gl_frag_t> const &frag,
+                                std::vector<IdType> const &dst_lists,
+                                IdType src_id, const label_id_t edge_label) {
+  auto v = vertex_t{static_cast<uint64_t>(src_id)};
+  if (!frag->IsInnerVertex(v)) {
+    return Array<IdType>();
+  }
+  std::vector<const IdType *> values;
+  std::vector<int32_t> sizes;
+  auto offsets = frag->GetOutgoingAdjOffsets(v, edge_label);
+  return IdArray(dst_lists.data() + offsets.first, offsets.second - offsets.first);
+}
+
+const Array<IdType>
+get_all_outgoing_neighbor_edges(std::shared_ptr<gl_frag_t> const &frag,
+                                std::vector<IdType> const &edge_lists,
+                                IdType src_id, const label_id_t edge_label) {
+  auto v = vertex_t{static_cast<uint64_t>(src_id)};
+  if (!frag->IsInnerVertex(v)) {
+    return Array<IdType>();
+  }
+  std::vector<const IdType *> values;
+  std::vector<int32_t> sizes;
+  auto offsets = frag->GetOutgoingAdjOffsets(v, edge_label);
+  return IdArray(offsets.first, offsets.second);
+}
+
 IdType get_edge_src_id(std::shared_ptr<gl_frag_t> const &frag,
                        label_id_t const edge_label,
                        std::vector<IdType> const &src_ids, IdType edge_id) {
@@ -274,7 +302,7 @@ IdType get_edge_dst_id(std::shared_ptr<gl_frag_t> const &frag,
 }
 
 float get_edge_weight(std::shared_ptr<gl_frag_t> const &frag,
-                      label_id_t const edge_label, IdType edge_id) {
+                      label_id_t const edge_label, IdType edge_offset) {
   auto table = frag->edge_data_table(edge_label);
   int index = find_index_of_name(table->schema(), "weight");
   if (index == -1) {
@@ -282,11 +310,11 @@ float get_edge_weight(std::shared_ptr<gl_frag_t> const &frag,
   }
   auto const &array = frag->edge_data_table(edge_label)->column(index)->chunk(0);
   return static_cast<float>(
-      std::dynamic_pointer_cast<arrow::DoubleArray>(array)->GetView(edge_id));
+      std::dynamic_pointer_cast<arrow::DoubleArray>(array)->GetView(edge_offset));
 }
 
 int32_t get_edge_label(std::shared_ptr<gl_frag_t> const &frag,
-                       label_id_t const edge_label, IdType edge_id) {
+                       label_id_t const edge_label, IdType edge_offset) {
   auto table = frag->edge_data_table(edge_label);
   int index = find_index_of_name(table->schema(), "label");
   if (index == -1) {
@@ -294,30 +322,40 @@ int32_t get_edge_label(std::shared_ptr<gl_frag_t> const &frag,
   }
   auto const &array = frag->edge_data_table(edge_label)->column(index)->chunk(0);
   return static_cast<int32_t>(
-      std::dynamic_pointer_cast<arrow::Int64Array>(array)->GetView(edge_id));
+      std::dynamic_pointer_cast<arrow::Int64Array>(array)->GetView(edge_offset));
 }
 
 Attribute get_edge_attribute(std::shared_ptr<gl_frag_t> const &frag,
                              label_id_t const edge_label,
-                             IdType edge_id,
+                             IdType edge_offset,
                              std::set<std::string> const &attrs) {
   auto table = frag->edge_data_table(edge_label);
-  return Attribute(arrow_line_to_attribute_value(table, edge_id, attrs), true);
+  return Attribute(arrow_line_to_attribute_value(table, edge_offset, attrs), true);
 }
 
 void init_src_dst_list(std::shared_ptr<gl_frag_t> const &frag,
-                    label_id_t const edge_label, std::vector<IdType> &src_lists,
-                    std::vector<IdType> &dst_lists) {
-  src_lists.resize(frag->edge_data_table(edge_label)->num_rows());
-  dst_lists.resize(frag->edge_data_table(edge_label)->num_rows());
+                       label_id_t const edge_label,
+                       std::vector<IdType> &src_lists,
+                       std::vector<IdType> &dst_lists,
+                       std::vector<IdType> &edge_lists) {
   for (label_id_t node_label = 0; node_label < frag->vertex_label_num();
        ++node_label) {
     auto id_range = frag->InnerVertices(node_label);
     for (auto id = id_range.begin(); id < id_range.end(); ++id) {
       auto oes = frag->GetOutgoingAdjList(id, edge_label);
+#if defined(VINEYARD_USE_OID)
+      auto sid = frag->GetInnerVertexId(id);
+#else
+      auto sid = frag->GetInnerVertexGid(id);
+#endif
       for (auto &e : oes) {
-        src_lists[e.edge_id()] = frag->GetInnerVertexGid(id);
-        dst_lists[e.edge_id()] = frag->Vertex2Gid(e.neighbor());
+        src_lists.emplace_back(sid);
+#if defined(VINEYARD_USE_OID)
+        dst_lists.emplace_back(frag->GetId(e.neighbor()));
+#else
+        dst_lists.emplace_back(frag->Vertex2Gid(e.neighbor()));
+#endif
+        edge_lists.emplace_back(e.edge_id());
       }
     }
   }
@@ -514,7 +552,10 @@ GraphStorage *NewVineyardGraphStorage(const std::string &edge_type,
     const std::string &view_type,
     const std::string &use_attrs) {
 #if defined(WITH_VINEYARD)
-  LOG(INFO) << "create vineyard graph storage: " << WITH_VINEYARD;
+  LOG(INFO) << "create vineyard graph storage";
+#if defined(VINEYARD_USE_OID)
+  LOG(INFO) << "use external ID as node id";
+#endif
   return new VineyardGraphStorage(edge_type, view_type, use_attrs);
 #else
   throw std::runtime_error("create graph stroage: vineyard is not enabled");
@@ -525,7 +566,10 @@ NodeStorage *NewVineyardNodeStorage(const std::string &node_type,
     const std::string &view_type,
     const std::string &use_attrs) {
 #if defined(WITH_VINEYARD)
-  LOG(INFO) << "create vineyard node storage: " << WITH_VINEYARD;
+  LOG(INFO) << "create vineyard node storage";
+#if defined(VINEYARD_USE_OID)
+  LOG(INFO) << "use external ID as node id";
+#endif
   return new VineyardNodeStorage(node_type, view_type, use_attrs);
 #else
   throw std::runtime_error("create node storage: vineyard is not enabled");

@@ -49,6 +49,7 @@ public:
     if (frag_ == nullptr) {
       throw std::runtime_error("Node: failed to find a local fragment");
     }
+    vertex_map_ = frag_->GetVertexMap();
 
     if (!node_view.empty()) {
       std::vector<std::string> args;
@@ -82,6 +83,8 @@ public:
                          i64_indexes_, f32_indexes_, f64_indexes_, s_indexes_,
                          ls_indexes_, vertex_table_accessors_);
 
+    oid_array_ = vertex_map_->GetOidArray(frag_->fid(), node_label_);
+
     if (node_view.empty()) {
       auto range = frag_->InnerVertices(node_label_);
       #ifndef NDEBUG
@@ -89,8 +92,12 @@ public:
                     << ", range begin = " << range.begin().GetValue()
                     << ", range end = " << range.end().GetValue() << std::endl;
       #endif
+#if defined(VINEYARD_USE_OID)
+      all_ids_ = IdArray(oid_array_->raw_values(), oid_array_->length());
+#else
       all_ids_ = IdArray(frag_->GetInnerVertexGid(range.begin()),
-                                   frag_->GetInnerVertexGid(range.end()));
+                         frag_->GetInnerVertexGid(range.end()));
+#endif
     } else {
       auto range = frag_->InnerVertices(node_label_);
       #ifndef NDEBUG
@@ -103,7 +110,11 @@ public:
       for (auto v: range) {
         int rng_number = rng_gen(rng);
         if (rng_number >= split_begin && rng_number < split_end) {
+#if defined(VINEYARD_USE_OID)
+          selected_ids_.emplace_back(oid_array_->GetView(frag_->vertex_offset(v)));
+#else
           selected_ids_.emplace_back(frag_->GetInnerVertexGid(v));
+#endif
         }
       }
       all_ids_ = IdArray(selected_ids_.data(), selected_ids_.size());
@@ -142,7 +153,15 @@ public:
     if (!side_info_->IsWeighted()) {
       return -1;
     }
-    auto v = vertex_t{static_cast<uint64_t>(node_id)};
+#if defined(VINEYARD_USE_OID)
+    vineyard_vid_t node_gid;
+    if (!vertex_map_->GetGid(frag_->fid(), node_label_, node_id, node_gid)) {
+      return -1;
+    }
+#else
+    vineyard_vid_t node_gid = static_cast<vineyard_vid_t>(node_id);
+#endif
+    auto v = vertex_t{node_gid};
     auto label = frag_->vertex_label(v);
     if (label != node_label_) {
       return -1;
@@ -152,15 +171,22 @@ public:
     if (index == -1) {
       return 0.0;
     }
-    return static_cast<float>(frag_->GetData<double>(
-        vertex_t{static_cast<uint64_t>(node_id)}, index));
+    return static_cast<float>(frag_->GetData<double>(v, index));
   }
 
   virtual int32_t GetLabel(IdType node_id) const override {
     if (!side_info_->IsLabeled()) {
       return -1;
     }
-    auto v = vertex_t{static_cast<uint64_t>(node_id)};
+#if defined(VINEYARD_USE_OID)
+    vineyard_vid_t node_gid;
+    if (!vertex_map_->GetGid(frag_->fid(), node_label_, node_id, node_gid)) {
+      return -1;
+    }
+#else
+    vineyard_vid_t node_gid = static_cast<vineyard_vid_t>(node_id);
+#endif
+    auto v = vertex_t{node_gid};
     auto label = frag_->vertex_label(v);
     if (label != node_label_) {
       return -1;
@@ -170,15 +196,22 @@ public:
     if (index == -1) {
       return -1;
     }
-    return static_cast<int32_t>(frag_->GetData<int64_t>(
-        vertex_t{static_cast<uint64_t>(node_id)}, index));
+    return static_cast<int32_t>(frag_->GetData<int64_t>(v, index));
   }
 
   virtual Attribute GetAttribute(IdType node_id) const override {
     if (!side_info_->IsAttributed()) {
       return Attribute();
     }
-    auto v = vertex_t{static_cast<uint64_t>(node_id)};
+#if defined(VINEYARD_USE_OID)
+    vineyard_vid_t node_gid;
+    if (!vertex_map_->GetGid(frag_->fid(), node_label_, node_id, node_gid)) {
+      return Attribute();
+    }
+#else
+    vineyard_vid_t node_gid = static_cast<vineyard_vid_t>(node_id);
+#endif
+    auto v = vertex_t{node_gid};
     if (!frag_->IsInnerVertex(v)) {
       return Attribute(AttributeValue::Default(side_info_), false);
     }
@@ -295,6 +328,8 @@ private:
   std::vector<const void *> vertex_table_accessors_;
 
   std::set<std::string> attrs_;
+  std::shared_ptr<gl_frag_t::vertex_map_t> vertex_map_;
+  std::shared_ptr<vineyard::ConvertToArrowType<vineyard_oid_t>::ArrayType> oid_array_;
 };
 
 } // namespace io

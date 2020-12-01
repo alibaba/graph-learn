@@ -84,6 +84,16 @@ const Array<IdType>
 get_all_outgoing_neighbor_edges(std::shared_ptr<gl_frag_t> const &frag,
                                 IdType src_id, const label_id_t edge_label);
 
+const Array<IdType>
+get_all_outgoing_neighbor_nodes(std::shared_ptr<gl_frag_t> const &frag,
+                                std::vector<IdType> const &edge_lists,
+                                IdType src_id, const label_id_t edge_label);
+
+const Array<IdType>
+get_all_outgoing_neighbor_edges(std::shared_ptr<gl_frag_t> const &frag,
+                                std::vector<IdType> const &edge_lists,
+                                IdType src_id, const label_id_t edge_label);
+
 IdType get_edge_src_id(std::shared_ptr<gl_frag_t> const &frag,
                        label_id_t const edge_label,
                        std::vector<IdType> const &src_ids, IdType edge_id);
@@ -93,19 +103,21 @@ IdType get_edge_dst_id(std::shared_ptr<gl_frag_t> const &frag,
                        std::vector<IdType> const &dst_ids, IdType edge_id);
 
 float get_edge_weight(std::shared_ptr<gl_frag_t> const &frag,
-                      label_id_t const edge_label, IdType edge_id);
+                      label_id_t const edge_label, IdType edge_offset);
 
 int32_t get_edge_label(std::shared_ptr<gl_frag_t> const &frag,
-                       label_id_t const edge_label, IdType edge_id);
+                       label_id_t const edge_label, IdType edge_offset);
 
 Attribute get_edge_attribute(std::shared_ptr<gl_frag_t> const &frag,
                              label_id_t const edge_label,
-                             IdType edge_id,
+                             IdType edge_offset,
                              std::set<std::string> const &attrs);
 
 void init_src_dst_list(std::shared_ptr<gl_frag_t> const &frag,
-                    label_id_t const edge_label, std::vector<IdType> &src_lists,
-                    std::vector<IdType> &dst_lists);
+                       label_id_t const edge_label,
+                       std::vector<IdType> &src_lists,
+                       std::vector<IdType> &dst_lists,
+                       std::vector<IdType> &edge_lists);
 
 SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
                               std::set<std::string> const &attrs,
