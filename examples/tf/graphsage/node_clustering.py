@@ -118,12 +118,12 @@ def main():
 
   config = {'class_num': 16, # output dimension
             'features_num': 128, # 128 dimension + year + id + kcore + page_rank
-            'batch_size': 500,
+            'batch_size': 1000,
             'categorical_attrs_desc': '',
             'hidden_dim': 256,
             'in_drop_rate': 0.5,
             'hops_num': 2,
-            'neighs_num': [1, 1],  # [1, 1] to make it fase, origin is [10, 20]
+            'neighs_num': [5, 5],  # [1, 1] to make it fase, origin is [10, 20]
             'full_graph_mode': False,
             'agg_type': 'gcn',  # mean, sum
             'learning_algo': 'adam',
@@ -136,14 +136,14 @@ def main():
             'node_type': "paper",
             'edge_type': "cites"}
 
-  attrs = []
+  features = []
   for i in range(128):
-    attrs.append("feat_" + str(i))
-  attrs.append("KC")
-  attrs.append("TC")
+    features.append("feat_" + str(i))
+  features.append("KC")
+  features.append("TC")
   try:
-    g = gl.Graph().vineyard(handle) \
-        .node_attributes("paper", attrs, n_ints=2, nfloats=128, nstrings=0) \
+    g = gl.Graph().vineyard(handle, nodes=["paper"], edges=["cites"]) \
+        .node_attributes("paper", features, n_ints=2, nfloats=128, nstrings=0) \
         .init_vineyard(standalone=True)
 
     node_ids, clusters = train(config, g, n_clusters=40)  # 40 for test
