@@ -115,22 +115,8 @@ def main():
   handle_str = sys.argv[1]
   s = base64.b64decode(handle_str).decode('utf-8')
   handle = json.loads(s)
-  handle['pod_index'] = int(sys.argv[2])
-  node_type = sys.argv[3]
-  edge_type = sys.argv[4]
-  for node_info in handle['node_schema']:
-    if node_info.split(':')[0] == node_type:
-      handle['node_schema'] = [node_info]
-  for edge_info in handle['edge_schema']:
-    if edge_info.split(':')[1] == edge_type:
-      handle['edge_schema'] = [edge_info]
-  # FIXME: hard code here.
-  handle['node_schema'] = ['paper:false:false:0:128:0']
-  gl.set_attr_start_index(0)
-  gl.set_attr_end_index(128)
 
-  config = {'dataset_folder': '',
-            'class_num': 16, # output dimension
+  config = {'class_num': 16, # output dimension
             'features_num': 128, # 128 dimension + year + id + kcore + page_rank
             'batch_size': 500,
             'categorical_attrs_desc': '',
@@ -147,16 +133,19 @@ def main():
             'unsupervised': True,
             'use_neg': True,
             'neg_num': 10,
-            'node_type': node_type,
-            'edge_type': edge_type}
+            'node_type': "paper",
+            'edge_type': "cites"}
 
+  attrs = []
+  for i in range(128):
+    attrs.append("feat_" + str(i))
+  attrs.append("KC")
+  attrs.append("TC")
   try:
-    g = gl.get_graph_from_handle(
-      handle,
-      worker_index=0,
-      worker_count=1,
-      standalone=True
-    )
+    g = gl.Graph().vineyard(handle) \
+        .node_attributes("paper", attrs, n_ints=2, nfloats=128, nstrings=0) \
+        .init_vineyard(standalone=True)
+
     node_ids, clusters = train(config, g, n_clusters=40)  # 40 for test
     # TODO: uncomment after we use oid as output ids
     # test(config, node_ids, clusters)
