@@ -143,7 +143,7 @@ def main():
   features.append("TC")
   try:
     g = gl.Graph().vineyard(handle, nodes=["paper"], edges=["cites"]) \
-        .node_attributes("paper", features, n_ints=2, nfloats=128, nstrings=0) \
+        .node_attributes("paper", features, n_int=2, n_float=128, n_string=0) \
         .init_vineyard(standalone=True)
 
     node_ids, clusters = train(config, g, n_clusters=40)  # 40 for test
