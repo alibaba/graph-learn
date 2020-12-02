@@ -35,8 +35,9 @@ def launch_server():
   features.append("KC")
   features.append("TC")
   hosts = handle['hosts'].split(',')
-  handle['server'] = ','.join(["{}:{}".format(pod_name, 8000 + index) for index, pod_name in enumerate(hosts[0:])])
-  g = gl.Graph().vineyard(handle, nodes=["paper"], edges=["cites"]) \
+  handle['server'] = ','.join(["{}:{}".format(pod_name, 8000) for index, pod_name in enumerate(hosts[0:])])
+  handle['client'] = "8.8.8.8:8888"
+  g = gl.Graph().vineyard(handle, nodes=["paper"], edges=[("paper", "cites", "paper")]) \
       .node_attributes("paper", features, n_int=2, n_float=128, n_string=0) \
       .init_vineyard(server_index=handle['pod_index'], worker_count=handle['client_count'])
   print('servers', handle['server'])
