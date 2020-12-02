@@ -223,7 +223,7 @@ public:
   void FillStrings(Tensor* tensor) const override;
 
 private:
-	const int row_index_;
+	int row_index_;
   const std::vector<int> &i32_indexes_;
   const std::vector<int> &i64_indexes_;
   const std::vector<int> &f32_indexes_;
