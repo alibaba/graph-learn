@@ -121,10 +121,12 @@ void init_src_dst_list(std::shared_ptr<gl_frag_t> const &frag,
 
 SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
                               std::set<std::string> const &attrs,
+                              std::string const &edge_label_name,
                               label_id_t const edge_label);
 
 SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
                               std::set<std::string> const &attrs,
+                              std::string const &node_label_name,
                               label_id_t const node_label);
 
 int64_t find_index_of_name(std::shared_ptr<arrow::Schema> const &schema,
@@ -216,7 +218,7 @@ public:
     throw std::runtime_error("Not implemented");
   }
 
-	void FillInts(Tensor* tensor) const override;
+  void FillInts(Tensor* tensor) const override;
 
   void FillFloats(Tensor* tensor) const override;
 

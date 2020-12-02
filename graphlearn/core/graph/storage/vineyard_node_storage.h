@@ -51,6 +51,8 @@ public:
     }
     vertex_map_ = frag_->GetVertexMap();
 
+    std::string node_label_name = node_label;
+
     if (!node_view.empty()) {
       std::vector<std::string> args;
       boost::algorithm::split(args, node_view, boost::is_any_of(":"));
@@ -78,7 +80,7 @@ public:
       boost::algorithm::split(attrs_, use_attrs, boost::is_any_of(";"));
     }
 
-    side_info_ = frag_node_side_info(frag_, attrs_, node_label_);
+    side_info_ = frag_node_side_info(frag_, attrs_, node_label_name, node_label_);
     init_table_accessors(vtable, attrs_, i32_indexes_,
                          i64_indexes_, f32_indexes_, f64_indexes_, s_indexes_,
                          ls_indexes_, vertex_table_accessors_);

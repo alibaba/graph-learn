@@ -83,6 +83,9 @@ setup(
     ext_package='graphlearn',
     ext_modules=extensions,
     packages=find_packages(exclude=["*.examples", "*.examples.*", "examples.*", "examples"]),
+    install_requires=[
+        "tensorflow==1.12.0",
+    ],
     package_dir={'graphlearn' : 'graphlearn'},
     package_data={'': ['python/lib/lib*.so*']},
 )

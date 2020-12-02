@@ -244,11 +244,11 @@ file (GLOB_RECURSE SERVICE_FILES
 
 
 if (GL_DEBUG)
-    set (CMAKE_BUILD_TYPE "Debug")
     set (MODEFLAGS -DDEBUG -g)
+    set (CMAKE_BUILD_TYPE "Debug")
 else()
-    set (CMAKE_BUILD_TYPE "Release")
     set (MODEFLAGS -DNDEBUG -O2)
+    set (CMAKE_BUILD_TYPE "Release")
 endif()
 
 if (PROFILING)
@@ -505,4 +505,9 @@ add_custom_command (TARGET python
     COMMAND /bin/sh -c "rm -rf ${PYTHON_DIR}/__init__.py*"
     WORKING_DIRECTORY ${ROOT}
     VERBATIM
+)
+
+# install
+install(CODE "execute_process(COMMAND pip3 install ${PROJECT_SOURCE_DIR}/dist/*.whl)
+                              WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}"
 )

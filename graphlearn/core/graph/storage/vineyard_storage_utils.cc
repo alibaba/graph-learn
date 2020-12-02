@@ -363,14 +363,15 @@ void init_src_dst_list(std::shared_ptr<gl_frag_t> const &frag,
 
 SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
                               std::set<std::string> const &attrs,
+                              std::string const &edge_label_name,
                               label_id_t const edge_label) {
   static std::map<vineyard::ObjectID,
-                  std::map<label_id_t, std::shared_ptr<SideInfo>>>
+                  std::map<std::string, std::shared_ptr<SideInfo>>>
       side_info_cache;
 
   static std::mutex mutex;
   std::lock_guard<std::mutex> lexical_scope_lock(mutex);
-  auto cache_entry = side_info_cache[frag->id()][edge_label];
+  auto cache_entry = side_info_cache[frag->id()][edge_label_name];
   if (cache_entry) {
     return cache_entry.get();
   }
@@ -417,7 +418,7 @@ SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
     // }
     side_info->format |= kAttributed;
   }
-  side_info->type = std::to_string(edge_label);
+  side_info->type = edge_label_name;
   // TODO: in vineyard's data model, edges of the same label can have arbitary
   // kinds of sources and destinations.
   //
@@ -430,21 +431,22 @@ SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
   //     frag->vertex_label(vertex_t{first_dst_id}));
   // side_info->direction = Direction::kOrigin;
 
-  side_info_cache[frag->id()][edge_label] = side_info;
+  side_info_cache[frag->id()][edge_label_name] = side_info;
   return side_info.get();
 }
 
 SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
                               std::set<std::string> const &attrs,
+                              std::string const &node_label_name,
                               label_id_t const node_label) {
   static std::map<vineyard::ObjectID,
-                  std::map<label_id_t, std::shared_ptr<SideInfo>>>
+                  std::map<std::string, std::shared_ptr<SideInfo>>>
       side_info_cache;
 
   static std::mutex mutex;
   std::lock_guard<std::mutex> lexical_scope_lock(mutex);
 
-  auto cache_entry = side_info_cache[frag->id()][node_label];
+  auto cache_entry = side_info_cache[frag->id()][node_label_name];
   if (cache_entry) {
     return cache_entry.get();
   }
@@ -488,8 +490,8 @@ SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
     }
     side_info->format |= kAttributed;
   }
-  side_info->type = std::to_string(node_label);
-  side_info_cache[frag->id()][node_label] = side_info;
+  side_info->type = node_label_name;
+  side_info_cache[frag->id()][node_label_name] = side_info;
   return side_info.get();
 }
 

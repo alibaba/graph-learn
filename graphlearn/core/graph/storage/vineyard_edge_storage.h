@@ -38,6 +38,8 @@ public:
       throw std::runtime_error("Edge: failed to find a local fragment");
     }
 
+    std::string edge_label_name = edge_label;
+
     if (!edge_view.empty()) {
       std::vector<std::string> args;
       boost::algorithm::split(args, edge_view, boost::is_any_of(":"));
@@ -68,7 +70,7 @@ public:
 
     init_src_dst_list(frag_, edge_label_,
                       src_lists_, dst_lists_, edge_lists_);
-    side_info_ = frag_edge_side_info(frag_, attrs_, edge_label_);
+    side_info_ = frag_edge_side_info(frag_, attrs_, edge_label_name, edge_label_);
   }
 
   virtual ~VineyardEdgeStorage() = default;
