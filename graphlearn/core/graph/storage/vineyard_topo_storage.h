@@ -65,7 +65,8 @@ public:
       boost::algorithm::split(attrs_, use_attrs, boost::is_any_of(";"));
     }
 
-    init_src_dst_list(frag_, edge_label_, src_lists_, dst_lists_);
+    init_src_dst_list(frag_, edge_label_,
+                      src_lists_, dst_lists_, edge_lists_);
   }
 
   virtual ~VineyardTopoStorage() = default;
@@ -141,6 +142,7 @@ private:
 
   std::vector<IdType> src_lists_;
   std::vector<IdType> dst_lists_;
+  std::vector<IdType> edge_lists_;
 };
 
 } // namespace io

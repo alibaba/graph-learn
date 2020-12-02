@@ -48,6 +48,7 @@ public:
     if (frag_ == nullptr) {
       throw std::runtime_error("Graph: failed to find a local fragment");
     }
+    vertex_map_ = frag_->GetVertexMap();
 
     if (!edge_view.empty()) {
       std::vector<std::string> args;
@@ -77,7 +78,8 @@ public:
       boost::algorithm::split(attrs_, use_attrs, boost::is_any_of(";"));
     }
 
-    init_src_dst_list(frag_, edge_label_, src_lists_, dst_lists_);
+    init_src_dst_list(frag_, edge_label_,
+                      src_lists_, dst_lists_, edge_lists_);
     side_info_ = frag_edge_side_info(frag_, attrs_, edge_label_);
   }
 
@@ -104,37 +106,74 @@ public:
     return get_edge_dst_id(frag_, edge_label_, dst_lists_, edge_id);
   }
   virtual float GetEdgeWeight(IdType edge_id) const override {
-    if (!side_info_->IsWeighted()) {
+    if (!side_info_->IsWeighted() || edge_id >= edge_lists_.size()) {
       return -1;
     }
-    return get_edge_weight(frag_, edge_label_, edge_id);
+    return get_edge_weight(frag_, edge_label_, edge_lists_[edge_id]);
   }
   virtual int32_t GetEdgeLabel(IdType edge_id) const override {
-    if (!side_info_->IsLabeled()) {
+    if (!side_info_->IsLabeled() || edge_id >= edge_lists_.size()) {
       return -1;
     }
-    return get_edge_label(frag_, edge_label_, edge_id);
+    return get_edge_label(frag_, edge_label_, edge_lists_[edge_id]);
   }
   virtual Attribute GetEdgeAttribute(IdType edge_id) const override {
     if (!side_info_->IsAttributed()) {
       return Attribute();
     }
-    return get_edge_attribute(frag_, edge_label_, edge_id, attrs_);
+    if (edge_id >= edge_lists_.size()) {
+      return Attribute(AttributeValue::Default(side_info_), false);
+    }
+    return get_edge_attribute(frag_, edge_label_, edge_lists_[edge_id], attrs_);
   }
 
   virtual Array<IdType> GetNeighbors(IdType src_id) const override {
-    return get_all_outgoing_neighbor_nodes(frag_, src_id, edge_label_);
+#if defined(VINEYARD_USE_OID)
+    vineyard_vid_t src_gid;
+    if (!vertex_map_->GetGid(frag_->fid(), /* node_label_, */ src_id, src_gid)) {
+      return IdArray();
+    }
+#else
+    vineyard_vid_t src_gid = static_cast<vineyard_vid_t>(src_id);
+#endif
+    return get_all_outgoing_neighbor_nodes(frag_, dst_lists_, src_gid, edge_label_);
   }
+
   virtual Array<IdType> GetOutEdges(IdType src_id) const override {
-    return get_all_outgoing_neighbor_edges(frag_, src_id, edge_label_);
+#if defined(VINEYARD_USE_OID)
+    vineyard_vid_t src_gid;
+    if (!vertex_map_->GetGid(frag_->fid(), /* node_label_, */ src_id, src_gid)) {
+      return IdArray();
+    }
+#else
+    vineyard_vid_t src_gid = static_cast<vineyard_vid_t>(src_id);
+#endif
+    return get_all_outgoing_neighbor_edges(frag_, edge_lists_, src_gid, edge_label_);
   }
 
   virtual IndexType GetInDegree(IdType dst_id) const override {
-    return frag_->GetLocalInDegree(vertex_t{static_cast<uint64_t>(dst_id)},
+#if defined(VINEYARD_USE_OID)
+    vineyard_vid_t dst_gid;
+    if (!vertex_map_->GetGid(frag_->fid(), /* node_label_, */ dst_id, dst_gid)) {
+      return -1;
+    }
+#else
+    vineyard_vid_t dst_gid = static_cast<vineyard_vid_t>(dst_id);
+#endif
+    return frag_->GetLocalInDegree(vertex_t{static_cast<uint64_t>(dst_gid)},
                                    edge_label_);
   }
+
   virtual IndexType GetOutDegree(IdType src_id) const override {
-    return frag_->GetLocalOutDegree(vertex_t{static_cast<uint64_t>(src_id)},
+#if defined(VINEYARD_USE_OID)
+    vineyard_vid_t src_gid;
+    if (!vertex_map_->GetGid(frag_->fid(), /* node_label_, */ src_id, src_gid)) {
+      return -1;
+    }
+#else
+    vineyard_vid_t src_gid = static_cast<vineyard_vid_t>(src_id);
+#endif
+    return frag_->GetLocalOutDegree(vertex_t{static_cast<uint64_t>(src_gid)},
                                     edge_label_);
   }
   virtual const IndexList *GetAllInDegrees() const override {
@@ -164,6 +203,9 @@ private:
 
   std::vector<IdType> src_lists_;
   std::vector<IdType> dst_lists_;
+  std::vector<IdType> edge_lists_;
+
+  std::shared_ptr<gl_frag_t::vertex_map_t> vertex_map_;
 };
 
 } // namespace io
