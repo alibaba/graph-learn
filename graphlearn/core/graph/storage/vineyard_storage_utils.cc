@@ -480,15 +480,12 @@ SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
     }
   }
   side_info->format = kDefault;
-  for (size_t idx = 0; idx < vtable_schema->fields().size(); ++idx) {
-    // if (field->name() == "label") {
-    //   side_info->format |= kLabeled;
-    // } else if (field->name() == "weight") {
-    //   side_info->format |= kWeighted;
-    // } else {
-    //   // otherwise we have attributes
-    //   side_info->format |= kAttributed;
-    // }
+  for (size_t idx = 0; idx < fields.size(); ++idx) {
+    if (fields[idx]->name() == "label") {
+      side_info->format |= kLabeled;
+    } else if (fields[idx]->name() == "weight") {
+      side_info->format |= kWeighted;
+    }
     side_info->format |= kAttributed;
   }
   side_info->type = std::to_string(node_label);
