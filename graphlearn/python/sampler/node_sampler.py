@@ -100,7 +100,7 @@ class NodeSampler(object):
     res = pywrap.new_get_nodes_response()
     status = self._client.get_nodes(req, res)
     if not status.ok():
-      if not self._client.is_in_memory() and self._client.connect_to_next():
+      if self._client.connect_to_next_server():
         req = pywrap.new_get_nodes_request(self._type,
                                        self._strategy,
                                        self._node_from,

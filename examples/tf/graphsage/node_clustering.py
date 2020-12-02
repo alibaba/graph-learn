@@ -142,7 +142,7 @@ def main():
   features.append("KC")
   features.append("TC")
   try:
-    g = gl.Graph().vineyard(handle, nodes=["paper"], edges=["cites"]) \
+    g = gl.Graph().vineyard(handle, nodes=["paper"], edges=[("paper", "cites", "paper"]) \
         .node_attributes("paper", features, n_int=2, n_float=128, n_string=0) \
         .init_vineyard(standalone=True)
 
