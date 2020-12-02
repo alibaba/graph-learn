@@ -134,7 +134,7 @@ def train_dist(config, graph):
 
 def local_training(handle, config):
   features = ["creationDate"]
-  g = gl.Graph().vineyard(handle, nodes=["person"], edges=["knows"]) \
+  g = gl.Graph().vineyard(handle, nodes=["person"], edges=[("person", "knows", "person")]) \
       .node_attributes("person", features, n_int=1, n_float=0, n_string=0) \
       .init_vineyard(standalone=True)
   train_local(config, g)
@@ -166,13 +166,13 @@ def dist_training(handle, config):
     config['job_name'] = 'worker'
     config['task_index'] = pod_index
     client_count = len(config['worker_hosts'])
-    g = gl.Graph().vineyard(handle, nodes=["person"], edges=["knows"]) \
+    g = gl.Graph().vineyard(handle, nodes=["person"], edges=[("person", "knows", "person")]) \
         .node_attributes("person", features, n_int=1, n_float=0, n_string=0) \
         .init_vineyard(worker_index=config['task_index'], worker_count=client_count)
   else:
     config['job_name'] = 'ps'
     config['task_index'] = pod_index - mid
-    g = gl.Graph().vineyard(handle, nodes=["person"], edges=["knows"]) \
+    g = gl.Graph().vineyard(handle, nodes=["person"], edges=[("person", "knows", "person")]) \
         .node_attributes("person", features, n_int=1, n_float=0, n_string=0) \
         .init_vineyard(server_index=config['task_index'], worker_count=client_count)
 
