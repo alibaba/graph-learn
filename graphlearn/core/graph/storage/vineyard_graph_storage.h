@@ -118,8 +118,11 @@ public:
     return get_edge_label(frag_, edge_label_, edge_lists_[edge_id]);
   }
   virtual Attribute GetEdgeAttribute(IdType edge_id) const override {
-    if (!side_info_->IsAttributed() || edge_id >= edge_lists_.size()) {
+    if (!side_info_->IsAttributed()) {
       return Attribute();
+    }
+    if (edge_id >= edge_lists_.size()) {
+      return Attribute(AttributeValue::Default(side_info_), false);
     }
     return get_edge_attribute(frag_, edge_label_, edge_lists_[edge_id], attrs_);
   }

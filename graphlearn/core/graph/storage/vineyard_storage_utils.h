@@ -153,6 +153,10 @@ public:
   ~ArrowRefAttributeValue() override {
   }
 
+  void Reuse(const int row_index) {
+    row_index_ = row_index;
+  }
+
   void Clear() override {
   }
 

@@ -206,7 +206,7 @@ public:
 #if defined(VINEYARD_USE_OID)
     vineyard_vid_t node_gid;
     if (!vertex_map_->GetGid(frag_->fid(), node_label_, node_id, node_gid)) {
-      return Attribute();
+      return Attribute(AttributeValue::Default(side_info_), false);
     }
 #else
     vineyard_vid_t node_gid = static_cast<vineyard_vid_t>(node_id);
@@ -234,9 +234,11 @@ public:
         offset, i32_indexes_, i64_indexes_, f32_indexes_, f64_indexes_,
         s_indexes_, ls_indexes_, vertex_table_accessors_), true);
 #else
-    return Attribute(new ArrowRefAttributeValue(
-        offset, i32_indexes_, i64_indexes_, f32_indexes_, f64_indexes_,
-        s_indexes_, ls_indexes_, vertex_table_accessors_), true);
+    thread_local ArrowRefAttributeValue attribute(
+        0, i32_indexes_, i64_indexes_, f32_indexes_, f64_indexes_,
+        s_indexes_, ls_indexes_, vertex_table_accessors_);
+    attribute.Reuse(offset);
+    return Attribute(&attribute, false);
 #endif
   }
 
