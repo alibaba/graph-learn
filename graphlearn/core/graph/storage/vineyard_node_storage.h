@@ -136,11 +136,7 @@ public:
 
   /// Get the total node count after data fixed.
   virtual IdType Size() const override {
-#ifndef NDEBUG
-    std::cerr << "node: get size = "
-              << frag_->vertex_data_table(node_label_)->num_rows() << std::endl;
-#endif
-    return frag_->vertex_data_table(node_label_)->num_rows();
+    return all_ids_.Size();
   }
 
   /// A NODE is made up of [ id, attributes, weight, label ].
