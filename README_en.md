@@ -7,7 +7,7 @@
 
 # Introduction
 
-**Graph-Learn(GL)** is a distributed framework designed for the development and application of large-scale graph neural networks.
+**Graph-Learn(GL, once called AliGraph)** is a distributed framework designed for the development and application of large-scale graph neural networks.
 It refines and abstracts a set of programming paradigms suitable for the current neural network model.
 It has been successfully applied to many scenarios such as search recommendation, network security, and knowledge graphs within Alibaba.
 
