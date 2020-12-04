@@ -420,7 +420,7 @@ class Graph(object):
       raise ValueError('Cannot be a server and a worker at the same unless standalone is True')
 
     cluster = {'server': self._vineyard_handle['server'],
-               'client': self._vineyard_handle['client']}
+               'client_count': self._vineyard_handle['client_count']}
     if server_index is not None:
       self.init(cluster=cluster, task_index=server_index, job_name="server")
     else:
