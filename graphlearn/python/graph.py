@@ -95,8 +95,8 @@ class Graph(object):
       node_type = confs[0]
       if nodes is not None and node_type not in nodes:
         continue
-      weighted = confs[1] == 'True'
-      labeled = confs[2] == 'True'
+      weighted = confs[1] == 'true'
+      labeled = confs[2] == 'true'
       n_int = int(confs[3])
       n_float = int(confs[4])
       n_string = int(confs[5])
@@ -114,8 +114,8 @@ class Graph(object):
       dst_node_type = confs[2]
       if edges is not None and (src_node_type, edge_type, dst_node_type) not in edges:
         continue
-      weighted = confs[3] == 'True'
-      labeled = confs[4] == 'True'
+      weighted = confs[3] == 'true'
+      labeled = confs[4] == 'true'
       n_int = int(confs[5])
       n_float = int(confs[6])
       n_string = int(confs[7])
