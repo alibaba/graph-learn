@@ -52,7 +52,7 @@ def launch_server():
 
   g = g.init_vineyard(server_index=pod_index, worker_count=handle['client_count'])
   print('servers', handle['server'])
-  time.sleep(100000)
+  g.close()
 
 if __name__ == "__main__":
   launch_server()
