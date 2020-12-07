@@ -112,7 +112,7 @@ class Graph(object):
       src_node_type = confs[0]
       edge_type = confs[1]
       dst_node_type = confs[2]
-      if edges is not None and (src_node_type, edge_type, dst_node_type) not in edges:
+      if edges is not None and [src_node_type, edge_type, dst_node_type] not in edges:
         continue
       weighted = confs[3] == 'true'
       labeled = confs[4] == 'true'
@@ -292,7 +292,7 @@ class Graph(object):
     self._edge_sources.append(edge_source)
     return self
 
-  def edge_attributes(self, node_type, attrs, n_int, n_float, n_string):
+  def edge_attributes(self, edge_type, attrs, n_int, n_float, n_string):
     edge_source = None
     for edge in self._edge_sources:
       if (edge.src_id_type, edge.dst_id_type, edge.edge_type) == edge_type:

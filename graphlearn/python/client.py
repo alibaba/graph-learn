@@ -37,15 +37,17 @@ class Client(object):
     """
     self._client_id = client_id
     self._in_memory = in_memory
+    self._client_cache = []
     if in_memory:
-      self._client = pywrap.in_memory_client()
+      self._client_cache.append(pywrap.in_memory_client())
+      self._cur_index = 0
     else:
       server_id = kwargs.get("server_id", -1)
       server_own = kwargs.get("server_own", False)
       client_own = kwargs.get("client_own", True)
       # auto select
       client = pywrap.rpc_client(server_id, server_own, client_own)
-      self._own_servers = self._client.get_own_servers()
+      self._own_servers = client.get_own_servers()
       self._client_cache = [None] * len(self._own_servers)
       self._client_cache[0] = client
       self._cur_index = 0
