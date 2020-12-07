@@ -37,14 +37,19 @@ class Client(object):
     """
     self._client_id = client_id
     self._in_memory = in_memory
+    self._client_cache = []
     if in_memory:
-      self._client = pywrap.in_memory_client()
+      self._client_cache.append(pywrap.in_memory_client())
+      self._cur_index = 0
     else:
       server_id = kwargs.get("server_id", -1)
       server_own = kwargs.get("server_own", False)
       client_own = kwargs.get("client_own", True)
-      self._client = pywrap.rpc_client(server_id, server_own, client_own)
-      self._own_servers = self._client.get_own_servers()
+      # auto select
+      client = pywrap.rpc_client(server_id, server_own, client_own)
+      self._own_servers = client.get_own_servers()
+      self._client_cache = [None] * len(self._own_servers)
+      self._client_cache[0] = client
       self._cur_index = 0
 
   @property
@@ -61,37 +66,38 @@ class Client(object):
     elif next_index < self._cur_index:
       # one epoch finish, start next epoch
       self._cur_index = next_index
-      self._client.stop
-      self._client = pywrap.rpc_client(self._own_servers[next_index], True, True)
       return False
     else:
       # one server finish, start to connect next server
+      if self._client_cache[next_index] is None:
+        self._client_cache[next_index] = pywrap.rpc_client(
+          self._own_servers[next_index], True, True
+        )
       self._cur_index = next_index
-      self._client.stop
-      self._client = pywrap.rpc_client(self._own_servers[next_index], True, True)
       return True
 
   def stop(self):
-    self._client.stop()
+    for client in self._client_cache:
+      client.stop()
     self._client = None
 
   def lookup_nodes(self, req, res):
-    return self._client.lookup_nodes(req, res)
+    return self._client_cache[self._cur_index].lookup_nodes(req, res)
 
   def lookup_edges(self, req, res):
-    return self._client.lookup_edges(req, res)
+    return self._client_cache[self._cur_index].lookup_edges(req, res)
 
   def get_nodes(self, req, res):
-    return self._client.get_nodes(req, res)
+    return self._client_cache[self._cur_index].get_nodes(req, res)
 
   def get_edges(self, req, res):
-    return self._client.get_edges(req, res)
+    return self._client_cache[self._cur_index].get_edges(req, res)
 
   def agg_nodes(self, req, res):
-    return self._client.agg_nodes(req, res)
+    return self._client_cache[self._cur_index].agg_nodes(req, res)
 
   def sample_neighbor(self, req, res):
-    return self._client.sample_neighbor(req, res)
+    return self._client_cache[self._cur_index].sample_neighbor(req, res)
 
   def is_in_memory(self):
     return self._in_memory
