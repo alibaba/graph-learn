@@ -112,9 +112,8 @@ class Graph(object):
       src_node_type = confs[0]
       edge_type = confs[1]
       dst_node_type = confs[2]
-      if edges is not None and (
-        [src_node_type, edge_type, dst_node_type] not in edges or
-        (src_node_type, edge_type, dst_node_type) not in edges):
+      if edges is not None and [src_node_type, edge_type, dst_node_type] not in edges \
+        and (src_node_type, edge_type, dst_node_type) not in edges:
         continue
       weighted = confs[3] == 'true'
       labeled = confs[4] == 'true'
