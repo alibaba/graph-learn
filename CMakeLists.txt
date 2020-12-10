@@ -301,7 +301,6 @@ add_dependencies (graphlearn_shared
     grpc_target
     glog_target
     pybind_target
-    gtest_target
     gflags_target
     proto_target)
 
