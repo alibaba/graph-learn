@@ -29,7 +29,5 @@ try:
     from .tf.graphsage.graph_sage import GraphSage
     from .tf.line.line import LINE
     from .tf.transe.trans_e import TransE
-except ImportError:
-    pass
 finally:
     sys.path.pop(sys.path.index(os.path.join(os.path.dirname(__file__), "..")))

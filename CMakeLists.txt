@@ -143,26 +143,28 @@ else()
 endif()
 
 # gtest
-find_package(GTest)
-if(GTEST_FOUND)
-    set (GTEST_INCLUDE ${GTEST_INCLUDE_DIRS})
-    get_filename_component(GTEST_LIB ${GTEST_MAIN_LIBRARIES} DIRECTORY)
-    add_custom_target (gtest_target)
-    add_custom_command (TARGET gtest_target
-        COMMAND ${CMAKE_COMMAND} -E echo "gtest found"
-        VERBATIM
-    )
-else()
-    set (GTEST_DIR ${THIRD_PARTY_DIR}/googletest)
-    set (GTEST_INCLUDE ${GTEST_DIR}/googletest/googletest/include)
-    set (GTEST_LIB ${GTEST_DIR}/build/googlemock/gtest)
-    add_custom_target (gtest_target)
-    add_custom_command (TARGET gtest_target
-        COMMAND ${CMAKE_COMMAND} -E echo "prepare gtest library ..."
-        COMMAND /bin/sh -c "if [ ! -d '${GTEST_DIR}/build' ]; then cd '${GTEST_DIR}'; ./build.sh; fi"
-        COMMAND ${CMAKE_COMMAND} -E echo "gtest done"
-        VERBATIM
-    )
+if (TESTING)
+    find_package(GTest)
+    if(GTEST_FOUND)
+        set (GTEST_INCLUDE ${GTEST_INCLUDE_DIRS})
+        get_filename_component(GTEST_LIB ${GTEST_MAIN_LIBRARIES} DIRECTORY)
+        add_custom_target (gtest_target)
+        add_custom_command (TARGET gtest_target
+            COMMAND ${CMAKE_COMMAND} -E echo "gtest found"
+            VERBATIM
+        )
+    else()
+        set (GTEST_DIR ${THIRD_PARTY_DIR}/googletest)
+        set (GTEST_INCLUDE ${GTEST_DIR}/googletest/googletest/include)
+        set (GTEST_LIB ${GTEST_DIR}/build/googlemock/gtest)
+        add_custom_target (gtest_target)
+        add_custom_command (TARGET gtest_target
+            COMMAND ${CMAKE_COMMAND} -E echo "prepare gtest library ..."
+            COMMAND /bin/sh -c "if [ ! -d '${GTEST_DIR}/build' ]; then cd '${GTEST_DIR}'; ./build.sh; fi"
+            COMMAND ${CMAKE_COMMAND} -E echo "gtest done"
+            VERBATIM
+        )
+    endif()
 endif()
 
 # gflags
