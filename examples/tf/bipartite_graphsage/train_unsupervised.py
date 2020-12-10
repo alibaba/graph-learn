@@ -20,7 +20,12 @@ import os
 
 import graphlearn as gl
 import numpy as np
-import tensorflow as tf
+itry:
+  # https://www.tensorflow.org/guide/migrate
+  import tensorflow.compat.v1 as tf
+  tf.disable_v2_behavior()
+except ImportError:
+  import tensorflow as tf
 
 from bipartite_graph_sage import BipartiteGraphSage
 
