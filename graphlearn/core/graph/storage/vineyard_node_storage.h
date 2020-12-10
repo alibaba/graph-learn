@@ -63,7 +63,7 @@ public:
       split_end = stoi(args[4]);
     }
 
-    auto vlabels = frag_->schema().GetVextexLabels();
+    auto vlabels = frag_->schema().GetVertexLabels();
     auto vlabel_index = std::find(vlabels.begin(), vlabels.end(), node_label);
     if (vlabel_index == vlabels.end()) {
       throw std::runtime_error(

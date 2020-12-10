@@ -18,8 +18,21 @@ namespace io {
 class VineyardTopoStorage : public graphlearn::io::TopoStorage {
 public:
   explicit VineyardTopoStorage(std::string edge_label = "0",
-                               std::string const &edge_view = "",
+                               std::string const &decorated_edge_view = "",
                                std::string const &use_attrs = "") {
+    std::vector<std::string> edge_args;
+    boost::algorithm::split(edge_args, decorated_edge_view, boost::is_any_of("|"));
+    std::string src_node_type = edge_args[0];
+    std::string dst_node_type = edge_args[1];
+    std::string edge_view;
+    if (edge_args.size() == 3) {
+      edge_view = edge_args[2];
+    }
+
+    std::cerr << "edge_label = " << edge_label << ": "
+              << src_node_type << " -> " << dst_node_type
+              << ", from " << GLOBAL_FLAG(VineyardGraphID);
+
     VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
     auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
         GLOBAL_FLAG(VineyardGraphID));
@@ -56,6 +69,23 @@ public:
       edge_label_ = elabel_index - elabels.begin();
     }
 
+    auto vlabels = frag_->schema().GetVertexLabels();
+
+    auto src_label_index = std::find(vlabels.begin(), vlabels.end(), src_node_type);
+    if (src_label_index == vlabels.end()) {
+      throw std::runtime_error(
+          "Topo: failed to find src node label in local fragment: " + src_node_type);
+    } else {
+      src_node_label_ = src_label_index - vlabels.begin();
+    }
+    auto dst_label_index = std::find(vlabels.begin(), vlabels.end(), dst_node_type);
+    if (dst_label_index == vlabels.end()) {
+      throw std::runtime_error(
+          "Topo: failed to find dst node label in local fragment: " + dst_node_type);
+    } else {
+      dst_node_label_ = dst_label_index - vlabels.begin();
+    }
+
     auto etable = frag_->edge_data_table(edge_label_);
     if (use_attrs.empty()) {
       for (auto const &field: etable->schema()->fields()) {
@@ -65,7 +95,7 @@ public:
       boost::algorithm::split(attrs_, use_attrs, boost::is_any_of(";"));
     }
 
-    init_src_dst_list(frag_, edge_label_,
+    init_src_dst_list(frag_, edge_label_, src_node_label_, dst_node_label_,
                       src_lists_, dst_lists_, edge_lists_);
   }
 
@@ -132,7 +162,7 @@ public:
 private:
   vineyard::Client client_;
   std::shared_ptr<gl_frag_t> frag_;
-  label_id_t edge_label_;
+  label_id_t edge_label_, src_node_label_, dst_node_label_;
 
   // for edge view
   std::string view_label;

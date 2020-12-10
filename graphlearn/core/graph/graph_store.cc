@@ -180,7 +180,11 @@ Status GraphStore::Load(
     const std::vector<io::NodeSource>& nodes) {
   for (const auto& e : edges) {
     topo_.Add(e.edge_type, e.src_id_type, e.dst_id_type);
-    graphs_->LookupOrCreate(e.edge_type, e.view_type, e.use_attrs);
+    std::string decorated_edge_view = e.src_id_type + "|" + e.dst_id_type;
+    if (!e.view_type.empty()) {
+      decorated_edge_view += "|" + e.view_type;
+    }
+    graphs_->LookupOrCreate(e.edge_type, decorated_edge_view, e.use_attrs);
   }
   for (const auto& n : nodes) {
     noders_->LookupOrCreate(n.id_type, n.view_type, n.use_attrs);

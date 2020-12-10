@@ -335,20 +335,21 @@ Attribute get_edge_attribute(std::shared_ptr<gl_frag_t> const &frag,
 
 void init_src_dst_list(std::shared_ptr<gl_frag_t> const &frag,
                        label_id_t const edge_label,
+                       label_id_t const src_node_label,
+                       label_id_t const dst_node_label,
                        std::vector<IdType> &src_lists,
                        std::vector<IdType> &dst_lists,
                        std::vector<IdType> &edge_lists) {
-  for (label_id_t node_label = 0; node_label < frag->vertex_label_num();
-       ++node_label) {
-    auto id_range = frag->InnerVertices(node_label);
-    for (auto id = id_range.begin(); id < id_range.end(); ++id) {
-      auto oes = frag->GetOutgoingAdjList(id, edge_label);
+  auto id_range = frag->InnerVertices(src_node_label);
+  for (auto id = id_range.begin(); id < id_range.end(); ++id) {
+    auto oes = frag->GetOutgoingAdjList(id, edge_label);
 #if defined(VINEYARD_USE_OID)
-      auto sid = frag->GetInnerVertexId(id);
+    auto sid = frag->GetInnerVertexId(id);
 #else
-      auto sid = frag->GetInnerVertexGid(id);
+    auto sid = frag->GetInnerVertexGid(id);
 #endif
-      for (auto &e : oes) {
+    for (auto &e : oes) {
+      if (frag->vertex_label(e.neighbor())) {
         src_lists.emplace_back(sid);
 #if defined(VINEYARD_USE_OID)
         dst_lists.emplace_back(frag->GetId(e.neighbor()));
@@ -364,6 +365,8 @@ void init_src_dst_list(std::shared_ptr<gl_frag_t> const &frag,
 SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
                               std::set<std::string> const &attrs,
                               std::string const &edge_label_name,
+                              std::string const &src_label_name,
+                              std::string const &dst_label_name,
                               label_id_t const edge_label) {
   static std::map<vineyard::ObjectID,
                   std::map<std::string, std::shared_ptr<SideInfo>>>
@@ -408,27 +411,18 @@ SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
   }
   side_info->format = kDefault;
   for (auto const &field : etable_schema->fields()) {
-    // if (field->name() == "label") {
-    //   side_info->format |= kLabeled;
-    // } else if (field->name() == "weight") {
-    //   side_info->format |= kWeighted;
-    // } else {
-    //   // otherwise we have attributes
-    //   side_info->format |= kAttributed;
-    // }
+    if (field->name() == "label") {
+      side_info->format |= kLabeled;
+    } else if (field->name() == "weight") {
+      side_info->format |= kWeighted;
+    }
     side_info->format |= kAttributed;
   }
   side_info->type = edge_label_name;
-  // TODO: in vineyard's data model, edges of the same label can have arbitary
-  // kinds of sources and destinations.
-  //
-  // Thus we just inspect the label of first src/dst
-  // gl_frag_t::vid_t first_src_id = frag->edge_srcs(edge_label)->Value(0);
-  // gl_frag_t::vid_t first_dst_id = frag->edge_dsts(edge_label)->Value(0);
-  // side_info->src_type = std::to_string(
-  //     frag->vertex_label(vertex_t{first_src_id}));
-  // side_info->dst_type = std::to_string(
-  //     frag->vertex_label(vertex_t{first_dst_id}));
+  side_info->src_type = src_label_name;
+  side_info->dst_type = dst_label_name;
+
+  // TODO: not supported
   // side_info->direction = Direction::kOrigin;
 
   side_info_cache[frag->id()][edge_label_name] = side_info;

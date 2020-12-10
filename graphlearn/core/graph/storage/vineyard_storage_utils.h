@@ -115,6 +115,8 @@ Attribute get_edge_attribute(std::shared_ptr<gl_frag_t> const &frag,
 
 void init_src_dst_list(std::shared_ptr<gl_frag_t> const &frag,
                        label_id_t const edge_label,
+                       label_id_t const src_node_label,
+                       label_id_t const dst_node_label,
                        std::vector<IdType> &src_lists,
                        std::vector<IdType> &dst_lists,
                        std::vector<IdType> &edge_lists);
@@ -122,6 +124,8 @@ void init_src_dst_list(std::shared_ptr<gl_frag_t> const &frag,
 SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
                               std::set<std::string> const &attrs,
                               std::string const &edge_label_name,
+                              std::string const &src_label_name,
+                              std::string const &dst_label_name,
                               label_id_t const edge_label);
 
 SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
