@@ -292,7 +292,7 @@ class EgoFlow(object):
 
     # wrap dataset.
     if self._full_graph_mode: # constant tensors
-      value = self._sample_generator().__next__()
+      value = next(self._sample_generator())
       value = tuple([tf.convert_to_tensor(i) for i in value])
     else:
       dataset = tf.data.Dataset.from_generator(self._sample_generator,
