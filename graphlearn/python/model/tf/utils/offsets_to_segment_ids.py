@@ -13,7 +13,12 @@
 # limitations under the License.
 # =============================================================================
 """Transfor offsets to segment_ids, used for GCN and GAT"""
-import tensorflow as tf
+try:
+  # https://www.tensorflow.org/guide/migrate
+  import tensorflow.compat.v1 as tf
+  tf.disable_v2_behavior()
+except ImportError:
+  import tensorflow as tf
 
 
 def offsets_to_segment_ids(offsets):

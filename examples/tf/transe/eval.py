@@ -18,8 +18,13 @@ from __future__ import division
 from __future__ import print_function
 
 from argparse import ArgumentParser
-import tensorflow as tf
 import numpy as np
+try:
+  # https://www.tensorflow.org/guide/migrate
+  import tensorflow.compat.v1 as tf
+  tf.disable_v2_behavior()
+except ImportError:
+  import tensorflow as tf
 
 
 def topk_hit_rate(head_embs,
