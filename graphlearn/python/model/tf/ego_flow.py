@@ -19,7 +19,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
+try:
+  # https://www.tensorflow.org/guide/migrate
+  import tensorflow.compat.v1 as tf
+  tf.disable_v2_behavior()
+except ImportError:
+  import tensorflow as tf
 
 from graphlearn.python.errors import OutOfRangeError
 from graphlearn.python.model.ego_graph import EgoGraph
@@ -292,7 +297,7 @@ class EgoFlow(object):
 
     # wrap dataset.
     if self._full_graph_mode: # constant tensors
-      value = self._sample_generator().next()
+      value = next(self._sample_generator())
       value = tuple([tf.convert_to_tensor(i) for i in value])
     else:
       dataset = tf.data.Dataset.from_generator(self._sample_generator,
