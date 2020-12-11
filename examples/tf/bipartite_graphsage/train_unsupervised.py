@@ -20,7 +20,7 @@ import os
 
 import graphlearn as gl
 import numpy as np
-itry:
+try:
   # https://www.tensorflow.org/guide/migrate
   import tensorflow.compat.v1 as tf
   tf.disable_v2_behavior()
