@@ -21,14 +21,15 @@ from __future__ import print_function
 
 import os
 import tarfile
-import urllib2
+#import urllib2
+import urllib.request
 import zipfile
 
 def download(url, path):
   if os.path.exists(path):
     return
   print('download from ' + url + '...')
-  response = urllib2.urlopen(url)
+  response = urllib.request.urlopen(url)
   with open(path, 'wb') as output:
     output.write(response.read())
 
