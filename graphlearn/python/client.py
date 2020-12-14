@@ -78,8 +78,9 @@ class Client(object):
 
   def stop(self):
     for client in self._client_cache:
-      client.stop()
-    self._client = None
+      if client is not None:
+        client.stop()
+    self._client_cache.clear()
 
   def lookup_nodes(self, req, res):
     return self._client_cache[self._cur_index].lookup_nodes(req, res)
