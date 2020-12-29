@@ -1,10 +1,10 @@
 # Install from pip
 
-We build the wheel package with```g++ 5.4.0``` and ```python 2.7``` on ```Ubuntu 16.04```.
-If you have the same environment, you can download and install directly.
-Otherwise, please refer to the section 'build from source'.
-Currently, the example models provided by **GL** are developed based on **TensorFlow 1.12**. To run the example models, please install **TensorFlow 1.12**.
-Users who only rely on system interfaces for model development can modify the source code slightly and remove the relevant part of ```import *tf*``` in the ```__init__.py``` file.
+We have built a wheel package with```g++ 5.4.0``` and ```python 2.7``` on ```Ubuntu 16.04```.
+If it matches your environment, just download and install it directly.
+Otherwise, please refer to the section 'Build from source'.
+Currently, the examples provided by **GL** are developed based on **TensorFlow 1.12**. To run the examples, please install **TensorFlow 1.12** first.
+Users that develop thier own models based on system interfaces can modify the source code slightly and remove the relevant part of ```import *tf*``` in the ```__init__.py``` file.
 
 ## Get wheel package
 
