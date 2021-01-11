@@ -67,8 +67,8 @@ void ChannelManager::SetCapacity(int32_t capacity) {
 void ChannelManager::Stop() {
   bool to_stop = true;
   for (size_t i = 0; i < channels_.size(); ++i) {
-    if (!channels_[i]->IsStoped()) {
-      to_stop = false
+    if (!channels_[i]->IsStopped()) {
+      to_stop = false;
     }
   }
   if (to_stop) {
