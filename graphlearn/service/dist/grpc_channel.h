@@ -47,7 +47,7 @@ private:
 private:
   std::mutex mtx_;
   volatile bool broken_;
-  bool stoped;
+  bool stoped_;
   std::string endpoint_;
   std::shared_ptr<::grpc::Channel> channel_;
   std::unique_ptr<GraphLearn::Stub> stub_;

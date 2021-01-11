@@ -66,7 +66,7 @@ bool GrpcChannel::IsBroken() const {
 }
 
 bool GrpcChannel::IsStoped() const {
-  return stoped;
+  return stoped_;
 }
 
 void GrpcChannel::Reset(const std::string& endpoint) {
@@ -89,6 +89,7 @@ Status GrpcChannel::CallMethod(const OpRequestPb* req, OpResponsePb* res) {
 }
 
 Status GrpcChannel::CallStop(const StopRequestPb* req, StopResponsePb* res) {
+  stoped_ = true;
   if (broken_) {
     return error::Unavailable("Channel is broken, please retry later");
   }
@@ -96,7 +97,6 @@ Status GrpcChannel::CallStop(const StopRequestPb* req, StopResponsePb* res) {
   ::grpc::ClientContext ctx;
   SetContext(&ctx);
   ::grpc::Status s = stub_->HandleStop(&ctx, *req, res);
-  stoped = true;
   return Transmit(s);
 }
 
