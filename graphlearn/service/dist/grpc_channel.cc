@@ -45,7 +45,7 @@ void SetContext(::grpc::ClientContext* ctx) {
 }  // anonymous namespace
 
 GrpcChannel::GrpcChannel(const std::string& endpoint)
-    : broken_(false), endpoint_(endpoint) {
+    : broken_(false), stoped(false), endpoint_(endpoint) {
   if (endpoint.empty()) {
     broken_ = true;
   } else {
@@ -63,6 +63,10 @@ void GrpcChannel::MarkBroken() {
 
 bool GrpcChannel::IsBroken() const {
   return broken_;
+}
+
+bool GrpcChannel::IsStoped() const {
+  return stoped;
 }
 
 void GrpcChannel::Reset(const std::string& endpoint) {
@@ -92,6 +96,7 @@ Status GrpcChannel::CallStop(const StopRequestPb* req, StopResponsePb* res) {
   ::grpc::ClientContext ctx;
   SetContext(&ctx);
   ::grpc::Status s = stub_->HandleStop(&ctx, *req, res);
+  stoped = true;
   return Transmit(s);
 }
 

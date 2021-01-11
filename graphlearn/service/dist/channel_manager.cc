@@ -65,9 +65,17 @@ void ChannelManager::SetCapacity(int32_t capacity) {
 }
 
 void ChannelManager::Stop() {
-  engine_->Stop();
-  stopped_ = true;
-  sleep(1);
+  bool to_stop = true;
+  for (size_t i = 0; i < channels_.size(); ++i) {
+    if (!channels_[i]->IsStoped()) {
+      to_stop = false
+    }
+  }
+  if (to_stop) {
+    engine_->Stop();
+    stopped_ = true;
+    sleep(1);
+  }
 }
 
 GrpcChannel* ChannelManager::ConnectTo(int32_t server_id) {
