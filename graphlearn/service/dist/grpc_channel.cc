@@ -45,7 +45,7 @@ void SetContext(::grpc::ClientContext* ctx) {
 }  // anonymous namespace
 
 GrpcChannel::GrpcChannel(const std::string& endpoint)
-    : broken_(false), stoped(false), endpoint_(endpoint) {
+    : broken_(false), stoped_(false), endpoint_(endpoint) {
   if (endpoint.empty()) {
     broken_ = true;
   } else {
