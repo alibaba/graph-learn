@@ -112,15 +112,11 @@ class Graph(object):
       src_node_type = confs[0]
       edge_type = confs[1]
       dst_node_type = confs[2]
-      directed = True
-      if edges is not None:
-        orig_edges = [list(e[0:3]) for e in edges]
-        e = [src_node_type, edge_type, dst_node_type]
-        if e not in orig_edges:
-          continue
-        index = orig_edges.index(e)
-        if len(edge[index]) == 4:
-          directed = edge[index][3]
+      if edges is not None and [src_node_type, edge_type, dst_node_type] not in edges \
+        and (src_node_type, edge_type, dst_node_type) not in edges:
+        continue
+      if 'reverse' not in edge_type:
+        self._undirected_edges.append(edge_type)
       weighted = confs[3] == 'true'
       labeled = confs[4] == 'true'
       n_int = int(confs[5])
@@ -129,8 +125,7 @@ class Graph(object):
       self.edge(source='',
                 edge_type=(src_node_type, dst_node_type, edge_type),
                 decoder=self._make_vineyard_decoder(
-                  weighted, labeled, n_int, n_float, n_string),
-                directed = directed)
+                  weighted, labeled, n_int, n_float, n_string))
 
     return self
 
