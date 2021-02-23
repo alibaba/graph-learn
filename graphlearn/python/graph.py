@@ -115,6 +115,8 @@ class Graph(object):
       if edges is not None and [src_node_type, edge_type, dst_node_type] not in edges \
         and (src_node_type, edge_type, dst_node_type) not in edges:
         continue
+      if 'reverse' not in edge_type:
+        self._undirected_edges.append(edge_type)
       weighted = confs[3] == 'true'
       labeled = confs[4] == 'true'
       n_int = int(confs[5])
