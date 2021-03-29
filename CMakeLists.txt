@@ -289,8 +289,14 @@ target_link_libraries (graphlearn_shared
     gflags
     grpc++
     gpr
-    upb
     ${LINK_DIRS})
+
+# Some grpc archive does not contains upb lib
+# https://github.com/grpc/grpc/issues/20392
+find_library(UPB_LIBRARY upb)
+if (UPB_LIBRARY)
+    target_link_libraries (graphlearn_shared PUBLIC ${UPB_LIBRARY})
+endif()
 
 if(WITH_VINEYARD)
     target_link_libraries(graphlearn_shared PUBLIC ${VINEYARD_LIBRARIES})
