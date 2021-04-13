@@ -16,6 +16,9 @@ limitations under the License.
 #include "graphlearn/service/dist/channel_manager.h"
 
 #include <unistd.h>
+#include <memory>
+#include <unordered_map>
+
 #include "graphlearn/common/base/log.h"
 #include "graphlearn/common/string/string_tool.h"
 #include "graphlearn/common/threading/sync/lock.h"
@@ -27,8 +30,17 @@ limitations under the License.
 namespace graphlearn {
 
 ChannelManager* ChannelManager::GetInstance() {
+#if defined(WITH_VINEYARD)
+  static std::unordered_map<uint64_t, std::shared_ptr<ChannelManager>> managers;
+  uint64_t key = GLOBAL_FLAG(VineyardGraphID);
+  if (managers.find(key) == managers.end()) {
+    managers[key] = std::shared_ptr<ChannelManager>(new ChannelManager());
+  }
+  return managers[key].get();
+#else
   static ChannelManager manager;
   return &manager;
+#endif
 }
 
 ChannelManager::ChannelManager() : stopped_(false) {

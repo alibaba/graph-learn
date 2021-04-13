@@ -321,6 +321,10 @@ class Graph(object):
         hosts (string): hosts of servers for in-memory mode.
     """
     # In memory mode, local or distribute.
+    if "server_own" in kwargs:
+      extra_args = {"server_own": kwargs["server_own"]}
+    else:
+      extra_args = {}
     if not job_name:
       assert cluster == ""
       tracker = kwargs.get("tracker", 'root://graphlearn')
@@ -344,7 +348,7 @@ class Graph(object):
         pywrap.set_tracker(tracker)
         pywrap.set_client_id(task_index)
 
-      self._client = Client(client_id=task_index)
+      self._client = Client(client_id=task_index, **extra_args)
       self._server = Server(task_index, task_count, host, tracker)
       self._server.start()
       self._server.init(self._edge_sources, self._node_sources)
@@ -381,7 +385,7 @@ class Graph(object):
       if job_name == "client":
         pywrap.set_tracker(tracker)
         pywrap.set_client_id(task_index)
-        self._client = Client(client_id=task_index, in_memory=False)
+        self._client = Client(client_id=task_index, in_memory=False, **extra_args)
         self._server = None
       elif job_name == "server":
         self._client = None
@@ -395,7 +399,7 @@ class Graph(object):
     return self
 
   def init_vineyard(self, server_index=None, worker_index=None, worker_count=None,
-                    standalone=False):
+                    standalone=False, server_own=True):
     if not self._with_vineyard:
       raise ValueError('Not a vineyard graph')
 
@@ -411,9 +415,9 @@ class Graph(object):
     cluster = {'server': self._vineyard_handle['server'],
                'client_count': self._vineyard_handle['client_count']}
     if server_index is not None:
-      self.init(cluster=cluster, task_index=server_index, job_name="server")
+      self.init(cluster=cluster, task_index=server_index, job_name="server", server_own=server_own)
     else:
-      self.init(cluster=cluster, task_index=worker_index, job_name="client")
+      self.init(cluster=cluster, task_index=worker_index, job_name="client", server_own=server_own)
     return self
 
   def close(self):
