@@ -26,8 +26,8 @@ namespace graphlearn {
 namespace {
 
 void* ThreadFunc(void* ctx) {
-  ::google::protobuf::Closure* func =
-  reinterpret_cast< ::google::protobuf::Closure*>(ctx);
+  ::PB_NAMESPACE::Closure* func =
+  reinterpret_cast< ::PB_NAMESPACE::Closure*>(ctx);
   func->Run();
   return nullptr;
 }
@@ -36,7 +36,7 @@ void* ThreadFunc(void* ctx) {
 
 class Thread : private Uncopyable {
 private:
-  using Callback =  ::google::protobuf::Closure;
+  using Callback =  ::PB_NAMESPACE::Closure;
   using handle_type =  pthread_t;
 
   Thread(Callback* func,
@@ -91,7 +91,7 @@ void Thread::Routine() {
   delete this;
 }
 
-ThreadHandle CreateThread(::google::protobuf::Closure* func,
+ThreadHandle CreateThread(::PB_NAMESPACE::Closure* func,
                           WaitableEvent* wait,
                           const char* name) {
   WaitableEvent* event = new WaitableEvent();

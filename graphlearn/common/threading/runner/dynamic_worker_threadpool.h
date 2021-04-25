@@ -23,11 +23,12 @@ limitations under the License.
 #include "graphlearn/common/threading/runner/threadpool_base.h"
 #include "graphlearn/common/threading/sync/lock.h"
 #include "graphlearn/common/threading/sync/waitable_event.h"
+#include "graphlearn/platform/protobuf.h"
 
 namespace graphlearn {
 
 //   This Threadpool is used to run instances of graphlearn::Closure, which is
-//   compatible with google::protobuf::Closure.  The number of worker threads
+//   compatible with PB_NAMESPACE::Closure.  The number of worker threads
 //   will adjusts dynamically.  When adding tasks, it may add worker thread
 //   if 1) all the worker threads are processing tasks and, 2) the current
 //   worker threads number is less than thread_num limit of this thread pool.

@@ -18,12 +18,13 @@ limitations under the License.
 
 #include "graphlearn/common/base/closure.h"
 #include "graphlearn/common/base/uncopyable.h"
+#include "graphlearn/platform/protobuf.h"
 
 namespace graphlearn {
 
 class ThreadPoolBase : private Uncopyable {
 public:
-  typedef ::google::protobuf::Closure Callback;
+  typedef ::PB_NAMESPACE::Closure Callback;
 
   static const int kNotRunning = -1;
   static const int kQueueFull = -2;

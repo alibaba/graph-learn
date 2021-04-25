@@ -182,9 +182,14 @@ void RpcNotificationImpl::NotifyFail(int32_t remote_id,
   rpc_times_[index] = (GetTimeStampInUs() - begin_time_) / 1000;
   int32_t finished = finished_tasks_.fetch_add(1);
   failed_tasks_.fetch_add(1);
-  LOG(ERROR) << "RpcNotification:Failed"
-             << "\treq_type:" << req_type_
-             << "\tstatus:" << status.ToString();
+
+  if (error::IsOutOfRange(status)) {
+    LOG(WARNING) << "Finish an epoch: " << req_type_;
+  } else {
+    LOG(ERROR) << "RpcNotification:Failed"
+               << "\treq_type:" << req_type_
+               << "\tstatus:" << status.ToString();
+  }
   if (finished + 1 >= total_tasks_.load()) {
     LOG(WARNING) << "RpcNotification:Done"
                  << "\treq_type:" << req_type_;

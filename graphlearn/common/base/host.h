@@ -13,22 +13,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef GRAPHLEARN_COMMON_THREADING_THREAD_THREAD_H_
-#define GRAPHLEARN_COMMON_THREADING_THREAD_THREAD_H_
+#ifndef GRAPHLEARN_COMMON_BASE_HOST_H_
+#define GRAPHLEARN_COMMON_BASE_HOST_H_
 
-#include <pthread.h>
-#include "graphlearn/common/base/closure.h"
-#include "graphlearn/common/threading/sync/waitable_event.h"
-#include "graphlearn/platform/protobuf.h"
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace graphlearn {
 
-using ThreadHandle = pthread_t;
-
-ThreadHandle CreateThread(::PB_NAMESPACE::Closure* func,
-                          WaitableEvent* wait = nullptr,
-                          const char* name = nullptr);
+std::string GetLocalEndpoint(int32_t port);
+int32_t GetAvailablePort();
 
 }  // namespace graphlearn
 
-#endif  // GRAPHLEARN_COMMON_THREADING_THREAD_THREAD_H_
+#endif  // GRAPHLEARN_COMMON_BASE_HOST_H_

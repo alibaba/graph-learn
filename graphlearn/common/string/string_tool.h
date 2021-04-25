@@ -16,6 +16,7 @@ limitations under the License.
 #ifndef GRAPHLEARN_COMMON_STRING_STRING_TOOL_H_
 #define GRAPHLEARN_COMMON_STRING_STRING_TOOL_H_
 
+#include <limits.h>
 #include <functional>
 #include <string>
 #include <vector>

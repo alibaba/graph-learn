@@ -172,8 +172,25 @@ struct Schema {
 struct Record {
   std::vector<Value> values;
 
+  Record() {}
+
+  Record(Record&& record) {
+    Reserve(record.values.size());
+    Swap(&record);
+  }
+
+  Record& operator = (Record&& record) {
+    Reserve(record.values.size());
+    Swap(&record);
+    return *this;
+  }
+
   void Clear() {
     values.clear();
+  }
+
+  void Swap(Record* record) {
+    values.swap(record->values);
   }
 
   void Reserve(size_t num) {
