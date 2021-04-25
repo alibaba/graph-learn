@@ -42,5 +42,5 @@ class SyncBarrierHook(tf.train.SessionRunHook):
       queue_size = session.run(self._queue_size)
       time.sleep(5)
       print('Waiting for other worker, finished %d, total %d' %
-            (que_size, self._num_worker))
+            (queue_size, self._num_worker))
     print('SyncBarrier passed.')
