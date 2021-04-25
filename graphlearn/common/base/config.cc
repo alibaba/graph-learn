@@ -56,6 +56,25 @@ void SetGlobalFlag##name(type value) {       \
 #define DEFINE_SET_STRING_GLOBAL_FLAG(name)  \
   DEFINE_SET_GLOBAL_FLAG(name, const std::string&)
 
+// Define the getters of global flag
+#define DEFINE_GET_GLOBAL_FLAG(name, type)         \
+type GetGlobalFlag##name() {                 \
+  return GLOBAL_FLAG(name);                  \
+}
+
+#define DEFINE_GET_INT32_GLOBAL_FLAG(name)   \
+  DEFINE_GET_GLOBAL_FLAG(name, int32_t)
+
+#define DEFINE_GET_INT64_GLOBAL_FLAG(name)   \
+  DEFINE_GET_GLOBAL_FLAG(name, int64_t)
+
+#define DEFINE_GET_FLOAT_GLOBAL_FLAG(name)   \
+  DEFINE_GET_GLOBAL_FLAG(name, float)
+
+#define DEFINE_GET_STRING_GLOBAL_FLAG(name)  \
+  DEFINE_GET_GLOBAL_FLAG(name, const std::string&)
+
+
 // Define the global flags
 DEFINE_INT32_GLOBAL_FLAG(DeployMode, 0)
 DEFINE_INT32_GLOBAL_FLAG(ClientId, 0)
@@ -65,6 +84,8 @@ DEFINE_INT32_GLOBAL_FLAG(ServerCount, 1)
 DEFINE_INT32_GLOBAL_FLAG(Timeout, 60)
 DEFINE_INT32_GLOBAL_FLAG(RetryTimes, 10)
 DEFINE_INT32_GLOBAL_FLAG(InMemoryQueueSize, 10240)
+DEFINE_INT32_GLOBAL_FLAG(TapeCapacity, 10)
+DEFINE_INT32_GLOBAL_FLAG(DatasetCapacity, 10)
 DEFINE_INT32_GLOBAL_FLAG(DataInitBatchSize, 10240)
 DEFINE_INT32_GLOBAL_FLAG(ShuffleBufferSize, 10240)
 DEFINE_INT32_GLOBAL_FLAG(RpcMessageMaxSize, std::numeric_limits<int32_t>::max())
@@ -72,8 +93,8 @@ DEFINE_INT32_GLOBAL_FLAG(InterThreadNum, 32)
 DEFINE_INT32_GLOBAL_FLAG(IntraThreadNum, 32)
 DEFINE_INT32_GLOBAL_FLAG(PartitionMode, 1)
 DEFINE_INT32_GLOBAL_FLAG(StorageMode, 2)
-DEFINE_INT32_GLOBAL_FLAG(PaddingMode, 0)
-DEFINE_INT32_GLOBAL_FLAG(TrackerMode, 1)
+DEFINE_INT32_GLOBAL_FLAG(PaddingMode, 0) // 0: Local, 1: Server, 2: Worker
+DEFINE_INT32_GLOBAL_FLAG(TrackerMode, 1)  // 0: Rpc, 1: FileSystem
 DEFINE_INT64_GLOBAL_FLAG(AverageNodeCount, 10000)
 DEFINE_INT64_GLOBAL_FLAG(AverageEdgeCount, 10000)
 DEFINE_INT64_GLOBAL_FLAG(DefaultNeighborId, 0)
@@ -82,6 +103,9 @@ DEFINE_FLOAT_GLOBAL_FLAG(DefaultFloatAttribute, 0.0)
 DEFINE_STRING_GLOBAL_FLAG(DefaultStringAttribute, "")
 DEFINE_STRING_GLOBAL_FLAG(Tracker, "/tmp/graphlearn/")
 DEFINE_STRING_GLOBAL_FLAG(ServerHosts, "")
+DEFINE_INT32_GLOBAL_FLAG(NegativeSamplingRetryTimes, 5)
+DEFINE_INT32_GLOBAL_FLAG(IgnoreInvalid, 1) // 1 is True, 0 is False.
+
 
 // Define the setters
 DEFINE_SET_INT32_GLOBAL_FLAG(DeployMode)
@@ -92,6 +116,8 @@ DEFINE_SET_INT32_GLOBAL_FLAG(ServerCount)
 DEFINE_SET_INT32_GLOBAL_FLAG(Timeout)
 DEFINE_SET_INT32_GLOBAL_FLAG(RetryTimes)
 DEFINE_SET_INT32_GLOBAL_FLAG(InMemoryQueueSize)
+DEFINE_SET_INT32_GLOBAL_FLAG(TapeCapacity)
+DEFINE_SET_INT32_GLOBAL_FLAG(DatasetCapacity)
 DEFINE_SET_INT32_GLOBAL_FLAG(DataInitBatchSize)
 DEFINE_SET_INT32_GLOBAL_FLAG(ShuffleBufferSize)
 DEFINE_SET_INT32_GLOBAL_FLAG(RpcMessageMaxSize)
@@ -109,5 +135,10 @@ DEFINE_SET_FLOAT_GLOBAL_FLAG(DefaultFloatAttribute)
 DEFINE_SET_STRING_GLOBAL_FLAG(DefaultStringAttribute)
 DEFINE_SET_STRING_GLOBAL_FLAG(Tracker)
 DEFINE_SET_STRING_GLOBAL_FLAG(ServerHosts)
+DEFINE_SET_INT32_GLOBAL_FLAG(NegativeSamplingRetryTimes)
+DEFINE_SET_INT32_GLOBAL_FLAG(IgnoreInvalid)
+
+// Define the getters
+DEFINE_GET_INT32_GLOBAL_FLAG(TrackerMode)
 
 }  // namespace graphlearn
