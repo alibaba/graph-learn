@@ -26,12 +26,25 @@ limitations under the License.
 
 namespace graphlearn {
 
-FSNamingEngine::FSNamingEngine()
+FSNamingEngine::FSNamingEngine(std::string&& prefix)
     : NamingEngine(), stopping_(false), stopped_(false), fs_(nullptr) {
-  if (strings::EndWith(GLOBAL_FLAG(Tracker), "/")) {
-    tracker_ = GLOBAL_FLAG(Tracker) + "endpoints/";
+  std::string tracker = GLOBAL_FLAG(Tracker);
+  if (!strings::EndWith(GLOBAL_FLAG(Tracker), "/")) {
+    tracker = tracker + "/";
+  }
+
+  if (strings::EndWith(prefix, "/")) {
+    prefix = prefix.substr(0, prefix.length() - 1);
+  }
+
+  if (strings::StartWith(prefix, "/")) {
+    prefix = prefix.substr(1, prefix.length());
+  }
+
+  if (prefix == "") {
+    tracker_ = tracker + "endpoints/";
   } else {
-    tracker_ = GLOBAL_FLAG(Tracker) + "/endpoints/";
+    tracker_ = tracker + prefix + "_endpoints/";
   }
 
   Status s = Env::Default()->GetFileSystem(tracker_, &fs_);

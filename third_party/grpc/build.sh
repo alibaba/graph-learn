@@ -11,8 +11,8 @@ cd third_party/protobuf
 git checkout 3.10.x
 cd ../..
 
-make shared -j10
+make static -j10
 
 make install-headers prefix=${install_dir}
-make install-shared_cxx prefix=${install_dir}
+make install-static prefix=${install_dir}
 make install-plugins prefix=${install_dir}

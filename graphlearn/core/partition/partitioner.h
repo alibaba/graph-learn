@@ -32,7 +32,7 @@ namespace graphlearn {
 template<class T>
 class PartitionerCreator {
 public:
-  PartitionerCreator(int32_t local_id, int32_t range) {
+  PartitionerCreator(int32_t range) {
     // If more partition strategies exist, register it here.
     no_parter_.reset(new NoPartitioner<T>());
     hash_parter_.reset(new HashPartitioner<T>(range));
@@ -55,9 +55,8 @@ private:
 
 template<class T>
 BasePartitioner<T>* GetPartitioner(const T* t) {
-  static int32_t id = Env::Default()->GetServerId();
   static int32_t n = Env::Default()->GetServerCount();
-  static PartitionerCreator<T> creator(id, n);
+  static PartitionerCreator<T> creator(n);
   return creator(GLOBAL_FLAG(PartitionMode));
 }
 

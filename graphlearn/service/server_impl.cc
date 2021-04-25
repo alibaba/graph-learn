@@ -37,8 +37,6 @@ ServerImpl::ServerImpl(int32_t server_id,
     : server_id_(server_id),
       server_count_(server_count),
       server_host_(server_host),
-      executor_(nullptr),
-      graph_store_(nullptr),
       in_memory_service_(nullptr),
       dist_service_(nullptr),
       coordinator_(nullptr) {
@@ -46,53 +44,47 @@ ServerImpl::ServerImpl(int32_t server_id,
   SetGlobalFlagServerId(server_id);
   SetGlobalFlagServerCount(server_count);
   SetGlobalFlagTracker(tracker);
-  env_ = Env::Default();
-  graph_store_ = new GraphStore(env_);
-  executor_ = new Executor(env_, graph_store_);
 }
 
 ServerImpl::~ServerImpl() {
   delete in_memory_service_;
-  delete executor_;
-  delete graph_store_;
+  delete dist_service_;
   delete coordinator_;
 
   UninitGoogleLogging();
 }
 
-void ServerImpl::Start() {
-  LOG(INFO) << "Server starts with mode:" << GLOBAL_FLAG(DeployMode)
-            << ", server_id:" << server_id_
-            << ", server_count:" << server_count_;
-
-  if (GLOBAL_FLAG(DeployMode) >= 1) {
-    coordinator_ = GetCoordinator(server_id_, server_count_, env_);
-    RegisterInMemoryService();
-    RegisterDistributeService();
-  } else {
-    RegisterInMemoryService();
+void ServerImpl::RegisterBasicService(Env* env, Executor* executor) {
+  if (GLOBAL_FLAG(DeployMode) != kLocal) {
+    coordinator_ = GetCoordinator(server_id_, server_count_, env);
   }
-  LOG(INFO) << "Server started.";
-  USER_LOG("Server started.");
-}
 
-void ServerImpl::Init(const std::vector<io::EdgeSource>& edges,
-                      const std::vector<io::NodeSource>& nodes) {
-  if (graph_store_) {
-    Status s = graph_store_->Load(edges, nodes);
+  if (!in_memory_service_) {
+    in_memory_service_ = new InMemoryService(env, executor, coordinator_);
+    in_memory_service_->Start();
+    LOG(INFO) << "Start InMemoryService OK.";
+  }
+
+  if (GLOBAL_FLAG(DeployMode) != kLocal && !dist_service_) {
+    dist_service_ = new DistributeService(
+      server_id_, server_count_, server_host_, env, executor, coordinator_);
+    Status s = dist_service_->Start();
     if (!s.ok()) {
-      USER_LOG("Server load data failed and exit now.");
+      USER_LOG("Server start failed and exit now.");
       USER_LOG(s.ToString());
-      LOG(FATAL) << "Server load data failed: " << s.ToString();
+      LOG(FATAL) << "DistributeService start failed: " << s.ToString();
       ::exit(-1);
     }
-    graph_store_->Build();
+    LOG(INFO) << "Start DistributeService OK"
+              << ", server_id:" << server_id_
+              << ", server_count:" << server_count_;
   }
+}
 
+void ServerImpl::InitBasicService() {
   if (in_memory_service_) {
     in_memory_service_->Init();
   }
-
   if (dist_service_) {
     Status s = dist_service_->Init();
     if (!s.ok()) {
@@ -102,11 +94,24 @@ void ServerImpl::Init(const std::vector<io::EdgeSource>& edges,
       ::exit(-1);
     }
   }
-  LOG(INFO) << "Data initialized.";
-  USER_LOG("Data initialized.");
 }
 
-void ServerImpl::Stop() {
+void ServerImpl::BuildBasicService() {
+  if (in_memory_service_) {
+    in_memory_service_->Build();
+  }
+  if (dist_service_) {
+    Status s = dist_service_->Build();
+    if (!s.ok()) {
+      USER_LOG("Server build failed and exit now.");
+      USER_LOG(s.ToString());
+      LOG(FATAL) << "DistributeService build failed: " << s.ToString();
+      ::exit(-1);
+    }
+  }
+}
+
+void ServerImpl::StopBasicService() {
   if (in_memory_service_) {
     in_memory_service_->Stop();
   }
@@ -119,33 +124,72 @@ void ServerImpl::Stop() {
       ::exit(-1);
     }
   }
+}
+
+DefaultServerImpl::DefaultServerImpl(int32_t server_id,
+                                     int32_t server_count,
+                                     const std::string& server_host,
+                                     const std::string& tracker)
+    : ServerImpl(server_id, server_count, server_host, tracker),
+      env_(nullptr),
+      graph_store_(nullptr),
+      executor_(nullptr) {
+  env_ = Env::Default();
+  graph_store_ = new GraphStore(env_);
+  executor_ = new Executor(env_, graph_store_);
+}
+
+DefaultServerImpl::~DefaultServerImpl() {
+  env_->ShutdownItraThreadPool();
+  delete graph_store_;
+  delete executor_;
+}
+
+void DefaultServerImpl::Start() {
+  LOG(INFO) << "Server starts with mode:" << GLOBAL_FLAG(DeployMode)
+            << ", server_id:" << server_id_
+            << ", server_count:" << server_count_;
+  RegisterBasicService(env_, executor_);
+  LOG(INFO) << "Server started.";
+  USER_LOG("Server started.");
+}
+
+void DefaultServerImpl::Init(const std::vector<io::EdgeSource>& edges,
+                             const std::vector<io::NodeSource>& nodes) {
+  Status s = graph_store_->Load(edges, nodes);
+  if (!s.ok()) {
+    USER_LOG("Server load data failed and exit now.");
+    USER_LOG(s.ToString());
+    LOG(FATAL) << "Server load data failed: " << s.ToString();
+    ::exit(-1);
+  }
+  InitBasicService();
+  LOG(INFO) << "Data initialized.";
+  USER_LOG("Data initialized.");
+
+  s = graph_store_->Build(edges, nodes);
+  if (!s.ok()) {
+    USER_LOG("Server build data failed and exit now.");
+    USER_LOG(s.ToString());
+    LOG(FATAL) << "Server build data failed: " << s.ToString();
+    ::exit(-1);
+  }
+  BuildBasicService();
+  LOG(INFO) << "Data is ready for serving.";
+  USER_LOG("Data is ready for serving.");
+}
+
+void DefaultServerImpl::Stop() {
+  StopBasicService();
   LOG(INFO) << "Server stopped.";
   USER_LOG("Server stopped.");
 }
 
-void ServerImpl::RegisterInMemoryService() {
-  if (in_memory_service_ == nullptr) {
-    in_memory_service_ = new InMemoryService(env_, executor_, coordinator_);
-    in_memory_service_->Start();
-  }
-  LOG(INFO) << "Start InMemoryService OK.";
-}
-
-void ServerImpl::RegisterDistributeService() {
-  if (dist_service_ == nullptr) {
-    dist_service_ = new DistributeService(
-      server_id_, server_count_, server_host_, env_, executor_, coordinator_);
-    Status s = dist_service_->Start();
-    if (!s.ok()) {
-      USER_LOG("Server start failed and exit now.");
-      USER_LOG(s.ToString());
-      LOG(FATAL) << "DistributeService start failed: " << s.ToString();
-      ::exit(-1);
-    }
-  }
-  LOG(INFO) << "Start DistributeService OK"
-            << ", server_id:" << server_id_
-            << ", server_count:" << server_count_;
+ServerImpl* NewDefaultServerImpl(int32_t server_id,
+                                 int32_t server_count,
+                                 const std::string& server_host,
+                                 const std::string& tracker) {
+  return new DefaultServerImpl(server_id, server_count, server_host, tracker);
 }
 
 }  // namespace graphlearn

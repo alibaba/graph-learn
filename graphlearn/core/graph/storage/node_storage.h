@@ -57,7 +57,6 @@ public:
   /// Get all the node ids, the count of which is the same with Size().
   /// These ids are distinct.
   virtual const IdList* GetIds() const = 0;
-  
   /// Get all weights if existed, the count of which is the same with Size().
   virtual const std::vector<float>* GetWeights() const = 0;
   /// Get all labels if existed, the count of which is the same with Size().

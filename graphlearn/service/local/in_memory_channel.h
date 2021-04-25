@@ -25,7 +25,9 @@ class EventQueue;
 
 class InMemoryChannel {
 public:
-  explicit InMemoryChannel(EventQueue<Call*>* queue) : queue_(queue) {}
+  explicit InMemoryChannel(EventQueue<Call*>* queue) : queue_(queue) {
+  }
+
   ~InMemoryChannel() = default;
 
   void CallMethod(uint16_t method_id,

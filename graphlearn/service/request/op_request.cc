@@ -21,58 +21,6 @@ limitations under the License.
 
 namespace graphlearn {
 
-namespace {
-
-void SwapToPB(Tensor* t, TensorValue* v, DataType type) {
-  if (type == DataType::kInt32) {
-    t->SwapWithPB(v->mutable_int32_values());
-  } else if (type == DataType::kInt64) {
-    t->SwapWithPB(v->mutable_int64_values());
-  } else if (type == DataType::kFloat) {
-    t->SwapWithPB(v->mutable_float_values());
-  } else if (type == DataType::kDouble) {
-    t->SwapWithPB(v->mutable_double_values());
-  } else if (type == DataType::kString) {
-    // Because of the limitation of protobuf, Swap() does not work
-    // well as expectattion. Here we use data copy instead. IF you
-    // care the performance very much, please CONVERT the string
-    // attributes into integer. We provide hash options for string
-    // attributes of the Node and Edge. By doing this, the string
-    // attributes will be converted into integers. Refer data_source.h
-    // for details.
-    for (int32_t i = 0; i < t->Size(); ++i) {
-      v->add_string_values(t->GetString(i));
-    }
-  } else {
-  }
-}
-
-void SwapFromPB(Tensor* t, TensorValue* v, DataType type) {
-  if (type == DataType::kInt32) {
-    t->SwapWithPB(v->mutable_int32_values());
-  } else if (type == DataType::kInt64) {
-    t->SwapWithPB(v->mutable_int64_values());
-  } else if (type == DataType::kFloat) {
-    t->SwapWithPB(v->mutable_float_values());
-  } else if (type == DataType::kDouble) {
-    t->SwapWithPB(v->mutable_double_values());
-  } else if (type == DataType::kString) {
-    // Because of the limitation of protobuf, Swap() does not work
-    // well as expectattion. Here we use data copy instead. IF you
-    // care the performance very much, please CONVERT the string
-    // attributes into integer. We provide hash options for string
-    // attributes of the Node and Edge. By doing this, the string
-    // attributes will be converted into integers. Refer data_source.h
-    // for details.
-    for (int32_t i = 0; i < v->string_values_size(); ++i) {
-      t->AddString(v->string_values(i));
-    }
-  } else {
-  }
-}
-
-}  // anonymous namespace
-
 OpRequest::OpRequest()
     : is_parse_from_(false) {
 }
@@ -95,6 +43,10 @@ const std::string& OpRequest::PartitionKey() const {
   return params_.at(kPartitionKey).GetString(0);
 }
 
+int32_t OpRequest::PartitionId() const {
+  return GLOBAL_FLAG(ServerId);
+}
+
 OpRequest* OpRequest::Clone() const {
   OpRequest* req = new OpRequest;
   req->params_ = params_;
@@ -113,7 +65,7 @@ void OpRequest::SerializeTo(void* request) {
     v->set_name(param.first);
     v->set_length(t->Size());
     v->set_dtype(static_cast<int32_t>(t->DType()));
-    SwapToPB(t, v, t->DType());
+    t->SwapWithProto(v);
   }
 
   for (auto& tensor : tensors_) {
@@ -122,7 +74,7 @@ void OpRequest::SerializeTo(void* request) {
     v->set_name(tensor.first);
     v->set_length(t->Size());
     v->set_dtype(static_cast<int32_t>(t->DType()));
-    SwapToPB(t, v, t->DType());
+    t->SwapWithProto(v);
   }
 
   is_parse_from_ = false;
@@ -136,7 +88,7 @@ bool OpRequest::ParseFrom(const void* request) {
     DataType type = static_cast<DataType>(v->dtype());
     ADD_TENSOR(params_, v->name(), type, v->length());
     Tensor* t = &(params_[v->name()]);
-    SwapFromPB(t, v, t->DType());
+    t->SwapWithProto(v);
   }
 
   for (int32_t i = 0; i < pb->tensors_size(); ++i) {
@@ -144,7 +96,7 @@ bool OpRequest::ParseFrom(const void* request) {
     DataType type = static_cast<DataType>(v->dtype());
     ADD_TENSOR(tensors_, v->name(), type, v->length());
     Tensor* t = &(tensors_[v->name()]);
-    SwapFromPB(t, v, t->DType());
+    t->SwapWithProto(v);
   }
 
   shardable_ = pb->shardable();
@@ -176,7 +128,7 @@ void OpResponse::SerializeTo(void* response) {
     v->set_name(param.first);
     v->set_length(t->Size());
     v->set_dtype(static_cast<int32_t>(t->DType()));
-    SwapToPB(t, v, t->DType());
+    t->SwapWithProto(v);
   }
 
   for (auto& tensor : tensors_) {
@@ -185,7 +137,7 @@ void OpResponse::SerializeTo(void* response) {
     v->set_name(tensor.first);
     v->set_length(t->Size());
     v->set_dtype(static_cast<int32_t>(t->DType()));
-    SwapToPB(t, v, t->DType());
+    t->SwapWithProto(v);
   }
 
   is_parse_from_ = false;
@@ -199,7 +151,7 @@ bool OpResponse::ParseFrom(const void* response) {
     DataType type = static_cast<DataType>(v->dtype());
     ADD_TENSOR(params_, v->name(), type, v->length());
     Tensor* t = &(params_[v->name()]);
-    SwapFromPB(t, v, t->DType());
+    t->SwapWithProto(v);
   }
 
   for (int32_t i = 0; i < pb->tensors_size(); ++i) {
@@ -207,7 +159,7 @@ bool OpResponse::ParseFrom(const void* response) {
     DataType type = static_cast<DataType>(v->dtype());
     ADD_TENSOR(tensors_, v->name(), type, v->length());
     Tensor* t = &(tensors_[v->name()]);
-    SwapFromPB(t, v, t->DType());
+    t->SwapWithProto(v);
   }
 
   batch_size_ = params_[kBatchSize].GetInt32(0);

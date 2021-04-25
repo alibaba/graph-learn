@@ -35,7 +35,7 @@ ChannelManager::ChannelManager() : stopped_(false) {
   channels_.resize(GLOBAL_FLAG(ServerCount), nullptr);
 
   engine_ = NamingEngine::GetInstance();
-  if (GLOBAL_FLAG(TrackerMode) == 0) {
+  if (GLOBAL_FLAG(TrackerMode) == kRpc) {
     LiteString s(GLOBAL_FLAG(ServerHosts));
     engine_->Update(strings::Split(s, ","));
   }

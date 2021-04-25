@@ -32,6 +32,7 @@ public:
 
   void Start();
   void Init();
+  void Build();
   void Stop();
 
 private:

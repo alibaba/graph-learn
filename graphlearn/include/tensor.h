@@ -17,15 +17,20 @@ limitations under the License.
 #define GRAPHLEARN_INCLUDE_TENSOR_H_
 
 #include <cstdint>
-#include <cstring>
 #include <memory>
 #include <string>
 #include <vector>
 #include "graphlearn/include/constants.h"
+#include "graphlearn/proto/tensor.pb.h"
 
 namespace graphlearn {
 
 class TensorImpl;
+
+#define ADD_TENSOR(m, name, type, size)         \
+  m.emplace(std::piecewise_construct,           \
+            std::forward_as_tuple(name),        \
+            std::forward_as_tuple(type, size))
 
 class Tensor {
 public:
@@ -33,7 +38,9 @@ public:
   explicit Tensor(DataType dtype);
   Tensor(DataType dtype, int32_t capacity);
   Tensor(const Tensor& t);
+  Tensor(Tensor&& t);
   Tensor& operator=(const Tensor& t);
+  Tensor& operator=(Tensor&& t);
   ~Tensor();
 
   DataType DType() const;
@@ -67,13 +74,14 @@ public:
   const int64_t* GetInt64() const;
   const float*   GetFloat() const;
   const double*  GetDouble() const;
-  const std::string* GetString() const;
+  const std::string* const* GetString() const;
 
   void Swap(Tensor& right);
-  void SwapWithPB(void* pb);
-  void CopyFromPB(const void* pb);
+  void SwapWithProto(TensorValue* v);
 
-private:
+  typedef std::unordered_map<std::string, Tensor> Map;
+
+protected:
   std::shared_ptr<TensorImpl> impl_;
 };
 

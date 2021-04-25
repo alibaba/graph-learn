@@ -14,10 +14,13 @@ limitations under the License.
 ==============================================================================*/
 
 #include <unistd.h>
+#include <chrono>  // NOLINT [build/c++11]
 #include <memory>
+#include <thread>  // NOLINT [build/c++11]
 #include <vector>
 #include "graphlearn/common/base/errors.h"
 #include "graphlearn/common/base/log.h"
+#include "graphlearn/common/base/macros.h"
 #include "graphlearn/common/string/string_tool.h"
 #include "graphlearn/include/config.h"
 #include "graphlearn/platform/env.h"
@@ -46,6 +49,35 @@ FSCoordinator::FSCoordinator(int32_t server_id, int32_t server_count,
 void FSCoordinator::Finallize() {
   auto tp = Env::Default()->ReservedThreadPool();
   tp->WaitForIdle();
+}
+
+Status FSCoordinator::Sync(const std::string& barrier) {
+  Status s = Sink(barrier + "/", std::to_string(server_id_));
+  LOG_RETURN_IF_NOT_OK(s)
+
+  while (!IsReady(barrier)) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  }
+  return s;
+}
+
+bool FSCoordinator::IsReady(const std::string& barrier) {
+  if (IsMaster()) {
+    if (Counting(barrier + "/") == server_count_) {
+      if (Sink("", barrier + "_done").ok()) {
+        LOG(INFO) << "Master sync " << barrier + "_done";
+        return true;
+      }
+    }
+    return false;
+  } else {
+    if (FileExist(barrier + "_done")) {
+      LOG(INFO) << "Server " << server_id_ << " monitored "
+                << barrier + "_done.";
+      return true;
+    }
+    return false;
+  }
 }
 
 Status FSCoordinator::Start() {
@@ -188,7 +220,7 @@ int32_t FSCoordinator::Counting(const std::string& sub_dir) {
 }
 
 Status FSCoordinator::Sink(const std::string& sub_dir,
-                        const std::string& file_name) {
+                           const std::string& file_name) {
   Status s;
   int32_t retry = 0;
   while (retry < GLOBAL_FLAG(RetryTimes)) {

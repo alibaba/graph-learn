@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package graphlearn;
+
+message TensorValue {
+  string name = 1;
+  int32  dtype = 2;
+  int32  length = 3;
+  repeated int32  int32_values = 4;
+  repeated int64  int64_values = 5;
+  repeated float  float_values = 6;
+  repeated double double_values = 7;
+  repeated string string_values = 8;
+}

@@ -27,20 +27,19 @@ limitations under the License.
 
 namespace graphlearn {
 
-#define ADD_TENSOR(m, name, type, size)         \
-  m.emplace(std::piecewise_construct,           \
-            std::forward_as_tuple(name),        \
-            std::forward_as_tuple(type, size))
-
 class OpRequest : public ShardableRequest<OpRequest> {
 public:
   OpRequest();
   virtual ~OpRequest() = default;
 
+  virtual void Init(const Tensor::Map& params) {}
+  virtual void Set(const Tensor::Map& tensors) {}
+
   std::string Name() const override;
 
   bool HasPartitionKey() const;
   const std::string& PartitionKey() const;
+  int32_t PartitionId() const;
 
   virtual OpRequest* Clone() const;
 

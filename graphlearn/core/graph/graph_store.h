@@ -34,9 +34,14 @@ public:
   explicit GraphStore(Env* env);
   ~GraphStore();
 
+  static GraphStore* GetInstance();
+
+  Status Init(const std::vector<io::EdgeSource>& edges,
+              const std::vector<io::NodeSource>& nodes);
   Status Load(const std::vector<io::EdgeSource>& edges,
               const std::vector<io::NodeSource>& nodes);
-  void Build();
+  Status Build(const std::vector<io::EdgeSource>& edges,
+               const std::vector<io::NodeSource>& nodes);
 
   Graph* GetGraph(const std::string& edge_type);
   Noder* GetNoder(const std::string& node_type);

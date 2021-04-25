@@ -22,11 +22,12 @@ limitations under the License.
 #include "graphlearn/common/base/macros.h"
 #include "graphlearn/common/threading/sync/lock.h"
 #include "graphlearn/include/config.h"
+#include "graphlearn/include/constants.h"
 
 namespace graphlearn {
 
 NamingEngine* NamingEngine::GetInstance() {
-  if (GLOBAL_FLAG(TrackerMode) == 0) {
+  if (GLOBAL_FLAG(TrackerMode) == kRpc) {
     static SpecNamingEngine engine;
     return &engine;
   } else {

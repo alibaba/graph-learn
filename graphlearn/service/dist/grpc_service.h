@@ -40,13 +40,22 @@ public:
   ::grpc::Status HandleStop(
       ::grpc::ServerContext* context,
       const StopRequestPb* request,
-      StopResponsePb* response) override;
+      StatusResponsePb* response) override;
 
   ::grpc::Status HandleReport(
       ::grpc::ServerContext* context,
       const StateRequestPb* request,
-      StateResponsePb* response) override;
+      StatusResponsePb* response) override;
 
+  ::grpc::Status HandleDag(
+      ::grpc::ServerContext* context,
+      const DagDef* request,
+      StatusResponsePb* response) override;
+
+  ::grpc::Status HandleDagValues(
+      ::grpc::ServerContext* context,
+      const DagValuesRequestPb* request,
+      DagValuesResponsePb* response) override;
 
 private:
   Env*         env_;

@@ -20,6 +20,7 @@ limitations under the License.
 #include <stdio.h>
 #include <unistd.h>
 #include <string>
+#include "graphlearn/common/base/host.h"
 #include "graphlearn/common/base/macros.h"
 #include "graphlearn/include/config.h"
 #include "graphlearn/platform/env.h"
@@ -30,36 +31,6 @@ limitations under the License.
 #include "graphlearn/service/executor.h"
 
 namespace graphlearn {
-
-namespace {
-
-std::string GetLocalEndpoint(int32_t port) {
-  char host_name[128] = {0};
-  int ret = gethostname(host_name, sizeof(host_name));
-  if (ret < 0) {
-    LOG(FATAL) << "gethostname error: " << ret;
-    return "";
-  }
-
-  hostent* hptr = gethostbyname(host_name);
-  if (hptr == NULL) {
-    LOG(FATAL) << "gethostbyname error";
-    return "";
-  }
-
-  int i = 0;
-  while (hptr->h_addr_list[i] != NULL) {
-    std::string ip = inet_ntoa(*(struct in_addr*)hptr->h_addr_list[i]);
-    if (ip != "127.0.0.1") {
-      return ip + ":" + std::to_string(port);
-    } else {
-      ++i;
-    }
-  }
-  return "";
-}
-
-}  // anonymous namespace
 
 DistributeService::DistributeService(int32_t server_id,
                                      int32_t server_count,
@@ -93,7 +64,7 @@ Status DistributeService::Start() {
 
   Status s;
 
-  if (GLOBAL_FLAG(TrackerMode) == 1) {
+  if (GLOBAL_FLAG(TrackerMode) == kFileSystem) {
     std::string endpoint = GetLocalEndpoint(port_);
     s = engine_->Update(server_id_, endpoint);
     LOG_RETURN_IF_NOT_OK(s)
@@ -113,6 +84,16 @@ Status DistributeService::Start() {
 }
 
 Status DistributeService::Init() {
+  Status s = coord_->Init();
+  RETURN_IF_NOT_OK(s)
+
+  while (!coord_->IsInited()) {
+    sleep(1);
+  }
+  return s;
+}
+
+Status DistributeService::Build() {
   Status s = coord_->Prepare();
   RETURN_IF_NOT_OK(s)
 
@@ -127,6 +108,7 @@ Status DistributeService::Stop() {
     LOG(WARNING) << "Waiting other servers to stop";
     sleep(1);
   }
+  Env::Default()->SetStopping();
   server_->Shutdown();
   manager_->Stop();
   engine_->Stop();
@@ -141,7 +123,7 @@ Coordinator* DistributeService::GetCoordinator() {
 void DistributeService::StartAndJoin() {
   builder_.SetMaxSendMessageSize(GLOBAL_FLAG(RpcMessageMaxSize));
   builder_.SetMaxReceiveMessageSize(GLOBAL_FLAG(RpcMessageMaxSize));
-  if (GLOBAL_FLAG(TrackerMode == 0)) {
+  if (GLOBAL_FLAG(TrackerMode == kRpc)) {
     builder_.AddListeningPort(server_host_,
                               ::grpc::InsecureServerCredentials(),
                               &port_);
@@ -151,8 +133,17 @@ void DistributeService::StartAndJoin() {
                               &port_);
   }
   builder_.RegisterService(impl_);
-
   server_ = builder_.BuildAndStart();
+
+  int32_t retry = 1;
+  while (!server_ && retry < GLOBAL_FLAG(RetryTimes)) {
+    sleep(retry++);
+    server_ = builder_.BuildAndStart();
+  }
+  if (!server_) {
+    LOG(FATAL) << "Start server failed, please check the environment. "
+               << "Endpoint: " << server_host_;
+  }
   server_->Wait();
 }
 

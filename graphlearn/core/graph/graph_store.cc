@@ -23,8 +23,8 @@ limitations under the License.
 #include "graphlearn/core/io/element_value.h"
 #include "graphlearn/core/io/edge_loader.h"
 #include "graphlearn/core/io/node_loader.h"
-#include "graphlearn/core/operator/operator_factory.h"
-#include "graphlearn/core/runner/distribute_runner.h"
+#include "graphlearn/core/operator/op_factory.h"
+#include "graphlearn/core/runner/op_runner.h"
 #include "graphlearn/include/config.h"
 #include "graphlearn/include/graph_request.h"
 #include "graphlearn/platform/env.h"
@@ -149,7 +149,7 @@ private:
 
     std::unique_ptr<ResType> res(new ResType);
     op::Operator* op =
-      op::OperatorFactory::GetInstance().Lookup(req->Name());
+      op::OpFactory::GetInstance()->Create(req->Name());
     std::unique_ptr<OpRunner> runner = GetOpRunner(env_, op);
     return runner->Run(req, res.get());
   }
@@ -174,7 +174,12 @@ GraphStore::~GraphStore() {
   delete noders_;
 }
 
-Status GraphStore::Load(
+GraphStore* GraphStore::GetInstance() {
+  static GraphStore store(Env::Default());
+  return &store;
+}
+
+Status GraphStore::Init(
     const std::vector<io::EdgeSource>& edges,
     const std::vector<io::NodeSource>& nodes) {
   for (const auto& e : edges) {
@@ -184,7 +189,13 @@ Status GraphStore::Load(
   for (const auto& n : nodes) {
     noders_->LookupOrCreate(n.id_type);
   }
+  return Status::OK();
+}
 
+Status GraphStore::Load(
+    const std::vector<io::EdgeSource>& edges,
+    const std::vector<io::NodeSource>& nodes) {
+  Init(edges, nodes);
   Initializer<io::EdgeSource,
               io::EdgeLoader,
               io::EdgeValue,
@@ -218,21 +229,29 @@ Status GraphStore::Load(
   return s;
 }
 
-void GraphStore::Build() {
-  std::string type;
-
-  graphs_->ResetNext();
-  Graph* graph = nullptr;
-  while (graphs_->Next(&type, &graph)) {
-    graph->Build();
+Status GraphStore::Build(
+    const std::vector<io::EdgeSource>& edges,
+    const std::vector<io::NodeSource>& nodes) {
+  for (const auto& e : edges) {
+    Graph* graph = graphs_->LookupOrCreate(e.edge_type);
+    Status s = graph->Build(e.option);
+    if (!s.ok()) {
+      LOG(ERROR) << "Graph build failed: " << e.edge_type
+                 << ", details:" << s.ToString();
+      return s;
+    }
   }
-
-  noders_->ResetNext();
-  Noder* noder = nullptr;
-  while (noders_->Next(&type, &noder)) {
-    noder->Build();
+  for (const auto& n : nodes) {
+    Noder* noder = noders_->LookupOrCreate(n.id_type);
+    Status s = noder->Build(n.option);
+    if (!s.ok()) {
+      LOG(ERROR) << "Graph build failed: " << n.id_type
+                 << ", details:" << s.ToString();
+      return s;
+    }
   }
   LOG(INFO) << "GraphStore build OK.";
+  return Status();
 }
 
 Graph* GraphStore::GetGraph(const std::string& edge_type) {

@@ -16,7 +16,7 @@ limitations under the License.
 #include "graphlearn/service/dist/grpc_channel.h"
 
 #include <unistd.h>
-#include <chrono>
+#include <chrono>  // NOLINT [build/c++11]
 #include "graphlearn/common/base/errors.h"
 #include "graphlearn/common/base/log.h"
 #include "graphlearn/common/threading/sync/lock.h"
@@ -84,7 +84,30 @@ Status GrpcChannel::CallMethod(const OpRequestPb* req, OpResponsePb* res) {
   return Transmit(s);
 }
 
-Status GrpcChannel::CallStop(const StopRequestPb* req, StopResponsePb* res) {
+Status GrpcChannel::CallDag(const DagDef* req, StatusResponsePb* res) {
+  if (broken_) {
+    return error::Unavailable("Channel is broken, please retry later");
+  }
+
+  ::grpc::ClientContext ctx;
+  SetContext(&ctx);
+  ::grpc::Status s = stub_->HandleDag(&ctx, *req, res);
+  return Transmit(s);
+}
+
+Status GrpcChannel::CallDagValues(const DagValuesRequestPb* req,
+                                  DagValuesResponsePb* res) {
+  if (broken_) {
+    return error::Unavailable("Channel is broken, please retry later");
+  }
+
+  ::grpc::ClientContext ctx;
+  SetContext(&ctx);
+  ::grpc::Status s = stub_->HandleDagValues(&ctx, *req, res);
+  return Transmit(s);
+}
+
+Status GrpcChannel::CallStop(const StopRequestPb* req, StatusResponsePb* res) {
   if (broken_) {
     return error::Unavailable("Channel is broken, please retry later");
   }
@@ -96,7 +119,7 @@ Status GrpcChannel::CallStop(const StopRequestPb* req, StopResponsePb* res) {
 }
 
 Status GrpcChannel::CallReport(const StateRequestPb* req,
-                               StateResponsePb* res) {
+                               StatusResponsePb* res) {
   if (broken_) {
     return error::Unavailable("Channel is broken, please retry later");
   }

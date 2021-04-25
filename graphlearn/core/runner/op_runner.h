@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef GRAPHLEARN_CORE_RUNNER_DISTRIBUTE_RUNNER_H_
-#define GRAPHLEARN_CORE_RUNNER_DISTRIBUTE_RUNNER_H_
+#ifndef GRAPHLEARN_CORE_RUNNER_OP_RUNNER_H_
+#define GRAPHLEARN_CORE_RUNNER_OP_RUNNER_H_
 
 #include <memory>
 #include <string>
@@ -121,7 +121,10 @@ private:
     notifier->Init(name, size);
     notifier->SetCallback([](const std::string& req_type,
                              const Status& status) {
-      if (!status.ok()) {
+      if (status.ok()) {
+      } else if (error::IsOutOfRange(status)) {
+        LOG(INFO) << status.ToString();
+      } else {
         LOG(ERROR) << "Rpc failed:" << status.ToString()
                    << "name:" << req_type;
       }
@@ -161,4 +164,4 @@ std::unique_ptr<OpRunner> GetOpRunner(Env* env, op::Operator* op);
 
 }  // namespace graphlearn
 
-#endif  // GRAPHLEARN_CORE_RUNNER_DISTRIBUTE_RUNNER_H_
+#endif  // GRAPHLEARN_CORE_RUNNER_OP_RUNNER_H_

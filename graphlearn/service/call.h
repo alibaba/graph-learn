@@ -27,7 +27,9 @@ namespace graphlearn {
 enum MethodType {
   kUserDefinedOp = 0,
   kStop = 1,
-  kOtherToExtend = 2,
+  kRunDag = 2,
+  kGetDagValues = 3,
+  kOtherToExtend = 4
 };
 
 struct StatusWrapper {

@@ -140,11 +140,9 @@ void Env::ShutdownReservedThreadPool() {
   }
 }
 
-#if defined(LOCAL_PLATFORM) || defined(TUNNEL_PLATFORM)
 Env* Env::Default() {
   static Env* default_env = new Env;
   return default_env;
 }
-#endif
 
 }  // namespace graphlearn

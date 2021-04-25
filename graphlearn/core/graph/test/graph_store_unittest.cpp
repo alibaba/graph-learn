@@ -20,7 +20,7 @@ limitations under the License.
 #include "graphlearn/core/graph/storage/graph_storage.h"
 #include "graphlearn/core/graph/storage/node_storage.h"
 #include "graphlearn/core/io/element_value.h"
-#include "graphlearn/core/operator/operator_factory.h"
+#include "graphlearn/core/operator/op_factory.h"
 #include "graphlearn/include/config.h"
 #include "graphlearn/platform/env.h"
 #include "gtest/gtest.h"
@@ -180,11 +180,11 @@ protected:
     source->src_id_type = src_type;
     source->dst_id_type = dst_type;
     source->format = format;
-    source->ignore_invalid = false;
+    source->attr_info.ignore_invalid = false;
     if (format & kAttributed) {
-      source->delimiter = ":";
-      source->types = {DataType::kInt32, DataType::kFloat, DataType::kString};
-      source->hash_buckets = {0 ,0, 0};
+      source->attr_info.delimiter = ":";
+      source->attr_info.types = {DataType::kInt32, DataType::kFloat, DataType::kString};
+      source->attr_info.hash_buckets = {0 ,0, 0};
     }
   }
 
@@ -194,11 +194,11 @@ protected:
     source->path = file_name;
     source->id_type = node_type;
     source->format = format;
-    source->ignore_invalid = false;
+    source->attr_info.ignore_invalid = false;
     if (format & kAttributed) {
-      source->delimiter = ":";
-      source->types = {DataType::kInt32, DataType::kFloat, DataType::kString};
-      source->hash_buckets = {0 ,0, 0};
+      source->attr_info.delimiter = ":";
+      source->attr_info.types = {DataType::kInt32, DataType::kFloat, DataType::kString};
+      source->attr_info.hash_buckets = {0 ,0, 0};
     }
   }
 
@@ -335,25 +335,28 @@ TEST_F(GraphStoreTest, OnlyEdges) {
   GenEdgeSource(&edge_source[2], kAttributed, a_file, "watch", "user", "movie");
 
   std::vector<NodeSource> node_source;
+
   {
     GLOBAL_FLAG(StorageMode) = 2;
     GraphStore store(Env::Default());
-    ::graphlearn::op::OperatorFactory::GetInstance().Set(&store);
+    op::OpFactory::GetInstance()->Set(&store);
 
     Status s = store.Load(edge_source, node_source);
     EXPECT_TRUE(s.ok());
-    store.Build();
+    s = store.Build(edge_source, node_source);
+    EXPECT_TRUE(s.ok());
 
     TestGraph(&store);
   }
   {
     GLOBAL_FLAG(StorageMode) = 3;
     GraphStore store(Env::Default());
-    ::graphlearn::op::OperatorFactory::GetInstance().Set(&store);
+    ::graphlearn::op::OpFactory::GetInstance()->Set(&store);
 
     Status s = store.Load(edge_source, node_source);
     EXPECT_TRUE(s.ok());
-    store.Build();
+    s = store.Build(edge_source, node_source);
+    EXPECT_TRUE(s.ok());
 
     TestGraph(&store);
   }
@@ -374,25 +377,28 @@ TEST_F(GraphStoreTest, OnlyNodes) {
   GenNodeSource(&node_source[2], kAttributed, a_file, "movie");
 
   std::vector<EdgeSource> edge_source;
+
   {
     GLOBAL_FLAG(StorageMode) = 2;
     GraphStore store(Env::Default());
-    ::graphlearn::op::OperatorFactory::GetInstance().Set(&store);
+    ::graphlearn::op::OpFactory::GetInstance()->Set(&store);
 
     Status s = store.Load(edge_source, node_source);
     EXPECT_TRUE(s.ok());
-    store.Build();
+    s = store.Build(edge_source, node_source);
+    EXPECT_TRUE(s.ok());
 
     TestNoder(&store);
   }
   {
     GLOBAL_FLAG(StorageMode) = 3;
     GraphStore store(Env::Default());
-    ::graphlearn::op::OperatorFactory::GetInstance().Set(&store);
+    ::graphlearn::op::OpFactory::GetInstance()->Set(&store);
 
     Status s = store.Load(edge_source, node_source);
     EXPECT_TRUE(s.ok());
-    store.Build();
+    s = store.Build(edge_source, node_source);
+    EXPECT_TRUE(s.ok());
 
     TestNoder(&store);
   }
@@ -432,11 +438,12 @@ TEST_F(GraphStoreTest, EdgesAndNodes) {
   {
     GLOBAL_FLAG(StorageMode) = 2;
     GraphStore store(Env::Default());
-    ::graphlearn::op::OperatorFactory::GetInstance().Set(&store);
+    ::graphlearn::op::OpFactory::GetInstance()->Set(&store);
 
     Status s = store.Load(edge_source, node_source);
     EXPECT_TRUE(s.ok());
-    store.Build();
+    s = store.Build(edge_source, node_source);
+    EXPECT_TRUE(s.ok());
 
     TestGraph(&store);
     TestNoder(&store);
@@ -444,11 +451,12 @@ TEST_F(GraphStoreTest, EdgesAndNodes) {
   {
     GLOBAL_FLAG(StorageMode) = 3;
     GraphStore store(Env::Default());
-    ::graphlearn::op::OperatorFactory::GetInstance().Set(&store);
+    ::graphlearn::op::OpFactory::GetInstance()->Set(&store);
 
     Status s = store.Load(edge_source, node_source);
     EXPECT_TRUE(s.ok());
-    store.Build();
+    s = store.Build(edge_source, node_source);
+    EXPECT_TRUE(s.ok());
 
     TestGraph(&store);
     TestNoder(&store);

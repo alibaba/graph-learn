@@ -31,8 +31,8 @@ public:
     delete local_;
   }
 
-  void Build() override {
-    local_->Build();
+  Status Build(const IndexOption& option) override {
+    return local_->Build(option);
   }
 
   io::GraphStorage* GetLocalStorage() override {

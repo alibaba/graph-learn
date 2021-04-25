@@ -273,6 +273,7 @@ bool UpdateNodesRequest::Next(io::NodeValue* value) {
   if (cursor_ >= Size()) {
     return false;
   }
+
   value->id = ids_->GetInt64(cursor_);
   if (info_->IsWeighted()) {
     value->weight = weights_->GetFloat(cursor_);

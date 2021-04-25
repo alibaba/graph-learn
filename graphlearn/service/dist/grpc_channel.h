@@ -37,8 +37,12 @@ public:
   void Reset(const std::string& endpoint);
 
   Status CallMethod(const OpRequestPb* req, OpResponsePb* res);
-  Status CallStop(const StopRequestPb* req, StopResponsePb* res);
-  Status CallReport(const StateRequestPb* req, StateResponsePb* res);
+  Status CallStop(const StopRequestPb* req, StatusResponsePb* res);
+  Status CallReport(const StateRequestPb* req, StatusResponsePb* res);
+
+  Status CallDag(const DagDef* dag_def, StatusResponsePb* res);
+  Status CallDagValues(const DagValuesRequestPb* req,
+                       DagValuesResponsePb* res);
 
 private:
   void NewChannel(const std::string& endpoint);

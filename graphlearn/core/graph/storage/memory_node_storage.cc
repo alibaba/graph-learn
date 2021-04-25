@@ -24,7 +24,6 @@ class MemoryNodeStorage : public NodeStorage {
 public:
   MemoryNodeStorage() {
     int64_t estimate_size = GLOBAL_FLAG(AverageNodeCount);
-
     id_to_index_.rehash(estimate_size);
     ids_.reserve(estimate_size);
   }
@@ -82,19 +81,6 @@ public:
     }
   }
 
-  IndexType GetLabel(IdType node_id) const override {
-    if (!side_info_.IsLabeled()) {
-      return -1;
-    }
-
-    auto it = id_to_index_.find(node_id);
-    if (it == id_to_index_.end()) {
-      return -1;
-    } else {
-      return labels_[it->second];
-    }
-  }
-
   float GetWeight(IdType node_id) const override {
     if (!side_info_.IsWeighted()) {
       return 0.0;
@@ -105,6 +91,19 @@ public:
       return 0.0;
     } else {
       return weights_[it->second];
+    }
+  }
+
+  int32_t GetLabel(IdType node_id) const override {
+    if (!side_info_.IsLabeled()) {
+      return -1;
+    }
+
+    auto it = id_to_index_.find(node_id);
+    if (it == id_to_index_.end()) {
+      return -1;
+    } else {
+      return labels_[it->second];
     }
   }
 
@@ -125,12 +124,12 @@ public:
     return &ids_;
   }
 
-  const std::vector<int32_t>* GetLabels() const override {
-    return &labels_;
-  }
-
   const std::vector<float>* GetWeights() const override {
     return &weights_;
+  }
+
+  const std::vector<int32_t>* GetLabels() const override {
+    return &labels_;
   }
 
   const std::vector<Attribute>* GetAttributes() const override {

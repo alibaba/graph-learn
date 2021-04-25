@@ -33,8 +33,6 @@ cleanall:
 	@rm -rf ${PYBIND_DIR}/pybind11/
 	@rm -rf ${GTEST_DIR}/build/
 	@rm -rf ${GTEST_DIR}/googletest/
-	@rm -rf ${GFLAGS_DIR}/build/
-	@rm -rf ${GFLAGS_DIR}/gflags/
 
 # protobuf
 PROTOBUF_DIR := $(THIRD_PARTY_DIR)/protobuf
@@ -82,15 +80,6 @@ gtest:
 	@if [ ! -d "${GTEST_DIR}/build" ]; then cd "${GTEST_DIR}"; ./build.sh; fi
 	@echo "gtest done"
 
-# gflags
-GFLAGS_DIR := $(THIRD_PARTY_DIR)/gflags
-GFLAGS_LIB := $(GFLAGS_DIR)/build/lib
-gflags:
-	@echo "prepare gflags library"
-	@if [ ! -d "${GFLAGS_DIR}/build" ]; then cd "${GFLAGS_DIR}"; ./build.sh; fi
-	@echo "gflags done"
-
-
 # compling flags
 DEBUG ?= 0
 ifeq ($(DEBUG), 1)
@@ -100,35 +89,52 @@ else
 endif
 
 PROFILING := CLOSE
-CXX := g++
-CXXFLAGS := $(MODEFLAGS) -std=c++11 -fPIC    \
-            -pthread -mavx -msse4.2 -msse4.1 \
-            -D$(PROFILING)_PROFILING         \
-            -I. -I$(ROOT) -I$(BUILT_DIR)     \
-            -I$(PROTOBUF_INCLUDE)            \
-            -I$(GLOG_INCLUDE)                \
-            -I$(GRPC_INCLUDE)
 
-# c++ so
-so:protobuf grpc gflags glog gtest proto common platform service core
+CXX := g++
+CXXSTD := c++11
+CXXFLAGS := $(MODEFLAGS) -std=$(CXXSTD) -fPIC \
+            -fvisibility-inlines-hidden       \
+            -pthread -mavx -msse4.2 -msse4.1  \
+            -D$(PROFILING)_PROFILING          \
+            -I. -I$(ROOT) -I$(BUILT_DIR)      \
+            -I$(PROTOBUF_INCLUDE)             \
+            -I$(GLOG_INCLUDE)                 \
+            -I$(GRPC_INCLUDE)                 \
+
+LINKFLAGS := -L$(ROOT) -L$(LIB_DIR)                        \
+             -L$(GLOG_LIB) -L$(PROTOBUF_LIB) -L$(GRPC_LIB) \
+             -lglog -lprotobuf -lgrpc++ -lgrpc -lssl -lz
+
+# c++ shared library
+so: protobuf grpc glog gtest proto common platform service core
 	@mkdir -p $(INCLUDE_DIR)
 	@mkdir -p $(LIB_DIR)
 	@mkdir -p $(BIN_DIR)
-	$(CXX) $(CXXFLAGS) -shared $(PROTO_OBJ) $(COMMON_OBJ) $(PLATFORM_OBJ) $(SERVICE_OBJ) $(CORE_OBJ) \
-		-L$(ROOT) -L$(GLOG_LIB) -L$(PROTOBUF_LIB) -L$(GRPC_LIB) -L$(GFLAGS_LIB) \
-		-lglog -lprotobuf -lgflags -lgrpc++ -lgrpc -lgpr -lupb \
-		-o $(LIB_DIR)/libgraphlearn_shared.so
+	$(CXX) $(CXXFLAGS) -shared  \
+		$(PROTO_OBJ) $(COMMON_OBJ) $(PLATFORM_OBJ) $(SERVICE_OBJ) $(CORE_OBJ) \
+		$(LINKFLAGS) -o $(LIB_DIR)/libgraphlearn_shared.so
+
 
 ####################################### proto begin ########################################
 PROTO_DIR := $(ROOT)/graphlearn/proto
 PROTO_BUILT_DIR := $(BUILT_DIR)/graphlearn/proto
-PROTO_OBJ := $(PROTO_BUILT_DIR)/service.pb.o $(PROTO_BUILT_DIR)/service.grpc.pb.o
+PROTO_DIRS := $(shell find "graphlearn/proto" -maxdepth 3 -type d)
+PROTO_FILES := $(foreach dir,$(PROTO_DIRS),$(wildcard $(dir)/*.proto))
+PROTO_OBJ := $(addprefix $(BUILT_DIR)/,$(patsubst %.proto,%.pb.o,$(PROTO_FILES))) $(PROTO_BUILT_DIR)/service.grpc.pb.o
 
-proto:
+proto: $(PROTO_FILES)
+	@echo $(PROTO_FILES)
+	@echo $(PROTO_OBJ)
 	@mkdir -p $(PROTO_BUILT_DIR)
 	@echo 'generating pb file'
+	@$(PROTOC) --cpp_out=. graphlearn/proto/tensor.proto
+	@$(PROTOC) --cpp_out=. graphlearn/proto/dag.proto
+	@$(PROTOC) --cpp_out=. graphlearn/proto/request.proto
 	@$(PROTOC) --cpp_out=. graphlearn/proto/service.proto
 	@$(PROTOC) --grpc_out=. --plugin=protoc-gen-grpc=$(PROTOC_GRPC_PLUGIN) graphlearn/proto/service.proto
+	@$(CXX) $(CXXFLAGS) -c $(PROTO_DIR)/tensor.pb.cc -o $(PROTO_BUILT_DIR)/tensor.pb.o
+	@$(CXX) $(CXXFLAGS) -c $(PROTO_DIR)/dag.pb.cc -o $(PROTO_BUILT_DIR)/dag.pb.o
+	@$(CXX) $(CXXFLAGS) -c $(PROTO_DIR)/request.pb.cc -o $(PROTO_BUILT_DIR)/request.pb.o
 	@$(CXX) $(CXXFLAGS) -c $(PROTO_DIR)/service.pb.cc -o $(PROTO_BUILT_DIR)/service.pb.o
 	@$(CXX) $(CXXFLAGS) -c $(PROTO_DIR)/service.grpc.pb.cc -o $(PROTO_BUILT_DIR)/service.grpc.pb.o
 	@echo 'generating pb file done'
@@ -192,7 +198,7 @@ common:$(COMMON_OBJ)
 ####################################### platform begin ########################################
 PLATFORM_DIR := $(ROOT)/graphlearn/platform
 PLATFORM_BUILT_DIR := $(BUILT_DIR)/graphlearn/platform
-PLATFORM_DIRS := $(shell find "graphlearn/platform" -maxdepth 3 -type d)
+PLATFORM_DIRS := graphlearn/platform graphlearn/platform/local
 PLATFORM_H := $(foreach dir,$(PLATFORM_DIRS),$(wildcard $(dir)/*.h))
 PLATFORM_CC := $(foreach dir,$(PLATFORM_DIRS),$(wildcard $(dir)/*.cc))
 PLATFORM_OBJ := $(addprefix $(BUILT_DIR)/,$(patsubst %.cc,%.o,$(PLATFORM_CC)))
@@ -279,6 +285,14 @@ $(CORE_BUILT_DIR)/operator/aggregator/%.o:$(CORE_DIR)/operator/aggregator/%.cc $
 	@mkdir -p $(CORE_BUILT_DIR)/operator/aggregator
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+$(CORE_BUILT_DIR)/operator/subgraph/%.o:$(CORE_DIR)/operator/subgraph/%.cc $(CORE_H)
+	@mkdir -p $(CORE_BUILT_DIR)/operator/subgraph
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(CORE_BUILT_DIR)/operator/utils/%.o:$(CORE_DIR)/operator/utils/%.cc $(CORE_H)
+	@mkdir -p $(CORE_BUILT_DIR)/operator/utils
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 $(CORE_BUILT_DIR)/partition/%.o:$(CORE_DIR)/partition/%.cc $(CORE_H)
 	@mkdir -p $(CORE_BUILT_DIR)/partition
 	$(CXX) $(CXXFLAGS) -c $< -o $@
@@ -287,10 +301,15 @@ $(CORE_BUILT_DIR)/runner/%.o:$(CORE_DIR)/runner/%.cc $(CORE_H)
 	@mkdir -p $(CORE_BUILT_DIR)/runner
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+$(CORE_BUILT_DIR)/dag/%.o:$(CORE_DIR)/dag/%.cc $(CORE_H)
+	@mkdir -p $(CORE_BUILT_DIR)/dag
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 core:$(CORE_OBJ)
 ####################################### core done ########################################
 
-TEST_FLAG := -I$(GTEST_INCLUDE) -L$(GTEST_LIB) -L$(LIB_DIR) -L$(GRPC_LIB) -L/lib64 -lgraphlearn_shared -lgtest -lgtest_main -lstdc++ -lgrpc++ -lgrpc -lgpr -lupb
+TEST_FLAG := -I$(GTEST_INCLUDE) -L$(GTEST_LIB) -L$(LIB_DIR) -L$(GRPC_LIB) -L/lib64 \
+             -lgraphlearn_shared -lgtest -lgtest_main -lstdc++ -lssl -lz
 
 test:so gtest
 	$(CXX) $(CXXFLAGS) graphlearn/common/base/test/closure_unittest.cpp -o built/bin/closure_unittest $(TEST_FLAG)
@@ -314,6 +333,7 @@ test:so gtest
 	$(CXX) $(CXXFLAGS) graphlearn/core/operator/sampler/test/sampler_unittest.cpp -o built/bin/sampler_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/core/operator/sampler/test/negative_sampler_unittest.cpp -o built/bin/negative_sampler_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/core/operator/aggregator/test/aggregating_op_unittest.cpp -o built/bin/aggregating_op_unittest $(TEST_FLAG)
+	$(CXX) $(CXXFLAGS) graphlearn/core/runner/test/thread_dag_scheduler_unittest.cpp -o built/bin/thread_dag_scheduler_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/platform/test/env_unittest.cpp -o built/bin/env_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/platform/test/local_fs_unittest.cpp -o built/bin/local_fs_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/service/test/event_queue_unittest.cpp -o built/bin/event_queue_unittest $(TEST_FLAG)
@@ -330,6 +350,8 @@ test:so gtest
 	$(CXX) $(CXXFLAGS) graphlearn/service/dist/test/service_with_hosts_unittest.cpp -o built/bin/service_with_hosts_unittest $(TEST_FLAG)
 
 VERSION := $(shell grep "_VERSION = " ${SETUP_DIR}/setup.py | cut -d= -f2)
+GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
+GIT_VERSION := $(shell git rev-parse --short HEAD)
 python: so pybind
 	@rm -rf build
 	@rm -rf dist
@@ -337,19 +359,9 @@ python: so pybind
 	@mkdir -p $(PYTHON_LIB)
 	@cp $(SETUP_DIR)/gl.__init__.py $(PYTHON_DIR)/__init__.py
 	@echo "__version__ = $(VERSION)" >> $(PYTHON_DIR)/__init__.py
-	@cp $(THIRD_PARTY_DIR)/grpc/build/lib/libgrpc++.so.1.26.0 $(PYTHON_LIB)/libgrpc++.so.1.26.0
-	@cp $(THIRD_PARTY_DIR)/grpc/build/lib/libgrpc.so.9.0.0 $(PYTHON_LIB)/libgrpc.so.9.0.0
-	@cp $(THIRD_PARTY_DIR)/grpc/build/lib/libgpr.so.9.0.0 $(PYTHON_LIB)/libgpr.so.9.0.0
-	@cp $(THIRD_PARTY_DIR)/grpc/build/lib/libupb.so.9.0.0 $(PYTHON_LIB)/libupb.so.9.0.0
-	@if [ ! -f "$(PYTHON_LIB)/libgrpc++.so" ]; then ln -s $(PYTHON_LIB)/libgrpc++.so.1.26.0 $(PYTHON_LIB)/libgrpc++.so; fi
-	@if [ ! -f "$(PYTHON_LIB)/libgrpc++.so.1" ]; then ln -s $(PYTHON_LIB)/libgrpc++.so.1.26.0 $(PYTHON_LIB)/libgrpc++.so.1; fi
-	@if [ ! -f "$(PYTHON_LIB)/libgrpc.so" ]; then ln -s $(PYTHON_LIB)/libgrpc.so.9.0.0 $(PYTHON_LIB)/libgrpc.so; fi
-	@if [ ! -f "$(PYTHON_LIB)/libgrpc.so.9" ]; then ln -s $(PYTHON_LIB)/libgrpc.so.9.0.0 $(PYTHON_LIB)/libgrpc.so.9; fi
-	@if [ ! -f "$(PYTHON_LIB)/libgpr.so" ]; then ln -s $(PYTHON_LIB)/libgpr.so.9.0.0 $(PYTHON_LIB)/libgpr.so; fi
-	@if [ ! -f "$(PYTHON_LIB)/libgpr.so.9" ]; then ln -s $(PYTHON_LIB)/libgpr.so.9.0.0 $(PYTHON_LIB)/libgpr.so.9; fi
-	@if [ ! -f "${PYTHON_LIB}/libupb.so" ]; then ln -s $(PYTHON_LIB)/libupb.so.9.0.0 $(PYTHON_LIB)/libupb.so; fi
-	@if [ ! -f "${PYTHON_LIB}/libupb.so.9" ]; then ln -s $(PYTHON_LIB)/libupb.so.9.0.0 $(PYTHON_LIB)/libupb.so.9; fi
+	@echo "__git_version__ = '$(GIT_BRANCH)-$(GIT_VERSION)'" >> $(PYTHON_DIR)/__init__.py
 	@cp $(LIB_DIR)/libgraphlearn_shared.so $(PYTHON_LIB)
+
 	python $(SETUP_DIR)/setup.py bdist_wheel
 	@mkdir -p $(BIN_DIR)/ge_data/data
 	@mkdir -p $(BIN_DIR)/ge_data/ckpt

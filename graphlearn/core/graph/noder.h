@@ -20,6 +20,7 @@ limitations under the License.
 #include <string>
 #include "graphlearn/core/graph/storage/node_storage.h"
 #include "graphlearn/include/graph_request.h"
+#include "graphlearn/include/index_option.h"
 #include "graphlearn/include/status.h"
 
 namespace graphlearn {
@@ -28,7 +29,7 @@ class Noder {
 public:
   virtual ~Noder() = default;
 
-  virtual void Build() = 0;
+  virtual Status Build(const IndexOption& option) = 0;
 
   virtual io::NodeStorage* GetLocalStorage() = 0;
 

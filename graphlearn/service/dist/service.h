@@ -42,6 +42,7 @@ public:
 
   Status Start();
   Status Init();
+  Status Build();
   Status Stop();
 
   // just for test

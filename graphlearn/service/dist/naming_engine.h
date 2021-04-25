@@ -69,7 +69,7 @@ public:
   void Stop() override;
 
 public:
-  FSNamingEngine();
+  explicit FSNamingEngine(std::string&& prefix = "");
   ~FSNamingEngine();
 
 private:

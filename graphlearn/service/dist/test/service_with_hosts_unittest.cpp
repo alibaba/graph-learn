@@ -13,6 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <net/if.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <stdio.h>
+#include <string.h>
+#include <strings.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
 #include <thread>
 #include "graphlearn/common/base/log.h"
 #include "graphlearn/include/config.h"
@@ -48,9 +58,39 @@ void RequestToStop(Coordinator* coord) {
   coord->Stop(0, 1);
 }
 
+int32_t GetAvailablePort() {
+  int sock = socket(AF_INET, SOCK_STREAM, 0);
+  if (sock < 0) {
+    LOG(FATAL) << "GetAvailablePort with socket error.";
+    return -1;
+  }
+  struct sockaddr_in serv_addr;
+  bzero(reinterpret_cast<char*>(&serv_addr), sizeof(serv_addr));
+  serv_addr.sin_family = AF_INET;
+  serv_addr.sin_addr.s_addr = INADDR_ANY;
+  // auto-detect port.
+  serv_addr.sin_port = 0;
+  if (bind(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+    LOG(FATAL) << "GetAvailablePort failed with auto-binding port.";
+    return -1;
+  }
+
+  socklen_t len = sizeof(serv_addr);
+  if (getsockname(sock, (struct sockaddr *)&serv_addr, &len) == -1) {
+    LOG(FATAL) << "GetAvailablePort failed with geting socket name.";
+    return -1;
+  }
+  if (close(sock) < 0) {
+    LOG(FATAL) << "GetAvailablePort failed with closing socket.";
+    return -1;
+  }
+  return int32_t(ntohs(serv_addr.sin_port));
+}
+
 TEST_F(DistributeServiceTest, StartInitStopWithHosts) {
-  SetGlobalFlagTrackerMode(0);
-  SetGlobalFlagServerHosts("127.0.0.1:8891");
+  SetGlobalFlagTrackerMode(kRpc);
+  std::string endpoint = "127.0.0.1:" + std::to_string(GetAvailablePort());
+  SetGlobalFlagServerHosts(endpoint);
   Env* env = Env::Default();
   Executor* executor = nullptr;  // not handle request, just set null
   int32_t server_id = 0;
@@ -59,7 +99,7 @@ TEST_F(DistributeServiceTest, StartInitStopWithHosts) {
   Coordinator* coordinator = GetCoordinator(server_id, server_count, env);
 
   DistributeService* service = new DistributeService(
-    server_id, server_count, "127.0.0.1:8891", env, executor, coordinator);
+    server_id, server_count, endpoint, env, executor, coordinator);
   Status s = service->Start();
   EXPECT_TRUE(s.ok());
   s = service->Init();

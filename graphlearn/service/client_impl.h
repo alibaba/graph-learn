@@ -18,9 +18,10 @@ limitations under the License.
 
 #include <string>
 #include "graphlearn/include/constants.h"
+#include "graphlearn/include/dag_request.h"
 #include "graphlearn/include/op_request.h"
 #include "graphlearn/include/status.h"
-#include "graphlearn/proto/service.pb.h"
+#include "graphlearn/proto/request.pb.h"
 
 namespace graphlearn {
 
@@ -30,7 +31,10 @@ public:
 
   virtual Status RunOp(const OpRequest* req, OpResponse* res) = 0;
   virtual Status Stop() = 0;
-  virtual Status Report(const StateRequestPb* req, StateResponsePb* res) {}
+  virtual Status Report(const StateRequestPb* req) {}
+  virtual Status RunDag(const DagRequest* req) = 0;
+  virtual Status GetDagValues(const GetDagValuesRequest* req,
+                              GetDagValuesResponse* res) = 0;
 
 protected:
   ClientImpl() {}

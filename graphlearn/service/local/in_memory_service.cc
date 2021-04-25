@@ -15,8 +15,11 @@ limitations under the License.
 
 #include "graphlearn/service/local/in_memory_service.h"
 
+#include <memory>
+#include <utility>
 #include "graphlearn/common/base/log.h"
 #include "graphlearn/platform/env.h"
+#include "graphlearn/proto/request.pb.h"
 #include "graphlearn/service/call.h"
 #include "graphlearn/service/dist/coordinator.h"
 #include "graphlearn/service/executor.h"
@@ -44,7 +47,13 @@ void InMemoryService::Start() {
 void InMemoryService::Init() {
 }
 
+void InMemoryService::Build() {
+}
+
 void InMemoryService::Stop() {
+  if (GLOBAL_FLAG(DeployMode) == kLocal) {
+    env_->SetStopping();
+  }
   GetInMemoryEventQueue<Call*>()->Cancel();
   thread_->join();
 }
@@ -72,6 +81,16 @@ void InMemoryService::Handler(Call* call) {
     } else {
       s = Status::OK();
     }
+    break;
+  case kRunDag:
+  {
+    s = executor_->RunDag(static_cast<const DagRequest*>(call->req_)->def_);
+    break;
+  }
+  case kGetDagValues:
+    s = executor_->GetDagValues(
+        static_cast<const GetDagValuesRequest*>(call->req_),
+        static_cast<GetDagValuesResponse*>(call->res_));
     break;
   case kOtherToExtend:
     // some request may not need executor_, just like some system status.

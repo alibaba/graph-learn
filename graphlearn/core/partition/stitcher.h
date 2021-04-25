@@ -56,12 +56,17 @@ private:
     // while loop each shard
     while (shards->Next(&shard_id, &tmp)) {
       auto sticker = shards->StickerPtr()->At(shard_id);
+      int32_t bs = tmp->batch_size_;
+      if (bs == -1) {
+        bs = sticker.size();
+      }
+
       // for loop all the data in this shard
-      for (int32_t i = 0; i < tmp->batch_size_; ++i) {
+      for (int32_t i = 0; i < bs; ++i) {
         // for loop all the tensors
         for (auto& it : tmp->tensors_) {
           if (it.first != kDegreeKey) {
-            int32_t dim = it.second.Size() / tmp->batch_size_;
+            int32_t dim = it.second.Size() / bs;
             int32_t from_offset = i * dim;
             int32_t to_offset = sticker[i] * dim;
             CopyToResponse(&(it.second),
@@ -81,12 +86,17 @@ private:
     shards->Next(&shard_id, &tmp);
 
     int32_t batch_size = shards->StickerPtr()->Size();
+    auto sticker = shards->StickerPtr()->At(shard_id);
+    int32_t bs = tmp->batch_size_;
+    if (bs == -1 ) {
+      bs = sticker.size();
+    }
     t->batch_size_ = batch_size;
     t->params_ = tmp->params_;
     t->tensors_.reserve(tmp->tensors_.size());
     for (auto& it : tmp->tensors_) {
       if (it.first != kDegreeKey) {
-        int32_t dim = it.second.Size() / tmp->batch_size_;
+        int32_t dim = it.second.Size() / bs;
         ADD_TENSOR(t->tensors_, it.first, it.second.DType(), batch_size * dim);
         t->tensors_[it.first].Resize(batch_size * dim);
       }

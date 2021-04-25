@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+import "graphlearn/proto/tensor.proto";
+
+package graphlearn;
+
+message DagEdgeDef {
+  int32 id = 1;
+  string src_output = 2;
+  string dst_input = 3;
+}
+
+message DagNodeDef {
+  int32 id = 1;
+  string op_name = 2;
+  repeated TensorValue params = 3;
+  repeated DagEdgeDef in_edges = 4;
+  repeated DagEdgeDef out_edges = 5;
+}
+
+message DagDef {
+  int32 id = 1;
+  repeated DagNodeDef nodes = 2;
+}
+
+message DagNodeValue {
+  int32 id = 1;
+  repeated TensorValue tensors = 2;
+}

@@ -36,6 +36,7 @@ typedef int32_t IndexType;
 typedef std::vector<IdType> IdList;
 typedef std::vector<IndexType> IndexList;
 typedef std::vector<std::vector<IdType>> IdMatrix;
+
 #if __cplusplus >= 201103L
 typedef std::unordered_map<IdType, IndexType> MAP;
 #else

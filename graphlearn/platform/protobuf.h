@@ -16,6 +16,6 @@ limitations under the License.
 #ifndef GRAPHLEARN_PLATFORM_PROTOBUF_H_
 #define GRAPHLEARN_PLATFORM_PROTOBUF_H_
 
-#define PB_NAMESPACE ::google::protobuf
+#define PB_NAMESPACE google::protobuf
 
 #endif  // GRAPHLEARN_PLATFORM_PROTOBUF_H_

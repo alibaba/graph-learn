@@ -24,7 +24,6 @@ class MemoryEdgeStorage : public EdgeStorage {
 public:
   MemoryEdgeStorage() {
     int64_t estimate_size = GLOBAL_FLAG(AverageEdgeCount);
-
     src_ids_.reserve(estimate_size);
     dst_ids_.reserve(estimate_size);
   }
@@ -111,6 +110,7 @@ public:
     if (!side_info_.IsAttributed()) {
       return Attribute();
     }
+
     if (edge_id < attributes_.size()) {
       return Attribute(attributes_[edge_id].get(), false);
     } else {
@@ -130,7 +130,7 @@ public:
     return &weights_;
   }
 
-  const IndexList* GetLabels() const override {
+  const std::vector<int32_t>* GetLabels() const override {
     return &labels_;
   }
 

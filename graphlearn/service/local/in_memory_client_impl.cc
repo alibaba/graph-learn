@@ -40,8 +40,21 @@ public:
     return status.s_;
   }
 
+  Status RunDag(const DagRequest* request) override {
+    StatusWrapper status;
+    channel_->CallMethod(kRunDag, request, nullptr, &status);
+    return status.s_;
+  }
+
+  Status GetDagValues(const GetDagValuesRequest* request,
+                      GetDagValuesResponse* response) override {
+    StatusWrapper status;
+    channel_->CallMethod(kGetDagValues, request, response, &status);
+    return status.s_;
+  }
+
   Status Stop() override {
-    if (GLOBAL_FLAG(DeployMode) == 2) {
+    if (GLOBAL_FLAG(DeployMode) == kWorker) {
       StatusWrapper status;
       channel_->CallMethod(kStop, nullptr, nullptr, &status);
       return status.s_;

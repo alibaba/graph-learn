@@ -1,50 +1,15 @@
 syntax = "proto3";
 
+import "graphlearn/proto/dag.proto";
+import "graphlearn/proto/request.proto";
+
 package graphlearn;
 
 service GraphLearn {
   rpc HandleOp (OpRequestPb) returns (OpResponsePb) {}
-  rpc HandleStop (StopRequestPb) returns (StopResponsePb) {}
-  rpc HandleReport (StateRequestPb) returns (StateResponsePb) {}
-}
+  rpc HandleStop (StopRequestPb) returns (StatusResponsePb) {}
+  rpc HandleReport (StateRequestPb) returns (StatusResponsePb) {}
 
-message TensorValue {
-  string name = 1;
-  int32  dtype = 2;
-  int32  length = 3;
-  repeated int32  int32_values = 4;
-  repeated int64  int64_values = 5;
-  repeated float  float_values = 6;
-  repeated double double_values = 7;
-  repeated string string_values = 8;
-}
-
-message OpRequestPb {
-  string name = 1;
-  bool shardable = 2;
-  bool need_server_ready = 3;
-  repeated TensorValue params = 4;
-  repeated TensorValue tensors = 5;
-}
-
-message OpResponsePb {
-  repeated TensorValue params = 1;
-  repeated TensorValue tensors = 2;
-}
-
-message StopRequestPb {
-  int32 client_id = 1;
-  int32 client_count = 2;
-}
-
-message StopResponsePb {
-}
-
-message StateRequestPb {
-  int32 state = 1;
-  int32 id = 2;
-  int32 count = 3;
-}
-
-message StateResponsePb {
+  rpc HandleDag (DagDef) returns (StatusResponsePb) {}
+  rpc HandleDagValues (DagValuesRequestPb) returns (DagValuesResponsePb) {}
 }

@@ -46,6 +46,18 @@ GetEdgesRequest::GetEdgesRequest(const std::string& edge_type,
   params_[kSideInfo].AddInt32(epoch);
 }
 
+void GetEdgesRequest::Init(const Tensor::Map& params) {
+  ADD_TENSOR(params_, kOpName, kString, 1);
+  params_[kOpName].AddString("GetEdges");
+  ADD_TENSOR(params_, kEdgeType, kString, 2);
+  params_[kEdgeType].AddString(params.at(kEdgeType).GetString(0));
+  params_[kEdgeType].AddString(params.at(kStrategy).GetString(0));
+  ADD_TENSOR(params_, kBatchSize, kInt32, 1);
+  params_[kBatchSize].AddInt32(params.at(kBatchSize).GetInt32(0));
+  ADD_TENSOR(params_, kSideInfo, kInt32, 1);
+  params_[kSideInfo].AddInt32(params.at(kEpoch).GetInt32(0));
+}
+
 const std::string& GetEdgesRequest::EdgeType() const {
   return params_.at(kEdgeType).GetString(0);
 }
@@ -130,6 +142,18 @@ GetNodesRequest::GetNodesRequest(const std::string& type,
   params_[kSideInfo].AddInt32(epoch);
 }
 
+void GetNodesRequest::Init(const Tensor::Map& params) {
+  ADD_TENSOR(params_, kOpName, kString, 1);
+  params_[kOpName].AddString("GetNodes");
+  ADD_TENSOR(params_, kNodeType, kString, 2);
+  params_[kNodeType].AddString(params.at(kNodeType).GetString(0));
+  params_[kNodeType].AddString(params.at(kStrategy).GetString(0));
+  ADD_TENSOR(params_, kSideInfo, kInt32, 3);
+  params_[kSideInfo].AddInt32(params.at(kNodeFrom).GetInt32(0));
+  params_[kSideInfo].AddInt32(params.at(kBatchSize).GetInt32(0));
+  params_[kSideInfo].AddInt32(params.at(kEpoch).GetInt32(0));
+}
+
 const std::string& GetNodesRequest::Type() const {
   return params_.at(kNodeType).GetString(0);
 }
@@ -209,10 +233,35 @@ void LookupEdgesRequest::SetMembers() {
   src_ids_ = &(tensors_[kSrcIds]);
 }
 
+void LookupEdgesRequest::Init(const Tensor::Map& params) {
+  ADD_TENSOR(params_, kOpName, kString, 1);
+  params_[kOpName].AddString("LookupEdges");
+
+  ADD_TENSOR(params_, kPartitionKey, kString, 1);
+  params_[kPartitionKey].AddString(kSrcIds);
+
+  ADD_TENSOR(params_, kEdgeType, kString, 1);
+  params_[kEdgeType].AddString(params.at(kEdgeType).GetString(0));
+
+  ADD_TENSOR(tensors_, kEdgeIds, kInt64, kReservedSize);
+  edge_ids_ = &(tensors_[kEdgeIds]);
+
+  ADD_TENSOR(tensors_, kSrcIds, kInt64, kReservedSize);
+  src_ids_ = &(tensors_[kSrcIds]);
+}
+
 void LookupEdgesRequest::Set(const int64_t* edge_ids, const int64_t* src_ids,
                              int32_t batch_size) {
   edge_ids_->AddInt64(edge_ids, edge_ids + batch_size);
   src_ids_->AddInt64(src_ids, src_ids + batch_size);
+}
+
+void LookupEdgesRequest::Set(const Tensor::Map& tensors) {
+  const int64_t* edge_ids = tensors.at(kEdgeIds).GetInt64();
+  const int64_t* src_ids = tensors.at(kSrcIds).GetInt64();
+  int32_t batch_size = tensors.at(kEdgeIds).Size();
+  edge_ids_ ->AddInt64(edge_ids, edge_ids + batch_size);
+  src_ids_ ->AddInt64(src_ids, src_ids + batch_size);
 }
 
 const std::string& LookupEdgesRequest::EdgeType() const {
@@ -261,8 +310,28 @@ void LookupNodesRequest::SetMembers() {
   node_ids_ = &(tensors_[kNodeIds]);
 }
 
+void LookupNodesRequest::Init(const Tensor::Map& params) {
+  ADD_TENSOR(params_, kOpName, kString, 1);
+  params_[kOpName].AddString("LookupNodes");
+
+  ADD_TENSOR(params_, kPartitionKey, kString, 1);
+  params_[kPartitionKey].AddString(kNodeIds);
+
+  ADD_TENSOR(params_, kNodeType, kString, 1);
+  params_[kNodeType].AddString(params.at(kNodeType).GetString(0));
+
+  ADD_TENSOR(tensors_, kNodeIds, kInt64, kReservedSize);
+  node_ids_ = &(tensors_[kNodeIds]);
+}
+
 void LookupNodesRequest::Set(const int64_t* node_ids, int32_t batch_size) {
   node_ids_->AddInt64(node_ids, node_ids + batch_size);
+}
+
+void LookupNodesRequest::Set(const Tensor::Map& tensors) {
+  const int64_t* node_ids = tensors.at(kNodeIds).GetInt64();
+  int32_t batch_size = tensors.at(kNodeIds).Size();
+  node_ids_ ->AddInt64(node_ids, node_ids + batch_size);
 }
 
 const std::string& LookupNodesRequest::NodeType() const {
@@ -427,7 +496,7 @@ const float* LookupResponse::FloatAttrs() const {
   return f_attrs_->GetFloat();
 }
 
-const std::string* LookupResponse::StringAttrs() const {
+const std::string* const* LookupResponse::StringAttrs() const {
   return s_attrs_->GetString();
 }
 
@@ -439,9 +508,168 @@ LookupNodesResponse::LookupNodesResponse()
     : LookupResponse() {
 }
 
+GetCountRequest::GetCountRequest() : OpRequest() {
+}
+
+GetCountRequest::GetCountRequest(const std::string& type, bool node)
+    : OpRequest() {
+  ADD_TENSOR(params_, kOpName, kString, 1);
+  if (node) {
+    params_[kOpName].AddString("GetNodeCount");
+  } else {
+    params_[kOpName].AddString("GetEdgeCount");
+  }
+
+  ADD_TENSOR(params_, kNodeType, kString, 1);
+  params_[kNodeType].AddString(type);
+}
+
+const std::string& GetCountRequest::Type() const {
+  return params_.at(kNodeType).GetString(0);
+}
+
+GetCountResponse::GetCountResponse() : OpResponse() {
+}
+
+void GetCountResponse::SetMembers() {
+  count_ = &(tensors_[kCount]);
+}
+
+void GetCountResponse::Swap(OpResponse& right) {
+  OpResponse::Swap(right);
+  GetCountResponse& res = static_cast<GetCountResponse&>(right);
+  std::swap(count_, res.count_);
+}
+
+void GetCountResponse::Init() {
+  ADD_TENSOR(tensors_, kCount, kInt32, 1);
+  count_ = &(tensors_[kCount]);
+}
+
+void GetCountResponse::Set(int32_t count) {
+  count_->AddInt32(count);
+}
+
+const int32_t GetCountResponse::Count() const {
+  return *(count_->GetInt32());
+}
+
+GetDegreeRequest::GetDegreeRequest() : OpRequest(), node_ids_(nullptr) {
+}
+
+GetDegreeRequest::GetDegreeRequest(const std::string& edge_type,
+                                   NodeFrom node_from)
+    :OpRequest(),
+     node_ids_(nullptr) {
+  params_.reserve(3);
+  ADD_TENSOR(params_, kOpName, kString, 1);
+  params_[kOpName].AddString("GetDegree");
+
+  ADD_TENSOR(params_, kPartitionKey, kString, 1);
+  params_[kPartitionKey].AddString(kNodeIds);
+
+  ADD_TENSOR(params_, kEdgeType, kString, 1);
+  params_[kEdgeType].AddString(edge_type);
+
+  ADD_TENSOR(params_, kSideInfo, kInt32, 1);
+  params_[kSideInfo].AddInt32(node_from);
+
+  ADD_TENSOR(tensors_, kNodeIds, kInt64, kReservedSize);
+  node_ids_ = &(tensors_[kNodeIds]);
+}
+
+OpRequest* GetDegreeRequest::Clone() const {
+  GetDegreeRequest* req = new GetDegreeRequest(EdgeType(), GetNodeFrom());
+  return req;
+}
+
+void GetDegreeRequest::SetMembers() {
+  node_ids_ = &(tensors_[kNodeIds]);
+}
+
+void GetDegreeRequest::Init(const Tensor::Map& params) {
+  params_.reserve(3);
+  ADD_TENSOR(params_, kOpName, kString, 1);
+  params_[kOpName].AddString("GetDegree");
+
+  ADD_TENSOR(params_, kPartitionKey, kString, 1);
+  params_[kPartitionKey].AddString(kNodeIds);
+
+  ADD_TENSOR(params_, kEdgeType, kString, 1);
+  params_[kEdgeType].AddString(params.at(kEdgeType).GetString(0));
+
+  ADD_TENSOR(params_, kSideInfo, kInt32, 1);
+  params_[kSideInfo].AddInt32(params.at(kNodeFrom).GetInt32(0));
+
+  ADD_TENSOR(tensors_, kNodeIds, kInt64, kReservedSize);
+  node_ids_ = &(tensors_[kNodeIds]);
+}
+
+void GetDegreeRequest::Set(const Tensor::Map& tensors) {
+  const int64_t* node_ids = tensors.at(kNodeIds).GetInt64();
+  int32_t batch_size = tensors.at(kNodeIds).Size();
+  node_ids_ ->AddInt64(node_ids, node_ids + batch_size);
+}
+
+void GetDegreeRequest::Set(const int64_t* node_ids,
+                           int32_t batch_size) {
+  node_ids_->AddInt64(node_ids, node_ids + batch_size);
+}
+
+const std::string& GetDegreeRequest::EdgeType() const {
+  return params_.at(kEdgeType).GetString(0);
+}
+
+NodeFrom GetDegreeRequest::GetNodeFrom() const {
+  return static_cast<NodeFrom>(params_.at(kSideInfo).GetInt32(0));
+}
+
+const int64_t* GetDegreeRequest::GetNodeIds() const {
+  if (node_ids_) {
+    return node_ids_->GetInt64();
+  } else {
+    return nullptr;
+  }
+}
+
+int32_t GetDegreeRequest::BatchSize() const {
+  return node_ids_->Size();
+}
+
+GetDegreeResponse::GetDegreeResponse()
+    : OpResponse(),
+      degrees_(nullptr) {
+}
+
+void GetDegreeResponse::Swap(OpResponse& right) {
+  OpResponse::Swap(right);
+  GetDegreeResponse& res = static_cast<GetDegreeResponse&>(right);
+  std::swap(degrees_, res.degrees_);
+}
+
+void GetDegreeResponse::SetMembers() {
+  degrees_ = &(tensors_[kDegrees]);
+}
+
+void GetDegreeResponse::InitDegrees(int32_t count) {
+  ADD_TENSOR(tensors_, kDegrees, kInt32, count);
+  degrees_ = &(tensors_[kDegrees]);
+  batch_size_ = count;
+}
+
+void GetDegreeResponse::AppendDegree(int32_t degree) {
+  degrees_->AddInt32(degree);
+}
+
+int32_t* GetDegreeResponse::GetDegrees() {
+  return const_cast<int32_t*>(degrees_->GetInt32());
+}
+
 REGISTER_REQUEST(GetEdges, GetEdgesRequest, GetEdgesResponse);
 REGISTER_REQUEST(GetNodes, GetNodesRequest, GetNodesResponse);
 REGISTER_REQUEST(LookupEdges, LookupEdgesRequest, LookupEdgesResponse);
 REGISTER_REQUEST(LookupNodes, LookupNodesRequest, LookupNodesResponse);
-
+REGISTER_REQUEST(GetNodeCount, GetCountRequest, GetCountResponse);
+REGISTER_REQUEST(GetEdgeCount, GetCountRequest, GetCountResponse);
+REGISTER_REQUEST(GetDegree, GetDegreeRequest, GetDegreeResponse);
 }  // namespace graphlearn

@@ -17,6 +17,7 @@ limitations under the License.
 #define GRAPHLEARN_INCLUDE_GRAPH_REQUEST_H_
 
 #include <string>
+#include <unordered_map>
 #include "graphlearn/include/constants.h"
 #include "graphlearn/include/op_request.h"
 
@@ -127,6 +128,8 @@ public:
                   int32_t epoch = 0);
   virtual ~GetEdgesRequest() = default;
 
+  void Init(const std::unordered_map<std::string, Tensor>& params) override;
+
   const std::string& EdgeType() const;
   const std::string& Strategy() const;
   int32_t BatchSize() const;
@@ -170,6 +173,8 @@ public:
                   int32_t epoch = 0);
   virtual ~GetNodesRequest() = default;
 
+  void Init(const std::unordered_map<std::string, Tensor>& params) override;
+
   const std::string& Type() const;
   const std::string& Strategy() const;
   NodeFrom GetNodeFrom() const;
@@ -208,6 +213,9 @@ public:
 
   OpRequest* Clone() const override;
 
+  void Init(const Tensor::Map& params) override;
+  void Set(const Tensor::Map& tensors) override;
+
   void Set(const int64_t* edge_ids,
            const int64_t* src_ids,
            int32_t batch_size);
@@ -232,6 +240,9 @@ public:
   virtual ~LookupNodesRequest() = default;
 
   OpRequest* Clone() const override;
+
+  void Init(const Tensor::Map& params) override;
+  void Set(const Tensor::Map& tensors) override;
 
   void Set(const int64_t* node_ids, int32_t batch_size);
 
@@ -268,7 +279,7 @@ public:
   const int32_t* Labels() const;
   const int64_t* IntAttrs() const;
   const float* FloatAttrs() const;
-  const std::string* StringAttrs() const;
+  const std::string* const* StringAttrs() const;
 
 protected:
   void SetMembers() override;
@@ -301,6 +312,86 @@ public:
   OpResponse* New() const override {
     return new LookupNodesResponse;
   }
+};
+
+class GetCountRequest : public OpRequest {
+public:
+  GetCountRequest();
+  explicit GetCountRequest(const std::string& type, bool node = true);
+  virtual ~GetCountRequest() = default;
+
+  const std::string& Type() const;
+};
+
+class GetCountResponse : public OpResponse {
+public:
+  GetCountResponse();
+  virtual ~GetCountResponse() = default;
+
+  OpResponse* New() const override {
+    return new GetCountResponse;
+  }
+
+  void Swap(OpResponse& right) override;
+
+  void Init();
+  void Set(int32_t count);
+  const int32_t Count() const;
+
+protected:
+  void SetMembers() override;
+
+private:
+  Tensor* count_;
+};
+
+class GetDegreeRequest : public OpRequest {
+public:
+  GetDegreeRequest();
+  GetDegreeRequest(const std::string& edge_type,
+                   NodeFrom node_from);
+  virtual ~GetDegreeRequest() = default;
+
+  OpRequest* Clone() const;
+
+  void Init(const Tensor::Map& params) override;
+  void Set(const Tensor::Map& tensors) override;
+  void Set(const int64_t* node_ids, int32_t batch_size);
+
+  const std::string& EdgeType() const;
+  NodeFrom GetNodeFrom() const;
+  const int64_t* GetNodeIds() const;
+  int32_t BatchSize() const;
+
+protected:
+  void SetMembers() override;
+
+private:
+  Tensor* node_ids_;
+};
+
+class GetDegreeResponse : public OpResponse {
+public:
+  GetDegreeResponse();
+  virtual ~GetDegreeResponse() = default;
+
+  OpResponse* New() const override {
+    return new GetDegreeResponse;
+  }
+
+  void Swap(OpResponse& right) override;
+
+  void InitDegrees(int32_t count);
+  void AppendDegree(int32_t degree);
+  int32_t Size() const { return batch_size_; }
+
+  int32_t* GetDegrees();
+
+protected:
+  void SetMembers() override;
+
+private:
+  Tensor* degrees_;
 };
 
 class GetTopologyRequest : public OpRequest {

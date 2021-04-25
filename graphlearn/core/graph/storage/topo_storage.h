@@ -41,10 +41,10 @@ public:
   virtual Array<IdType> GetNeighbors(IdType src_id) const = 0;
   /// Get all the neighbor edge ids of a given id.
   virtual Array<IdType> GetOutEdges(IdType src_id) const = 0;
-  /// Get the in-degree value of a given id.
-  virtual IndexType GetInDegree(IdType dst_id) const = 0;
   /// Get the out-degree value of a given id.
   virtual IndexType GetOutDegree(IdType src_id) const = 0;
+  /// Get the in-degree value of a given id.
+  virtual IndexType GetInDegree(IdType dst_id) const = 0;
 
   /// Get all the distinct ids that appear as the source id of an edge.
   /// For example, 6 edges like

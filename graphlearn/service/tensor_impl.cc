@@ -28,15 +28,15 @@ TensorImpl::TensorImpl(DataType dtype)
       double_buf_(nullptr),
       string_buf_(nullptr) {
   if (type_ == DataType::kInt32) {
-    int32_buf_ = new ::google::protobuf::RepeatedField<int32_t>();
+    int32_buf_ = new ::PB_NAMESPACE::RepeatedField<int32_t>();
   } else if (type_ == DataType::kInt64) {
-    int64_buf_ = new ::google::protobuf::RepeatedField<int64_t>();
+    int64_buf_ = new ::PB_NAMESPACE::RepeatedField<int64_t>();
   } else if (type_ == DataType::kFloat) {
-    float_buf_ = new ::google::protobuf::RepeatedField<float>();
+    float_buf_ = new ::PB_NAMESPACE::RepeatedField<float>();
   } else if (type_ == DataType::kDouble) {
-    double_buf_ = new ::google::protobuf::RepeatedField<double>();
+    double_buf_ = new ::PB_NAMESPACE::RepeatedField<double>();
   } else if (type_ == DataType::kString) {
-    string_buf_ = new ::google::protobuf::RepeatedField<std::string>();
+    string_buf_ = new ::PB_NAMESPACE::RepeatedPtrField<std::string>();
   } else {
     LOG(ERROR) << "Invalid data type: " << static_cast<int32_t>(dtype);
   }
@@ -51,19 +51,19 @@ TensorImpl::TensorImpl(DataType dtype, int32_t capacity)
       double_buf_(nullptr),
       string_buf_(nullptr) {
   if (type_ == DataType::kInt32) {
-    int32_buf_ = new ::google::protobuf::RepeatedField<int32_t>();
+    int32_buf_ = new ::PB_NAMESPACE::RepeatedField<int32_t>();
     int32_buf_->Reserve(capacity);
   } else if (type_ == DataType::kInt64) {
-    int64_buf_ = new ::google::protobuf::RepeatedField<int64_t>();
+    int64_buf_ = new ::PB_NAMESPACE::RepeatedField<int64_t>();
     int64_buf_->Reserve(capacity);
   } else if (type_ == DataType::kFloat) {
-    float_buf_ = new ::google::protobuf::RepeatedField<float>();
+    float_buf_ = new ::PB_NAMESPACE::RepeatedField<float>();
     float_buf_->Reserve(capacity);
   } else if (type_ == DataType::kDouble) {
-    double_buf_ = new ::google::protobuf::RepeatedField<double>();
+    double_buf_ = new ::PB_NAMESPACE::RepeatedField<double>();
     double_buf_->Reserve(capacity);
   } else if (type_ == DataType::kString) {
-    string_buf_ = new ::google::protobuf::RepeatedField<std::string>();
+    string_buf_ = new ::PB_NAMESPACE::RepeatedPtrField<std::string>();
     string_buf_->Reserve(capacity);
   } else {
     LOG(ERROR) << "Invalid data type: " << static_cast<int32_t>(dtype);
@@ -78,62 +78,63 @@ TensorImpl::~TensorImpl() {
   delete string_buf_;
 }
 
-void TensorImpl::SwapWithPB(void* pb) {
-  if (type_ == DataType::kInt32) {
-    ::google::protobuf::RepeatedField<int32_t>* pb_buf =
-      static_cast<::google::protobuf::RepeatedField<int32_t>*>(pb);
-    int32_buf_->Swap(pb_buf);
-    size_ = int32_buf_->size();
-  } else if (type_ == DataType::kInt64) {
-    ::google::protobuf::RepeatedField<int64_t>* pb_buf =
-      static_cast<::google::protobuf::RepeatedField<int64_t>*>(pb);
-    int64_buf_->Swap(pb_buf);
-    size_ = int64_buf_->size();
-  } else if (type_ == DataType::kFloat) {
-    ::google::protobuf::RepeatedField<float>* pb_buf =
-      static_cast<::google::protobuf::RepeatedField<float>*>(pb);
-    float_buf_->Swap(pb_buf);
-    size_ = float_buf_->size();
-  } else if (type_ == DataType::kDouble) {
-    ::google::protobuf::RepeatedField<double>* pb_buf =
-      static_cast<::google::protobuf::RepeatedField<double>*>(pb);
-    double_buf_->Swap(pb_buf);
-    size_ = double_buf_->size();
-  } else if (type_ == DataType::kString) {
-    ::google::protobuf::RepeatedField<std::string>* pb_buf =
-      static_cast<::google::protobuf::RepeatedField<std::string>*>(pb);
-    string_buf_->Swap(pb_buf);
-    size_ = string_buf_->size();
-  } else {
-    LOG(ERROR) << "Invalid data type: " << static_cast<int32_t>(type_);
-  }
+TensorImpl::TensorImpl(TensorImpl&& other) noexcept
+    : type_(other.type_), size_(other.size_),
+      int32_buf_(other.int32_buf_),
+      int64_buf_(other.int64_buf_),
+      float_buf_(other.float_buf_),
+      double_buf_(other.double_buf_),
+      string_buf_(other.string_buf_) {
+  other.type_ = DataType::kUnknown;
+  other.size_ = 0;
+  other.int32_buf_ = nullptr;
+  other.int64_buf_ = nullptr;
+  other.float_buf_ = nullptr;
+  other.double_buf_ = nullptr;
+  other.string_buf_ = nullptr;
 }
 
-void TensorImpl::CopyFromPB(const void* pb) {
+TensorImpl& TensorImpl::operator=(TensorImpl&& other) noexcept {
+  if (this != &other) {
+    type_ = other.type_;
+    size_ = other.size_;
+    int32_buf_ = other.int32_buf_;
+    int64_buf_ = other.int64_buf_;
+    float_buf_ = other.float_buf_;
+    double_buf_ = other.double_buf_;
+    string_buf_ = other.string_buf_;
+    other.type_ = DataType::kUnknown;
+    other.size_ = 0;
+    other.int32_buf_ = nullptr;
+    other.int64_buf_ = nullptr;
+    other.float_buf_ = nullptr;
+    other.double_buf_ = nullptr;
+    other.string_buf_ = nullptr;
+  }
+  return *this;
+}
+
+
+void TensorImpl::SwapWithProto(TensorValue* v) {
   if (type_ == DataType::kInt32) {
-    const ::google::protobuf::RepeatedField<int32_t>* pb_buf =
-      static_cast<const ::google::protobuf::RepeatedField<int32_t>*>(pb);
-    int32_buf_->CopyFrom(*pb_buf);
+    auto tmp = v->mutable_int32_values();
+    int32_buf_->Swap(tmp);
     size_ = int32_buf_->size();
   } else if (type_ == DataType::kInt64) {
-    const ::google::protobuf::RepeatedField<int64_t>* pb_buf =
-      static_cast<const ::google::protobuf::RepeatedField<int64_t>*>(pb);
-    int64_buf_->CopyFrom(*pb_buf);
+    auto tmp = v->mutable_int64_values();
+    int64_buf_->Swap(tmp);
     size_ = int64_buf_->size();
   } else if (type_ == DataType::kFloat) {
-    const ::google::protobuf::RepeatedField<float>* pb_buf =
-      static_cast<const ::google::protobuf::RepeatedField<float>*>(pb);
-    float_buf_->CopyFrom(*pb_buf);
+    auto tmp = v->mutable_float_values();
+    float_buf_->Swap(tmp);
     size_ = float_buf_->size();
   } else if (type_ == DataType::kDouble) {
-    const ::google::protobuf::RepeatedField<double>* pb_buf =
-      static_cast<const ::google::protobuf::RepeatedField<double>*>(pb);
-    double_buf_->CopyFrom(*pb_buf);
+    auto tmp = v->mutable_double_values();
+    double_buf_->Swap(tmp);
     size_ = double_buf_->size();
   } else if (type_ == DataType::kString) {
-    const ::google::protobuf::RepeatedField<std::string>* pb_buf =
-      static_cast<const ::google::protobuf::RepeatedField<std::string>*>(pb);
-    string_buf_->CopyFrom(*pb_buf);
+    auto tmp = v->mutable_string_values();
+    string_buf_->Swap(tmp);
     size_ = string_buf_->size();
   } else {
     LOG(ERROR) << "Invalid data type: " << static_cast<int32_t>(type_);

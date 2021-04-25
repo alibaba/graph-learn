@@ -14,8 +14,9 @@ limitations under the License.
 ==============================================================================*/
 
 #include <string>
-#include "graphlearn/include/tensor.h"
 #include "google/protobuf/repeated_field.h"
+#include "graphlearn/include/tensor.h"
+#include "graphlearn/platform/protobuf.h"
 #include "gtest/gtest.h"
 
 using namespace graphlearn;  // NOLINT [build/namespaces]
@@ -57,18 +58,19 @@ TEST(TensorTest, Int32) {
     EXPECT_EQ(buf2[i], i);
   }
 
-  // Copy from PB
-  ::google::protobuf::RepeatedField<int32_t> tmp_buf;
+  // SwapWithProto
+  TensorValue tv;
+  auto tmp_buf = tv.mutable_int32_values();
   for (int32_t i = 0; i < 8; ++i) {
-    tmp_buf.Add(i);
+    tmp_buf->Add(i);
   }
-  EXPECT_EQ(tmp_buf.size(), 8);
+  EXPECT_EQ(tmp_buf->size(), 8);
 
   Tensor t3(kInt32);
-  t3.CopyFromPB(&tmp_buf);
+  t3.SwapWithProto(&tv);
 
   EXPECT_EQ(t3.Size(), 8);
-  EXPECT_EQ(tmp_buf.size(), 8);
+  EXPECT_EQ(tmp_buf->size(), 0);
 
   for (int32_t i = 0; i < 8; ++i) {
     EXPECT_EQ(t3.GetInt32(i), i);
@@ -77,24 +79,6 @@ TEST(TensorTest, Int32) {
   const int32_t* buf3 = t3.GetInt32();
   for (int32_t i = 0; i < 8; ++i) {
     EXPECT_EQ(buf3[i], i);
-  }
-
-  // Swap from PB
-  EXPECT_EQ(tmp_buf.size(), 8);
-
-  Tensor t4(kInt32);
-  t4.SwapWithPB(&tmp_buf);
-
-  EXPECT_EQ(t4.Size(), 8);
-  EXPECT_EQ(tmp_buf.size(), 0);
-
-  for (int32_t i = 0; i < 8; ++i) {
-    EXPECT_EQ(t4.GetInt32(i), i);
-  }
-
-  const int32_t* buf4 = t4.GetInt32();
-  for (int32_t i = 0; i < 8; ++i) {
-    EXPECT_EQ(buf4[i], i);
   }
 }
 
@@ -135,18 +119,19 @@ TEST(TensorTest, Int64) {
     EXPECT_EQ(buf2[i], i);
   }
 
-  // Copy from PB
-  ::google::protobuf::RepeatedField<int64_t> tmp_buf;
+  // SwapWithProto
+  TensorValue tv;
+  auto tmp_buf = tv.mutable_int64_values();
   for (int64_t i = 0; i < 8; ++i) {
-    tmp_buf.Add(i);
+    tmp_buf->Add(i);
   }
-  EXPECT_EQ(tmp_buf.size(), 8);
+  EXPECT_EQ(tmp_buf->size(), 8);
 
   Tensor t3(kInt64);
-  t3.CopyFromPB(&tmp_buf);
+  t3.SwapWithProto(&tv);
 
   EXPECT_EQ(t3.Size(), 8);
-  EXPECT_EQ(tmp_buf.size(), 8);
+  EXPECT_EQ(tmp_buf->size(), 0);
 
   for (int64_t i = 0; i < 8; ++i) {
     EXPECT_EQ(t3.GetInt64(i), i);
@@ -155,24 +140,6 @@ TEST(TensorTest, Int64) {
   const int64_t* buf3 = t3.GetInt64();
   for (int64_t i = 0; i < 8; ++i) {
     EXPECT_EQ(buf3[i], i);
-  }
-
-  // Swap from PB
-  EXPECT_EQ(tmp_buf.size(), 8);
-
-  Tensor t4(kInt64);
-  t4.SwapWithPB(&tmp_buf);
-
-  EXPECT_EQ(t4.Size(), 8);
-  EXPECT_EQ(tmp_buf.size(), 0);
-
-  for (int64_t i = 0; i < 8; ++i) {
-    EXPECT_EQ(t4.GetInt64(i), i);
-  }
-
-  const int64_t* buf4 = t4.GetInt64();
-  for (int64_t i = 0; i < 8; ++i) {
-    EXPECT_EQ(buf4[i], i);
   }
 }
 
@@ -213,18 +180,19 @@ TEST(TensorTest, Float) {
     EXPECT_FLOAT_EQ(buf2[i], float(i));
   }
 
-  // Copy from PB
-  ::google::protobuf::RepeatedField<float> tmp_buf;
+  // SwapWithProto
+  TensorValue tv;
+  auto tmp_buf = tv.mutable_float_values();
   for (int32_t i = 0; i < 8; ++i) {
-    tmp_buf.Add(float(i));
+    tmp_buf->Add(float(i));
   }
-  EXPECT_EQ(tmp_buf.size(), 8);
+  EXPECT_EQ(tmp_buf->size(), 8);
 
   Tensor t3(kFloat);
-  t3.CopyFromPB(&tmp_buf);
+  t3.SwapWithProto(&tv);
 
   EXPECT_EQ(t3.Size(), 8);
-  EXPECT_EQ(tmp_buf.size(), 8);
+  EXPECT_EQ(tmp_buf->size(), 0);
 
   for (int32_t i = 0; i < 8; ++i) {
     EXPECT_FLOAT_EQ(t3.GetFloat(i), float(i));
@@ -233,24 +201,6 @@ TEST(TensorTest, Float) {
   const float* buf3 = t3.GetFloat();
   for (int32_t i = 0; i < 8; ++i) {
     EXPECT_FLOAT_EQ(buf3[i], float(i));
-  }
-
-  // Swap from PB
-  EXPECT_EQ(tmp_buf.size(), 8);
-
-  Tensor t4(kFloat);
-  t4.SwapWithPB(&tmp_buf);
-
-  EXPECT_EQ(t4.Size(), 8);
-  EXPECT_EQ(tmp_buf.size(), 0);
-
-  for (int32_t i = 0; i < 8; ++i) {
-    EXPECT_FLOAT_EQ(t4.GetFloat(i), float(i));
-  }
-
-  const float* buf4 = t4.GetFloat();
-  for (int32_t i = 0; i < 8; ++i) {
-    EXPECT_FLOAT_EQ(buf4[i], float(i));
   }
 }
 
@@ -291,18 +241,19 @@ TEST(TensorTest, Double) {
     EXPECT_DOUBLE_EQ(buf2[i], double(i));
   }
 
-  // Copy from PB
-  ::google::protobuf::RepeatedField<double> tmp_buf;
+  // SwapWithProto
+  TensorValue tv;
+  auto tmp_buf = tv.mutable_double_values();
   for (int32_t i = 0; i < 8; ++i) {
-    tmp_buf.Add(double(i));
+    tmp_buf->Add(double(i));
   }
-  EXPECT_EQ(tmp_buf.size(), 8);
+  EXPECT_EQ(tmp_buf->size(), 8);
 
   Tensor t3(kDouble);
-  t3.CopyFromPB(&tmp_buf);
+  t3.SwapWithProto(&tv);
 
   EXPECT_EQ(t3.Size(), 8);
-  EXPECT_EQ(tmp_buf.size(), 8);
+  EXPECT_EQ(tmp_buf->size(), 0);
 
   for (int32_t i = 0; i < 8; ++i) {
     EXPECT_DOUBLE_EQ(t3.GetDouble(i), double(i));
@@ -311,24 +262,6 @@ TEST(TensorTest, Double) {
   const double* buf3 = t3.GetDouble();
   for (int32_t i = 0; i < 8; ++i) {
     EXPECT_DOUBLE_EQ(buf3[i], double(i));
-  }
-
-  // Swap from PB
-  EXPECT_EQ(tmp_buf.size(), 8);
-
-  Tensor t4(kDouble);
-  t4.SwapWithPB(&tmp_buf);
-
-  EXPECT_EQ(t4.Size(), 8);
-  EXPECT_EQ(tmp_buf.size(), 0);
-
-  for (int32_t i = 0; i < 8; ++i) {
-    EXPECT_DOUBLE_EQ(t4.GetDouble(i), double(i));
-  }
-
-  const double* buf4 = t4.GetDouble();
-  for (int32_t i = 0; i < 8; ++i) {
-    EXPECT_DOUBLE_EQ(buf4[i], double(i));
   }
 }
 
@@ -347,10 +280,11 @@ TEST(TensorTest, String) {
   for (int32_t i = 0; i < 10; ++i) {
     EXPECT_EQ(t.GetString(i), std::to_string(i));
   }
+
   // Get all
-  const std::string* buf = t.GetString();
+  const std::string* const* buf = t.GetString();
   for (int32_t i = 0; i < 10; ++i) {
-    EXPECT_EQ(buf[i], std::to_string(i));
+    EXPECT_EQ(*(buf[i]), std::to_string(i));
   }
 
   // Swap
@@ -364,48 +298,31 @@ TEST(TensorTest, String) {
     EXPECT_EQ(t2.GetString(i), std::to_string(i));
   }
 
-  const std::string* buf2 = t2.GetString();
+  const std::string* const* buf2 = t2.GetString();
   for (int32_t i = 0; i < 10; ++i) {
-    EXPECT_EQ(buf2[i], std::to_string(i));
+    EXPECT_EQ(*(buf2[i]), std::to_string(i));
   }
 
-  // Copy from PB
-  ::google::protobuf::RepeatedField<std::string> tmp_buf;
+  // SwapWithProto
+  TensorValue tv;
+  auto tmp_buf = tv.mutable_string_values();
   for (int32_t i = 0; i < 8; ++i) {
-    tmp_buf.Add(std::to_string(i));
+    tmp_buf->Add(std::to_string(i));
   }
-  EXPECT_EQ(tmp_buf.size(), 8);
+  EXPECT_EQ(tmp_buf->size(), 8);
 
   Tensor t3(kString);
-  t3.CopyFromPB(&tmp_buf);
+  t3.SwapWithProto(&tv);
 
   EXPECT_EQ(t3.Size(), 8);
-  EXPECT_EQ(tmp_buf.size(), 8);
+  EXPECT_EQ(tmp_buf->size(), 0);
 
   for (int32_t i = 0; i < 8; ++i) {
     EXPECT_EQ(t3.GetString(i), std::to_string(i));
   }
 
-  const std::string* buf3 = t3.GetString();
+  const std::string* const* buf3 = t3.GetString();
   for (int32_t i = 0; i < 8; ++i) {
-    EXPECT_EQ(buf3[i], std::to_string(i));
-  }
-
-  // Swap from PB
-  EXPECT_EQ(tmp_buf.size(), 8);
-
-  Tensor t4(kString);
-  t4.SwapWithPB(&tmp_buf);
-
-  EXPECT_EQ(t4.Size(), 8);
-  EXPECT_EQ(tmp_buf.size(), 0);
-
-  for (int32_t i = 0; i < 8; ++i) {
-    EXPECT_EQ(t4.GetString(i), std::to_string(i));
-  }
-
-  const std::string* buf4 = t4.GetString();
-  for (int32_t i = 0; i < 8; ++i) {
-    EXPECT_EQ(buf4[i], std::to_string(i));
+    EXPECT_EQ(*(buf3[i]), std::to_string(i));
   }
 }

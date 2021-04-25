@@ -62,7 +62,7 @@ public:
   /// Get all the destination node ids, the count of which is the same with
   /// Size(). These ids are not distinct.
   virtual const IdList* GetDstIds() const = 0;
-  /// Get all weights if existed, the count of which is the same with Size().  
+  /// Get all weights if existed, the count of which is the same with Size().
   virtual const std::vector<float>* GetWeights() const = 0;
   /// Get all labels if existed, the count of which is the same with Size().
   virtual const std::vector<int32_t>* GetLabels() const = 0;

@@ -45,6 +45,25 @@ extern const char* kDirection;
 extern const char* kSegmentIds;
 extern const char* kNumSegments;
 extern const char* kSegments;
+extern const char* kDistances;
+extern const char* kRowIndices;
+extern const char* kColIndices;
+extern const char* kSeedType;
+extern const char* kNbrType;
+extern const char* kCount;
+extern const char* kBatchShare;
+extern const char* kUnique;
+extern const char* kIntCols;
+extern const char* kIntProps;
+extern const char* kFloatCols;
+extern const char* kFloatProps;
+extern const char* kStrCols;
+extern const char* kStrProps;
+extern const char* kFilterType;
+extern const char* kFilterIds;
+extern const char* kDegrees;
+extern const char* kEpoch;
+extern const char* kNodeFrom;
 
 enum SystemState {
   kBlank = 0,
@@ -79,6 +98,12 @@ enum DataType {
   kUnknown
 };
 
+enum DeployMode {
+  kLocal = 0,
+  kServer = 1,
+  kWorker = 2
+};
+
 enum PartitionMode {
   kNoPartition = 0,
   kByHash = 1
@@ -87,6 +112,11 @@ enum PartitionMode {
 enum PaddingMode {
   kReplicate = 0,
   kCircular = 1
+};
+
+enum TrackerMode {
+  kRpc = 0,
+  kFileSystem = 1
 };
 
 enum NodeFrom {

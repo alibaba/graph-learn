@@ -33,8 +33,18 @@ Tensor::Tensor(const Tensor& t) {
   impl_ = t.impl_;
 }
 
+Tensor::Tensor(Tensor&& t)
+    : impl_(std::move(t.impl_)) {
+}
+
 Tensor& Tensor::operator=(const Tensor& t) {
   impl_ = t.impl_;
+  return *this;
+}
+
+Tensor& Tensor::operator=(Tensor&& t) {
+  impl_ = std::move(t.impl_);
+  t.impl_ = nullptr;
   return *this;
 }
 
@@ -145,7 +155,7 @@ const double* Tensor::GetDouble() const {
   return impl_->GetDouble();
 }
 
-const std::string* Tensor::GetString() const {
+const std::string* const* Tensor::GetString() const {
   return impl_->GetString();
 }
 
@@ -155,12 +165,8 @@ void Tensor::Swap(Tensor& right) {
   impl_ = tmp;
 }
 
-void Tensor::SwapWithPB(void* pb) {
-  impl_->SwapWithPB(pb);
-}
-
-void Tensor::CopyFromPB(const void* pb) {
-  impl_->CopyFromPB(pb);
+void Tensor::SwapWithProto(TensorValue* v) {
+  impl_->SwapWithProto(v);
 }
 
 }  // namespace graphlearn

@@ -49,6 +49,9 @@ DEFINE_METHOD(LookupNodes);
 DEFINE_METHOD(GetTopology);
 DEFINE_METHOD(Sampling);
 DEFINE_METHOD(Aggregating);
+DEFINE_METHOD(SubGraph);
+DEFINE_METHOD(GetCount);
+DEFINE_METHOD(GetDegree);
 
 #undef DEFINE_METHOD
 
@@ -56,13 +59,21 @@ Status Client::RunOp(const OpRequest* request, OpResponse* response) {
   return impl_->RunOp(request, response);
 }
 
+Status Client::RunDag(const DagRequest* request) {
+  return impl_->RunDag(request);
+}
+
+Status Client::GetDagValues(const GetDagValuesRequest* request,
+                            GetDagValuesResponse* response) {
+  return impl_->GetDagValues(request, response);
+}
+
 Status Client::Stop() {
   return impl_->Stop();
 }
 
-Status Client::Report(const StateRequestPb* request,
-                      StateResponsePb* response) {
-  return impl_->Report(request, response);
+Status Client::Report(const StateRequestPb* request) {
+  return impl_->Report(request);
 }
 
 Client* NewInMemoryClient() {

@@ -113,6 +113,13 @@ public:
     return sticker_;
   }
 
+  T* Get(int32_t shard_id) {
+    if (shard_id >= capacity_) {
+      return nullptr;
+    }
+    return pieces_[shard_id];
+  }
+
   /// Get reference of the next piece and move the cursor.
   /// If no more exist, return false. Otherwise, return true.
   bool Next(int32_t* shard_id, T** t) {

@@ -13,14 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/runner/distribute_runner.h"
+#include "graphlearn/core/runner/op_runner.h"
 #include "graphlearn/include/config.h"
 
 namespace graphlearn {
 
 std::unique_ptr<OpRunner> GetOpRunner(Env* env, op::Operator* op) {
   std::unique_ptr<OpRunner> ret;
-  if (GLOBAL_FLAG(DeployMode) < 1) {
+  if (GLOBAL_FLAG(DeployMode) == kLocal) {
     ret.reset(new OpRunner(env, op));
   } else {
     ret.reset(new DistOpRunner(env, GLOBAL_FLAG(ServerId), op));

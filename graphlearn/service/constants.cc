@@ -44,5 +44,24 @@ const char* kDirection = "dir";
 const char* kSegmentIds = "segi";
 const char* kNumSegments = "ns";
 const char* kSegments = "sm";
+const char* kDistances = "dis";
+const char* kRowIndices = "ridx";
+const char* kColIndices = "cidx";
+const char* kSeedType = "seedt";
+const char* kNbrType = "nbrt";
+const char* kCount = "cnt";
+const char* kBatchShare = "batch_share";
+const char* kUnique = "unique";
+const char* kIntCols = "icols";
+const char* kIntProps = "ipps";
+const char* kFloatCols = "fcols";
+const char* kFloatProps = "fpps";
+const char* kStrCols = "scols";
+const char* kStrProps = "spps";
+const char* kFilterType = "ftype";
+const char* kFilterIds = "filt";
+const char* kDegrees = "dg";
+const char* kEpoch = "ep";
+const char* kNodeFrom = "nf";
 
 }  // namespace graphlearn

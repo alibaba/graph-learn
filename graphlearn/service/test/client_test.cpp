@@ -117,10 +117,10 @@ void TestLookupNodes(Client* client) {
     }
     if (res.StringAttrNum() > 0) {
       int32_t str_num = res.StringAttrNum();
-      const std::string* strs = res.StringAttrs();
+      const std::string* const* strs = res.StringAttrs();
       std::cout << "strings: ";
       for (int32_t i = 0; i < size * str_num; ++i) {
-        std::cout << strs[i] << ' ';
+        std::cout << *(strs[i]) << ' ';
       }
       std::cout << std::endl;
     }
@@ -319,7 +319,6 @@ void TestFullSampleNeighbors(Client* client) {
   for (int32_t i = 0; i < batch_size; ++i) {
     std::cout << degrees[i] << std::endl;
   }
-
 }
 
 void TestNodeWeightNegativeSample(Client* client) {
@@ -339,6 +338,103 @@ void TestNodeWeightNegativeSample(Client* client) {
   }
 }
 
+void TestRandomNodeSampleSubGraph(Client* client) {
+  SubGraphRequest req("e", "r", "RandomNodeSubGraphSampler", 8);
+  SubGraphResponse res;
+  Status s = client->SubGraph(&req, &res);
+  std::cout << "RandomNodeSubGraphSample: " << s.ToString() << std::endl;
+
+  const int64_t* node_ids = res.NodeIds();
+  const int32_t* rows = res.RowIndices();
+  const int32_t* cols = res.ColIndices();
+  const int64_t* edge_ids = res.EdgeIds();
+  std::cout << "Total node count: " << res.NodeCount() << std::endl;
+  for (int32_t i = 0; i < res.NodeCount(); ++i) {
+    std::cout << node_ids[i] << std::endl;
+  }
+
+  std::cout << "Total edge count: " << res.EdgeCount() << std::endl;
+  for (int32_t i = 0; i < res.EdgeCount(); ++i) {
+    std::cout << rows[i] << "\t" << cols[i] << "\t" << edge_ids[i] << std::endl;
+  }
+}
+
+void TestInOrderNodeSampleSubGraph(Client* client) {
+  for (int32_t epoch = 0; epoch < 3; ++epoch) {
+    for (int32_t iter = 0; iter < 10; ++iter) {
+      SubGraphRequest req("e", "r", "InOrderNodeSubGraphSampler", 8, epoch);
+      SubGraphResponse res;
+      Status s = client->SubGraph(&req, &res);
+      std::cout << "InOrderNodeSubGraphSample: " << s.ToString() << std::endl;
+      if (!s.ok()) {
+        std::cout << "OutOfRange, epoch:" << epoch << std::endl;
+        break;
+      }
+      const int64_t* node_ids = res.NodeIds();
+      const int32_t* rows = res.RowIndices();
+      const int32_t* cols = res.ColIndices();
+      const int64_t* edge_ids = res.EdgeIds();
+      std::cout << "Node count: " << res.NodeCount() << std::endl;
+      for (int32_t i = 0; i < res.NodeCount(); ++i) {
+        std::cout << node_ids[i] << std::endl;
+      }
+
+      std::cout << "Edge count: " << res.EdgeCount() << std::endl;
+      for (int32_t i = 0; i < res.EdgeCount(); ++i) {
+        std::cout << rows[i] << "\t" << cols[i] << "\t" << edge_ids[i] << std::endl;
+      }
+    }
+  }
+}
+
+void TestGetNodeCount(Client* client) {
+  GetCountRequest req("user", true);
+  GetCountResponse res;
+  Status s = client->GetCount(&req, &res);
+  std::cout << "GetNodeCount: " << s.ToString() << std::endl;
+  int32_t count = res.Count();
+  std::cout << "Node user Count: " << count << std::endl;
+}
+
+void TestGetEdgeCount(Client* client) {
+  GetCountRequest req("click", false);
+  GetCountResponse res;
+  Status s = client->GetCount(&req, &res);
+  std::cout << "GetEdgeCount: " << s.ToString() << std::endl;
+  int32_t count = res.Count();
+  std::cout << "Edge click Count: " << count << std::endl;
+}
+
+void TestConditionalNegativeSample(Client* client) {
+  ConditionalSamplingRequest req("movie",
+                                 "node_weight",
+                                 5,
+                                 "movie",
+                                 true,
+                                 true);
+  int64_t src_ids[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  int64_t dst_ids[10] = {0, 1, 12, 13, 14, 15, 16, 17, 18, 19};
+  req.SetIds(src_ids, dst_ids, 10);
+  std::vector<int32_t> int_cols={0};
+  std::vector<float> int_props={0.5};
+  std::vector<int32_t> float_cols;
+  std::vector<float> float_props;
+  std::vector<int32_t> str_cols={0};
+  std::vector<float> str_props={0.5};
+  req.SetSelectedCols(int_cols, int_props,
+                      float_cols, float_props,
+                      str_cols, str_props);
+  SamplingResponse res;
+  Status s = client->Sampling(&req, &res);
+  std::cout << "ConditionalNegativeSample: " << s.ToString() << std::endl;
+
+  const int64_t* nbrs = res.GetNeighborIds();
+  int32_t size = res.TotalNeighborCount();
+  std::cout << "TotalNeighborCount: " << size << std::endl;
+  for (int32_t i = 0; i < size; ++i) {
+    std::cout << nbrs[i] << std::endl;
+  }
+}
 
 int main(int argc, char** argv) {
   int32_t client_id = 0;
@@ -350,17 +446,18 @@ int main(int argc, char** argv) {
     client_count = argv[2][0] - '0';
     server_count = argv[3][0] - '0';
     hosts = argv[4];
-    SetGlobalFlagTrackerMode(0);
+    SetGlobalFlagTrackerMode(kRpc);
     SetGlobalFlagServerHosts(hosts);
   } else if (argc > 3) {
     client_id = argv[1][0] - '0';
     client_count = argv[2][0] - '0';
     server_count = argv[3][0] - '0';
-    SetGlobalFlagTrackerMode(1);
+    SetGlobalFlagTrackerMode(kFileSystem);
     ::system("mkdir -p ./tracker");
     SetGlobalFlagTracker("./tracker");
   } else if (argc == 1) {
-
+    ::system("mkdir -p ./tracker");
+    SetGlobalFlagTracker("./tracker");
   } else {
     std::cout << "./client_test [client_id] [client_count] [server_count] [hosts]" << std::endl;
     std::cout << "e.g. ./client_test 0 2 2 127.0.0.1:8888,127.0.0.1:8889" << std::endl;
@@ -369,7 +466,7 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-  SetGlobalFlagDeployMode(1);
+  SetGlobalFlagDeployMode(kServer);
   SetGlobalFlagClientId(client_id);
   SetGlobalFlagClientCount(client_count);
   SetGlobalFlagServerCount(server_count);
@@ -389,6 +486,11 @@ int main(int argc, char** argv) {
   TestTopkSampleNeighbors(client);
   TestFullSampleNeighbors(client);
   TestNodeWeightNegativeSample(client);
+  TestRandomNodeSampleSubGraph(client);
+  TestInOrderNodeSampleSubGraph(client);
+  TestGetNodeCount(client);
+  TestGetEdgeCount(client);
+  TestConditionalNegativeSample(client);
 
   Status s = client->Stop();
   std::cout << client_id << " in " << client_count << " client stop " << s.ToString() << std::endl;

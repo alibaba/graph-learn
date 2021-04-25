@@ -17,7 +17,7 @@ limitations under the License.
 
 #include "graphlearn/include/constants.h"
 #include "graphlearn/core/operator/operator.h"
-#include "graphlearn/core/operator/operator_factory.h"
+#include "graphlearn/core/operator/op_factory.h"
 #include "graphlearn/core/operator/aggregator/aggregator.h"
 
 namespace graphlearn {
@@ -197,7 +197,7 @@ void AggregatingResponse::Stitch(ShardsPtr<OpResponse> shards) {
   float* embs = const_cast<float*>(tensors_[kFloatAttrKey].GetFloat());
   int32_t* segments = const_cast<int32_t*>(tensors_[kSegments].GetInt32());
 
-  op::Operator* op = op::OperatorFactory::GetInstance().Lookup(shard->Name());
+  op::Operator* op = op::OpFactory::GetInstance()->Create(shard->Name());
   op::Aggregator* agg_op = static_cast<op::Aggregator*>(op);
   agg_op->InitFunc(embs, size);
 

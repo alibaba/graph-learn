@@ -16,6 +16,10 @@ limitations under the License.
 #include "graphlearn/core/graph/noder.h"
 
 #include "graphlearn/common/base/errors.h"
+#include "graphlearn/common/base/log.h"
+#ifdef OPEN_KNN
+#include "graphlearn/contrib/knn/builder.h"
+#endif
 #include "graphlearn/core/graph/storage/node_storage.h"
 #include "graphlearn/core/graph/storage_creator.h"
 #include "graphlearn/include/config.h"
@@ -32,8 +36,22 @@ public:
     delete storage_;
   }
 
-  void Build() override {
-    storage_->Build();
+  Status Build(const IndexOption& option) override {
+    if (option.name == "sort") {
+      storage_->Build();
+    } else if (option.name == "knn") {
+#ifdef OPEN_KNN
+      if (!BuildKnnIndex(storage_, option)) {
+        LOG(ERROR) << "Invalid node type or index type for building KNN index:"
+                   << storage_->GetSideInfo()->type;
+        return error::InvalidArgument("Invalid node type or index type.");
+      }
+#endif
+    } else {
+      USER_LOG("Unsupported node index type:" + option.name);
+      LOG(WARNING) << "Unsupported node index type:" << option.name;
+    }
+    return Status();
   }
 
   io::NodeStorage* GetLocalStorage() override {

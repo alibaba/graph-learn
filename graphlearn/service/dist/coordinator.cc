@@ -68,9 +68,9 @@ void Coordinator::Refresh() {
     if (state_ < kStarted) {
       CheckStarted();
     }
-    // if (state_ < kInited) {
-    //   CheckInited();
-    // }
+    if (state_ < kInited) {
+      CheckInited();
+    }
     if (state_ < kReady) {
       CheckReady();
     }
@@ -89,7 +89,7 @@ public:
   Coordinator* operator() (int32_t server_id, int32_t server_count,
                            Env* env) {
     Coordinator* coord = nullptr;
-    if (GLOBAL_FLAG(TrackerMode) < 1) {
+    if (GLOBAL_FLAG(TrackerMode) == kRpc) {
       coord = new RPCCoordinator(server_id, server_count, env);
     } else {
       coord = new FSCoordinator(server_id, server_count, env);

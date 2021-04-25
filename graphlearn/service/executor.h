@@ -16,6 +16,8 @@ limitations under the License.
 #ifndef GRAPHLEARN_SERVICE_EXECUTOR_H_
 #define GRAPHLEARN_SERVICE_EXECUTOR_H_
 
+#include <memory>
+#include "graphlearn/include/dag_request.h"
 #include "graphlearn/include/op_request.h"
 #include "graphlearn/include/status.h"
 
@@ -25,7 +27,7 @@ class Env;
 class GraphStore;
 
 namespace op {
-class OperatorFactory;
+class OpFactory;
 }  // namespace op
 
 class Executor {
@@ -34,11 +36,14 @@ public:
   ~Executor() = default;
 
   Status RunOp(const OpRequest* request, OpResponse* response);
+  Status RunDag(const DagDef& def);
+  Status GetDagValues(const GetDagValuesRequest* request,
+                      GetDagValuesResponse* response);
 
 private:
-  Env*        env_;
-  GraphStore* graph_store_;
-  op::OperatorFactory* factory_;
+  Env*           env_;
+  GraphStore*    graph_store_;
+  op::OpFactory* factory_;
 };
 
 }  // namespace graphlearn

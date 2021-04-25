@@ -21,8 +21,10 @@ limitations under the License.
 #include <memory>
 #include <string>
 #include <vector>
-#include "graphlearn/include/constants.h"
 #include "google/protobuf/repeated_field.h"
+#include "graphlearn/include/constants.h"
+#include "graphlearn/platform/protobuf.h"
+#include "graphlearn/proto/service.pb.h"
 
 namespace graphlearn {
 
@@ -31,6 +33,9 @@ public:
   explicit TensorImpl(DataType dtype);
   TensorImpl(DataType dtype, int32_t capacity);
   ~TensorImpl();
+
+  TensorImpl(TensorImpl&& other) noexcept;
+  TensorImpl& operator=(TensorImpl&& other) noexcept;
 
   DataType DType() const {
     return type_;
@@ -50,7 +55,10 @@ public:
     } else if (type_ == DataType::kDouble) {
       double_buf_->Resize(size, 0.0);
     } else if (type_ == DataType::kString) {
-      string_buf_->Resize(size, "");
+      string_buf_->Reserve(size);
+      for (int32_t i = 0; i < size; ++i) {
+        string_buf_->Add();
+      }
     } else {
     }
     size_ = size;
@@ -77,7 +85,14 @@ public:
   }
 
   void AddString(const std::string& v) {
-    string_buf_->Add(v);
+    std::string* s = string_buf_->Add();
+    *s = v;
+    size_ = string_buf_->size();
+  }
+
+  void AddString(std::string&& v) {
+    std::string* s = string_buf_->Add();
+    *s = std::move(v);
     size_ = string_buf_->size();
   }
 
@@ -118,7 +133,7 @@ public:
   }
 
   void SetString(int32_t index, const std::string& v) {
-    string_buf_->Set(index, v);
+    string_buf_->at(index) = v;
   }
 
   int32_t GetInt32(int32_t index) const {
@@ -157,12 +172,11 @@ public:
     return double_buf_->data();
   }
 
-  const std::string* GetString() const {
+  const std::string* const* GetString() const {
     return string_buf_->data();
   }
 
-  void SwapWithPB(void* pb);
-  void CopyFromPB(const void* pb);
+  void SwapWithProto(TensorValue* v);
 
 private:
   TensorImpl(const TensorImpl& t);
@@ -171,11 +185,11 @@ private:
 private:
   DataType type_;
   int32_t  size_;
-  ::google::protobuf::RepeatedField<int32_t>*     int32_buf_;
-  ::google::protobuf::RepeatedField<int64_t>*     int64_buf_;
-  ::google::protobuf::RepeatedField<float>*       float_buf_;
-  ::google::protobuf::RepeatedField<double>*      double_buf_;
-  ::google::protobuf::RepeatedField<std::string>* string_buf_;
+  ::PB_NAMESPACE::RepeatedField<int32_t>* int32_buf_;
+  ::PB_NAMESPACE::RepeatedField<int64_t>* int64_buf_;
+  ::PB_NAMESPACE::RepeatedField<float>*   float_buf_;
+  ::PB_NAMESPACE::RepeatedField<double>*  double_buf_;
+  ::PB_NAMESPACE::RepeatedPtrField<std::string>* string_buf_;
 };
 
 }  // namespace graphlearn

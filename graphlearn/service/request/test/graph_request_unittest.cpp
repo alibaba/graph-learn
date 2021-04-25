@@ -94,11 +94,11 @@ protected:
     }
   }
 
-  void CheckStringAttrs(const std::string* strings, int32_t size) {
+  void CheckStringAttrs(const std::string* const* strings, int32_t size) {
     int32_t batch_size = size / info_.s_num;
     for (int32_t i = 0; i < batch_size; ++i) {
       for (int32_t j = 0; j < info_.s_num; ++j) {
-        EXPECT_EQ(strings[i * info_.s_num + j], std::to_string(i + j));
+        EXPECT_EQ(*(strings[i * info_.s_num + j]), std::to_string(i + j));
       }
     }
   }
@@ -165,8 +165,7 @@ protected:
         EXPECT_EQ(value->attrs->GetFloats(nullptr)[i], float(index + i));
       }
       for (int32_t i = 0; i < info_.s_num; ++i) {
-        EXPECT_EQ(value->attrs->GetStrings(nullptr)[i],
-                  std::to_string(index + i));
+        EXPECT_EQ(value->attrs->GetStrings(nullptr)[i], std::to_string(index + i));
       }
     }
   }
@@ -578,7 +577,7 @@ TEST_F(GraphRequestTest, LookupEdges) {
     EXPECT_EQ(res.Format(), info_.format);
     const int64_t* ints = res.IntAttrs();
     const float* floats = res.FloatAttrs();
-    const std::string* strings = res.StringAttrs();
+    const std::string* const* strings = res.StringAttrs();
     CheckIntAttrs(ints, 10);
     CheckFloatAttrs(floats, 10);
     CheckStringAttrs(strings, 10);
@@ -624,7 +623,7 @@ TEST_F(GraphRequestTest, LookupEdges) {
     CheckWeights(weights, 10);
     const int64_t* ints = res.IntAttrs();
     const float* floats = res.FloatAttrs();
-    const std::string* strings = res.StringAttrs();
+    const std::string* const* strings = res.StringAttrs();
     CheckIntAttrs(ints, 10);
     CheckFloatAttrs(floats, 10);
     CheckStringAttrs(strings, 10);
@@ -764,7 +763,7 @@ TEST_F(GraphRequestTest, LookupNodes) {
     EXPECT_EQ(res.Format(), info_.format);
     const int64_t* ints = res.IntAttrs();
     const float* floats = res.FloatAttrs();
-    const std::string* strings = res.StringAttrs();
+    const std::string* const* strings = res.StringAttrs();
     CheckIntAttrs(ints, 10);
     CheckFloatAttrs(floats, 10);
     CheckStringAttrs(strings, 10);
@@ -810,7 +809,7 @@ TEST_F(GraphRequestTest, LookupNodes) {
     CheckWeights(weights, 10);
     const int64_t* ints = res.IntAttrs();
     const float* floats = res.FloatAttrs();
-    const std::string* strings = res.StringAttrs();
+    const std::string* const* strings = res.StringAttrs();
     CheckIntAttrs(ints, 10);
     CheckFloatAttrs(floats, 10);
     CheckStringAttrs(strings, 10);

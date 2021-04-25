@@ -104,10 +104,10 @@ void TestLookupNodes(Client* client) {
     }
     if (res.StringAttrNum() > 0) {
       int32_t str_num = res.StringAttrNum();
-      const std::string* strs = res.StringAttrs();
+      const std::string* const* strs = res.StringAttrs();
       std::cout << "strings: ";
       for (int32_t i = 0; i < size * str_num; ++i) {
-        std::cout << strs[i] << ' ';
+        std::cout << *(strs[i]) << ' ';
       }
       std::cout << std::endl;
     }
@@ -165,11 +165,11 @@ void GenEdgeSource(io::EdgeSource* source, int32_t format,
   source->src_id_type = src_type;
   source->dst_id_type = dst_type;
   source->format = format;
-  source->ignore_invalid = false;
+  source->attr_info.ignore_invalid = false;
   if (format & io::kAttributed) {
-    source->delimiter = ":";
-    source->types = {DataType::kInt32, DataType::kInt32, DataType::kFloat, DataType::kString};
-    source->hash_buckets = {0, 0, 0, 0};
+    source->attr_info.delimiter = ":";
+    source->attr_info.types = {DataType::kInt32, DataType::kInt32, DataType::kFloat, DataType::kString};
+    source->attr_info.hash_buckets = {0, 0, 0, 0};
   }
 }
 
@@ -179,11 +179,11 @@ void GenNodeSource(io::NodeSource* source, int32_t format,
   source->path = file_name;
   source->id_type = node_type;
   source->format = format;
-  source->ignore_invalid = false;
+  source->attr_info.ignore_invalid = false;
   if (format & io::kAttributed) {
-    source->delimiter = ":";
-    source->types = {DataType::kInt32, DataType::kInt32, DataType::kFloat, DataType::kString};
-    source->hash_buckets = {0, 0, 0, 0};
+    source->attr_info.delimiter = ":";
+    source->attr_info.types = {DataType::kInt32, DataType::kInt32, DataType::kFloat, DataType::kString};
+    source->attr_info.hash_buckets = {0, 0, 0, 0};
   }
 }
 
@@ -330,13 +330,13 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-  SetGlobalFlagDeployMode(2);
+  SetGlobalFlagDeployMode(kWorker);
 
   SetGlobalFlagClientId(server_id);
   SetGlobalFlagClientCount(server_count);
   SetGlobalFlagServerCount(server_count);
 
-  SetGlobalFlagTrackerMode(0);
+  SetGlobalFlagTrackerMode(kRpc);
   // SetGlobalFlagTracker("./tracker");
   SetGlobalFlagServerHosts(server_hosts);
 

@@ -34,7 +34,7 @@ public:
     ShardsPtr<T> ret(new Shards<T>(range_));
 
     if (!req->HasPartitionKey()) {
-      ret->Add(GLOBAL_FLAG(ServerId), const_cast<T*>(req), false);
+      ret->Add(req->PartitionId(), const_cast<T*>(req), false);
       return ret;
     }
 

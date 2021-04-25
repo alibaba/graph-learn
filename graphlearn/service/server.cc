@@ -14,6 +14,8 @@ limitations under the License.
 ==============================================================================*/
 
 #include "graphlearn/include/server.h"
+
+#include "graphlearn/include/config.h"
 #include "graphlearn/service/server_impl.h"
 
 namespace graphlearn {
@@ -42,8 +44,7 @@ Server* NewServer(int32_t server_id,
                   int32_t server_count,
                   const std::string& server_host,
                   const std::string& tracker) {
-  ServerImpl* impl = new ServerImpl(
-    server_id, server_count, server_host, tracker);
+  ServerImpl* impl = NewDefaultServerImpl(server_id, server_count, server_host, tracker);
   return new Server(impl);
 }
 

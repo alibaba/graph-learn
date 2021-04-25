@@ -32,8 +32,13 @@ public:
     delete storage_;
   }
 
-  void Build() override {
-    storage_->Build();
+  Status Build(const IndexOption& option) override {
+    if (option.name == "sort") {
+      storage_->Build();
+    } else {
+      // Nothing to do
+    }
+    return Status();
   }
 
   io::GraphStorage* GetLocalStorage() override {

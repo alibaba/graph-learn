@@ -36,29 +36,51 @@ public:
              int32_t server_count,
              const std::string& server_host,
              const std::string& tracker);
-  ~ServerImpl();
+  virtual ~ServerImpl();
 
-  void Start();
-  void Init(const std::vector<io::EdgeSource>& edges,
-            const std::vector<io::NodeSource>& nodes);
-  void Stop();
+  virtual void Start() = 0;
+  virtual void Init(const std::vector<io::EdgeSource>& edges,
+                    const std::vector<io::NodeSource>& nodes) = 0;
+  virtual void Stop() = 0;
 
-private:
-  void RegisterInMemoryService();
-  void RegisterDistributeService();
+protected:
+  void RegisterBasicService(Env* env, Executor* executor);
+  void InitBasicService();
+  void BuildBasicService();
+  void StopBasicService();
 
-private:
+protected:
   int32_t            server_id_;
   int32_t            server_count_;
   std::string        server_host_;
-  Env*               env_;
-  Executor*          executor_;
-  GraphStore*        graph_store_;
-
   InMemoryService*   in_memory_service_;
   DistributeService* dist_service_;
   Coordinator*       coordinator_;
 };
+
+class DefaultServerImpl : public ServerImpl {
+public:
+  DefaultServerImpl(int32_t server_id,
+                    int32_t server_count,
+                    const std::string& server_host,
+                    const std::string& tracker);
+  ~DefaultServerImpl() override;
+
+  void Start() override;
+  void Init(const std::vector<io::EdgeSource>& edges,
+            const std::vector<io::NodeSource>& nodes) override;
+  void Stop() override;
+
+private:
+  Env*        env_;
+  GraphStore* graph_store_;
+  Executor*   executor_;
+};
+
+ServerImpl* NewDefaultServerImpl(int32_t server_id,
+                                 int32_t server_count,
+                                 const std::string& server_host,
+                                 const std::string& tracker);
 
 }  // namespace graphlearn
 

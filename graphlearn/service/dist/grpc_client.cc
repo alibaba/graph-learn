@@ -71,7 +71,7 @@ public:
     StopRequestPb req;
     req.set_client_id(GLOBAL_FLAG(ClientId));
     req.set_client_count(GLOBAL_FLAG(ClientCount));
-    StopResponsePb res;
+    StatusResponsePb res;
 
     Status s = channel_->CallStop(&req, &res);
     int32_t retry = 1;
@@ -85,17 +85,50 @@ public:
     return Status::OK();
   }
 
-  Status Report(const StateRequestPb* req,
-                StateResponsePb* res) override {
-    Status s = channel_->CallReport(req, res);
+  Status Report(const StateRequestPb* req) override {
+    StatusResponsePb res;
+    Status s = channel_->CallReport(req, &res);
     int32_t retry = 1;
     while (IsRetryable(s) && retry < GLOBAL_FLAG(RetryTimes)) {
       channel_->MarkBroken();
       sleep(1 << retry);
-      s = channel_->CallReport(req, res);
+      s = channel_->CallReport(req, &res);
       ++retry;
     }
     return Status::OK();
+  }
+
+  Status RunDag(const DagRequest* request) override {
+    StatusResponsePb res;
+    Status s = channel_->CallDag(&(request->def_), &res);
+    int32_t retry = 1;
+    while (IsRetryable(s) && retry < GLOBAL_FLAG(RetryTimes)) {
+      channel_->MarkBroken();
+      sleep(1 << retry);
+      s = channel_->CallDag(&(request->def_), &res);
+      ++retry;
+    }
+    return s;
+  }
+
+  Status GetDagValues(const GetDagValuesRequest* request,
+                      GetDagValuesResponse* response) override {
+    std::unique_ptr<DagValuesRequestPb> req(new DagValuesRequestPb);
+    std::unique_ptr<DagValuesResponsePb> res(new DagValuesResponsePb);
+    const_cast<GetDagValuesRequest*>(request)->SerializeTo(req.get());
+
+    Status s = channel_->CallDagValues(req.get(), res.get());
+    int32_t retry = 1;
+    while (IsRetryable(s) && retry < GLOBAL_FLAG(RetryTimes)) {
+      channel_->MarkBroken();
+      sleep(1 << retry);
+      s = channel_->CallDagValues(req.get(), res.get());
+      ++retry;
+    }
+    if (s.ok()) {
+      response->ParseFrom(res.get());
+    }
+    return s;
   }
 
 private:

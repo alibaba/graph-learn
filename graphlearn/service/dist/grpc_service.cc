@@ -15,6 +15,8 @@ limitations under the License.
 
 #include "graphlearn/service/dist/grpc_service.h"
 
+#include <memory>
+#include <utility>
 #include "graphlearn/common/base/errors.h"
 #include "graphlearn/common/base/log.h"
 #include "graphlearn/include/op_request.h"
@@ -75,7 +77,7 @@ GrpcServiceImpl::~GrpcServiceImpl() {
 ::grpc::Status GrpcServiceImpl::HandleStop(
     ::grpc::ServerContext* context,
     const StopRequestPb* request,
-    StopResponsePb* response) {
+    StatusResponsePb* response) {
   Status s = coord_->Stop(request->client_id(), request->client_count());
   return Transmit(s);
 }
@@ -83,7 +85,7 @@ GrpcServiceImpl::~GrpcServiceImpl() {
 ::grpc::Status GrpcServiceImpl::HandleReport(
     ::grpc::ServerContext* context,
     const StateRequestPb* request,
-    StateResponsePb* response) {
+    StatusResponsePb* response) {
   SystemState state = static_cast<SystemState>(request->state());
   Status s;
   switch (state) {
@@ -100,9 +102,40 @@ GrpcServiceImpl::~GrpcServiceImpl() {
     s = coord_->SetStopped(request->id(), request->count());
     break;
   default:
-    LOG(ERROR) << "Unsupported state: " << state;
-    s = error::Unimplemented("Unsupported state: %d", state);
+    LOG(INFO) << "Set reserved state: " << state;
+    s = coord_->SetState(request->state(), request->id());
     break;
+  }
+  return Transmit(s);
+}
+
+::grpc::Status GrpcServiceImpl::HandleDag(
+    ::grpc::ServerContext* context,
+    const DagDef* request,
+    StatusResponsePb* response) {
+  if (!coord_->IsReady()) {
+    Status s = error::Unavailable("Not all servers ready, please retry later");
+    return Transmit(s);
+  }
+
+  Status s = executor_->RunDag(*request);
+  return Transmit(s);
+}
+
+::grpc::Status GrpcServiceImpl::HandleDagValues(
+    ::grpc::ServerContext* context,
+    const DagValuesRequestPb* request,
+    DagValuesResponsePb* response) {
+  if (!coord_->IsReady()) {
+    Status s = error::Unavailable("Not all servers ready, please retry later");
+    return Transmit(s);
+  }
+
+  GetDagValuesRequest req(request->id(), request->client_id());
+  GetDagValuesResponse res;
+  Status s = executor_->GetDagValues(&req, &res);
+  if (s.ok()) {
+    res.SerializeTo(response);
   }
   return Transmit(s);
 }

@@ -20,6 +20,7 @@ limitations under the License.
 #include <set>
 #include <string>
 #include <unordered_map>
+#include "graphlearn/common/threading/sync/lock.h"
 #include "graphlearn/include/constants.h"
 #include "graphlearn/include/status.h"
 
@@ -40,6 +41,8 @@ public:
   virtual void Finallize();
 
   bool IsMaster() const;
+
+  virtual Status Sync(const std::string& barrier) = 0;
 
   /// Do tell that the current server started.
   virtual Status Start() = 0;
@@ -70,11 +73,13 @@ public:
   /// Is global state of all clients stopped or not.
   bool IsStopped() const;
 
+  virtual Status SetState(int32_t state, int32_t server_id = -1) = 0;
+
 protected:
   virtual void Refresh();
   virtual void CheckStarted() = 0;
   virtual void CheckInited() = 0;
-  virtual void CheckReady() = 0;;
+  virtual void CheckReady() = 0;
   virtual void CheckStopped() = 0;
 
 protected:
@@ -91,6 +96,8 @@ public:
 
   void Finallize() override;
 
+  Status Sync(const std::string& barrier) override;
+
   Status Start() override;
   Status SetStarted(int32_t server_id = -1) override;
 
@@ -104,6 +111,8 @@ public:
   Status SetStopped(int32_t client_id = -1,
                     int32_t client_count = 0) override;
 
+  Status SetState(int32_t state, int32_t id) override { return Status::OK(); }
+
 private:
   void Refresh() override;
   void CheckStarted() override;
@@ -111,6 +120,7 @@ private:
   void CheckReady() override;
   void CheckStopped() override;
 
+  bool IsReady(const std::string& barrier);
   bool FileExist(const std::string& file_name);
   int32_t Counting(const std::string& sub_dir);
   Status Sink(const std::string& sub_dir, const std::string& file_name);
@@ -125,6 +135,8 @@ public:
   RPCCoordinator(int32_t server_id, int32_t server_count, Env* env);
   ~RPCCoordinator() = default;
 
+  Status Sync(const std::string& barrier) override;
+
   Status Start() override;
   Status SetStarted(int32_t server_id = -1) override;
 
@@ -137,6 +149,7 @@ public:
   Status Stop(int32_t client_id, int32_t client_count) override;
   Status SetStopped(int32_t client_id = -1,
                     int32_t client_count = 0) override;
+  Status SetState(int32_t state, int32_t id) override;
 
 private:
   void Refresh() override;
@@ -147,10 +160,13 @@ private:
 
   Status SetState(SystemState state, int32_t id);
   void CheckState(SystemState state, int32_t count);
-  Status ReportState(int32_t target, SystemState state,
+  void CheckState(int32_t state, int32_t count);
+  Status ReportState(int32_t target, int32_t state,
                      int32_t id = -1, int32_t count = -1);
 
 private:
+  std::mutex mtx_;
+  int32_t reserved_state_;
   std::unordered_map<int32_t, std::set<int32_t>> state_map_;
 };
 

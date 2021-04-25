@@ -18,14 +18,16 @@ limitations under the License.
 
 #include "graphlearn/include/aggregating_request.h"
 #include "graphlearn/include/constants.h"
+#include "graphlearn/include/dag_request.h"
 #include "graphlearn/include/graph_request.h"
 #include "graphlearn/include/sampling_request.h"
 #include "graphlearn/include/status.h"
-#include "graphlearn/proto/service.pb.h"
+#include "graphlearn/include/subgraph_request.h"
 
 namespace graphlearn {
 
 class ClientImpl;
+class StateRequestPb;
 
 class Client {
 public:
@@ -44,12 +46,19 @@ public:
   DECLARE_METHOD(GetTopology);
   DECLARE_METHOD(Sampling);
   DECLARE_METHOD(Aggregating);
-
-#undef DECLARE_METHOD
+  DECLARE_METHOD(SubGraph);
+  DECLARE_METHOD(GetCount);
+  DECLARE_METHOD(GetDegree);
 
   Status RunOp(const OpRequest* request, OpResponse* response);
+
+  Status RunDag(const DagRequest* request);
+  DECLARE_METHOD(GetDagValues);
+
   Status Stop();
-  Status Report(const StateRequestPb* request, StateResponsePb* response);
+  Status Report(const StateRequestPb* request);
+
+#undef DECLARE_METHOD
 
 private:
   explicit Client(ClientImpl* impl, bool own = true);
