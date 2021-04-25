@@ -16,7 +16,9 @@ limitations under the License.
 #include <memory>
 #include <random>
 #include <unordered_set>
+#include "graphlearn/common/base/log.h"
 #include "graphlearn/core/operator/sampler/sampler.h"
+#include "graphlearn/include/config.h"
 
 namespace graphlearn {
 namespace op {
@@ -43,6 +45,11 @@ public:
     thread_local static std::mt19937 engine(rd());
 
     auto dst_ids = storage->GetAllDstIds();
+    if (!dst_ids) {
+      LOG(ERROR) << "Sample negatively on not existed edge_type: "
+                 << edge_type;
+      res->FillWith(GLOBAL_FLAG(DefaultNeighborId), -1);
+    }
     std::uniform_int_distribution<> dist(0, dst_ids->size() - 1);
     for (int32_t i = 0; i < batch_size; ++i) {
       for (int32_t j = 0; j < count; ++j) {

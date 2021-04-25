@@ -29,6 +29,7 @@ public:
   Status Sample(const SamplingRequest* req,
                 SamplingResponse* res) override {
     int32_t batch_size = req->BatchSize();
+    int32_t max_limit_size = req->NeighborCount();
 
     res->SetSparseFlag();
     res->SetBatchSize(batch_size);
@@ -50,8 +51,10 @@ public:
           LOG(FATAL) << "Inconsistent size of neighbors and edges.";
           return ::graphlearn::error::Internal("Storage error");
         } else {
-          res->AppendDegree(neighbor_ids.Size());
-          sum_degree += neighbor_ids.Size();
+          int32_t truncated_size =
+            GetTruncatedSize(max_limit_size, neighbor_ids.Size());
+          res->AppendDegree(truncated_size);
+          sum_degree += truncated_size;
         }
       } else {
         res->AppendDegree(0);
@@ -62,14 +65,19 @@ public:
     res->InitEdgeIds(sum_degree);
 
     Status s;
+    const int64_t* filters = req->GetFilters();
     for (int32_t i = 0; i < batch_size; ++i) {
       int64_t src_id = src_ids[i];
       auto neighbor_ids = storage->GetNeighbors(src_id);
       auto edge_ids = storage->GetOutEdges(src_id);
       if (neighbor_ids) {
-        int32_t neighbor_size = neighbor_ids.Size();
         auto padder = GetPadder(neighbor_ids, edge_ids);
-        s = padder->Pad(res, neighbor_size, neighbor_size);
+        if (filters) {
+          padder->SetFilter(filters[i]);
+        }
+        int32_t truncated_size =
+          GetTruncatedSize(max_limit_size, neighbor_ids.Size());
+        s = padder->Pad(res, truncated_size);
         if (!s.ok()) {
           return s;
         }
@@ -77,6 +85,16 @@ public:
     }
     return s;
   }
+
+private:
+  int32_t GetTruncatedSize(int32_t max_limit_size, int32_t actual_size) {
+    if (max_limit_size > 0 && max_limit_size < actual_size) {
+      return max_limit_size;
+    } else {
+      return actual_size;
+    }
+  }
+
 };
 
 REGISTER_OPERATOR("FullSampler", FullSampler);

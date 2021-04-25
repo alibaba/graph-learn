@@ -19,7 +19,7 @@ limitations under the License.
 #include "graphlearn/common/base/log.h"
 #include "graphlearn/core/graph/graph_store.h"
 #include "graphlearn/core/io/element_value.h"
-#include "graphlearn/core/operator/operator_factory.h"
+#include "graphlearn/core/operator/op_factory.h"
 #include "graphlearn/include/config.h"
 #include "graphlearn/platform/env.h"
 #include "gtest/gtest.h"
@@ -187,11 +187,11 @@ protected:
     source->src_id_type = src_type;
     source->dst_id_type = dst_type;
     source->format = format;
-    source->ignore_invalid = false;
+    source->attr_info.ignore_invalid = false;
     if (format & kAttributed) {
-      source->delimiter = ":";
-      source->types = {DataType::kInt32, DataType::kFloat, DataType::kString};
-      source->hash_buckets = {0 ,0, 0};
+      source->attr_info.delimiter = ":";
+      source->attr_info.types = {DataType::kInt32, DataType::kFloat, DataType::kString};
+      source->attr_info.hash_buckets = {0 ,0, 0};
     }
   }
 
@@ -201,11 +201,11 @@ protected:
     source->path = file_name;
     source->id_type = node_type;
     source->format = format;
-    source->ignore_invalid = false;
+    source->attr_info.ignore_invalid = false;
     if (format & kAttributed) {
-      source->delimiter = ":";
-      source->types = {DataType::kInt32, DataType::kFloat, DataType::kString};
-      source->hash_buckets = {0 ,0, 0};
+      source->attr_info.delimiter = ":";
+      source->attr_info.types = {DataType::kInt32, DataType::kFloat, DataType::kString};
+      source->attr_info.hash_buckets = {0 ,0, 0};
     }
   }
 
@@ -229,7 +229,7 @@ TEST_F(GraphOpTest, EdgeGetter) {
 
   std::vector<NodeSource> node_source;
   GraphStore store(Env::Default());
-  ::graphlearn::op::OperatorFactory::GetInstance().Set(&store);
+  ::graphlearn::op::OpFactory::GetInstance()->Set(&store);
 
   Status s = store.Load(edge_source, node_source);
   EXPECT_TRUE(s.ok());
@@ -242,7 +242,7 @@ TEST_F(GraphOpTest, EdgeGetter) {
         edge_types[edge_type], "by_order", batch_size);
       GetEdgesResponse* res = new GetEdgesResponse();
 
-      Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
+      Operator* op = OpFactory::GetInstance()->Create(req->Name());
       EXPECT_TRUE(op != nullptr);
 
       // 12 ids in the first 8 responses
@@ -293,7 +293,7 @@ TEST_F(GraphOpTest, NodeGetter) {
 
   std::vector<EdgeSource> edge_source;
   GraphStore store(Env::Default());
-  ::graphlearn::op::OperatorFactory::GetInstance().Set(&store);
+  ::graphlearn::op::OpFactory::GetInstance()->Set(&store);
 
   Status s = store.Load(edge_source, node_source);
   EXPECT_TRUE(s.ok());
@@ -306,7 +306,7 @@ TEST_F(GraphOpTest, NodeGetter) {
         node_types[node_type], "by_order", NodeFrom::kNode, batch_size);
       GetNodesResponse* res = new GetNodesResponse();
 
-      Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
+      Operator* op = OpFactory::GetInstance()->Create(req->Name());
       EXPECT_TRUE(op != nullptr);
 
       // 12 ids in the first 8 responses
@@ -353,7 +353,7 @@ TEST_F(GraphOpTest, ShuffledNodeGetter) {
 
   std::vector<EdgeSource> edge_source;
   GraphStore store(Env::Default());
-  ::graphlearn::op::OperatorFactory::GetInstance().Set(&store);
+  ::graphlearn::op::OpFactory::GetInstance()->Set(&store);
 
   Status s = store.Load(edge_source, node_source);
   EXPECT_TRUE(s.ok());
@@ -366,7 +366,7 @@ TEST_F(GraphOpTest, ShuffledNodeGetter) {
         node_types[node_type], "shuffle", NodeFrom::kNode, batch_size);
       GetNodesResponse* res = new GetNodesResponse();
 
-      Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
+      Operator* op = OpFactory::GetInstance()->Create(req->Name());
       EXPECT_TRUE(op != nullptr);
 
       // 12 ids in the first 8 responses
@@ -413,7 +413,7 @@ TEST_F(GraphOpTest, NodeGetterFromEdgeSrc) {
 
   std::vector<NodeSource> node_source;
   GraphStore store(Env::Default());
-  ::graphlearn::op::OperatorFactory::GetInstance().Set(&store);
+  ::graphlearn::op::OpFactory::GetInstance()->Set(&store);
 
   Status s = store.Load(edge_source, node_source);
   EXPECT_TRUE(s.ok());
@@ -427,7 +427,7 @@ TEST_F(GraphOpTest, NodeGetterFromEdgeSrc) {
         edge_types[edge_type], "by_order", NodeFrom::kEdgeSrc, batch_size);
       GetNodesResponse* res = new GetNodesResponse();
 
-      Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
+      Operator* op = OpFactory::GetInstance()->Create(req->Name());
       EXPECT_TRUE(op != nullptr);
 
       // 12 ids in the first 8 responses
@@ -463,7 +463,7 @@ TEST_F(GraphOpTest, NodeGetterFromEdgeSrc) {
         edge_types[edge_type], "by_order", NodeFrom::kEdgeDst, batch_size);
       GetNodesResponse* res = new GetNodesResponse();
 
-      Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
+      Operator* op = OpFactory::GetInstance()->Create(req->Name());
       EXPECT_TRUE(op != nullptr);
 
       // 12 ids in the first 8 responses
@@ -510,7 +510,7 @@ TEST_F(GraphOpTest, EdgeLookuper) {
 
   std::vector<NodeSource> node_source;
   GraphStore store(Env::Default());
-  ::graphlearn::op::OperatorFactory::GetInstance().Set(&store);
+  ::graphlearn::op::OpFactory::GetInstance()->Set(&store);
 
   Status s = store.Load(edge_source, node_source);
   EXPECT_TRUE(s.ok());
@@ -527,7 +527,7 @@ TEST_F(GraphOpTest, EdgeLookuper) {
     LookupEdgesResponse* res = new LookupEdgesResponse();
     req->Set(ids.data(), ids.data(), batch_size);
 
-    Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
+    Operator* op = OpFactory::GetInstance()->Create(req->Name());
     EXPECT_TRUE(op != nullptr);
 
     Status s = op->Process(req, res);
@@ -550,7 +550,7 @@ TEST_F(GraphOpTest, EdgeLookuper) {
     LookupEdgesResponse* res = new LookupEdgesResponse();
     req->Set(ids.data(), ids.data(), batch_size);
 
-    Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
+    Operator* op = OpFactory::GetInstance()->Create(req->Name());
     EXPECT_TRUE(op != nullptr);
 
     Status s = op->Process(req, res);
@@ -573,7 +573,7 @@ TEST_F(GraphOpTest, EdgeLookuper) {
     LookupEdgesResponse* res = new LookupEdgesResponse();
     req->Set(ids.data(), ids.data(), batch_size);
 
-    Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
+    Operator* op = OpFactory::GetInstance()->Create(req->Name());
     EXPECT_TRUE(op != nullptr);
 
     Status s = op->Process(req, res);
@@ -586,11 +586,11 @@ TEST_F(GraphOpTest, EdgeLookuper) {
 
     const int64_t* ints = res->IntAttrs();
     const float* floats = res->FloatAttrs();
-    const std::string* strings = res->StringAttrs();
+    const std::string* const* strings = res->StringAttrs();
     for (int32_t i = 0; i < res->Size(); ++i) {
       EXPECT_EQ(ints[i], i);
       EXPECT_FLOAT_EQ(floats[i], float(i));
-      EXPECT_EQ(strings[i][0], char('A' + i % 26));
+      EXPECT_EQ(strings[i]->at(0), char('A' + i % 26));
     }
     delete res;
     delete req;
@@ -613,7 +613,7 @@ TEST_F(GraphOpTest, NodeLookuper) {
 
   std::vector<EdgeSource> edge_source;
   GraphStore store(Env::Default());
-  ::graphlearn::op::OperatorFactory::GetInstance().Set(&store);
+  ::graphlearn::op::OpFactory::GetInstance()->Set(&store);
 
   Status s = store.Load(edge_source, node_source);
   EXPECT_TRUE(s.ok());
@@ -629,7 +629,7 @@ TEST_F(GraphOpTest, NodeLookuper) {
     LookupNodesResponse* res = new LookupNodesResponse();
     req->Set(ids.data(), batch_size);
 
-    Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
+    Operator* op = OpFactory::GetInstance()->Create(req->Name());
     EXPECT_TRUE(op != nullptr);
 
     Status s = op->Process(req, res);
@@ -652,7 +652,7 @@ TEST_F(GraphOpTest, NodeLookuper) {
     LookupNodesResponse* res = new LookupNodesResponse();
     req->Set(ids.data(), batch_size);
 
-    Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
+    Operator* op = OpFactory::GetInstance()->Create(req->Name());
     EXPECT_TRUE(op != nullptr);
 
     Status s = op->Process(req, res);
@@ -675,7 +675,7 @@ TEST_F(GraphOpTest, NodeLookuper) {
     LookupNodesResponse* res = new LookupNodesResponse();
     req->Set(ids.data(), batch_size);
 
-    Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
+    Operator* op = OpFactory::GetInstance()->Create(req->Name());
     EXPECT_TRUE(op != nullptr);
 
     Status s = op->Process(req, res);
@@ -688,13 +688,133 @@ TEST_F(GraphOpTest, NodeLookuper) {
 
     const int64_t* ints = res->IntAttrs();
     const float* floats = res->FloatAttrs();
-    const std::string* strings = res->StringAttrs();
+    const std::string* const* strings = res->StringAttrs();
     for (int32_t i = 0; i < res->Size(); ++i) {
       EXPECT_EQ(ints[i], i);
       EXPECT_FLOAT_EQ(floats[i], float(i));
-      EXPECT_EQ(strings[i][0], char('A' + i % 26));
+      EXPECT_EQ(strings[i]->at(0), char('A' + i % 26));
     }
     delete res;
     delete req;
   }
 }
+
+TEST_F(GraphOpTest, NodeCountGetter) {
+  const char* w_file = "w_node_file";
+  const char* l_file = "l_node_file";
+  const char* a_file = "a_node_file";
+
+  GenNodeTestData(w_file, kWeighted);
+  GenNodeTestData(l_file, kLabeled);
+  GenNodeTestData(a_file, kAttributed);
+
+  std::vector<NodeSource> node_source(3);
+  GenNodeSource(&node_source[0], kWeighted, w_file, "user");
+  GenNodeSource(&node_source[1], kLabeled, l_file, "item");
+  GenNodeSource(&node_source[2], kAttributed, a_file, "movie");
+
+  std::vector<EdgeSource> edge_source;
+  GraphStore store(Env::Default());
+  ::graphlearn::op::OpFactory::GetInstance()->Set(&store);
+
+  Status s = store.Load(edge_source, node_source);
+  EXPECT_TRUE(s.ok());
+
+  std::string node_types[3] = {"user", "item", "movie"};
+  for (int32_t i = 0; i < 3; ++i) {
+    GetCountRequest* req = new GetCountRequest(node_types[i], true);
+    GetCountResponse* res = new GetCountResponse();
+
+    Operator* op = OpFactory::GetInstance()->Create(req->Name());
+    EXPECT_TRUE(op != nullptr);
+
+    Status s = op->Process(req, res);
+    EXPECT_TRUE(s.ok());
+    int32_t count = res->Count();
+    EXPECT_EQ(count, 100);
+    delete res;
+    delete req;
+  }
+}
+
+TEST_F(GraphOpTest, EdgeCountGetter) {
+  const char* w_file = "w_edge_file";
+  const char* l_file = "l_edge_file";
+  const char* a_file = "a_edge_file";
+
+  GenEdgeTestData(w_file, kWeighted);
+  GenEdgeTestData(l_file, kLabeled);
+  GenEdgeTestData(a_file, kAttributed);
+
+  std::vector<EdgeSource> edge_source(3);
+  GenEdgeSource(&edge_source[0], kWeighted, w_file, "click", "user", "item");
+  GenEdgeSource(&edge_source[1], kLabeled, l_file, "buy", "user", "item");
+  GenEdgeSource(&edge_source[2], kAttributed, a_file, "watch", "user", "movie");
+
+  std::vector<NodeSource> node_source;
+  GraphStore store(Env::Default());
+  ::graphlearn::op::OpFactory::GetInstance()->Set(&store);
+
+  Status s = store.Load(edge_source, node_source);
+  EXPECT_TRUE(s.ok());
+
+  std::string edge_types[3] = {"click", "buy", "watch"};
+  for (int32_t i = 0; i < 3; ++i) {
+    GetCountRequest* req = new GetCountRequest(edge_types[i], false);
+    GetCountResponse* res = new GetCountResponse();
+
+    Operator* op = OpFactory::GetInstance()->Create(req->Name());
+    EXPECT_TRUE(op != nullptr);
+
+    Status s = op->Process(req, res);
+    EXPECT_TRUE(s.ok());
+    int32_t count = res->Count();
+    EXPECT_EQ(count, 100);
+    delete res;
+    delete req;
+  }
+}
+
+TEST_F(GraphOpTest, DegreeGetter) {
+  const char* w_file = "w_edge_file";
+  const char* l_file = "l_edge_file";
+  const char* a_file = "a_edge_file";
+
+  GenEdgeTestData(w_file, kWeighted);
+  GenEdgeTestData(l_file, kLabeled);
+  GenEdgeTestData(a_file, kAttributed);
+
+  std::vector<EdgeSource> edge_source(3);
+  GenEdgeSource(&edge_source[0], kWeighted, w_file, "click", "user", "item");
+  GenEdgeSource(&edge_source[1], kLabeled, l_file, "buy", "user", "item");
+  GenEdgeSource(&edge_source[2], kAttributed, a_file, "watch", "user", "movie");
+
+  std::vector<NodeSource> node_source;
+  GraphStore store(Env::Default());
+  ::graphlearn::op::OpFactory::GetInstance()->Set(&store);
+
+  Status s = store.Load(edge_source, node_source);
+  EXPECT_TRUE(s.ok());
+
+  int32_t batch_size = 64;
+  std::vector<int64_t> ids;
+  for (int32_t i = 0; i < batch_size; ++i) {
+    ids.push_back(i);
+  }
+  GetDegreeRequest* req = new GetDegreeRequest("click", NodeFrom::kEdgeSrc);
+  req->Set(ids.data(), batch_size);
+  GetDegreeResponse* res = new GetDegreeResponse();
+
+  Operator* op = OpFactory::GetInstance()->Create(req->Name());
+  EXPECT_TRUE(op != nullptr);
+
+  s = op->Process(req, res);
+  EXPECT_TRUE(s.ok());
+  const int32_t* degrees = res->GetDegrees();
+  for (int32_t idx; idx < batch_size; ++idx) {
+    EXPECT_EQ(degrees[idx], 1);
+  }
+  delete res;
+  delete req;
+}
+

@@ -32,6 +32,11 @@ AliasMethod::AliasMethod(const std::vector<float>* dist)
   Build(dist);
 }
 
+AliasMethod::AliasMethod(int32_t uniform_max) : range_(uniform_max) {
+  std::vector<float> dist(uniform_max, 1.0);
+  Build(&dist);
+}
+
 AliasMethod::AliasMethod(const AliasMethod& rhs) {
   range_ = rhs.range_;
   alias_ = rhs.alias_;
@@ -116,35 +121,6 @@ bool AliasMethod::Sample(int32_t num, int32_t* ret) {
     ret[i] = (probs_[idx] <= (rand - idx)) ? alias_[idx] : idx;
   }
   return true;
-}
-
-AliasMethodFactory::AliasMethodFactory() {
-}
-
-AliasMethodFactory* AliasMethodFactory::GetInstance() {
-  static AliasMethodFactory factory;
-  return &factory;
-}
-
-void AliasMethodFactory::Lock() {
-  mtx_.lock();
-}
-
-void AliasMethodFactory::Unlock() {
-  mtx_.unlock();
-}
-
-AliasMethod* AliasMethodFactory::Get(const std::string& type) {
-  auto it = map_.find(type);
-  if (it == map_.end()) {
-    return nullptr;
-  } else {
-    return it->second;
-  }
-}
-
-void AliasMethodFactory::Put(const std::string& type, AliasMethod* am) {
-  map_[type] = am;
 }
 
 }  // namespace op

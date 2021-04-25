@@ -15,7 +15,7 @@ limitations under the License.
 
 #include "graphlearn/core/graph/graph_store.h"
 #include "graphlearn/core/operator/operator.h"
-#include "graphlearn/core/operator/operator_factory.h"
+#include "graphlearn/core/operator/op_registry.h"
 #include "graphlearn/include/graph_request.h"
 
 namespace graphlearn {

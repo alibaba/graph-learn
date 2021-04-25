@@ -15,8 +15,10 @@ limitations under the License.
 
 #include <memory>
 #include <unordered_set>
+#include "graphlearn/common/base/log.h"
 #include "graphlearn/core/operator/sampler/alias_method.h"
 #include "graphlearn/core/operator/sampler/sampler.h"
+#include "graphlearn/include/config.h"
 
 namespace graphlearn {
 namespace op {
@@ -59,6 +61,11 @@ protected:
                              SamplingResponse* res) {
     std::unique_ptr<int32_t[]> indices(new int32_t[n]);
     auto dst_ids = storage->GetAllDstIds();
+    if (!dst_ids) {
+      LOG(ERROR) << "Sample negatively on not existed edge_type.";
+      res->FillWith(GLOBAL_FLAG(DefaultNeighborId), -1);
+      return;
+    }
     for (int32_t i = 0; i < batch_size; ++i) {
       auto nbr_ids = storage->GetNeighbors(src_ids[i]);
 
@@ -96,19 +103,8 @@ private:
   AliasMethod* CreateAM(const std::string& type,
                         ::graphlearn::io::GraphStorage* storage) {
     AliasMethodFactory* factory = AliasMethodFactory::GetInstance();
-    factory->Lock();
-    AliasMethod* am = factory->Get(type);
-    if (am != nullptr) {
-      factory->Unlock();
-      return am;
-    }
-
     auto in_degrees = storage->GetAllInDegrees();
-    std::vector<float> probs(in_degrees->begin(), in_degrees->end());
-    am = new AliasMethod(&probs);
-    factory->Put(type, am);
-    factory->Unlock();
-    return am;
+    return factory->LookupOrCreate(type, in_degrees);
   }
 };
 

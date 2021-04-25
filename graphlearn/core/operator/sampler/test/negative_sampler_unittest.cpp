@@ -17,7 +17,7 @@ limitations under the License.
 #include <unordered_set>
 #include "graphlearn/core/graph/graph_store.h"
 #include "graphlearn/core/operator/sampler/sampler.h"
-#include "graphlearn/core/operator/operator_factory.h"
+#include "graphlearn/core/operator/op_factory.h"
 #include "graphlearn/platform/env.h"
 #include "gtest/gtest.h"
 
@@ -78,8 +78,8 @@ TEST_F(NegativeSamplerTest, Random) {
   int64_t ids[3] = {0, 1, 2};
   req->Set(ids, batch_size);
 
-  OperatorFactory::GetInstance().Set(graph_store_);
-  Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
+  OpFactory::GetInstance()->Set(graph_store_);
+  Operator* op = OpFactory::GetInstance()->Create(req->Name());
   EXPECT_TRUE(op != nullptr);
 
   Status s = op->Process(req, res);
@@ -114,8 +114,8 @@ TEST_F(NegativeSamplerTest, InDegree) {
   int64_t ids[3] = {0, 1, 2};
   req->Set(ids, batch_size);
 
-  OperatorFactory::GetInstance().Set(graph_store_);
-  Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
+  OpFactory::GetInstance()->Set(graph_store_);
+  Operator* op = OpFactory::GetInstance()->Create(req->Name());
   EXPECT_TRUE(op != nullptr);
 
   Status s = op->Process(req, res);
@@ -159,8 +159,8 @@ TEST_F(NegativeSamplerTest, SoftInDegree) {
   int64_t ids[3] = {0, 1, 2};
   req->Set(ids, batch_size);
 
-  OperatorFactory::GetInstance().Set(graph_store_);
-  Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
+  OpFactory::GetInstance()->Set(graph_store_);
+  Operator* op = OpFactory::GetInstance()->Create(req->Name());
   EXPECT_TRUE(op != nullptr);
 
   Status s = op->Process(req, res);

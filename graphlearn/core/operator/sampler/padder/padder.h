@@ -16,40 +16,44 @@ limitations under the License.
 #ifndef GRAPHLEARN_CORE_OPERATOR_SAMPLER_PADDER_PADDER_H_
 #define GRAPHLEARN_CORE_OPERATOR_SAMPLER_PADDER_PADDER_H_
 
+#include <memory>
+#include <vector>
 #include "graphlearn/core/graph/storage/types.h"
 #include "graphlearn/include/sampling_request.h"
 
 namespace graphlearn {
 namespace op {
 
+typedef ::graphlearn::io::IdArray IdArray;
+
 class BasePadder {
 public:
-  BasePadder(const ::graphlearn::io::IdArray& neighbor_ids,
-             const ::graphlearn::io::IdArray& edge_ids,
-             const std::vector<int32_t>& indices)
-      : neighbor_ids_(neighbor_ids),
-        edge_ids_(edge_ids),
-        indices_(indices) {
+  BasePadder(const IdArray& neighbors, const IdArray& edges)
+    : neighbors_(neighbors),
+      edges_(edges),
+      filter_(-1),
+      indices_(nullptr) {
   }
 
   virtual ~BasePadder() = default;
 
-  virtual Status Pad(SamplingResponse* res,
-                     int32_t target_size,
-                     int32_t actual_size) = 0;
+  void SetFilter(int64_t filter);
+  void SetIndex(const std::vector<int32_t>& indices);
+
+  virtual Status Pad(SamplingResponse* res, int32_t target_size) = 0;
 
 protected:
-  const ::graphlearn::io::IdArray& neighbor_ids_;
-  const ::graphlearn::io::IdArray& edge_ids_;  
-  const std::vector<int32_t>& indices_;
+  bool HitFilter(int64_t value);
+
+protected:
+  const IdArray& neighbors_;
+  const IdArray& edges_;
+  int64_t filter_;
+  const std::vector<int32_t>* indices_;
 };
 
 typedef std::unique_ptr<BasePadder> PadderPtr;
-
-PadderPtr GetPadder(
-  const ::graphlearn::io::IdArray& node_ids,
-  const ::graphlearn::io::IdArray& edge_ids,
-  const std::vector<int32_t>& indices = {});
+PadderPtr GetPadder(const IdArray& neighbors, const IdArray& edges);
 
 }  // namespace op
 }  // namespace graphlearn

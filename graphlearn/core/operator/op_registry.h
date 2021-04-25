@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef GRAPHLEARN_CORE_OPERATOR_OPERATOR_FACTORY_H_
-#define GRAPHLEARN_CORE_OPERATOR_OPERATOR_FACTORY_H_
+#ifndef GRAPHLEARN_CORE_OPERATOR_OP_REGISTRY_H_
+#define GRAPHLEARN_CORE_OPERATOR_OP_REGISTRY_H_
 
 #include <mutex>  // NOLINT [build/c++11]
 #include <string>
@@ -23,35 +23,32 @@ limitations under the License.
 
 namespace graphlearn {
 
-class GraphStore;
-
 namespace op {
 
-class OperatorFactory {
+class OpRegistry {
 public:
-  static OperatorFactory& GetInstance() {
-    static OperatorFactory factory;
-    return factory;
+  typedef Operator* (*OpCreator)();
+
+public:
+  static OpRegistry* GetInstance() {
+    static OpRegistry registry;
+    return &registry;
   }
 
-  OperatorFactory(const OperatorFactory&) = delete;
-  OperatorFactory& operator=(const OperatorFactory&) = delete;
+  OpRegistry(const OpRegistry&) = delete;
+  OpRegistry& operator=(const OpRegistry&) = delete;
 
-  ~OperatorFactory();
+  void Register(const std::string& name, OpCreator creator);
 
-  // set graph store of registed operators.
-  void Set(GraphStore* graph_store);
-
-  void Register(const std::string& name, Operator* op);
-
-  Operator* Lookup(const std::string& name);
+  OpCreator* Lookup(const std::string& name);
 
 private:
-  OperatorFactory() = default;
+  OpRegistry() = default;
+  ~OpRegistry() = default;
 
 private:
-  std::unordered_map<std::string, Operator*> map_;
-  std::mutex mtx_;
+  std::mutex mu_;
+  std::unordered_map<std::string, OpCreator> creator_map_;
 };
 
 }  // namespace op
@@ -64,10 +61,10 @@ private:
   class Register##OpClass {                                             \
   public:                                                               \
     Register##OpClass() {                                               \
-      auto& factory = ::graphlearn::op::OperatorFactory::GetInstance(); \
-      factory.Register(OpName, Create##OpClass());                      \
+      auto registry = ::graphlearn::op::OpRegistry::GetInstance();      \
+      registry->Register(OpName, Create##OpClass);                      \
     }                                                                   \
   };                                                                    \
   static Register##OpClass register_##OpClass;
 
-#endif  // GRAPHLEARN_CORE_OPERATOR_OPERATOR_FACTORY_H_
+#endif  // GRAPHLEARN_CORE_OPERATOR_OP_REGISTRY_H_

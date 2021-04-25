@@ -43,19 +43,24 @@ public:
     thread_local static std::mt19937 engine(rd());
 
     const int64_t* src_ids = req->GetSrcIds();
+    const int64_t* filters = req->GetFilters();
+
     for (int32_t i = 0; i < batch_size; ++i) {
       int64_t src_id = src_ids[i];
       auto neighbor_ids = storage->GetNeighbors(src_id);
-      if (!neighbor_ids) {
+      if (!neighbor_ids || (filters && neighbor_ids.Size() == 1
+          && neighbor_ids[0] == filters[i])) {
         res->FillWith(GLOBAL_FLAG(DefaultNeighborId), -1);
       } else {
         auto edge_ids = storage->GetOutEdges(src_id);
         std::uniform_int_distribution<> dist(0, neighbor_ids.Size() - 1);
-
-        for (int32_t j = 0; j < count; ++j) {
+        for (int32_t j = 0; j < count;) {
           int32_t idx = dist(engine);
-          res->AppendNeighborId(neighbor_ids[idx]);
-          res->AppendEdgeId(edge_ids[idx]);
+          if (!filters || filters[i] != neighbor_ids[idx]) {
+            res->AppendNeighborId(neighbor_ids[idx]);
+            res->AppendEdgeId(edge_ids[idx]);
+            ++j;
+          }
         }
       }
     }

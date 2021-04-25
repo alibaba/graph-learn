@@ -20,46 +20,48 @@ limitations under the License.
 #include "graphlearn/common/base/errors.h"
 #include "graphlearn/common/base/log.h"
 #include "graphlearn/core/operator/sampler/padder/padder.h"
+#include "graphlearn/include/config.h"
 
 namespace graphlearn {
 namespace op {
 
 class CircularPadder : public BasePadder {
 public:
-  CircularPadder(const ::graphlearn::io::IdArray& neighbor_ids,
-                 const ::graphlearn::io::IdArray& edge_ids,
-                 const std::vector<int32_t>& indices)
-      : BasePadder(neighbor_ids, edge_ids, indices) {
+  CircularPadder(const IdArray& neighbors, const IdArray& edges)
+    : BasePadder(neighbors, edges) {
   }
 
   ~CircularPadder() = default;
 
-  Status Pad(SamplingResponse* res,
-             int32_t target_size,
-             int32_t actual_size) override {
-    int32_t cursor = 0;
-    int32_t idx = 0;
-    int32_t value_size = indices_.size();
-    while (idx < target_size) {
-      cursor %= actual_size;
-      if (value_size == 0) {
-        res->AppendNeighborId(neighbor_ids_[cursor]);
-        if (edge_ids_.Size() > 0) {
-          res->AppendEdgeId(edge_ids_[cursor]);
-        }
-      } else if (value_size >= actual_size) {
-        res->AppendNeighborId(neighbor_ids_[indices_[cursor]]);
-        if (edge_ids_.Size() > 0) {
-          res->AppendEdgeId(edge_ids_[indices_[cursor]]);
-        }
+  Status Pad(SamplingResponse* res, int32_t target_size) override {
+    int32_t actual_size = neighbors_.Size();
+    int32_t got = 0;
+    for (int32_t idx = 0; got < target_size; idx++) {
+      int32_t cursor = idx % actual_size;
+      if (indices_ == nullptr) {
+        // just use the cursor directly
+      } else if (cursor < indices_->size()) {
+        cursor = indices_->at(cursor);
       } else {
-        LOG(ERROR) << "Padding value size of indices "
-                   << value_size
-                   << " < actual_size " << actual_size;
-        return error::InvalidArgument("Padding value size too small.");
+        LOG(ERROR) << "Invalid sampler indices, " << indices_->size()
+                   << ", cursor:" << cursor
+                   << ", actual_size:" << actual_size
+                   << ", target_size:" << target_size;
+        return error::InvalidArgument("Invalid sampler implementation.");
       }
-      ++idx;
-      ++cursor;
+
+      if (!HitFilter(neighbors_[cursor])) {
+        res->AppendNeighborId(neighbors_[cursor]);
+        res->AppendEdgeId(edges_[cursor]);
+        ++got;
+      } else if (actual_size == 1) {
+        // matches the filter and no more neighbors exist, just break
+        break;
+      }
+    }
+    for (int32_t idx = got; idx < target_size; idx++) {
+      res->AppendNeighborId(GLOBAL_FLAG(DefaultNeighborId));
+      res->AppendEdgeId(-1);
     }
     return Status::OK();
   }

@@ -44,6 +44,7 @@ public:
     std::vector<int32_t> indices(count);
 
     const int64_t* src_ids = req->GetSrcIds();
+    const int64_t* filters = req->GetFilters();
     Status s;
     for (int32_t i = 0; i < batch_size; ++i) {
       int64_t src_id = src_ids[i];
@@ -53,8 +54,12 @@ public:
       } else {
         auto edge_ids = storage->GetOutEdges(src_id);
         SampleFrom(neighbor_ids, storage, count, indices.data());
-        auto padder = GetPadder(neighbor_ids, edge_ids, indices);
-        s = padder->Pad(res, count, count);
+        auto padder = GetPadder(neighbor_ids, edge_ids);
+        padder->SetIndex(indices);
+        if (filters) {
+          padder->SetFilter(filters[i]);
+        }
+        s = padder->Pad(res, count);
         if (!s.ok()) {
           return s;
         }

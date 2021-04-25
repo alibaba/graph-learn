@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/operator/operator_factory.h"
+#include "graphlearn/core/operator/op_registry.h"
 
 #include <unordered_map>
 #include "graphlearn/common/base/log.h"
@@ -21,33 +21,23 @@ limitations under the License.
 namespace graphlearn {
 namespace op {
 
-OperatorFactory::~OperatorFactory() {
-  for (auto it : map_) {
-    delete it.second;
-  }
-}
-
-void OperatorFactory::Set(GraphStore* graph_store) {
-  for (auto& op : map_) {
-    op.second -> Set(graph_store);
-  }
-}
-
-void OperatorFactory::Register(const std::string& name, Operator* op) {
-  std::unique_lock<std::mutex> _(mtx_);
-  if (map_.find(name) != map_.end()) {
+void OpRegistry::Register(const std::string& name, OpCreator creator) {
+  std::unique_lock<std::mutex> _(mu_);
+  if (creator_map_.find(name) != creator_map_.end()) {
     LOG(WARNING) << "Repeated register operator:" << name;
     return;
   }
-  map_[name] = op;
+  creator_map_[name] = creator;
 }
 
-Operator* OperatorFactory::Lookup(const std::string& name) {
-  auto it = map_.find(name);
-  if (it != map_.end()) {
-    return it->second;
+OpRegistry::OpCreator* OpRegistry::Lookup(const std::string& name) {
+  // Lock free, because the map_ is fixed when lookup.
+  auto it = creator_map_.find(name);
+  if (it == creator_map_.end()) {
+    LOG(ERROR) << "No operator creator named " << name;
+    return nullptr;
   }
-  return nullptr;
+  return &(it->second);
 }
 
 }  // namespace op

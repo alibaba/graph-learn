@@ -14,7 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include "graphlearn/core/graph/graph_store.h"
-#include "graphlearn/core/io/element_value.h"
+#include "graphlearn/core/graph/storage/node_storage.h"
 #include "graphlearn/core/operator/operator.h"
 #include "graphlearn/core/operator/op_registry.h"
 #include "graphlearn/include/graph_request.h"
@@ -22,37 +22,33 @@ limitations under the License.
 namespace graphlearn {
 namespace op {
 
-class NodeUpdater : public RemoteOperator {
+class NodeCountGetter : public RemoteOperator {
 public:
-  virtual ~NodeUpdater() = default;
+  virtual ~NodeCountGetter() = default;
 
   Status Process(const OpRequest* req,
                  OpResponse* res) override {
-    const UpdateNodesRequest* request =
-      static_cast<const UpdateNodesRequest*>(req);
-    UpdateNodesResponse* response =
-      static_cast<UpdateNodesResponse*>(res);
+    const GetCountRequest* request =
+      static_cast<const GetCountRequest*>(req);
+    GetCountResponse* response =
+      static_cast<GetCountResponse*>(res);
 
-    const ::graphlearn::io::SideInfo* info = request->GetSideInfo();
-    Noder* noder = graph_store_->GetNoder(info->type);
-    return noder->UpdateNodes(request, response);
+    Noder* noder = graph_store_->GetNoder(request->Type());
+    ::graphlearn::io::NodeStorage* storage = noder->GetLocalStorage();
+
+    response->Init();
+    response->Set(storage->GetIds()->size());
+    return Status::OK();
   }
 
   Status Call(int32_t remote_id,
               const OpRequest* req,
               OpResponse* res) override {
-    const UpdateNodesRequest* request =
-      static_cast<const UpdateNodesRequest*>(req);
-    UpdateNodesResponse* response =
-      static_cast<UpdateNodesResponse*>(res);
-
-    const ::graphlearn::io::SideInfo* info = request->GetSideInfo();
-    Noder* noder = graph_store_->GetNoder(info->type);
-    return noder->UpdateNodes(remote_id, request, response);
+    return Process(req, res);
   }
 };
 
-REGISTER_OPERATOR("UpdateNodes", NodeUpdater);
+REGISTER_OPERATOR("GetNodeCount", NodeCountGetter);
 
 }  // namespace op
 }  // namespace graphlearn

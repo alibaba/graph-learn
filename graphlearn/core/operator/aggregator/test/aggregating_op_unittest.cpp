@@ -20,7 +20,7 @@ limitations under the License.
 #include "graphlearn/core/graph/graph_store.h"
 #include "graphlearn/include/aggregating_request.h"
 #include "graphlearn/core/io/element_value.h"
-#include "graphlearn/core/operator/operator_factory.h"
+#include "graphlearn/core/operator/op_factory.h"
 #include "graphlearn/include/config.h"
 #include "graphlearn/platform/env.h"
 #include "gtest/gtest.h"
@@ -187,11 +187,11 @@ protected:
     source->src_id_type = src_type;
     source->dst_id_type = dst_type;
     source->format = format;
-    source->ignore_invalid = false;
+    source->attr_info.ignore_invalid = false;
     if (format & kAttributed) {
-      source->delimiter = ":";
-      source->types = {DataType::kInt32, DataType::kFloat, DataType::kString};
-      source->hash_buckets = {0 ,0, 0};
+      source->attr_info.delimiter = ":";
+      source->attr_info.types = {DataType::kInt32, DataType::kFloat, DataType::kString};
+      source->attr_info.hash_buckets = {0 ,0, 0};
     }
   }
 
@@ -201,11 +201,11 @@ protected:
     source->path = file_name;
     source->id_type = node_type;
     source->format = format;
-    source->ignore_invalid = false;
+    source->attr_info.ignore_invalid = false;
     if (format & kAttributed) {
-      source->delimiter = ":";
-      source->types = {DataType::kInt32, DataType::kFloat, DataType::kString};
-      source->hash_buckets = {0 ,0, 0};
+      source->attr_info.delimiter = ":";
+      source->attr_info.types = {DataType::kInt32, DataType::kFloat, DataType::kString};
+      source->attr_info.hash_buckets = {0 ,0, 0};
     }
   }
 
@@ -229,7 +229,7 @@ TEST_F(AggregationOpTest, Aggregator) {
 
   std::vector<EdgeSource> edge_source;
   GraphStore store(Env::Default());
-  ::graphlearn::op::OperatorFactory::GetInstance().Set(&store);
+  ::graphlearn::op::OpFactory::GetInstance()->Set(&store);
 
   Status s = store.Load(edge_source, node_source);
   EXPECT_TRUE(s.ok());
@@ -252,7 +252,7 @@ TEST_F(AggregationOpTest, Aggregator) {
     AggregatingResponse* res = new AggregatingResponse();
     req->Set(ids.data(), segment_ids.data(), id_size, num_segments);
 
-    Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
+    Operator* op = OpFactory::GetInstance()->Create(req->Name());
     EXPECT_TRUE(op != nullptr);
 
     Status s = op->Process(req, res);
@@ -279,7 +279,7 @@ TEST_F(AggregationOpTest, Aggregator) {
     AggregatingResponse* res = new AggregatingResponse();
     req->Set(ids.data(), segment_ids.data(), id_size, num_segments);
 
-    Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
+    Operator* op = OpFactory::GetInstance()->Create(req->Name());
     EXPECT_TRUE(op != nullptr);
 
     Status s = op->Process(req, res);
@@ -301,7 +301,7 @@ TEST_F(AggregationOpTest, Aggregator) {
     AggregatingResponse* res = new AggregatingResponse();
     req->Set(ids.data(), segment_ids.data(), id_size, num_segments);
 
-    Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
+    Operator* op = OpFactory::GetInstance()->Create(req->Name());
     EXPECT_TRUE(op != nullptr);
 
     Status s = op->Process(req, res);
@@ -323,7 +323,7 @@ TEST_F(AggregationOpTest, Aggregator) {
     AggregatingResponse* res = new AggregatingResponse();
     req->Set(ids.data(), segment_ids.data(), id_size, num_segments);
 
-    Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
+    Operator* op = OpFactory::GetInstance()->Create(req->Name());
     EXPECT_TRUE(op != nullptr);
 
     Status s = op->Process(req, res);
@@ -345,7 +345,7 @@ TEST_F(AggregationOpTest, Aggregator) {
     AggregatingResponse* res = new AggregatingResponse();
     req->Set(ids.data(), segment_ids.data(), id_size, num_segments);
 
-    Operator* op = OperatorFactory::GetInstance().Lookup(req->Name());
+    Operator* op = OpFactory::GetInstance()->Create(req->Name());
     EXPECT_TRUE(op != nullptr);
 
     Status s = op->Process(req, res);

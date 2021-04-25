@@ -20,7 +20,7 @@ limitations under the License.
 #include <string>
 #include <vector>
 #include "graphlearn/core/operator/operator.h"
-#include "graphlearn/core/operator/operator_factory.h"
+#include "graphlearn/core/operator/op_registry.h"
 #include "graphlearn/include/aggregating_request.h"
 #include "graphlearn/include/status.h"
 #include "graphlearn/include/client.h"

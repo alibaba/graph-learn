@@ -43,6 +43,7 @@ public:
     auto storage = graph->GetLocalStorage();
 
     const int64_t* src_ids = req->GetSrcIds();
+    const int64_t* filters = req->GetFilters();
     Status s;
     for (int32_t i = 0; i < batch_size; ++i) {
       int64_t src_id = src_ids[i];
@@ -60,8 +61,12 @@ public:
         std::iota(indices.begin(), indices.end(), 0);
         std::shuffle(indices.begin(), indices.end(), engine);
 
-        auto padder = GetPadder(neighbor_ids, edge_ids, indices);
-        s = padder->Pad(res, count, neighbor_size);
+        auto padder = GetPadder(neighbor_ids, edge_ids);
+        padder->SetIndex(indices);
+        if (filters) {
+          padder->SetFilter(filters[i]);
+        }
+        s = padder->Pad(res, count);
         if (!s.ok()) {
           return s;
         }

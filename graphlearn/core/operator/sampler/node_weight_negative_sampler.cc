@@ -15,8 +15,10 @@ limitations under the License.
 
 #include <memory>
 #include <unordered_set>
+#include "graphlearn/common/base/log.h"
 #include "graphlearn/core/operator/sampler/alias_method.h"
 #include "graphlearn/core/operator/sampler/sampler.h"
+#include "graphlearn/include/config.h"
 
 namespace graphlearn {
 namespace op {
@@ -59,6 +61,11 @@ protected:
                              SamplingResponse* res) {
     std::unique_ptr<int32_t[]> indices(new int32_t[n]);
     auto ids = storage->GetIds();
+    if (!ids) {
+      LOG(ERROR) << "Sample negatively on not existed node_type.";
+      res->FillWith(GLOBAL_FLAG(DefaultNeighborId), -1);
+      return;
+    }
     std::unordered_set<int64_t> sets(src_ids, src_ids + batch_size);
     for (int32_t i = 0; i < batch_size; ++i) {
       int32_t count = 0;
@@ -90,19 +97,8 @@ private:
   AliasMethod* CreateAM(const std::string& type,
                         ::graphlearn::io::NodeStorage* storage) {
     AliasMethodFactory* factory = AliasMethodFactory::GetInstance();
-    factory->Lock();
-    AliasMethod* am = factory->Get(type);
-    if (am != nullptr) {
-      factory->Unlock();
-      return am;
-    }
-
     auto weights = storage->GetWeights();
-    std::vector<float> probs(weights->begin(), weights->end());
-    am = new AliasMethod(&probs);
-    factory->Put(type, am);
-    factory->Unlock();
-    return am;
+    return factory->LookupOrCreate(type, weights);
   }
 };
 

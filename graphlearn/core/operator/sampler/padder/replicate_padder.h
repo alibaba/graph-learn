@@ -28,38 +28,43 @@ namespace op {
 
 class ReplicatePadder : public BasePadder {
 public:
-  ReplicatePadder(const ::graphlearn::io::IdArray& neighbor_ids,
-                  const ::graphlearn::io::IdArray& edge_ids,
-                  const std::vector<int32_t>& indices)
-      : BasePadder(neighbor_ids, edge_ids, indices) {
+  ReplicatePadder(const IdArray& neighbors, const IdArray& edges)
+    : BasePadder(neighbors, edges) {
   }
 
   ~ReplicatePadder() = default;
 
-  Status Pad(SamplingResponse* res,
-             int32_t target_size,
-             int32_t actual_size) override {
-    int32_t size = std::min(target_size, actual_size);
-    int32_t value_size = indices_.size();
+  Status Pad(SamplingResponse* res, int32_t target_size) override {
+    int32_t size = 0;
+    if (indices_) {
+      size = indices_->size();
+    } else {
+      size = std::min(target_size, neighbors_.Size());
+    }
+
+    int32_t got = 0;
     for (int32_t idx = 0; idx < size; idx++) {
-      if (value_size == 0) {
-        res->AppendNeighborId(neighbor_ids_[idx]);
-        if (edge_ids_.Size() > 0) {
-          res->AppendEdgeId(edge_ids_[idx]);
-        }
-      } else if (value_size >= actual_size) {
-        res->AppendNeighborId(neighbor_ids_[indices_[idx]]);
-        if (edge_ids_.Size() > 0) {
-          res->AppendEdgeId(edge_ids_[indices_[idx]]);
-        }
+      int32_t cursor = idx;
+      if (indices_ == nullptr) {
+        // just use the cursor directly
+      } else if (cursor < indices_->size()) {
+        cursor = indices_->at(cursor);
       } else {
-        LOG(ERROR) << "Padding value size of indices "
-                   << value_size
-                   << " < actual_size " << actual_size;
-        return error::InvalidArgument("Padding value size too small.");
+        LOG(ERROR) << "Invalid sampler indices, " << indices_->size()
+                   << ", cursor:" << cursor
+                   << ", actual_size:" << size
+                   << ", target_size:" << target_size;
+        return error::InvalidArgument("Invalid sampler implementation.");
+      }
+
+      if (!HitFilter(neighbors_[cursor])) {
+        res->AppendNeighborId(neighbors_[cursor]);
+        res->AppendEdgeId(edges_[cursor]);
+        ++got;
       }
     }
-    for (int32_t idx = size; idx < target_size; idx++) {
+
+    for (int32_t idx = got; idx < target_size; idx++) {
       res->AppendNeighborId(GLOBAL_FLAG(DefaultNeighborId));
       res->AppendEdgeId(-1);
     }

@@ -27,24 +27,33 @@ public:
   PadderCreator() {}
   ~PadderCreator() = default;
 
-  PadderPtr operator() (const ::graphlearn::io::IdArray& neighbor_ids,
-                        const ::graphlearn::io::IdArray& edge_ids,
-                        const std::vector<int32_t>& indices) {
+  PadderPtr operator() (const IdArray& neighbors, const IdArray& edges) {
     if (GLOBAL_FLAG(PaddingMode == kCircular)) {
-      PadderPtr ret(new CircularPadder(neighbor_ids, edge_ids, indices));
-      return ret;
+      return PadderPtr(new CircularPadder(neighbors, edges));
     } else {
-      PadderPtr ret(new ReplicatePadder(neighbor_ids, edge_ids, indices));
-      return ret;
+      return PadderPtr(new ReplicatePadder(neighbors, edges));
     }
   }
 };
 
-PadderPtr GetPadder(const ::graphlearn::io::IdArray& node_ids,
-                    const ::graphlearn::io::IdArray& edge_ids,
-                    const std::vector<int32_t>& indices) {
+void BasePadder::SetFilter(int64_t filter) {
+  filter_ = filter;
+}
+
+void BasePadder::SetIndex(const std::vector<int32_t>& indices) {
+  indices_ = &indices;
+}
+
+bool BasePadder::HitFilter(int64_t value) {
+  if (filter_ == -1) {
+    return false;
+  }
+  return filter_ == value;
+}
+
+PadderPtr GetPadder(const IdArray& neighbors, const IdArray& edges) {
   static PadderCreator creator;
-  return creator(node_ids, edge_ids, indices);
+  return creator(neighbors, edges);
 }
 
 }  // namespace op

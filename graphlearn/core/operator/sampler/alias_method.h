@@ -20,6 +20,7 @@ limitations under the License.
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include "graphlearn/common/threading/sync/lock.h"
 #include "graphlearn/core/graph/storage/types.h"
 
 namespace graphlearn {
@@ -29,6 +30,7 @@ class AliasMethod {
 public:
   AliasMethod();
   explicit AliasMethod(const std::vector<float>* dist);
+  explicit AliasMethod(int32_t uniform_max); // uniform distribution AM.
 
   AliasMethod(const AliasMethod& rhs);
   AliasMethod& operator=(const AliasMethod& rhs);
@@ -46,15 +48,54 @@ private:
 
 class AliasMethodFactory {
 public:
-  static AliasMethodFactory* GetInstance();
+  static AliasMethodFactory* GetInstance() {
+    static AliasMethodFactory factory;
+    return &factory;
+  }
+  
+  template<class T>
+  AliasMethod* LookupOrCreate(const std::string& type, 
+      const std::vector<T>* weights) {
+    ScopedLocker<std::mutex> _(&mtx_);
+    auto it = map_.find(type);
+    if (it == map_.end()) {
+      std::vector<float> tmp_w(weights->begin(), weights->end());
+      auto am = new AliasMethod(&tmp_w);
+      map_[type] = am;
+      return am;
+    } else {
+      return it->second;
+    }                          
+  }
 
-  void Lock();
-  void Unlock();
-  AliasMethod* Get(const std::string& type);
-  void Put(const std::string& type, AliasMethod* am);
+  inline AliasMethod* LookupOrCreate(const std::string& type, 
+      const std::vector<float>* weights) {
+    ScopedLocker<std::mutex> _(&mtx_);
+    auto it = map_.find(type);
+    if (it == map_.end()) {
+      auto am = new AliasMethod(weights);
+      map_[type] = am;
+      return am;
+    } else {
+      return it->second;
+    }   
+  }
+
+  inline AliasMethod* LookupOrCreate(const std::string& type, 
+      int32_t uniform_max) {
+    ScopedLocker<std::mutex> _(&mtx_);
+    auto it = map_.find(type);
+    if (it == map_.end()) {
+      auto am = new AliasMethod(uniform_max);
+      map_[type] = am;
+      return am;
+    } else {
+      return it->second;
+    }   
+  }
 
 private:
-  AliasMethodFactory();
+  AliasMethodFactory() {}
 
 private:
   std::mutex mtx_;
