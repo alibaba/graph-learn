@@ -35,7 +35,7 @@ sudo apt-get install git-all
 ## Install dependent libraries
 
 ```bash
-sudo apt-get install autoconf automake libtool cmake python-numpy
+sudo apt-get install autoconf automake libtool libssl-dev cmake python-numpy python-setuptools python-pip
 ```
 
 ## Compile

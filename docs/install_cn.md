@@ -23,6 +23,7 @@ sudo apt-get install git-all
 
 ```bash
 sudo apt-get install autoconf automake libtool cmake python-numpy
+sudo apt-get install autoconf automake libtool libssl-dev cmake python-numpy python-setuptools python-pip
 ```
 
 ## 编译
