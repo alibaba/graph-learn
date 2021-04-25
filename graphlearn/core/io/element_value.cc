@@ -48,7 +48,7 @@ AttributeValue* AttributeValue::Default(const SideInfo* info) {
   }
   return attr;
 }
- 
+
 class DataHeldAttributeValue : public AttributeValue {
 public:
   DataHeldAttributeValue() = default;

@@ -66,18 +66,30 @@ Status EdgeLoader::Read(EdgeValue* value) {
     std::swap(value->src_id, value->dst_id);
   }
 
-  if (error::IsInvalidArgument(s) && source_->ignore_invalid) {
+  if (error::IsInvalidArgument(s) && source_->attr_info.ignore_invalid) {
     // ignore the invalid record and read next
     LOG(WARNING) << "Invalid edge data found but ignored, " << s.ToString();
     s = Read(value);
   } else if (!s.ok()) {
     LOG(WARNING) << "Invalid edge data found, " << s.ToString();
   }
-
   return s;
 }
 
-Status EdgeLoader::BeginNextFile() {
+Status EdgeLoader::ReadRaw(Record* record) {
+  Status s = reader_->Read(&record_);
+  if (error::IsOutOfRange(s)) {
+    LOG(INFO) << "Current edge file completed, " << source_->path;
+    return s;
+  } else if (!s.ok()) {
+    LOG(ERROR) << "Read edge failed, " << s.ToString();
+    return s;
+  }
+  *record = std::move(record_);
+  return s;
+}
+
+Status EdgeLoader::BeginNextFile(EdgeSource** source) {
   Status s = reader_->BeginNextFile(&source_);
   if (error::IsOutOfRange(s)) {
     LOG(INFO) << "No more edge file to be read";
@@ -96,6 +108,10 @@ Status EdgeLoader::BeginNextFile() {
                << ", edge_type:" << source_->edge_type;
     USER_LOG("Node or Edge types are not assigned.");
     return error::InvalidArgument("Node and edge types must be assigned.");
+  }
+
+  if (source) {
+    *source = source_;
   }
 
   schema_ = reader_->GetSchema();
@@ -162,9 +178,7 @@ Status EdgeLoader::ParseValue(EdgeValue* value) {
   }
   if (source_->IsAttributed()) {
     LiteString s(record_[idx].s.data, record_[idx].s.len);
-    return ParseAttribute(s, source_->delimiter,
-                          source_->types, source_->hash_buckets,
-                          value->attrs);
+    return ParseAttribute(s, source_->attr_info, value->attrs);
   }
 
   return Status::OK();

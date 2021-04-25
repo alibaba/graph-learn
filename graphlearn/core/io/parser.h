@@ -28,9 +28,7 @@ namespace io {
 
 Status ParseAttribute(
     const LiteString& input,
-    const std::string& delimiter,
-    const std::vector<DataType>& types,
-    const std::vector<int64_t>& hash_buckets,
+    const AttributeInfo& info,
     AttributeValue* value);
 
 template<class T>
@@ -40,17 +38,18 @@ void ParseSideInfo(const T* source, SideInfo* info) {
   info->s_num = 0;
   info->format = source->format;
 
-  for (int32_t i = 0; i < source->types.size(); ++i) {
-    if (source->types[i] == DataType::kInt32 ||
-        source->types[i] == DataType::kInt64) {
+  const AttributeInfo& attr_info = source->attr_info;
+  for (int32_t i = 0; i < attr_info.types.size(); ++i) {
+    if (attr_info.types[i] == DataType::kInt32 ||
+        attr_info.types[i] == DataType::kInt64) {
       ++(info->i_num);
-    } else if (source->types[i] == DataType::kFloat ||
-               source->types[i] == DataType::kDouble) {
+    } else if (attr_info.types[i] == DataType::kFloat ||
+               attr_info.types[i] == DataType::kDouble) {
       ++(info->f_num);
     } else {
-      if (source->hash_buckets.empty()) {
+      if (attr_info.hash_buckets.empty()) {
         ++(info->s_num);
-      } else if (source->hash_buckets[i] > 0) {
+      } else if (attr_info.hash_buckets[i] > 0) {
         // hash string to int, so we treat it as an integer
         ++(info->i_num);
       } else {

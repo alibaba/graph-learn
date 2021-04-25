@@ -34,12 +34,15 @@ public:
 
 protected:
   void SetUp() override {
+    system("mkdir -p weighted_efiles/");
+    system("mkdir -p labeled_efiles/");
+    system("mkdir -p attributed_efiles/");
   }
 
   void TearDown() override {
   }
 
-  void GenTestData(const char* file_name, int32_t format) {
+  void GenTestData(const char* file_name, int32_t format, int32_t offset=0) {
     SideInfo info;
     info.format = format;
 
@@ -72,7 +75,7 @@ protected:
     // write data
     int size = 0;
     char buffer[64];
-    for (int32_t i = 0; i < 100; ++i) {
+    for (int32_t i = 0 + offset; i < 100 + offset; ++i) {
       if (info.IsWeighted() && info.IsLabeled() && info.IsAttributed()) {
         size = snprintf(buffer, sizeof(buffer),
                         "%d\t%d\t%f\t%d\t%d:%f:%c\n",
@@ -112,11 +115,11 @@ protected:
     source->src_id_type = src_type;
     source->dst_id_type = dst_type;
     source->format = format;
-    source->ignore_invalid = false;
+    source->attr_info.ignore_invalid = false;
     if (format & kAttributed) {
-      source->delimiter = ":";
-      source->types = {DataType::kInt32, DataType::kFloat, DataType::kString};
-      source->hash_buckets = {0 ,0, 0};
+      source->attr_info.delimiter = ":";
+      source->attr_info.types = {DataType::kInt32, DataType::kFloat, DataType::kString};
+      source->attr_info.hash_buckets = {0 ,0, 0};
     }
   }
 
@@ -322,5 +325,60 @@ TEST_F(EdgeLoaderTest, ReadWeightedLabeledAttributed) {
 
   s = loader->BeginNextFile();
   EXPECT_TRUE(error::IsOutOfRange(s));
+  delete loader;
+}
+
+TEST_F(EdgeLoaderTest, ReadDirectories) {
+  const char* w_file = "weighted_efiles/";
+  const char* l_file = "labeled_efiles/";
+  const char* a_file = "attributed_efiles/";
+
+  for (int i = 0; i < 3; ++i) {
+    std::string f = w_file + std::to_string(i) + "_#" + std::to_string(100);
+    GenTestData(f.c_str(), kWeighted, 100 * i);
+  }
+  for (int i = 0; i < 2; ++i) {
+    std::string f = l_file + std::to_string(i) + "_#" + std::to_string(100);
+    GenTestData(f.c_str(), kLabeled, 100 * i);
+  }
+  for (int i = 0; i < 1; ++i) {
+    std::string f = a_file + std::to_string(i) + "_#" + std::to_string(100);
+    GenTestData(f.c_str(), kAttributed, 100 * i);
+  }
+
+  std::vector<EdgeSource> source(3);
+  GenEdgeSource(&source[0], kWeighted, w_file, "click", "user", "item");
+  GenEdgeSource(&source[1], kLabeled, l_file, "buy", "user", "item");
+  GenEdgeSource(&source[2], kAttributed, a_file, "watch", "user", "movie");
+
+  EdgeLoader* loader = new EdgeLoader(source, Env::Default(), 0, 1);
+
+  // check the first file
+  Status s = loader->BeginNextFile();
+  EXPECT_TRUE(s.ok());
+  TestEdgeLoader(loader, kWeighted, "click", "user", "item", 0, 100);
+  s = loader->BeginNextFile();
+  EXPECT_TRUE(s.ok());
+  TestEdgeLoader(loader, kWeighted, "click", "user", "item", 100, 200);
+  s = loader->BeginNextFile();
+  EXPECT_TRUE(s.ok());
+  TestEdgeLoader(loader, kWeighted, "click", "user", "item", 200, 300);
+
+  // check the second file
+  s = loader->BeginNextFile();
+  EXPECT_TRUE(s.ok());
+  TestEdgeLoader(loader, kLabeled, "buy", "user", "item", 0, 100);
+  s = loader->BeginNextFile();
+  EXPECT_TRUE(s.ok());
+  TestEdgeLoader(loader, kLabeled, "buy", "user", "item", 100, 200);
+
+  // check the third file
+  s = loader->BeginNextFile();
+  EXPECT_TRUE(s.ok());
+  TestEdgeLoader(loader, kAttributed, "watch", "user", "movie", 0, 100);
+
+  s = loader->BeginNextFile();
+  EXPECT_TRUE(error::IsOutOfRange(s));
+
   delete loader;
 }

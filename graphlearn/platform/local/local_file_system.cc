@@ -227,7 +227,7 @@ Status LocalFileSystem::NewByteStreamAccessFile(
 }
 
 Status LocalFileSystem::NewStructuredAccessFile(
-    const std::string& file_name, uint64_t offset,
+    const std::string& file_name, uint64_t offset, uint64_t end,
     std::unique_ptr<StructuredAccessFile>* result) {
   std::string name = Translate(file_name);
   std::ifstream* f = new std::ifstream(name, std::ifstream::binary);
@@ -297,6 +297,15 @@ Status LocalFileSystem::GetFileSize(
 Status LocalFileSystem::GetRecordCount(
     const std::string& file_name,
     uint64_t* count) {
+  std::vector<std::string> items = strings::Split(file_name, '#');
+  if (items.size() >= 2) {
+    int64_t c = 0;
+    if (strings::FastStringTo64(items.back().c_str(), &c)) {
+      *count = c;
+      return Status::OK();
+    }
+  }
+
   std::ifstream in(file_name);
   if (!in) {
     return error::InvalidArgument("File not exist");

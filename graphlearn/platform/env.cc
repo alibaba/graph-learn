@@ -52,32 +52,47 @@ FileSystem* FileSystemRegistryImpl::Lookup(const std::string& scheme) {
   return found->second.get();
 }
 
-Env::Env() {
+Env::Env() : is_stopping_(false) {
   fs_registry_.reset(new FileSystemRegistryImpl);
+}
 
-  inter_tp_.reset(new ThreadPool(GLOBAL_FLAG(InterThreadNum)));
-  inter_tp_->Startup();
+ThreadPool* Env::InterThreadPool() {
+  if (inter_tp_ == nullptr) {
+    inter_tp_.reset(new ThreadPool(GLOBAL_FLAG(InterThreadNum)));
+    inter_tp_->Startup();
+  }
+  return inter_tp_.get();
+}
 
-  intra_tp_.reset(new ThreadPool(GLOBAL_FLAG(IntraThreadNum)));
-  intra_tp_->Startup();
+ThreadPool* Env::IntraThreadPool() {
+  if (intra_tp_ == nullptr) {
+    intra_tp_.reset(new ThreadPool(GLOBAL_FLAG(IntraThreadNum)));
+    intra_tp_->Startup();
+  }
+  return intra_tp_.get();
+}
 
-  // for system runtime, users can not reset this number
-  reserved_tp_.reset(new ThreadPool(5));
-  reserved_tp_->Startup();
+ThreadPool* Env::ReservedThreadPool() {
+  if (reserved_tp_ == nullptr) {
+    // for system runtime, users can not reset this number
+    reserved_tp_.reset(new ThreadPool(5));
+    reserved_tp_->Startup();
+  }
+  return reserved_tp_.get();
 }
 
 Env::~Env() {
-  if (inter_tp_) {
-    inter_tp_->Shutdown();
-  }
+  ShutdownInterThreadPool();
+  ShutdownItraThreadPool();
+  ShutdownReservedThreadPool();
+}
 
-  if (intra_tp_) {
-    intra_tp_->Shutdown();
-  }
+bool Env::IsStopping() {
+  return is_stopping_;
+}
 
-  if (reserved_tp_) {
-    reserved_tp_->Shutdown();
-  }
+void Env::SetStopping() {
+  is_stopping_ = true;
 }
 
 int32_t Env::GetServerId() {
@@ -107,9 +122,29 @@ Status Env::RegisterFileSystem(
   return fs_registry_->Register(scheme, std::move(factory));
 }
 
+void Env::ShutdownInterThreadPool() {
+  if (inter_tp_) {
+    inter_tp_->Shutdown();
+  }
+}
+
+void Env::ShutdownItraThreadPool() {
+  if (intra_tp_) {
+    intra_tp_->Shutdown();
+  }
+}
+
+void Env::ShutdownReservedThreadPool() {
+  if (reserved_tp_) {
+    reserved_tp_->Shutdown();
+  }
+}
+
+#if defined(LOCAL_PLATFORM) || defined(TUNNEL_PLATFORM)
 Env* Env::Default() {
   static Env* default_env = new Env;
   return default_env;
 }
+#endif
 
 }  // namespace graphlearn

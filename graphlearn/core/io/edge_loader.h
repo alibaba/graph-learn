@@ -40,8 +40,9 @@ public:
              int32_t thread_num);
   ~EdgeLoader();
 
-  Status BeginNextFile();
+  Status BeginNextFile(EdgeSource** source = nullptr);
   Status Read(EdgeValue* value);
+  Status ReadRaw(Record* record);
 
   const SideInfo* GetSideInfo() const {
     return &side_info_;

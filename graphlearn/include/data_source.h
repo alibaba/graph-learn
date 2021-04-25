@@ -20,47 +20,79 @@ limitations under the License.
 #include <sstream>
 #include <string>
 #include <vector>
+#include "graphlearn/include/config.h"
 #include "graphlearn/include/constants.h"
+#include "graphlearn/include/index_option.h"
 
 namespace graphlearn {
 namespace io {
 
-struct NodeSource {
-  std::string path;
-  std::string id_type;
-  int32_t     format;
-  bool        ignore_invalid;
-
-  // attribute delimiter and type list
-  std::string delimiter;
+struct AttributeInfo {
+  // All of the attributes will be encoded in ONE string concatenated with
+  // `delimiter`. The type of each attribute can be kInt64, kFloat and kString.
+  // For kString attributes, we supply the option to convert it into kInt64,
+  // which is a necessary phase when training a model in most cases. If so,
+  // please make sure that the size of `hash_buckets` must be the same with
+  // the size of `types`. Put `0` to `hash_buckets` for attributes that do
+  // not need convertion. Otherwise, the element of `hash_buckets` is the
+  // hash bucket size for each corresponding attribute.
+  std::string           delimiter;
   std::vector<DataType> types;
+  std::vector<int64_t>  hash_buckets;
 
-  // whether to hash string attributes into integer.
-  // Default empty. Otherwise, must be the same size with types.
-  // 0 means no need hash.
-  std::vector<int64_t> hash_buckets;
+  // Ignore the invalid attributes or not.
+  bool ignore_invalid;
 
-  NodeSource()
-      : format(kAttributed),
-        ignore_invalid(false) {
+  AttributeInfo() : ignore_invalid(GLOBAL_FLAG(IgnoreInvalid)) {}
+
+  AttributeInfo(const AttributeInfo& right) {
+    delimiter = right.delimiter;
+    types = right.types;
+    hash_buckets = right.hash_buckets;
+    ignore_invalid = right.ignore_invalid;
+  }
+
+  void AppendType(DataType type) {
+    types.push_back(type);
+  }
+
+  void AppendHashBucket(int64_t bucket_size) {
+    hash_buckets.push_back(bucket_size);
+  }
+
+  void Serialize(std::stringstream* ss) const {
+    *ss << " delimiter:" << delimiter
+        << " ignore_invalid:" << ignore_invalid
+        << " types:";
+    for (size_t i = 0; i < types.size(); ++i) {
+      *ss << static_cast<int32_t>(types[i]) << ',';
+    }
+
+    *ss << " hash_buckets:";
+    for (size_t i = 0; i < hash_buckets.size(); ++i) {
+      *ss << static_cast<int32_t>(hash_buckets[i]) << ',';
+    }
+  }
+};
+
+struct NodeSource {
+  std::string   path;
+  std::string   id_type;
+  int32_t       format;
+  AttributeInfo attr_info;
+  IndexOption   option;
+  bool          local_shared;
+
+  NodeSource() : format(kAttributed), local_shared(true) {
   }
 
   NodeSource(const NodeSource& right) {
     path = right.path;
     id_type = right.id_type;
     format = right.format;
-    ignore_invalid = right.ignore_invalid;
-    delimiter = right.delimiter;
-    types = right.types;
-    hash_buckets = right.hash_buckets;
-  }
-
-  void AppendAttrType(DataType type) {
-    types.push_back(type);
-  }
-
-  void AppendHashBucket(int64_t bucket_size) {
-    hash_buckets.push_back(bucket_size);
+    attr_info = right.attr_info;
+    option = right.option;
+    local_shared = right.local_shared;
   }
 
   bool IsWeighted() const {
@@ -79,43 +111,24 @@ struct NodeSource {
     std::stringstream ss;
     ss << "path:" << path
        << " id_type:" << id_type
-       << " format:" << format
-       << " delimiter:" << delimiter
-       << " ignore_invalid:" << ignore_invalid;
-    ss << " types:";
-    for (size_t i = 0; i < types.size(); ++i) {
-      ss << static_cast<int32_t>(types[i]) << ',';
-    }
-    ss << " hash_buckets:";
-    for (size_t i = 0; i < hash_buckets.size(); ++i) {
-      ss << static_cast<int32_t>(hash_buckets[i]) << ',';
-    }
-
+       << " format:" << format;
+    attr_info.Serialize(&ss);
     return ss.str();
   }
 };
 
 struct EdgeSource {
-  std::string path;
-  std::string edge_type;
-  std::string src_id_type;
-  std::string dst_id_type;
-  int32_t     format;
-  bool        ignore_invalid;
-  Direction   direction;
+  std::string   path;
+  std::string   edge_type;
+  std::string   src_id_type;
+  std::string   dst_id_type;
+  int32_t       format;
+  Direction     direction;
+  AttributeInfo attr_info;
+  IndexOption   option;
+  bool          local_shared;
 
-  // attribute delimiter and type list
-  std::string delimiter;
-  std::vector<DataType> types;
-
-  // whether to hash string attributes into integer.
-  // Default empty. Otherwise, must be the same size with types.
-  // 0 means no need hash.
-  std::vector<int64_t> hash_buckets;
-
-  EdgeSource()
-      : format(kWeighted),
-        direction(kOrigin) {
+  EdgeSource() : format(kWeighted), direction(kOrigin), local_shared(true) {
   }
 
   EdgeSource(const EdgeSource& right) {
@@ -124,19 +137,10 @@ struct EdgeSource {
     src_id_type = right.src_id_type;
     dst_id_type = right.dst_id_type;
     format = right.format;
-    ignore_invalid = right.ignore_invalid;
     direction = right.direction;
-    delimiter = right.delimiter;
-    types = right.types;
-    hash_buckets = right.hash_buckets;
-  }
-
-  inline void AppendAttrType(DataType type) {
-    types.push_back(type);
-  }
-
-  inline void AppendHashBucket(int64_t bucket_size) {
-    hash_buckets.push_back(bucket_size);
+    attr_info = right.attr_info;
+    option = right.option;
+    local_shared = right.local_shared;
   }
 
   inline bool IsWeighted() const {
@@ -158,17 +162,8 @@ struct EdgeSource {
        << " src_id_type:" << src_id_type
        << " dst_id_type:" << dst_id_type
        << " format:" << format
-       << " ignore_invalid:" << ignore_invalid
-       << " direction:" << static_cast<int32_t>(direction)
-       << " delimiter:" << delimiter
-       << " attr_types:";
-    for (size_t i = 0; i < types.size(); ++i) {
-      ss << static_cast<int32_t>(types[i]) << ',';
-    }
-    ss << " hash_buckets:";
-    for (size_t i = 0; i < hash_buckets.size(); ++i) {
-      ss << static_cast<int32_t>(hash_buckets[i]) << ',';
-    }
+       << " direction:" << static_cast<int32_t>(direction);
+    attr_info.Serialize(&ss);
     return ss.str();
   }
 };

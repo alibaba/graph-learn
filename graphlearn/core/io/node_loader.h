@@ -40,8 +40,9 @@ public:
              int32_t thread_num);
   ~NodeLoader();
 
-  Status BeginNextFile();
+  Status BeginNextFile(NodeSource** source = nullptr);
   Status Read(NodeValue* value);
+  Status ReadRaw(Record* record);
 
   const SideInfo* GetSideInfo() const {
     return &side_info_;

@@ -34,12 +34,15 @@ public:
 
 protected:
   void SetUp() override {
+    system("mkdir -p weighted_nfiles/");
+    system("mkdir -p labeled_nfiles/");
+    system("mkdir -p attributed_nfiles/");
   }
 
   void TearDown() override {
   }
 
-  void GenTestData(const char* file_name, int32_t format) {
+  void GenTestData(const char* file_name, int32_t format, int32_t offset = 0) {
     SideInfo info;
     info.format = format;
 
@@ -72,7 +75,7 @@ protected:
     // write data
     int size = 0;
     char buffer[64];
-    for (int32_t i = 0; i < 100; ++i) {
+    for (int32_t i = 0 + offset; i < 100 + offset; ++i) {
       if (info.IsWeighted() && info.IsLabeled() && info.IsAttributed()) {
         size = snprintf(buffer, sizeof(buffer),
                         "%d\t%f\t%d\t%d:%f:%c\n",
@@ -108,11 +111,11 @@ protected:
     source->path = file_name;
     source->id_type = node_type;
     source->format = format;
-    source->ignore_invalid = false;
+    source->attr_info.ignore_invalid = false;
     if (format & kAttributed) {
-      source->delimiter = ":";
-      source->types = {DataType::kInt32, DataType::kFloat, DataType::kString};
-      source->hash_buckets = {0 ,0, 0};
+      source->attr_info.delimiter = ":";
+      source->attr_info.types = {DataType::kInt32, DataType::kFloat, DataType::kString};
+      source->attr_info.hash_buckets = {0 ,0, 0};
     }
   }
 
@@ -307,5 +310,60 @@ TEST_F(NodeLoaderTest, ReadWeightedLabeledAttributed) {
 
   s = loader->BeginNextFile();
   EXPECT_TRUE(error::IsOutOfRange(s));
+  delete loader;
+}
+
+TEST_F(NodeLoaderTest, ReadDirectories) {
+  std::string w_file = "weighted_nfiles/";
+  std::string l_file = "labeled_nfiles/";
+  std::string a_file = "attributed_nfiles/";
+
+  for (int i = 0; i < 3; ++i) {
+    std::string f = w_file + std::to_string(i) + "_#" + std::to_string(100);
+    GenTestData(f.c_str(), kWeighted, 100 * i);
+  }
+  for (int i = 0; i < 2; ++i) {
+    std::string f = l_file + std::to_string(i) + "_#" + std::to_string(100);
+    GenTestData(f.c_str(), kLabeled, 100 * i);
+  }
+  for (int i = 0; i < 1; ++i) {
+    std::string f = a_file + std::to_string(i) + "_#" + std::to_string(100);
+    GenTestData(f.c_str(), kAttributed, 100 * i);
+  }
+
+  std::vector<NodeSource> source(3);
+  GenNodeSource(&source[0], kWeighted, w_file, "user");
+  GenNodeSource(&source[1], kLabeled, l_file, "item");
+  GenNodeSource(&source[2], kAttributed, a_file, "movie");
+
+  NodeLoader* loader = new NodeLoader(source, Env::Default(), 0, 1);
+
+  // check the first file
+  Status s = loader->BeginNextFile();
+  EXPECT_TRUE(s.ok());
+  TestNodeLoader(loader, kWeighted, "user", 0, 100);
+  s = loader->BeginNextFile();
+  EXPECT_TRUE(s.ok());
+  TestNodeLoader(loader, kWeighted, "user", 100, 200);
+  s = loader->BeginNextFile();
+  EXPECT_TRUE(s.ok());
+  TestNodeLoader(loader, kWeighted, "user", 200, 300);
+
+  // check the second file
+  s = loader->BeginNextFile();
+  EXPECT_TRUE(s.ok());
+  TestNodeLoader(loader, kLabeled, "item", 0, 100);
+  s = loader->BeginNextFile();
+  EXPECT_TRUE(s.ok());
+  TestNodeLoader(loader, kLabeled, "item", 100, 200);
+
+  // check the third file
+  s = loader->BeginNextFile();
+  EXPECT_TRUE(s.ok());
+  TestNodeLoader(loader, kAttributed, "movie", 0, 100);
+
+  s = loader->BeginNextFile();
+  EXPECT_TRUE(error::IsOutOfRange(s));
+
   delete loader;
 }

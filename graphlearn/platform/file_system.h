@@ -42,7 +42,7 @@ public:
       std::unique_ptr<ByteStreamAccessFile>* f) = 0;
 
   virtual Status NewStructuredAccessFile(
-      const std::string& file_name, uint64_t offset,
+      const std::string& file_name, uint64_t offset, uint64_t end,
       std::unique_ptr<StructuredAccessFile>* f) = 0;
 
   virtual Status NewWritableFile(
@@ -90,7 +90,8 @@ protected:
 
 class StructuredAccessFile : private Uncopyable {
 public:
-  explicit StructuredAccessFile(uint64_t offset) : offset_(offset) {}
+  StructuredAccessFile(uint64_t offset, uint64_t end = -1)
+    : offset_(offset), end_(end) {}
   virtual ~StructuredAccessFile() = default;
 
   /// Reads next data record into `result`.
@@ -101,6 +102,7 @@ public:
 
 protected:
   uint64_t offset_;
+  uint64_t end_;
 };
 
 class WritableFile : private Uncopyable {

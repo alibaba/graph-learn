@@ -60,7 +60,7 @@ Status NodeLoader::Read(NodeValue* value) {
   }
 
   s = ParseValue(value);
-  if (error::IsInvalidArgument(s) && source_->ignore_invalid) {
+  if (error::IsInvalidArgument(s) && source_->attr_info.ignore_invalid) {
     // ignore the invalid record and read next
     LOG(WARNING) << "Invalid node data found but ignored, " << s.ToString();
     s = Read(value);
@@ -70,7 +70,20 @@ Status NodeLoader::Read(NodeValue* value) {
   return s;
 }
 
-Status NodeLoader::BeginNextFile() {
+Status NodeLoader::ReadRaw(Record* record) {
+  Status s = reader_->Read(&record_);
+  if (error::IsOutOfRange(s)) {
+    LOG(INFO) << "Current node file completed, " << source_->path;
+    return s;
+  } else if (!s.ok()) {
+    LOG(ERROR) << "Read node failed, " << s.ToString();
+    return s;
+  }
+  *record = std::move(record_);
+  return s;
+}
+
+Status NodeLoader::BeginNextFile(NodeSource** source) {
   Status s = reader_->BeginNextFile(&source_);
   if (error::IsOutOfRange(s)) {
     LOG(INFO) << "No more node file to be read";
@@ -84,6 +97,10 @@ Status NodeLoader::BeginNextFile() {
     LOG(ERROR) << "Node type is not assigned, " << source_->path;
     USER_LOG("Node type is not assigned.");
     return error::InvalidArgument("Node id type must be assigned.");
+  }
+
+  if (source) {
+    *source = source_;
   }
 
   schema_ = reader_->GetSchema();
@@ -149,9 +166,7 @@ Status NodeLoader::ParseValue(NodeValue* value) {
   }
   if (source_->IsAttributed()) {
     LiteString s(record_[idx].s.data, record_[idx].s.len);
-    return ParseAttribute(s, source_->delimiter,
-                          source_->types, source_->hash_buckets,
-                          value->attrs);
+    return ParseAttribute(s, source_->attr_info, value->attrs);
   }
 
   return Status::OK();

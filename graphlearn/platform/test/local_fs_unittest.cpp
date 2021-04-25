@@ -137,7 +137,7 @@ protected:
     EXPECT_TRUE(fs != NULL);
 
     std::unique_ptr<StructuredAccessFile> reader;
-    s = fs->NewStructuredAccessFile(file_name, offset, &reader);
+    s = fs->NewStructuredAccessFile(file_name, offset, -1, &reader);
     EXPECT_TRUE(s.ok());
 
     const io::Schema& schema = reader->GetSchema();

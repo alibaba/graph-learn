@@ -28,6 +28,9 @@ public:
   ~Env();
   static Env* Default();
 
+  bool IsStopping();
+  void SetStopping();
+
   int32_t GetServerId();
   int32_t GetServerCount();
 
@@ -39,22 +42,19 @@ public:
       const std::string& scheme,
       FileSystemRegistry::Factory factory);
 
-  ThreadPool* InterThreadPool() {
-    return inter_tp_.get();
-  }
+  ThreadPool* InterThreadPool();
+  ThreadPool* IntraThreadPool();
+  ThreadPool* ReservedThreadPool();
 
-  ThreadPool* IntraThreadPool() {
-    return intra_tp_.get();
-  }
-
-  ThreadPool* ReservedThreadPool() {
-    return reserved_tp_.get();
-  }
+  void ShutdownInterThreadPool();
+  void ShutdownItraThreadPool();
+  void ShutdownReservedThreadPool();
 
 private:
   Env();
 
 private:
+  bool                                is_stopping_;
   std::unique_ptr<FileSystemRegistry> fs_registry_;
   std::unique_ptr<ThreadPool>         inter_tp_;
   std::unique_ptr<ThreadPool>         intra_tp_;

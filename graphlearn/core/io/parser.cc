@@ -36,12 +36,13 @@ const char* pattern = "The %dth attribute expect an %s, but got \"%s\".";
 
 }  // anonymous namespace
 
-Status ParseAttribute(
-    const LiteString& input,
-    const std::string& delimiter,
-    const std::vector<DataType>& types,
-    const std::vector<int64_t>& hash_buckets,
-    AttributeValue* value) {
+Status ParseAttribute(const LiteString& input,
+                      const AttributeInfo& info,
+                      AttributeValue* value) {
+  const std::string& delimiter = info.delimiter;
+  const std::vector<DataType>& types = info.types;
+  const std::vector<int64_t>& hash_buckets = info.hash_buckets;
+
   std::vector<std::string> attrs =
     ::graphlearn::strings::Split(input, delimiter);
 

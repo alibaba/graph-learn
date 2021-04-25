@@ -33,7 +33,7 @@ public:
       std::unique_ptr<ByteStreamAccessFile>* result) override;
 
   Status NewStructuredAccessFile(
-      const std::string& path, uint64_t offset,
+      const std::string& path, uint64_t offset, uint64_t end,
       std::unique_ptr<StructuredAccessFile>* result) override;
 
   Status NewWritableFile(
