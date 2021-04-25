@@ -17,12 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-try:
-  # https://www.tensorflow.org/guide/migrate
-  import tensorflow.compat.v1 as tf
-  tf.disable_v2_behavior()
-except ImportError:
-  import tensorflow as tf
+import tensorflow as tf
 
 from graphlearn.python.model.base_encoder import BaseGraphEncoder
 from graphlearn.python.model.tf.utils.offsets_to_segment_ids import offsets_to_segment_ids
@@ -234,11 +229,11 @@ class LookupEncoder(BaseGraphEncoder):
                                           name=self._name +
                                           'str_to_hash_bucket_op')
 
-    emb = tf.nn.embedding_lookup(self._emb_table,
-                                 ids,
-                                 name=self._name + 'ids_embedding_lookup_op')
+    with tf.device('/cpu:0'):
+      emb = tf.nn.embedding_lookup(self._emb_table,
+                                   ids,
+                                   name=self._name + 'ids_embedding_lookup_op')
     emb = tf.reshape(emb, [-1, self._dim])
-
     return emb
 
   @property

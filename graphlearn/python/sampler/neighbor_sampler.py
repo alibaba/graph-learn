@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =============================================================================
-""" Classes for different neighbor samplers.
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -21,14 +19,13 @@ from __future__ import print_function
 import numpy as np
 
 from graphlearn import pywrap_graphlearn as pywrap
-from graphlearn.python.errors import raise_exception_on_not_ok_status
-from graphlearn.python.values import Layer, Layers
+from graphlearn.python.data.values import Layer, Layers
 from graphlearn.python.utils import strategy2op
+import graphlearn.python.errors as errors
 
 
 class NeighborSampler(object):
-  """ Sampling neighbors of given ids and edges between
-  ids and neighbors from graph.
+  """ Sampling neighbor nodes and edges of given ids from graph.
   """
 
   def __init__(self,
@@ -40,14 +37,12 @@ class NeighborSampler(object):
 
     Args:
       graph (`Graph` object): The graph which sample from.
-      meta_path (list): a list of string of edge_type.
-      expand_factor (int | list): Number of neighbors
-        sampled from all the in nodes of the node.
-        int: indicates the number of neighbors sampled for each node.
-        list of int: indicates the number of neighbors sampled for
-          each node of each hop.
-      strategy: A string, sampling strategy. "random", "in_degree",
-        or "edge_weight".
+      meta_path (list): A list of string of edge_type.
+      expand_factor (int | list):
+        int: the number of neighbors sampled for each node.
+        list of int: the number of neighbors sampled for each node at each hop.
+      strategy (string), sampling strategy, including "random",
+        "random_without_replacement", "topk", "indegree", "edgeweight", "full".
     """
     self._graph = graph
     if isinstance(meta_path, list):
@@ -92,10 +87,9 @@ class NeighborSampler(object):
     """
 
     if len(self._meta_path) != len(self._expand_factor):
-      raise ValueError("The meta_path must have the same number"
-                       "of elements as num_at_each_hop")
+      raise ValueError("The length of meta_path must be same with hop count.")
 
-    src_ids = ids
+    src_ids = np.array(ids)
     current_batch_size = ids.size
     layers = Layers()
     for i in range(len(self._meta_path)):
@@ -108,38 +102,38 @@ class NeighborSampler(object):
 
       pywrap.del_op_response(res)
       pywrap.del_op_request(req)
-      raise_exception_on_not_ok_status(status)
+      errors.raise_exception_on_not_ok_status(status)
 
       dst_type = self._dst_types[i]
-      layer_nodes = self._graph.get_nodes(dst_type,
-                                          nbr_ids,
-                                          shape=(current_batch_size,
-                                                 self._expand_factor[i]))
+      layer_nodes = self._graph.get_nodes(
+          dst_type,
+          nbr_ids,
+          shape=(current_batch_size, self._expand_factor[i]))
 
       ids = src_ids.repeat(self._expand_factor[i]).flatten()
       nbr_ids_flat = nbr_ids.flatten()
-      layer_edges = \
-        self._graph.get_edges(self._meta_path[i],
-                              ids,
-                              nbr_ids_flat,
-                              shape=(current_batch_size,
-                                     self._expand_factor[i]))
+      layer_edges = self._graph.get_edges(
+          self._meta_path[i],
+          ids,
+          nbr_ids_flat,
+          shape=(current_batch_size, self._expand_factor[i]))
       layer_edges.edge_ids = edge_ids
       layers.append_layer(Layer(layer_nodes, layer_edges))
       current_batch_size = nbr_ids_flat.size
 
       src_ids = nbr_ids
+
     return layers
 
   def _make_req(self, index, src_ids):
     """ Make rpc request.
     """
     if len(self._meta_path) > len(self._expand_factor):
-      raise ValueError("input too many meta_path, and can not decide each hops")
+      raise ValueError("The length of meta_path must be same with hop count.")
 
     sampler = strategy2op(self._strategy[index], "Sampler")
     req = pywrap.new_sampling_request(
-        self._meta_path[index], sampler, self._expand_factor[index])
+        self._meta_path[index], sampler, self._expand_factor[index], 0)
     pywrap.set_sampling_request(req, src_ids)
     return req
 
@@ -147,8 +141,10 @@ class NeighborSampler(object):
 class RandomNeighborSampler(NeighborSampler):
   pass
 
+
 class RandomWithoutReplacementNeighborSampler(NeighborSampler):
   pass
+
 
 class EdgeWeightNeighborSampler(NeighborSampler):
   pass
@@ -164,14 +160,13 @@ class InDegreeNeighborSampler(NeighborSampler):
 
 class FullNeighborSampler(NeighborSampler):
   """ Get all the neighbors of given node ids.
-  return Layer of SparseNodes and SparseEdges.
+  The result is made up of SparseNodes and SparseEdges.
   """
   def get(self, ids):  # pylint: disable=unused-argument
     if len(self._meta_path) != len(self._expand_factor):
-      raise ValueError("The meta_path must have the same number"
-                       "of elements as num_at_each_hop")
+      raise ValueError("The length of meta_path must be same with hop count.")
 
-    ids = ids.flatten()
+    ids = np.array(ids).flatten()
     src_ids = ids
     current_batch_size = ids.size
     layers = Layers()
@@ -189,26 +184,28 @@ class FullNeighborSampler(NeighborSampler):
 
       pywrap.del_op_response(res)
       pywrap.del_op_request(req)
-      raise_exception_on_not_ok_status(status)
+      errors.raise_exception_on_not_ok_status(status)
 
       dst_type = self._dst_types[i]
-      layer_nodes = self._graph.get_nodes(dst_type,
-                                          nbr_ids,
-                                          offsets=src_degrees,
-                                          shape=dense_shape)
+      layer_nodes = self._graph.get_nodes(
+          dst_type,
+          nbr_ids,
+          offsets=src_degrees,
+          shape=dense_shape)
 
       ids = np.concatenate([src_ids[idx].repeat(d) for \
                               idx, d in enumerate(src_degrees)])
       nbr_ids_flat = nbr_ids.flatten()
-      layer_edges = \
-        self._graph.get_edges(self._meta_path[i],
-                              ids,
-                              nbr_ids_flat,
-                              offsets=src_degrees,
-                              shape=dense_shape)
+      layer_edges = self._graph.get_edges(
+          self._meta_path[i],
+          ids,
+          nbr_ids_flat,
+          offsets=src_degrees,
+          shape=dense_shape)
       layer_edges.edge_ids = edge_ids
       layers.append_layer(Layer(layer_nodes, layer_edges))
       current_batch_size = nbr_ids_flat.size
 
       src_ids = nbr_ids
+
     return layers

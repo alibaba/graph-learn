@@ -12,45 +12,49 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =============================================================================
-""" Entry of GraphLearn.
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
-import atexit
 import json
 import warnings
+import numpy as np
 
 from graphlearn import pywrap_graphlearn as pywrap
-from graphlearn.python import sampler as samplers
-from graphlearn.python.decoder import Decoder
-from graphlearn.python.errors import raise_exception_on_not_ok_status
-from graphlearn.python.query import VertexQuery, EdgeQuery, QueryEngine
+from graphlearn.python.config import global_configs
 from graphlearn.python.server import Server
-from graphlearn.python.state import State
-from graphlearn.python.topology import Topology
-from graphlearn.python.values import \
-    Nodes, Edges, SparseNodes, SparseEdges, Values
-from graphlearn.python.utils import strategy2op
+import graphlearn.python.data as data
+import graphlearn.python.errors as errors
+import graphlearn.python.gsl as gsl
+import graphlearn.python.sampler as samplers
+import graphlearn.python.utils as utils
 
 
 class Graph(object):
-  """ A Graph object maintains a single graph with same edges or heterogenous
-  graph with different edges.
+  """ Entry of graph data operations, such as cluster initialization, data
+  loading and sampling. Both homogeneous and heterogeneous graphs are supported.
 
-  APIs:
-    node() & edge(): to make the graph topology.
-    init(): init the graph.
-    get_topology(): to get the graph topology.
-    get_nodes() & get_edges(): to get specified Nodes or Edges from the graph.
-    node_sampler() & edge_sampler() & neighbor_sampler() and negative_sampler():
-      to sample `Edges`, `Nodes` or `Layers` object from the graph.
-  Gemlin-like APIs:
-    node() & edge(): to make the graph topology.
-    init(): init the graph.
-    V() & E(): get the source nodes or edges, start of the gremlin-like query.
+  To use GL, we should define a Graph object first.
+  ```
+  import graphlearn as gl
+  g = gl.Graph()
+  ```
+
+  Based on a Graph object, we can do things through the APIs below.
+
+  node(): Add a kind of VERTEX with vertex type and data schema.
+  edge(): Add a kind of EDGE with (src_type, edge_type, dst_type) tuple and data schema.
+  init(): Load and initialize graph data. Cluster info is needed in distributed mode.
+  get_topology(): Get topology info for heterogeneous graph.
+  node_sampler(): Create a VERTEX sampler to iterate vertices of given type in this graph.
+  edge_sampler(): Create an EDGE sampler to iterate edges of given type in this graph.
+  neighbor_sampler(): Create a NEIGHBOR sampler to sample neighbors for given
+    vertices according to a metapath.
+  negative_sampler(): Create a NEGATIVE sampler to sample un-neighbored vertices
+    for given inputs according to a metapath.
+  subgraph_sampler(): Create SUBGRAPH sampler to sample a sub-graph.
+  V(): Entry of GSL, starting with VERTEX sampling.
+  E(): Entry of GSL, starting with EDGE sampling.
   """
 
   def __init__(self):
@@ -61,38 +65,48 @@ class Graph(object):
     # list of NodeSource added by .node()
 
     # maintain the graph's static topology for fast query.
-    self._topology = Topology()
+    self._topology = data.Topology()
     # maintain a map of node_type with it's decoder
     self._node_decoders = {}
     # maintain a map of edge_type with it's decoder
     self._edge_decoders = {}
     self._undirected_edges = []
-    self._query_engine = QueryEngine(self)
+    self._query_engine = gsl.QueryEngine(self)
 
     self._server = None
     self._client = None
 
-    self.node_state = State()
-    self.edge_state = State()
+    self.node_state = data.NodeState()
+    self.edge_state = data.EdgeState()
+
+    self._datasets = []
 
   def node(self,
            source,
            node_type,
-           decoder):
-    """ Add graph nodes that will be loaded from a given path or an object.
+           decoder,
+           option=None,
+           mask=utils.Mask.NONE):
+    """ Add graph vertices that will be loaded from a given path.
 
     Args:
-      source (string): Data source of path where graph nodes load from.
+      source (string): Data source path where to load the nodes.
       node_type (string): Indicates the type of the added nodes.
+      decoder (Decoder): A Decoder object to describe the data schema.
+      mask (TRAIN | TEST | VAL): Mark the source as TRAIN data, TEST data
+        or VAL data for the given node_type in the graph.
     """
     if not isinstance(source, str):
       raise ValueError('source for node() must be string.')
-    if not isinstance(decoder, Decoder):
+    if not isinstance(node_type, str):
+      raise ValueError('node_type for node() must be string.')
+    if not isinstance(decoder, data.Decoder):
       raise ValueError('decoder must be an instance of `Decoder`, got {}'
                        .format(type(decoder)))
 
+    node_type = utils.get_mask_type(node_type, mask)
     self._node_decoders[node_type] = decoder
-    node_source = self._construct_node_source(source, node_type, decoder)
+    node_source = self._construct_node_source(source, node_type, decoder, option)
     self._node_sources.append(node_source)
     return self
 
@@ -100,162 +114,205 @@ class Graph(object):
            source,
            edge_type,
            decoder=None,
-           directed=True):
-    """ Add graph edges that will be loaded from a given path or an object.
+           directed=True,
+           option=None,
+           mask=utils.Mask.NONE):
+    """ Add graph edges that will be loaded from a given path.
 
     Args:
-      source (string): Data source of path where graph edges load from.
-      edge_type (tuple): Indicates the src_type, dst_type and edge_type of
-        the added edges. The source should only contains one type of edges,
-        and the `edge_type` param should be a 3 element tuple that indicates
-        the (src_type, dst_type, edge_type) of the edges.
-      decoder (`Decoder` object, Optional): Indicates how to parse the data
-        source. Default is None, which means edges should have
-        (src_ids, dst_ids).
-      directed (boolean, Optional): Indicates that i fth edges are directed.
-        Default True means directed.
+      source (string): Data source path where to load the edges.
+      edge_type (tuple): A tuple of (src_type, dst_type, edge_type) that
+        indicates types of the edges.
+      decoder (Decoder): A Decoder object to describe the data schema.
+      directed (boolean): Whether edges are directed.
+      mask (TRAIN | TEST | VAL): Mark the source as TRAIN data, TEST data
+        or VAL data for the given edge_type in the graph.
     """
-    if not decoder:
-      decoder = Decoder()
     if not isinstance(source, str):
       raise ValueError('source for edge() must be a string.')
-    if not isinstance(decoder, Decoder):
+    if not isinstance(edge_type, tuple) or len(edge_type) != 3:
+      raise ValueError("edge_type for edge() must be a tuple of "
+                       "(src_type, dst_tye, edge_type).")
+    if not decoder:
+      decoder = data.Decoder()
+    if not isinstance(decoder, data.Decoder):
       raise ValueError('decoder must be an instance of Decoder, got {}'
                        .format(type(decoder)))
-    if not isinstance(edge_type, tuple) or len(edge_type) != 3:
-      raise ValueError("edge_type must be a tuple of "
-                       "(src_type, dst_tye, edge_type).")
 
-    self._edge_decoders[edge_type[2]] = decoder
+    masked_edge_type = utils.get_mask_type(edge_type[2], mask)
+    self._edge_decoders[masked_edge_type] = decoder
 
-    self._topology.add(edge_type[2], edge_type[0], edge_type[1])
-    edge_source = \
-        self._construct_edge_source(source, edge_type,
-                                    decoder,
-                                    direction=pywrap.Direction.ORIGIN)
+    self._topology.add(masked_edge_type, edge_type[0], edge_type[1])
+    edge_source = self._construct_edge_source(
+        source, (edge_type[0], edge_type[1], masked_edge_type),
+        decoder,
+        direction=pywrap.Direction.ORIGIN,
+        option=option)
     self._edge_sources.append(edge_source)
 
     if not directed:
-      self._undirected_edges.append(edge_type[2])
-      if (edge_type[0] != edge_type[1]):  #pylint: disable=superfluous-parens
-        edge_source_reverse = \
-            self._construct_edge_source(source,
-                                        (edge_type[1], edge_type[0],
-                                         edge_type[2] + '_reverse'),
-                                        decoder,
-                                        direction=pywrap.Direction.REVERSED)
-        self._edge_sources.append(edge_source_reverse)
-        self._edge_decoders[edge_type[2] + "_reverse"] = decoder
-        self._topology.add(edge_type[2] + '_reverse',
-                           edge_type[1], edge_type[0])
-      else:
-        edge_source_reverse = \
-            self._construct_edge_source(source,
-                                        edge_type,
-                                        decoder,
-                                        direction=pywrap.Direction.REVERSED)
-        self._edge_sources.append(edge_source_reverse)
+      self.add_reverse_edges(edge_type, source, decoder, option)
     return self
+
+  @property
+  def undirected_edges(self):
+    return self._undirected_edges
+
+  def add_reverse_edges(self, edge_type, source, decoder, option):
+    self._undirected_edges.append(edge_type[2])
+
+    if (edge_type[0] != edge_type[1]):  # pylint: disable=superfluous-parens
+      reversed_edge_type = edge_type[2] + '_reverse'
+      edge_source_reverse = self._construct_edge_source(
+          source,
+          (edge_type[1], edge_type[0], reversed_edge_type),
+          decoder,
+          direction=pywrap.Direction.REVERSED,
+          option=option)
+      self._edge_sources.append(edge_source_reverse)
+      self._edge_decoders[reversed_edge_type] = decoder
+      self._topology.add(reversed_edge_type, edge_type[1], edge_type[0])
+    else:
+      edge_source_reverse = self._construct_edge_source(
+          source,
+          edge_type,
+          decoder,
+          direction=pywrap.Direction.REVERSED,
+          option=option)
+      self._edge_sources.append(edge_source_reverse)
 
   def init(self, task_index=0, task_count=1,
            cluster="", job_name="", **kwargs):
-    """ Initialize the graph with creating graph server instance with
-    given cluster env info.
+    """ Initialize the graph object in local mode or distributed mode.
+
+    If deployed in local mode, just call `g.init()` without any parameters.
+    If in distributed, you should care about WORKER mode and SERVER mode.
 
     Args:
-      task_index (int): Current task index in in_memory mode or current
-        server or client index in independent mode.
-      task_count (int): Total task count in in_memory mode.
-      cluster (dict | josn str): Empty dict or string when Graph runs with
-        local mode. Otherwise, cluster includes (server_count, client_count,
-        tracker) or (server, client) or (server, client_count)
+      task_index (int): Current task index.
+        If in WORKER mode, it means the current worker index.
+        If in SERVER mode, it means the current server index.
+      task_count (int): Total task count. Only needed in WORKER mode.
+        It means in the total worker count.
+      cluster (dict | json string): Only needed in SERVER mode.
+        3 kinds of schemas are supported:
+        cluster = {
+          "server_count": 2,
+          "client_count": 4,
+          "tracker": "root://graphlearn"
+        }
+        cluster = {
+          "server": "127.0.0.2:6666,127.0.0.3:7777",
+          "client": "127.0.0.4:8888,127.0.0.5:9999"
+        }
+        cluster = {
+          "server": "127.0.0.2:6666,127.0.0.3:7777",
+          "client_count", 2
+        }
         server_count (int): count of servers.
         client_count (int): count of clients.
-        tracker (str): tracker path.
         server (string): hosts of servers, split by ','.
-      job_name (str): `client` or `server`, default empty means Graph runs
-        with local mode.
+      job_name (str): `client` or `server`. Only needed in SERVER mode.
       kwargs:
-        tracker (string): tracker path for in-memory mode.
-        hosts (string): hosts of servers for in-memory mode.
+        tracker (string): Optional tracker path for WORKER mode.
+        hosts (string): Optional worker hosts for WORKER mode.
     """
-    # In memory mode, local or distribute.
-    if not job_name:
-      assert cluster == ""
-      tracker = kwargs.get("tracker", 'root://graphlearn')
-      hosts = kwargs.get("hosts")
+    if not cluster and task_count == 1:
+      # Local mode
+      pywrap.set_deploy_mode(pywrap.DeployMode.LOCAL)
+      self.deploy_in_local_mode()
+    elif not cluster and task_count > 1:
+      # WORKER mode
+      pywrap.set_deploy_mode(pywrap.DeployMode.WORKER)
+      tracker = kwargs.get("tracker", "root://graphlearn")
+      hosts = kwargs.get("hosts", "")
+      self.deploy_in_worker_mode(tracker, hosts, task_index, task_count)
+    else:
+      # SERVER mode
+      pywrap.set_deploy_mode(pywrap.DeployMode.SERVER)
+      self.deploy_in_server_mode(task_index, cluster, job_name)
+    return self
+
+  def deploy_in_local_mode(self):
+    self._client = pywrap.in_memory_client()
+    self._server = Server(0, 1, "", "")
+    self._server.start()
+    self._server.init(self._edge_sources, self._node_sources)
+
+  def deploy_in_worker_mode(self, tracker, hosts, task_index, task_count):
+    if hosts:
+      pywrap.set_server_hosts(hosts)
+      hosts = hosts.split(',')
+      host = hosts[task_index]
+      task_count = len(hosts)
+    else:
       host = "0.0.0.0:0"
-      if hosts:
-        pywrap.set_server_hosts(hosts)
-        hosts = hosts.split(',')
-        host = hosts[task_index]
-        task_count = len(hosts)
-      assert task_index < task_count
 
-      # Local in-memory mode.
-      if task_count == 1:
-        pywrap.set_deploy_mode(0)
-      # Distribute in-memory mode.
-      else:
-        pywrap.set_deploy_mode(2)
-        pywrap.set_server_count(task_count)
-        pywrap.set_client_count(task_count)
-        pywrap.set_tracker(tracker)
-        pywrap.set_client_id(task_index)
+    assert task_index < task_count
 
-      self._client = pywrap.in_memory_client()
-      self._server = Server(task_index, task_count, host, tracker)
+    pywrap.set_client_id(task_index)
+    pywrap.set_client_count(task_count)
+    pywrap.set_server_count(task_count)
+    pywrap.set_tracker(tracker)
+
+    self._client = pywrap.in_memory_client()
+    self._server = Server(task_index, task_count, host, tracker)
+    self._server.start()
+    self._server.init(self._edge_sources, self._node_sources)
+
+  def deploy_in_server_mode(self, task_index, cluster, job_name):
+    if isinstance(cluster, dict):
+      cluster_spec = cluster
+    elif isinstance(cluster, str):
+      cluster_spec = json.loads(cluster)
+    else:
+      raise ValueError("cluster must be dict or json string.")
+
+    tracker = cluster_spec.get("tracker", "root://graphlearn")
+
+    # parse servers
+    server_count = cluster_spec.get("server_count")
+    servers = cluster_spec.get("server")
+    if servers:
+      pywrap.set_server_hosts(servers)
+      servers = servers.split(',')
+      server_count = len(servers)
+
+    # parse clients
+    client_count = cluster_spec.get("client_count")
+    clients = cluster_spec.get("client")
+    if clients:
+      client_count = len(clients.split(','))
+
+    if not server_count or not client_count:
+      raise ValueError("Invalid cluster schema")
+
+    pywrap.set_server_count(server_count)
+    pywrap.set_client_count(client_count)
+
+    if job_name == "client":
+      pywrap.set_tracker(tracker)
+      pywrap.set_client_id(task_index)
+      self._client = pywrap.rpc_client()
+      self._server = None
+    elif job_name == "server":
+      self._client = None
+      server_host = "0.0.0.0:0" if not servers else servers[task_index]
+      self._server = Server(task_index, server_count, server_host, tracker)
       self._server.start()
       self._server.init(self._edge_sources, self._node_sources)
-
-    # Distribute service mode.
     else:
-      if isinstance(cluster, dict):
-        cluster_spec = cluster
-      elif isinstance(cluster, str):
-        cluster_spec = json.loads(cluster)
-      else:
-        raise ValueError("cluster must be dict or json string.")
+      raise ValueError("Only support client and server job name in SERVER mode.")
 
-      tracker = cluster_spec.get("tracker", 'root://graphlearn')
-      server_count = cluster_spec.get("server_count")
-      servers = cluster_spec.get("server")
-      if servers:
-        pywrap.set_server_hosts(servers)
-        servers = servers.split(',')
-        server_count = len(servers)
-
-      client_count = cluster_spec.get("client_count")
-      clients = cluster_spec.get("client")
-      if clients:
-        client_count = len(clients.split(','))
-      if not server_count or not client_count:
-        raise ValueError("cluster is composed of"
-                         " (server_count, client_count, tracker)"
-                         " or (server, client) or (server, client_count)}")
-      pywrap.set_server_count(server_count)
-      pywrap.set_client_count(client_count)
-      pywrap.set_deploy_mode(1)
-
-      if job_name == "client":
-        pywrap.set_tracker(tracker)
-        pywrap.set_client_id(task_index)
-        self._client = pywrap.rpc_client()
-        self._server = None
-      elif job_name == "server":
-        self._client = None
-        server_host = "0.0.0.0:0" if not servers else servers[task_index]
-        self._server = Server(task_index, server_count, server_host, tracker)
-        self._server.start()
-        self._server.init(self._edge_sources, self._node_sources)
-      else:
-        raise ValueError("Only support client and server for GL.")
-    return self
+  def add_dataset(self, ds):
+    self._datasets.append(ds)
 
   def close(self):
     self.wait_for_close()
 
   def wait_for_close(self):
+    for ds in self._datasets:
+      ds.close()
     if self._client:
       self._client.stop()
       self._client = None
@@ -263,8 +320,12 @@ class Graph(object):
       self._server.stop()
       self._server = None
 
-  def V(self, t, feed=None, node_from=pywrap.NodeFrom.NODE):  # pylint: disable=invalid-name
-    """ Entry of Gremlin-like query. Start from node.
+  def V(self,
+        t,
+        feed=None,
+        node_from=pywrap.NodeFrom.NODE,
+        mask=utils.Mask.NONE):
+    """ Entry of GSL, starting from VERTEX.
 
     Args:
       t (string): The type of node which is the entry of query or the type
@@ -283,6 +344,9 @@ class Graph(object):
         iterate node from source node of edge, and `NodeFrom.EDGE_DST` means
         sample or iterate node from destination node of edge. If node is from
         edge, the `type` must be an edge type.
+      mask (NONE | TRAIN | TEST | VAL): The given node set is indexed by both the
+        raw node type and mask value. The default mask value is NONE, which plays
+        nothing on the index.
 
     Return:
       A 'Query' object.
@@ -297,11 +361,17 @@ class Graph(object):
     >>> gen = gen()
     >>> g.V("user", feed=gen)
     """
-    return VertexQuery(self._query_engine, t,
-                       feed=feed, node_from=node_from)
+    if not global_configs.eager_mode:
+      return self._lazy_V(t, node_from, mask=mask)
+    return gsl.VertexQuery(self._query_engine, t, feed=feed,
+                           node_from=node_from, mask=mask)
 
-  def E(self, edge_type, feed=None, reverse=False):  # pylint: disable=invalid-name
-    """ Entry of Gremlin-like query. Start from edge.
+  def E(self,
+        edge_type,
+        feed=None,
+        reverse=False,
+        mask=utils.Mask.NONE):
+    """ Entry of GSL, starting from EDGE.
 
     Args:
       edge_type (string): The type of edge which is the entry of query.
@@ -313,6 +383,9 @@ class Graph(object):
         types.Generator: A generator of (numpy.ndarray, numpy.ndarray). Get
           edges of generated (src_ids, dst_ids) and given edge_type.
         `Edges`: An `Edges` object.
+      mask (NONE | TRAIN | TEST | VAL): The given edge set is indexed by both the
+        raw edge type and mask value. The default mask value is NONE, which plays
+        nothing on the index.
 
     Return:
       A 'Query' object.
@@ -327,12 +400,40 @@ class Graph(object):
     >>> gen = gen()
     >>> g.E("buy", feed=gen)
     """
+    if not global_configs.eager_mode:
+      return self._lazy_E(edge_type, mask=mask)
     if reverse:
       edge_type = edge_type + "_reverse"
-    return EdgeQuery(self._query_engine, edge_type, feed=feed)
+    return gsl.EdgeQuery(self._query_engine, edge_type, feed=feed, mask=mask)
+
+  def _lazy_V(self, t, node_from=pywrap.NodeFrom.NODE,
+              mask=utils.Mask.NONE):
+    dag = gsl.Dag(self)
+    params = {pywrap.kNodeType: utils.get_mask_type(t, mask),
+              pywrap.kNodeFrom: int(node_from)}
+    source_node = gsl.TraverseVertexDagNode(
+      dag, op_name="GetNodes", params=params)
+    source_node.set_output_field(pywrap.kNodeIds)
+    source_node.set_path(t, node_from)
+
+    # Add sink node to dag
+    gsl.SinkNode(dag)
+    return source_node
+
+  def _lazy_E(self, t, mask=utils.Mask.NONE):
+    dag = gsl.Dag(self)
+    params = {pywrap.kEdgeType: utils.get_mask_type(t, mask)}
+    source_node = gsl.TraverseSourceEdgeDagNode(
+      dag, op_name="GetEdges", params=params)
+    source_node.set_output_field(pywrap.kEdgeIds)
+    source_node.set_path(t, pywrap.NodeFrom.NODE)
+
+    # Add sink node to dag
+    gsl.SinkNode(dag)
+    return source_node
 
   def run(self, q, **kwargs):
-    """ Run the query, get the result.
+    """ Run GSL query.
 
     Args:
       q (Query): A query starts from .V()/.E() and ends up with .values().
@@ -360,7 +461,7 @@ class Graph(object):
     if not decoder:
       warnings.warn("Node_type {} not exist in graph. Use default decoder."
                     .format(node_type))
-      decoder = Decoder()
+      decoder = data.Decoder()
     return decoder
 
   def get_edge_decoder(self, edge_type):
@@ -370,7 +471,7 @@ class Graph(object):
     if not decoder:
       warnings.warn("Edge_type {} not exist in graph. Use default decoder."
                     .format(edge_type))
-      decoder = Decoder()
+      decoder = data.Decoder()
     return decoder
 
   def get_node_decoders(self):
@@ -389,7 +490,7 @@ class Graph(object):
     Args:
       node_type (string): Type of nodes, which should has been added by
         `Graph.node()`.
-      ids (numpy.ndarrayy): ids of nodes. In sparse case, it must be 1D.
+      ids (numpy.ndarray): ids of nodes. In sparse case, it must be 1D.
       offsets: (list): To get `SparseNodes`, whose dense shape is 2D,
         `offsets` indicates the number of nodes for each line.
         Default None means it is a dense `Nodes`.
@@ -401,12 +502,12 @@ class Graph(object):
       A `Nodes` object or a `SparseNodes` object.
     '''
     if offsets is None:
-      nodes = Nodes(ids, node_type, shape=shape, graph=self)
+      nodes = data.Nodes(ids, node_type, shape=shape, graph=self)
     else:
-      nodes = SparseNodes(ids, offsets, shape, node_type, graph=self)
+      nodes = data.SparseNodes(ids, offsets, shape, node_type, graph=self)
     return nodes
 
-  def get_edges(self, edge_type, src_ids, dst_ids, offsets=None,
+  def get_edges(self, edge_type, src_ids, dst_ids, edge_ids=None, offsets=None,
                 shape=None, reverse=False):
     """ Get edges from the graph.
 
@@ -431,14 +532,22 @@ class Graph(object):
     if reverse:
       edge_type = edge_type + "_reverse"
 
-    src_type, dst_type = self._topology.get_src_type(edge_type), \
-                         self._topology.get_dst_type(edge_type)
+    src_type = self._topology.get_src_type(edge_type)
+    dst_type = self._topology.get_dst_type(edge_type)
     if offsets is None:
-      edges = Edges(src_ids, src_type, dst_ids,
-                    dst_type, edge_type, shape=shape, graph=self)
+      edges = data.Edges(src_ids, src_type,
+                         dst_ids, dst_type,
+                         edge_type,
+                         edge_ids,
+                         shape=shape,
+                         graph=self)
     else:
-      edges = SparseEdges(src_ids, src_type, dst_ids,
-                          dst_type, edge_type, offsets, shape, graph=self)
+      edges = data.SparseEdges(src_ids, src_type,
+                               dst_ids, dst_type,
+                               edge_type,
+                               offsets, shape,
+                               edge_ids,
+                               graph=self)
     return edges
 
   def is_directed(self, edge_type):
@@ -455,7 +564,8 @@ class Graph(object):
                    t,
                    batch_size=64,
                    strategy="by_order",
-                   node_from=pywrap.NodeFrom.NODE):
+                   node_from=pywrap.NodeFrom.NODE,
+                   mask=utils.Mask.NONE):
     """ Sampler for sample one type of nodes.
 
     Args:
@@ -485,17 +595,19 @@ class Graph(object):
     Return:
       A `NodeSampler` object.
     """
-    sampler = strategy2op(strategy, "NodeSampler")
+    sampler = utils.strategy2op(strategy, "NodeSampler")
     return getattr(samplers, sampler)(self,
                                       t,
                                       batch_size=batch_size,
                                       strategy=strategy,
-                                      node_from=node_from)
+                                      node_from=node_from,
+                                      mask=mask)
 
   def edge_sampler(self,
                    edge_type,
                    batch_size=64,
-                   strategy="by_order"):
+                   strategy="by_order",
+                   mask=utils.Mask.NONE):
     """Sampler for sample one type of edges.
 
     Args:
@@ -516,11 +628,12 @@ class Graph(object):
       An `EdgeSampler` object.
 
     """
-    sampler = strategy2op(strategy, "EdgeSampler")
+    sampler = utils.strategy2op(strategy, "EdgeSampler")
     return getattr(samplers, sampler)(self,
                                       edge_type,
                                       batch_size=batch_size,
-                                      strategy=strategy)
+                                      strategy=strategy,
+                                      mask=mask)
 
   def neighbor_sampler(self,
                        meta_path,
@@ -547,7 +660,7 @@ class Graph(object):
     Return:
       A 'NeighborSampler' object.
     """
-    sampler = strategy2op(strategy, "NeighborSampler")
+    sampler = utils.strategy2op(strategy, "NeighborSampler")
     return getattr(samplers, sampler)(self,
                                       meta_path,
                                       expand_factor,
@@ -556,8 +669,10 @@ class Graph(object):
   def negative_sampler(self,
                        object_type,
                        expand_factor,
-                       strategy="random"):
-    """Sampler for sample negative dst nodes of the given src nodes
+                       strategy="random",
+                       conditional=False,
+                       **kwargs):
+    """Sampler for sampling negative dst nodes of the given src nodes
     with edge_type.
 
     Args:
@@ -568,30 +683,35 @@ class Graph(object):
         "random": randomly sample negative nodes.
         "in_degree": sample negative nodes by the in degree of the target nodes.
       expand_factor (int): Indicates how many negatives to sample for one node.
-
+      conditional(bool): Indicates whether sample under condition.
     Return:
       A 'NegativeSampler' object.
     """
-    sampler = strategy2op(strategy, "NegativeSampler")
-    return getattr(samplers, sampler)(self,
-                                      object_type,
-                                      expand_factor,
-                                      strategy=strategy)
+    if not conditional:
+      sampler = utils.strategy2op(strategy, "NegativeSampler")
+      return getattr(samplers, sampler)(self,
+                                        object_type,
+                                        expand_factor,
+                                        strategy=strategy)
+    else:
+      return getattr(samplers, "ConditionalNegativeSampler")(self,
+                                                             object_type,
+                                                             expand_factor,
+                                                             strategy=strategy,
+                                                             **kwargs)
 
-  def _construct_node_source(self, path, node_type, decoder=None):
-    """ Construct `NodeSource` with path, node_type and
-    (attr_delimiter, data_format and attr_types) in decoder.
-    """
+  def _construct_node_source(self, path, node_type, decoder=None, option=None):
     source = pywrap.NodeSource()
     source.id_type = node_type
-    self._common_construct_source(source, path, decoder)
+    self._common_construct_source(source, path, decoder, option)
     return source
 
-  def _construct_edge_source(self, path, edge_type, decoder,
-                             direction=pywrap.Direction.ORIGIN):
-    """ Construct `EdgeSource` with path, edge_type and
-        (attr_delimiter, data_format and attr_types) in decoder.
-    """
+  def _construct_edge_source(self,
+                             path,
+                             edge_type,
+                             decoder,
+                             direction=pywrap.Direction.ORIGIN,
+                             option=None):
     source = pywrap.EdgeSource()
     if isinstance(edge_type, tuple) and len(edge_type) == 3:
       source.src_id_type, source.dst_id_type, source.edge_type = edge_type
@@ -599,38 +719,42 @@ class Graph(object):
       raise ValueError("edge_type param for .edge must be a tuple with "
                        "(src_type, dst_type, edge_type)")
     source.direction = direction
-    self._common_construct_source(source, path, decoder)
+    self._common_construct_source(source, path, decoder, option)
     return source
 
-  def _common_construct_source(self, source, path, decoder):
-    """Construct pywrap.Source with decoder
+  def _common_construct_source(self, source, path, decoder, option=None):
+    """Construct pywrap.Source
     """
     source.path = path
     source.format = decoder.data_format
+    if option:
+      source.option = option
+    else:
+      source.option = pywrap.IndexOption()
+      source.option.name = "sort"
 
     if decoder.attributed:
-      source.delimiter = decoder.attr_delimiter
+      source.attr_info.delimiter = decoder.attr_delimiter
       for t in decoder.attr_types:
-        if isinstance(t, tuple):
-          type_str = t[0]
-          if len(t) < 2:
-            source.append_hash_bucket(0)
-          else:
-            source.append_hash_bucket(t[1])
+        type_str, bucket_size, is_multival = decoder.parse(t)
+        if is_multival:
+          source.attr_info.append_hash_bucket(0)
+        elif bucket_size is not None:
+          source.attr_info.append_hash_bucket(bucket_size)
         else:
-          type_str = t
-          source.append_hash_bucket(0)
+          source.attr_info.append_hash_bucket(0)
 
         if type_str == "int":
-          source.append_attr_type(pywrap.DataType.INT64)
+          source.attr_info.append_type(pywrap.DataType.INT64)
         elif type_str == "float":
-          source.append_attr_type(pywrap.DataType.FLOAT)
+          source.attr_info.append_type(pywrap.DataType.FLOAT)
         else:
-          source.append_attr_type(pywrap.DataType.STRING)
+          source.attr_info.append_type(pywrap.DataType.STRING)
 
   def lookup_nodes(self, node_type, ids):
-    """ Get all the node properties.
+    """ Get the attributes of given nodes.
     """
+    ids = np.array(ids)
     req = pywrap.new_lookup_nodes_request(node_type)
     pywrap.set_lookup_nodes_request(req, ids)
 
@@ -638,30 +762,35 @@ class Graph(object):
     status = self._client.lookup_nodes(req, res)
     if status.ok():
       decoder = self.get_node_decoder(node_type)
-      weights = weights = pywrap.get_node_weights(res) \
-        if decoder.weighted else None
-      labels = pywrap.get_node_labels(res) \
-        if decoder.labeled else None
-      int_attrs = pywrap.get_node_int_attributes(res) \
-        if decoder.attributed else None
-      float_attrs = pywrap.get_node_float_attributes(res) \
-        if decoder.attributed else None
-      string_attrs = pywrap.get_node_string_attributes(res) \
-        if decoder.attributed else None
-      int_attrs, float_attrs, string_attrs = \
-        decoder.format_attrs(int_attrs, float_attrs, string_attrs)
+      weights = pywrap.get_node_weights(res) if decoder.weighted else None
+      labels = pywrap.get_node_labels(res) if decoder.labeled else None
+      int_attrs = pywrap.get_node_int_attributes(
+        res) if decoder.attributed else None
+      float_attrs = pywrap.get_node_float_attributes(
+        res) if decoder.attributed else None
+      string_attrs = pywrap.get_node_string_attributes(
+        res) if decoder.attributed else None
+      int_attrs, float_attrs, string_attrs = decoder.format_attrs(
+        int_attrs, float_attrs, string_attrs)
 
     pywrap.del_op_response(res)
     pywrap.del_op_request(req)
-    raise_exception_on_not_ok_status(status)
+    errors.raise_exception_on_not_ok_status(status)
 
-    return Values(int_attrs=int_attrs,
-                  float_attrs=float_attrs, string_attrs=string_attrs,
-                  weights=weights, labels=labels, graph=self)
+    return data.Values(
+        int_attrs=int_attrs,
+        float_attrs=float_attrs,
+        string_attrs=string_attrs,
+        weights=weights,
+        labels=labels,
+        graph=self)
 
   def lookup_edges(self, edge_type, src_ids, edge_ids):
-    """ Get all the edge properties.
+    """ Get the attributes of given edges.
     """
+    src_ids = np.array(src_ids)
+    edge_ids = np.array(edge_ids)
+
     batch_size = src_ids.flatten().size
     if batch_size != edge_ids.flatten().size:
       raise ValueError("src_ids and edge_ids for lookup edges must "
@@ -670,31 +799,100 @@ class Graph(object):
 
     req = pywrap.new_lookup_edges_request(edge_type)
     pywrap.set_lookup_edges_request(req, src_ids, edge_ids)
-
     res = pywrap.new_lookup_edges_response()
     status = self._client.lookup_edges(req, res)
     if status.ok():
       decoder = self.get_edge_decoder(edge_type)
-      weights = pywrap.get_edge_weights(res) \
-        if decoder.weighted else None
-      labels = pywrap.get_edge_labels(res) \
-        if decoder.labeled else None
-      int_attrs = pywrap.get_edge_int_attributes(res) \
-        if decoder.attributed else None
-      float_attrs = pywrap.get_edge_float_attributes(res) \
-        if decoder.attributed else None
-      string_attrs = pywrap.get_edge_string_attributes(res) \
-        if decoder.attributed else None
-      int_attrs, float_attrs, string_attrs = \
-        decoder.format_attrs(int_attrs, float_attrs, string_attrs)
+      weights = pywrap.get_edge_weights(res) if decoder.weighted else None
+      labels = pywrap.get_edge_labels(res) if decoder.labeled else None
+      int_attrs = pywrap.get_edge_int_attributes(
+        res) if decoder.attributed else None
+      float_attrs = pywrap.get_edge_float_attributes(
+        res) if decoder.attributed else None
+      string_attrs = pywrap.get_edge_string_attributes(
+        res) if decoder.attributed else None
+      int_attrs, float_attrs, string_attrs = decoder.format_attrs(
+        int_attrs, float_attrs, string_attrs)
 
     pywrap.del_op_response(res)
     pywrap.del_op_request(req)
-    raise_exception_on_not_ok_status(status)
+    errors.raise_exception_on_not_ok_status(status)
 
-    return Values(int_attrs=int_attrs,
-                  float_attrs=float_attrs, string_attrs=string_attrs,
-                  weights=weights, labels=labels, graph=self)
+    return data.Values(
+        int_attrs=int_attrs,
+        float_attrs=float_attrs,
+        string_attrs=string_attrs,
+        weights=weights,
+        labels=labels,
+        graph=self)
+
+  def subgraph_sampler(self,
+                       seed_type,
+                       nbr_type,
+                       batch_size=64,
+                       strategy="random_node"):
+    """Sampler for sample SubGraph.
+
+    Args:
+      graph (`Graph` object): The graph which sample from.
+      seed_type (string): Sample seed type, either node type or edge type.
+      nbr_type (string): Neighbor type of seeds nodes/edges.
+      batch_size (int): How many nodes will be returned for `get()`.
+      strategy (string, Optional): Sampling strategy. "random_node".
+    Return:
+      An `SubGraphSampler` object.
+
+    """
+    sampler = utils.strategy2op(strategy, "SubGraphSampler")
+    return getattr(samplers, sampler)(self,
+                                      seed_type,
+                                      nbr_type,
+                                      batch_size=batch_size,
+                                      strategy=strategy)
+
+  def get_node_count(self, type):
+    if type not in self.get_node_decoders().keys():
+      raise ValueError('Graph has no node type of {}'.format(type))
+
+    return self.get_entity_count(type, True)
+
+  def get_edge_count(self, type):
+    if type not in self.get_edge_decoders().keys():
+      raise ValueError('Graph has no edge type of {}'.format(type))
+
+    return self.get_entity_count(type, False)
+
+  def get_entity_count(self, type, is_node):
+    req = pywrap.new_get_count_request(type, is_node=is_node)
+    res = pywrap.new_get_count_response()
+    status = self._client.get_count(req, res)
+    if status.ok():
+      count = pywrap.get_count(res)
+
+    pywrap.del_op_response(res)
+    pywrap.del_op_request(req)
+    errors.raise_exception_on_not_ok_status(status)
+    return count
+
+  def _get_degree(self, edge_type, node_from, ids):
+    req = pywrap.new_get_degree_request(edge_type, node_from)
+    pywrap.set_degree_request(req, ids)
+    res = pywrap.new_get_degree_response()
+    status = self._client.get_degree(req, res)
+    if status.ok():
+      degrees = pywrap.get_degree(res)
+    pywrap.del_op_response(res)
+    pywrap.del_op_request(req)
+    errors.raise_exception_on_not_ok_status(status)
+    return degrees
+
+  def in_degrees(self, ids, edge_type):
+    ids = np.array(ids)
+    return self._get_degree(edge_type, pywrap.NodeFrom.EDGE_DST, ids)
+
+  def out_degrees(self, ids, edge_type):
+    ids = np.array(ids)
+    return self._get_degree(edge_type, pywrap.NodeFrom.EDGE_SRC, ids)
 
   def get_client(self):
     return self._client

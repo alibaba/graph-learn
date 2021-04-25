@@ -27,8 +27,10 @@ from graphlearn.python.tests.test_edge import EdgeTestCase
 
 class BasicEdgeTestCase(EdgeTestCase):
   def test_basic(self):
+    gl.set_eager_mode(True)
     file_path = self.gen_test_data([], False)
     decoder = gl.Decoder()
+    gl.set_eager_mode(True)
     g = gl.Graph() \
       .edge(source=file_path, edge_type=self.edge_tuple_, decoder=decoder)
     g.init(tracker=utils.TRACKER_PATH)

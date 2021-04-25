@@ -52,3 +52,24 @@ def gen_pair(path, left_window_size, right_window_size):
       pairs[1].append(path[center_idx + cursor + 1])
       cursor += 1
   return np.concatenate(pairs[0]), np.concatenate(pairs[1])
+
+def gen_pair_names(path, left_window_size, right_window_size):
+  """
+  path: alias of walks.
+  """
+  path_len = len(path)
+  pairs = [[], []] # [src ids list, dst ids list]
+
+  for center_idx in range(path_len):
+    cursor = 0
+    while center_idx - cursor > 0 and  cursor < left_window_size:
+      pairs[0].append(path[center_idx])
+      pairs[1].append(path[center_idx - cursor - 1])
+      cursor += 1
+
+    cursor = 0
+    while center_idx + cursor + 1 < path_len and cursor < right_window_size:
+      pairs[0].append(path[center_idx])
+      pairs[1].append(path[center_idx + cursor + 1])
+      cursor += 1
+  return pairs[0], pairs[1]

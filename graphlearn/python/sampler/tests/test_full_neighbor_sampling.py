@@ -20,6 +20,7 @@ from __future__ import print_function
 
 import unittest
 
+import graphlearn as gl
 from graphlearn.python.sampler.tests.test_sampling import SamplingTestCase
 import graphlearn.python.tests.utils as utils
 
@@ -31,8 +32,9 @@ class FullNeighborSamplingTestCase(SamplingTestCase):
     """ Sample full neighbors.
     """
     ids = self._seed_node1_ids
+    expand_factor = 0
     nbr_s = self.g.neighbor_sampler(self._edge1_type,
-                                    1,
+                                    expand_factor,
                                     strategy="full")
     nbrs = nbr_s.get(ids)
     edges = nbrs.layer_edges(1)
@@ -44,18 +46,35 @@ class FullNeighborSamplingTestCase(SamplingTestCase):
           utils.fixed_dst_ids(ids[index], self._node2_range), node.ids)
       index += 1
 
+  def test_1hop_with_expand_factor(self):
+    """ Test case for sample 1 hop neighbor with strategy of edge_weight.
+    All the src_ids have neighbors.
+    """
+    expand_factor = 6
+    ids = self._seed_node1_ids
+    nbr_s = self.g.neighbor_sampler(self._edge1_type,
+                                    expand_factor,
+                                    strategy="full")
+    nbrs = nbr_s.get(ids)
+    edges = nbrs.layer_edges(1)
+    nodes = nbrs.layer_nodes(1)
+    utils.check_node_ids(nodes, self._node2_ids)
+    utils.check_node_type(nodes, node_type=self._node2_type)
+
   def test_1hop_with_agg(self):
+    gl.set_eager_mode(True)
     ids = self._seed_node2_ids
     res = self.g.V(self._node2_type, feed=ids).outV(self._edge2_type).sample().by("full").emit()
     print(res[1].embedding_agg(func="sum"))
 
-  def test_1hop_using_gremlin(self):
-    """ Full neighbor sample with gremlin-like api.
+  def test_1hop_using_gsl(self):
+    """ Full neighbor sample with gsl api.
     """
-    expand_factor = 2
+    gl.set_eager_mode(True)
+    expand_factor = 0
     ids = self._seed_node1_ids
     nbrs = self.g.V(self._node1_type, feed=ids) \
-      .outE(self._edge1_type).sample().by("full") \
+      .outE(self._edge1_type).sample(expand_factor).by("full") \
       .inV().emit()
 
     nodes = nbrs[2]

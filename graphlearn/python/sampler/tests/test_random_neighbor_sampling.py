@@ -19,10 +19,12 @@ from __future__ import division
 from __future__ import print_function
 
 import unittest
+import time
 
 from graphlearn.python.sampler.tests.test_sampling import SamplingTestCase
 import graphlearn.python.tests.utils as utils
 
+import graphlearn as gl
 
 class RandomNeighborSamplingTestCase(SamplingTestCase):
   """ Test cases for sampling with ranom choise.
@@ -38,6 +40,8 @@ class RandomNeighborSamplingTestCase(SamplingTestCase):
     nbrs = nbr_s.get(ids)
     edges = nbrs.layer_edges(1)
     nodes = nbrs.layer_nodes(1)
+
+    print(edges.src_nodes.get_out_degrees(self._edge1_type))
 
     utils.check_fixed_edge_dst_ids(edges, dst_range=self._node2_range,
                                    expected_src_ids=ids)
@@ -60,6 +64,7 @@ class RandomNeighborSamplingTestCase(SamplingTestCase):
     """ Sample neighbors for nodes which have no out neighbors,
     and get the default neighbor id.
     """
+    gl.set_eager_mode(True)
     expand_factor = 6
     ids = self._seed_node1_ids_with_nbr_missing
     nbr_s = self.g.neighbor_sampler(self._edge1_type,
@@ -138,9 +143,10 @@ class RandomNeighborSamplingTestCase(SamplingTestCase):
     utils.check_node_type(nodes, node_type=self._node1_type)
     utils.check_node_shape(nodes, ids.size * expand_factor[1])
 
-  def test_1hop_using_gremlin(self):
-    """ Using gremlin-like api.
+  def test_1hop_using_gsl(self):
+    """ Using gsl api.
     """
+    gl.set_eager_mode(True)
     expand_factor = 6
     ids = self._seed_node1_ids
     nbrs = self.g.V(self._node1_type, feed=ids) \
@@ -168,9 +174,10 @@ class RandomNeighborSamplingTestCase(SamplingTestCase):
     utils.check_node_labels(nodes)
 
 
-  def test_2hop_using_gremlin(self):
-    """ Using gremlin-like api.
+  def test_2hop_using_gsl(self):
+    """ Using gsl api.
     """
+    gl.set_eager_mode(True)
     expand_factor = [3, 2]
     ids = self._seed_node1_ids
     nbrs = self.g.V(self._node1_type, feed=ids) \
@@ -190,10 +197,11 @@ class RandomNeighborSamplingTestCase(SamplingTestCase):
     utils.check_fixed_edge_dst_ids(edges, dst_range=self._node1_range,
                                    expected_src_ids=ids)
 
-  def test_2hop_using_gremlin_with_undirected_edge(self):
-    """ Using gremlin-like api and sample neighbor on undirected edges
+  def test_2hop_using_gsl_with_undirected_edge(self):
+    """ Using gsl api and sample neighbor on undirected edges
     whose source node and dst node has defferent type.
     """
+    gl.set_eager_mode(True)
     expand_factor = [3, 2]
     ids = self._seed_node1_ids
     nbrs = self.g.V(self._node1_type, feed=ids) \
@@ -218,10 +226,11 @@ class RandomNeighborSamplingTestCase(SamplingTestCase):
     utils.check_node_type(nodes2, self._node1_type)
     utils.check_node_ids(nodes2, self._node1_ids)
 
-  def test_2hop_using_gremlin_with_undirected_edge_homo(self):
-    """ Using gremlin-like api and sample neighbor on undirected edges
+  def test_2hop_using_gsl_with_undirected_edge_homo(self):
+    """ Using gsl api and sample neighbor on undirected edges
     whose source node and dst node has same type.
     """
+    gl.set_eager_mode(True)
     expand_factor = [3, 2]
     ids = self._seed_node2_ids
 

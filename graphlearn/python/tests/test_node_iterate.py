@@ -45,7 +45,7 @@ class NodeIterateTestCase(NodeTestCase):
         res_ids.extend(list(nodes.ids))
       except gl.OutOfRangeError:
         break
-    ids = range(self.value_range_[0][0], self.value_range_[0][1])
+    ids = range(self.value_range_[0], self.value_range_[1])
     utils.check_sorted_equal(res_ids, ids)
 
     sampler = g.node_sampler('user', batch_size=batch_size,

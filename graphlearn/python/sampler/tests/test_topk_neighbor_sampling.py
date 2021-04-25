@@ -66,9 +66,10 @@ class TopkNeighborSamplingTestCase(SamplingTestCase):
         edges, default_dst_id=self._default_dst_id)
 
 
-  def test_1hop_using_gremlin(self):
-    """ Topk neighbor sample with gremlin-like api.
+  def test_1hop_using_gsl(self):
+    """ Topk neighbor sample with gsl api.
     """
+    gl.set_eager_mode(True)
     gl.set_padding_mode(gl.REPLICATE)
     ids = self._seed_node2_ids
     nbrs = self.g.V(self._node2_type, feed=ids) \

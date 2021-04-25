@@ -12,17 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =============================================================================
-""" GraphLearn Server.
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 from graphlearn import pywrap_graphlearn as pywrap
 
-
 class Server(object):
-  """ A class managing a GraphLearn server, including start, init and stop.
+  """ Class to manage a GraphLearn server, including start, init and stop.
   """
 
   def __init__(self,
@@ -36,8 +33,12 @@ class Server(object):
     Args:
       server_id: An int, server index in the cluster, starts from 0.
       server_count: An int, server instance number in the cluster.
-      tracker: A string where the tracker will be stored, and dynamic
-        address will be registered to.
+      server_host: Use a given ip:port to start the server, which will be used
+        for communication. By default, the server will choose an available
+        address automatically. In this way, tracker is needed for address
+        discovering.
+      tracker: A string, the tracker path, where all server addresses will be
+        registered to.
     """
     self._server_id = server_id
     self._server_count = server_count
@@ -58,11 +59,12 @@ class Server(object):
 
   def start(self):
     """ Start the server. It will not return until all servers are started.
-    After calling this, the server can response a request.
     """
     self._server.start()
 
   def init(self, edge_source=None, node_source=None):
+    """ Initialize graph data. It will not return until all data is installed.
+    """
     if not edge_source:
       edge_source = []
     if not node_source:

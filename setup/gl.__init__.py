@@ -14,33 +14,16 @@
 # =============================================================================
 
 from graphlearn import pywrap_graphlearn as pywrap
+from graphlearn.pywrap_graphlearn import IndexOption
+
+from graphlearn.python.cluster import get_cluster
 from graphlearn.python.config import * # pylint: disable=wildcard-import
-from graphlearn.python.graph import Graph
-from graphlearn.python.values import Nodes, Edges, Layer, Layers, \
-  SparseNodes, SparseEdges
+from graphlearn.python.data import *  # pylint: disable=wildcard-import
 from graphlearn.python.errors import * # pylint: disable=wildcard-import
-from graphlearn.python.decoder import Decoder
-from graphlearn.python.topology import Topology
-from graphlearn.python.sampler import *
-
-# model
-from graphlearn.python.model.base_encoder import *
-from graphlearn.python.model.ego_graph import *
-from graphlearn.python.model.ego_spec import *
-from graphlearn.python.model.learning_based_model import *
-from graphlearn.python.model.utils import *
-# tf based model
-from graphlearn.python.model.tf import aggregators
-from graphlearn.python.model.tf import encoders
-from graphlearn.python.model.tf import layers
-from graphlearn.python.model.tf import utils
-
-from graphlearn.python.model.tf.trainer import *
-from graphlearn.python.model.tf.optimizer import *
-from graphlearn.python.model.tf.loss_fn import *
-from graphlearn.python.model.tf.ego_tensor import *
-from graphlearn.python.model.tf.ego_flow import *
-
+from graphlearn.python.graph import Graph
+from graphlearn.python.gsl import Dataset
+from graphlearn.python.sampler import * # pylint: disable=wildcard-import
+from graphlearn.python.utils import * # pylint: disable=wildcard-import
 
 EDGE_SRC = pywrap.NodeFrom.EDGE_SRC
 EDGE_DST = pywrap.NodeFrom.EDGE_DST

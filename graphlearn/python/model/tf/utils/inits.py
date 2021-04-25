@@ -13,12 +13,7 @@
 # limitations under the License.
 # =============================================================================
 """Functions of different initializer"""
-try:
-  # https://www.tensorflow.org/guide/migrate
-  import tensorflow.compat.v1 as tf
-  tf.disable_v2_behavior()
-except ImportError:
-  import tensorflow as tf
+import tensorflow as tf
 
 
 def zeros(shape, name=None):

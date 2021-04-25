@@ -17,12 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-try:
-  # https://www.tensorflow.org/guide/migrate
-  import tensorflow.compat.v1 as tf
-  tf.disable_v2_behavior()
-except ImportError:
-  import tensorflow as tf
+import tensorflow as tf
 
 from graphlearn.python.model.tf.layers.conv import BaseConv
 
@@ -77,7 +72,7 @@ class GATConv(BaseConv):
       self_vecs_extend = tf.tile(tf.expand_dims(self_vecs, 1),
                                  [1, num_neibors, 1])
       coefficients = tf.nn.softmax(tf.nn.leaky_relu(self._attn_fc(
-          tf.concat([self_vecs_extend, neigh_vecs], axis=-1))))
+          tf.concat([self_vecs_extend, neigh_vecs], axis=-1))), axis=1)
       coefficients = tf.nn.dropout(coefficients, 1 - self._attn_drop)
       neigh_vecs = tf.multiply(coefficients, neigh_vecs)
       neigh_vecs = tf.reduce_sum(neigh_vecs, axis=1)

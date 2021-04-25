@@ -18,7 +18,7 @@ from __future__ import division
 from __future__ import print_function
 
 from graphlearn.python.model.utils.reorganize_attrs import reorganize_attrs
-from graphlearn.python.values import Nodes
+from graphlearn.python.data.values import Nodes, Edges
 
 class EgoGraph(object):
   """This class organizes the sampled subgraph, which consists of a list of Layer,
@@ -84,10 +84,10 @@ class EgoGraph(object):
     """
     flatten_list = []
     # ids
-    if isinstance(feature, Nodes):
-      ids = feature.ids.reshape([-1])
-    else: # Edges
+    if isinstance(feature, Edges):
       ids = feature.edge_ids.reshape([-1])
+    else: # Nodes or DagNodes
+      ids = feature.ids.reshape([-1])
     flatten_list.append(ids)
     # for sparse format.
     if sparse:
@@ -105,10 +105,10 @@ class EgoGraph(object):
     # attrs
     int_attrs = float_attrs = string_attrs = None
     if feature_spec.cont_attrs_num > 0:
-      int_attrs = feature.int_attrs # [num_int_attrs, ids.shape]
-      float_attrs = feature.float_attrs # [num_float_attrs,ids.shape]
+      float_attrs = feature.float_attrs # [ids.shape, num_float_attrs]
 
     if feature_spec.cate_attrs_num > 0:
+      int_attrs = feature.int_attrs # [ids.shape, num_int_attrs]
       string_attrs = feature.string_attrs
     continuous_attrs, categorical_attrs = \
       reorganize_attrs(int_attrs, float_attrs, string_attrs)

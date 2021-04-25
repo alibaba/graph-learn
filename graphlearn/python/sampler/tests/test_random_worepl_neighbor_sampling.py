@@ -31,6 +31,7 @@ class RandomWithoutReplacementNeighborSamplingTestCase(SamplingTestCase):
   def test_1hop_circular_padding(self):
     """ Sample one hop of neighbors.
     """
+    gl.set_eager_mode(True)
     gl.set_padding_mode(gl.CIRCULAR)
     expand_factor = 6
     ids = self._seed_node1_ids
@@ -81,9 +82,10 @@ class RandomWithoutReplacementNeighborSamplingTestCase(SamplingTestCase):
                                    expected_src_ids=ids,
                                    default_dst_id=self._default_dst_id)
 
-  def test_1hop_using_gremlin(self):
-    """ Using gremlin-like api.
+  def test_1hop_using_gsl(self):
+    """ Using gsl api.
     """
+    gl.set_eager_mode(True)
     gl.set_padding_mode(gl.REPLICATE)
     expand_factor = 6
     ids = self._seed_node1_ids

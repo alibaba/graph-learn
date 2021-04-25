@@ -37,17 +37,16 @@ class NodeTestCase(unittest.TestCase):
     utils.prepare_env()
 
     self.node_type_ = 'user'
-    self.value_range_ = [(0, 100)]
+    self.value_range_ = (0, 100)
     self.ids_ = np.array([2, 5, 8])
 
   def tearDown(self):
     pass
 
   def gen_test_data(self, schema):
-    paths = utils.gen_node_data(id_type=[self.node_type_],
-                                id_range=self.value_range_,
-                                schema=schema)
-    return paths[0]
+    return utils.gen_node_data(id_type=self.node_type_,
+                               id_range=self.value_range_,
+                               schema=schema)
 
   def check_weights(self, nodes):
     self.assertEqual(3, nodes.weights.shape[0])

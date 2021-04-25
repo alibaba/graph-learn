@@ -25,26 +25,11 @@ def reorganize_attrs(int_attrs, float_attrs, string_attrs):
   def reshape_attrs(attrs):
     """reshape input attrs to [batch_size, attr_num].
     """
-    if attrs is not None:
+    if attrs is not None and attrs.size > 0:
       return np.reshape(attrs, (-1, attrs.shape[-1]))
     return attrs
 
   int_attrs = reshape_attrs(int_attrs)
   float_attrs = reshape_attrs(float_attrs)
   string_attrs = reshape_attrs(string_attrs)
-
-  continuous_list = []
-  if int_attrs is not None:
-    continuous_list.append(int_attrs.astype(np.float32))
-  if float_attrs is not None:
-    continuous_list.append(float_attrs)
-
-  if continuous_list:
-    continuous_attrs = np.concatenate(continuous_list, axis=-1)
-  else:
-    continuous_attrs = None
-  if string_attrs is not None:
-    categorical_attrs = string_attrs
-  else:
-    categorical_attrs = None
-  return continuous_attrs, categorical_attrs
+  return float_attrs, int_attrs

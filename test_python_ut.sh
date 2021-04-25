@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
-for file in $(ls -ld $(find ./graphlearn/python))
+for test_file in $(find ./graphlearn/python/ -name "test_*.py")
 do
-  if [[ $file == */test_*.py ]]
-  then
-    echo $file
-    python $file
-  fi
+echo TESTING $test_file ...
+python $test_file
 done

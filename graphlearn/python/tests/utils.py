@@ -31,7 +31,8 @@ WEIGHTED = 0
 LABELED = 1
 ATTRIBUTED = 2
 ATTR_TYPES = ['int', 'float', 'string', ('string', 10)]
-
+ENTITY_ATTR_TYPES = ['float', 'float', 'float', 'float']
+COND_ATTR_TYPES = ['int', 'int', 'float', 'string']
 
 def prepare_env():
   os.system('mkdir -p %s' % TRACKER_PATH)
@@ -40,11 +41,7 @@ def prepare_env():
   os.system('rm -rf %s*' % DATA_PATH)
 
 
-def gen_node_data(id_type, id_range, schema):
-  n = len(id_type)
-  if n != len(id_range):
-    raise ValueError('count of id_type and id_range must be the same')
-
+def gen_node_data(id_type, id_range, schema, mask=""):
   def write_meta(f, schema):
     meta = 'id:int64'
     if WEIGHTED in schema:
@@ -68,19 +65,16 @@ def gen_node_data(id_type, id_range, schema):
     line += '\n'
     f.write(line)
 
-  path_list = []
-  for i in range(n):
-    path = '%s/%s_%d' % (DATA_PATH, id_type[i], int(time.time() * 1000))
-    with open(path, 'w') as f:
-      write_meta(f, schema)
-      for value in range(id_range[i][0], id_range[i][1]):
-        write_data(f, value, schema)
-    path_list.append(path)
-  return path_list
+  path = '%s/%s_%d_%s' % (DATA_PATH, id_type, int(time.time() * 1000), mask)
+  with open(path, 'w') as f:
+    write_meta(f, schema)
+    for value in range(id_range[0], id_range[1]):
+      write_data(f, value, schema)
+  return path
 
 
 def gen_edge_data(src_type, dst_type, src_range,
-                  dst_range, schema, mixed=False, func=None):
+                  dst_range, schema, mixed=False, func=None, mask=""):
   if not func:
     func = fixed_dst_ids
 
@@ -108,8 +102,8 @@ def gen_edge_data(src_type, dst_type, src_range,
     line += '\n'
     f.write(line)
 
-  path = '%s/%s_%s_%d' % (DATA_PATH, src_type,
-                          dst_type, int(time.time() * 1000))
+  path = '%s/%s_%s_%d_%s' % (DATA_PATH, src_type,
+                          dst_type, int(time.time() * 1000), mask)
   with open(path, 'w') as f:
     write_meta(f, schema)
     src = range(src_range[0], src_range[1])
@@ -139,6 +133,61 @@ def fixed_dst_ids(src_ids, dst_range):
   return dst_ids
 
 
+def gen_entity_node(node_type):
+  def write_meta(f):
+    meta = 'id:int64\tlabel:int64\tfeature:string\n'
+    f.write(meta)
+
+  def write_data(f):
+    for i in range(120):
+      line = '%d\t%d\t%f:%f:%f:%f\n' % (i, i, i * 0.1, i * 0.2, i * 0.3, i * 0.4)
+      f.write(line)
+
+  path = '%s/%s_%d' % (DATA_PATH, node_type, int(time.time() * 1000))
+  with open(path, 'w') as f:
+    write_meta(f)
+    write_data(f)
+  return path
+
+
+def gen_relation_edge(edge_type):
+  def write_meta(f):
+    meta = 'src_id:int64\tdst_id:int64\tweight:float\n'
+    f.write(meta)
+
+  def write_data(f):
+    for i in range(100):
+      line = '%d\t%d\t%f\n' % (i, i + 2, (i / 100.0))
+      f.write(line)
+      line = '%d\t%d\t%f\n' % (i, i + 3, (i / 100.0))
+      f.write(line)
+      line = '%d\t%d\t%f\n' % (i, i + 5, (i / 100.0))
+      f.write(line)
+
+  path = '%s/%s_%d' % (DATA_PATH, edge_type, int(time.time() * 1000))
+  with open(path, 'w') as f:
+    write_meta(f)
+    write_data(f)
+  return path
+
+
+def gen_cond_node(node_type):
+  def write_meta(f):
+    meta = 'id:int64\tweight:float\tfeature:string\n'
+    f.write(meta)
+
+  def write_data(f):
+    for i in range(200):
+      line = '%d\t%f\t%d:%d:%f:%s\n' % (i, i * 0.1, i % 5, i % 4, i * 0.3, str(i%3))
+      f.write(line)
+
+  path = '%s/%s_%d' % (DATA_PATH, node_type, int(time.time() * 1000))
+  with open(path, 'w') as f:
+    write_meta(f)
+    write_data(f)
+  return path
+
+
 def check_node_ids(nodes, ids):
   assert set(list(nodes.ids.reshape(-1))).issubset(list(ids))
 
@@ -156,7 +205,10 @@ def check_node_shape(nodes, shape):
 
 
 def check_node_weights(nodes):
-  npt.assert_almost_equal(nodes.weights, 0.1 * nodes.ids, decimal=5)
+  check_id_weights(nodes.ids, nodes.weights)
+
+def check_id_weights(ids, weights):
+  npt.assert_almost_equal(weights.reshape(-1), 0.1 * ids.reshape(-1), decimal=5)
 
 
 def check_not_exist_node_weights(nodes):
@@ -173,13 +225,21 @@ def check_not_exist_node_labels(nodes):
 
 def check_node_attrs(nodes):
   size = nodes.ids.size
+  check_i_attrs(nodes.int_attrs, nodes.ids)
+  check_f_attrs(nodes.float_attrs, nodes.ids)
+  check_s_attrs(nodes.string_attrs, nodes.ids)
 
-  for i, value in zip(range(size), nodes.ids):
-    # the second int is hash value, here we just check the first one
-    npt.assert_equal(nodes.int_attrs[i][0], value)
-    npt.assert_almost_equal(nodes.float_attrs[i][0], value / 1.0, decimal=5)
-    npt.assert_equal(nodes.string_attrs[i][0], str(value))
+def check_i_attrs(i_attrs, ids):
+  for i, value in zip(range(ids.size), ids):
+    npt.assert_equal(i_attrs[i][0], value)
 
+def check_f_attrs(f_attrs, ids):
+  for i, value in zip(range(ids.size), ids):
+    npt.assert_almost_equal(f_attrs[i][0], value / 1.0, decimal=5)
+
+def check_s_attrs(s_attrs, ids):
+  for i, value in zip(range(ids.size), ids):
+    npt.assert_equal(s_attrs[i][0], str(value))
 
 def check_not_exist_node_attrs(nodes,
                                default_int_attr=0,
@@ -199,14 +259,22 @@ def check_not_exist_node_attrs(nodes,
     total_node = size
 
   # the second int is hash value, here we just check the first one
-  npt.assert_equal(nodes.int_attrs[:, 0].flatten(),
-                   np.array([default_int_attr] * total_node))
-  npt.assert_almost_equal(nodes.float_attrs.flatten(),
-                          np.array([default_float_attr] * total_node),
-                          decimal=4)
-  npt.assert_equal(nodes.string_attrs.flatten(),
-                   np.array([default_string_attr] * total_node))
+  check_default_i_attrs(nodes.int_attrs, total_node, default_int_attr)
+  check_default_f_attrs(nodes.float_attrs, total_node, default_float_attr)
+  check_default_s_attrs(nodes.string_attrs, total_node, default_string_attr)
 
+def check_default_i_attrs(i_attrs, count, default_int_attr=0):
+  npt.assert_equal(i_attrs[:, 0].flatten(),
+                   np.array([default_int_attr] * count))
+
+def check_default_f_attrs(f_attrs, count, default_float_attr=0.0):
+  npt.assert_almost_equal(f_attrs.flatten(),
+                          np.array([default_float_attr] * count),
+                          decimal=4)
+
+def check_default_s_attrs(f_attrs, count, default_string_attr=""):
+  npt.assert_equal(s_attrs.flatten(),
+                   np.array([default_string_attr] * count))
 
 def check_edge_shape(edges, batch_size):
   npt.assert_equal(edges.src_ids.reshape(-1).size, batch_size)
@@ -259,10 +327,12 @@ def check_topk_edge_ids(edges, expected_src_ids,
 
 
 def check_edge_weights(edges):
-  npt.assert_almost_equal(edges.weights,
-                          0.1 * (edges.src_ids + 0.1 * edges.dst_ids),
-                          decimal=5)
+  check_src_dst_weights(edges.weights, edges.src_ids, edges.dst_ids)
 
+def check_src_dst_weights(weights, src_ids, dst_ids):
+  npt.assert_almost_equal(weights,
+                          0.1 * (src_ids + 0.1 * dst_ids),
+                          decimal=5)
 
 def check_not_exist_edge_weights(edges):
   if len(edges.shape) == 2:
@@ -285,7 +355,6 @@ def check_half_exist_edge_weights(edges, default_dst_id=0):
 
 def check_edge_labels(edges):
   npt.assert_equal(edges.labels, edges.src_ids)
-
 
 def check_not_exist_edge_labels(edges):
   if len(edges.shape) == 2:
@@ -343,6 +412,8 @@ def check_not_exist_edge_attrs(edges,
 def check_equal(lhs, rhs):
   npt.assert_equal(list(lhs), list(rhs))
 
+def check_val_equal(lhs, rhs):
+  npt.assert_equal(lhs, rhs)
 
 def check_sorted_equal(lhs, rhs):
   """ check sorted lhs is equal with sorted rhs.
@@ -359,8 +430,37 @@ def check_subset(a, b):
   """
   assert set(list(a)).issubset(list(b))
 
+def check_disjoint(a, b):
+  """ check a is disjoint with b.
+  """
+  assert set(list(a)).isdisjoint(set(list(b)))
 
 def check_set_equal(lhs, rhs):
   """ check set of lhs is equal with set of rhs.
   """
   npt.assert_equal(set(lhs), set(rhs))
+
+def check_subgraph_node_lables(nodes):
+  npt.assert_equal(nodes.labels, nodes.ids)
+
+def check_subgraph_node_attrs(nodes):
+  size = nodes.ids.size
+  for i, value in zip(range(size), nodes.ids):
+    npt.assert_almost_equal(nodes.float_attrs[i][0], value * 0.1, decimal=5)
+    npt.assert_almost_equal(nodes.float_attrs[i][1], value * 0.2, decimal=5)
+    npt.assert_almost_equal(nodes.float_attrs[i][2], value * 0.3, decimal=5)
+    npt.assert_almost_equal(nodes.float_attrs[i][3], value * 0.4, decimal=5)
+
+def check_subgraph_edge_indices(nodes, row_indices, col_indices):
+  size = nodes.ids.size
+  true_row_idx = []
+  true_col_idx = []
+  for i in range(size):
+    for j in range(size):
+      if ((nodes.ids[i] < 100 or nodes.ids[j] < 100)
+          and (abs(nodes.ids[i] - nodes.ids[j]) in [2, 3, 5])):
+        true_row_idx.append(i)
+        true_col_idx.append(j)
+  npt.assert_equal(row_indices, np.array(true_row_idx))
+  npt.assert_equal(col_indices, np.array(true_col_idx))
+

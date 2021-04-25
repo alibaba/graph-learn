@@ -12,18 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =============================================================================
-"""Sample Nodes form Graph, support by_order, random and shuffle.
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 from graphlearn import pywrap_graphlearn as pywrap
-from graphlearn.python.errors import raise_exception_on_not_ok_status
+import graphlearn.python.errors as errors
+import graphlearn.python.utils as utils
 
 
 class NodeSampler(object):
-  """ Sampling nodes from graph.
+  """ Sampling a batch of nodes from graph, 3 modes are supported:
+  by_order, random and shuffle.
   """
 
   def __init__(self,
@@ -31,7 +31,8 @@ class NodeSampler(object):
                t,
                batch_size,
                strategy="by_order",
-               node_from=pywrap.NodeFrom.NODE):
+               node_from=pywrap.NodeFrom.NODE,
+               mask=utils.Mask.NONE):
     """ Create a Base NodeSampler..
 
     Args:
@@ -44,18 +45,16 @@ class NodeSampler(object):
       batch_size (int): How many nodes will be returned for `get()`.
       strategy (string, Optional): Sampling strategy. "by_order", "random"
         and "shuffle" are supported.
-        "by_order": get nodes by order of how the specified node is stored,
-          if the specified type of nodes are totally visited,
-          `graphlearn.OutOfRangeError` will be raised. Several
-          `NodeSampler`s with same type will hold a single state.
+        "by_order": get nodes by the order of how the specified node is stored,
+          if all the specified type of nodes are visited,
+          `graphlearn.OutOfRangeError` will be raised.
+          NodeSamplers that process the same node will share the same state.
         "random": randomly visit nodes, no state will be kept.
-        "shuffle": visit the nodes with shuffling, if the specified type of
-          nodes are totally visited, `graphlearn.OutOfRangeError` will be
-          raised. Several `NodeSampler`s with same type will hold a single
-          state.
+        "shuffle": visit the nodes with shuffling, if all the specified type of
+          nodes are visited, `graphlearn.OutOfRangeError` will be raised.
+          NodeSamplers that process the same node will share the same state.
      node_from (graphlearn.NODE | graphlearn.EDGE_SRC | graphlearn.EDGE_DST):
-        `graphlearn.NODE`: get node from node data, and `t` must be a node
-          type.
+        `graphlearn.NODE`: get node from node data, and `t` must be a node type.
         `graphlearn.EDGE_SRC`: get node from source node of edge data, and `t`
           must be an edge type.
         `graphlearn.EDGE_DST`: get node from destination node of edge data, and
@@ -67,6 +66,7 @@ class NodeSampler(object):
     self._strategy = strategy
     self._client = self._graph.get_client()
     self._node_from = node_from
+    self._mask = mask
 
     if self._node_from == pywrap.NodeFrom.NODE:
       if self._type not in self._graph.get_node_decoders().keys():
@@ -74,8 +74,8 @@ class NodeSampler(object):
       self._node_type = self._type
     else:
       topology = self._graph.get_topology()
-      src_type, dst_type = \
-        topology.get_src_type(self._type), topology.get_dst_type(self._type)
+      src_type = topology.get_src_type(self._type)
+      dst_type = topology.get_dst_type(self._type)
       self._src_type, self._dst_type = src_type, dst_type
       if self._node_from == pywrap.NodeFrom.EDGE_SRC:
         self._node_type = src_type
@@ -90,8 +90,9 @@ class NodeSampler(object):
     Raise:
       `graphlearn.OutOfRangeError`
     """
-    state = self._graph.node_state.get(self._type)
-    req = pywrap.new_get_nodes_request(self._type,
+    mask_type = utils.get_mask_type(self._type, self._mask)
+    state = self._graph.node_state.get(mask_type)
+    req = pywrap.new_get_nodes_request(mask_type,
                                        self._strategy,
                                        self._node_from,
                                        self._batch_size,
@@ -100,13 +101,13 @@ class NodeSampler(object):
     res = pywrap.new_get_nodes_response()
     status = self._client.get_nodes(req, res)
     if not status.ok():
-      self._graph.edge_state.inc(self._type)
+      self._graph.node_state.inc(mask_type)
     else:
       ids = pywrap.get_node_ids(res)
 
     pywrap.del_op_response(res)
     pywrap.del_op_request(req)
-    raise_exception_on_not_ok_status(status)
+    errors.raise_exception_on_not_ok_status(status)
 
     nodes = self._graph.get_nodes(self._node_type, ids)
     return nodes

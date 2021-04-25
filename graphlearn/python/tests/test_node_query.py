@@ -47,7 +47,7 @@ class NodeQueryTestCase(unittest.TestCase):
 
   def setUp(self):
     self.node_type_ = 'user'
-    self.value_range_ = [(0, 100)]
+    self.value_range_ = (0, 100)
     self.exist_ids_ = np.array([2, 5, 8])
     self.not_exist_ids_ = np.array([-2, -5, -8])
     self.half_exist_ids_ = np.array([2, 5, -8])
@@ -64,10 +64,9 @@ class NodeQueryTestCase(unittest.TestCase):
     pass
 
   def gen_test_data(self, schema):
-    paths = utils.gen_node_data(id_type=[self.node_type_],
-                                id_range=self.value_range_,
-                                schema=schema)
-    return paths[0]
+    return utils.gen_node_data(id_type=self.node_type_,
+                               id_range=self.value_range_,
+                               schema=schema)
 
   def check_exist_attrs(self, nodes):
     self.assertListEqual([3, 2], list(nodes.int_attrs.shape))  # [int_num, batch_size]

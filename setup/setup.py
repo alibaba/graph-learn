@@ -24,13 +24,12 @@ import shlex
 from subprocess import check_output
 
 # This version string should be updated when releasing a new version.
-_VERSION = '0.1'
+_VERSION = '1.0'
 
 ROOT_PATH = os.path.abspath(os.path.join(os.getcwd()))
 CUT_PATH = sys.path[0]
 
 extensions = []
-
 include_dirs=[]
 library_dirs=[]
 libraries=[]
@@ -55,8 +54,9 @@ extra_link_args.append('-Wl,-rpath=$ORIGIN/python/lib/')
 
 libraries.append('graphlearn_shared')
 
-sources = [ROOT_PATH + '/graphlearn/python/py_export.cc',
-           ROOT_PATH + '/graphlearn/python/py_client.cc']
+sources = [ROOT_PATH + '/graphlearn/python/c/py_export.cc',
+           ROOT_PATH + '/graphlearn/python/c/py_client.cc',
+           ROOT_PATH + '/graphlearn/python/c/py_contrib.cc']
 
 graphlearn_extension = Extension(
     'pywrap_graphlearn',

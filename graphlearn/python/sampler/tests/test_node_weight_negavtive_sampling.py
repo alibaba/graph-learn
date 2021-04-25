@@ -41,9 +41,11 @@ class NodeWeightNegavtiveSamplingTestCase(SamplingTestCase):
     utils.check_node_type(nodes, node_type=self._node2_type)
     utils.check_node_shape(nodes, ids.size * expand_factor)
 
-  def test_neg_using_gremlin(self):
-    """ Using gremlin-like api.
+  def test_neg_using_gsl(self):
+    """ Using gsl api.
     """
+    import graphlearn as gl
+    gl.set_eager_mode(True)
     expand_factor = 6
     ids = self._seed_node1_ids
     nbrs = self.g.V(self._node2_type, feed=ids) \

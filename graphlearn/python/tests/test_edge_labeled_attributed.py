@@ -27,6 +27,7 @@ from graphlearn.python.tests.test_edge import EdgeTestCase
 
 class LabeledAttributedEdgeTestCase(EdgeTestCase):
   def test_labeled_attributed(self):
+    gl.set_eager_mode(True)
     file_path = self.gen_test_data([utils.LABELED, utils.ATTRIBUTED], False)
     decoder = gl.Decoder(labeled=True, attr_types=utils.ATTR_TYPES)
     g = gl.Graph() \

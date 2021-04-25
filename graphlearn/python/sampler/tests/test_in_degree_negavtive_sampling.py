@@ -20,6 +20,7 @@ from __future__ import print_function
 
 import unittest
 
+import graphlearn as gl
 from graphlearn.python.sampler.tests.test_sampling import SamplingTestCase
 import graphlearn.python.tests.utils as utils
 
@@ -41,16 +42,17 @@ class InDegreeNegavtiveSamplingTestCase(SamplingTestCase):
     for i, e in enumerate(ids):
       expected_ids = [iid for iid in self._node2_ids if \
           iid not in utils.fixed_dst_ids(e, self._node2_range)]
-      utils.check_ids(nodes.ids[i * expand_factor: (i + 1) * expand_factor],
+      utils.check_ids(nodes.ids[i],
                       expected_ids)
 
     utils.check_node_type(nodes, node_type=self._node2_type)
     utils.check_node_shape(nodes, ids.size * expand_factor)
 
   @unittest.skip("Not always right")
-  def test_neg_using_gremlin(self):
-    """ Using gremlin-like api.
+  def test_neg_using_gsl(self):
+    """ Using gsl api.
     """
+    gl.set_eager_mode(True)
     expand_factor = 6
     ids = self._seed_node1_ids
     nbrs = self.g.V(self._node1_type, feed=ids) \
@@ -62,7 +64,7 @@ class InDegreeNegavtiveSamplingTestCase(SamplingTestCase):
     for i, e in enumerate(ids):
       expected_ids = [iid for iid in self._node2_ids if \
           iid not in utils.fixed_dst_ids(e, self._node2_range)]
-      utils.check_ids(nodes.ids[i * expand_factor: (i + 1) * expand_factor],
+      utils.check_ids(nodes.ids[i],
                       expected_ids)
 
     utils.check_node_type(nodes, node_type=self._node2_type)

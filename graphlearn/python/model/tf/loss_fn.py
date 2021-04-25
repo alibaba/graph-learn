@@ -17,12 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-try:
-  # https://www.tensorflow.org/guide/migrate
-  import tensorflow.compat.v1 as tf
-  tf.disable_v2_behavior()
-except ImportError:
-  import tensorflow as tf
+import tensorflow as tf
 
 #similarity measure function
 def _rank_dot_product(vec1, vec2):
@@ -181,5 +176,25 @@ def triplet_loss(pos_src_emb, pos_edge_emb, neg_src_emb,
     neg_d = tf.reduce_sum(tf.abs(neg_src_emb + neg_edge_emb - neg_dst_emb), axis=-1)
   if neg_num > 1:
     pos_d = tf.reshape(tf.tile(tf.expand_dims(pos_d, -1), [1, neg_num]), [-1])
-  loss = tf.reduce_mean(tf.maximum(0.0, margin + pos_d - neg_d))
+  loss = tf.reduce_mean(tf.maximum(0.0, margin + pos_d - neg_d)) 
   return [loss, None, None]
+
+# Unsupervised loss.
+def unsupervised_softmax_cross_entropy_loss(src_emb,
+                                            pos_emb,
+                                            neg_emb):
+  """Sigmoid cross entropy loss for unsuperviesd model.
+  Args:
+    src_emb: tensor with shape [batch_size, dim]
+    pos_emb: tensor with shape [batch_size, dim]
+    neg_emb: tensor with shape [batch_size * neg_num, dim]
+  Returns:
+    loss
+  """
+  pos_sim = tf.reduce_sum(tf.multiply(src_emb, pos_emb), axis=-1, keepdims=True)
+  neg_sim = tf.matmul(src_emb, tf.transpose(neg_emb))
+
+  logit = tf.nn.softmax(tf.concat([pos_sim, neg_sim], axis=-1))
+  loss = -tf.reduce_mean(tf.log(logit[:, :1] + 1e-12))
+
+  return loss

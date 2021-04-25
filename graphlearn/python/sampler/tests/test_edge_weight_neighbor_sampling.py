@@ -20,6 +20,7 @@ from __future__ import print_function
 
 import unittest
 
+import graphlearn as gl
 from graphlearn.python.sampler.tests.test_sampling import SamplingTestCase
 import graphlearn.python.tests.utils as utils
 
@@ -137,10 +138,11 @@ class EdgeWeightNeighborSamplingTestCase(SamplingTestCase):
     utils.check_node_type(nodes, node_type=self._node1_type)
     utils.check_node_shape(nodes, ids.size * expand_factor[1])
 
-  def test_1hop_using_gremlin(self):
+  def test_1hop_using_gsl(self):
     """ Test case for sample 1 hop neighbor.
     hetegerous graph with edge attrs, without edge weight.
     """
+    gl.set_eager_mode(True)
     expand_factor = 6
     ids = self._seed_node1_ids
     nbrs = self.g.V(self._node1_type, feed=ids) \
@@ -167,9 +169,10 @@ class EdgeWeightNeighborSamplingTestCase(SamplingTestCase):
     utils.check_node_weights(nodes)
     utils.check_node_labels(nodes)
 
-  def test_2hop_using_gremlin(self):
+  def test_2hop_using_gsl(self):
     """ Test case for sample 2 hop neighbor with strategy of edge_weight.
     """
+    gl.set_eager_mode(True)
     expand_factor = [3, 2]
     ids = self._seed_node1_ids
     nbrs = self.g.V(self._node1_type, feed=ids) \

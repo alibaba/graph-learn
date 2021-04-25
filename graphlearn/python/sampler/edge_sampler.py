@@ -12,25 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =============================================================================
-""" Sample Edges from Graph, supports by_order, random and shuffle.
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 from graphlearn import pywrap_graphlearn as pywrap
-from graphlearn.python.errors import raise_exception_on_not_ok_status
-
+import graphlearn.python.errors as errors
+import graphlearn.python.utils as utils
 
 class EdgeSampler(object):
-  """ Base class for sampling edges from graph.
+  """ Base class for sampling edges from graph, 3 modes are supported:
+  by_order, random and shuffle.
   """
 
   def __init__(self,
                graph,
                edge_type,
                batch_size,
-               strategy="by_order"):
+               strategy="by_order",
+               mask=utils.Mask.NONE):
     """ Create a Base EdgeSampler instance.
     Args:
       graph (`Graph` object): The graph which sample from.
@@ -53,6 +53,7 @@ class EdgeSampler(object):
     self._batch_size = batch_size
     self._strategy = strategy
     self._client = self._graph.get_client()
+    self._mask = mask
 
     topology = self._graph.get_topology()
     self._node_decoders = self._graph.get_node_decoders()
@@ -69,14 +70,15 @@ class EdgeSampler(object):
     Raise:
       `graphlearn.OutOfRangeError`
     """
-    state = self._graph.edge_state.get(self._edge_type)
+    mask_type = utils.get_mask_type(self._edge_type, self._mask)
+    state = self._graph.edge_state.get(mask_type)
     req = pywrap.new_get_edges_request(
-        self._edge_type, self._strategy, self._batch_size, state)
+        mask_type, self._strategy, self._batch_size, state)
     res = pywrap.new_get_edges_response()
 
     status = self._client.get_edges(req, res)
     if not status.ok():
-      self._graph.edge_state.inc(self._edge_type)
+      self._graph.edge_state.inc(mask_type)
     else:
       src_ids = pywrap.get_edge_src_id(res)
       dst_ids = pywrap.get_edge_dst_id(res)
@@ -84,7 +86,7 @@ class EdgeSampler(object):
 
     pywrap.del_op_response(res)
     pywrap.del_op_request(req)
-    raise_exception_on_not_ok_status(status)
+    errors.raise_exception_on_not_ok_status(status)
 
     edges = self._graph.get_edges(self._edge_type,
                                   src_ids,

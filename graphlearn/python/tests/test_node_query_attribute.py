@@ -46,12 +46,14 @@ class NodeQueryWeightTestCase(NodeQueryTestCase):
                              ids=self.not_exist_ids_)
     self.check_not_exist_attrs(nodes)
 
-  def test_query_exist_gremlin(self):
+  def test_query_exist_gsl(self):
+    gl.set_eager_mode(True)
     nodes = self.g.V(self.node_type_, feed=self.exist_ids_) \
       .emit()
     self.check_exist_attrs(nodes)
 
-  def test_query_not_exist_gremlin(self):
+  def test_query_not_exist_gsl(self):
+    gl.set_eager_mode(True)
     nodes = self.g.V(self.node_type_, feed=self.not_exist_ids_) \
       .emit()
     self.check_not_exist_attrs(nodes)

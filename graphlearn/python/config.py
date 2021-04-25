@@ -12,77 +12,120 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =============================================================================
-""" Functions to set global configurations.
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import functools
 from graphlearn import pywrap_graphlearn as pywrap
-from graphlearn.python.utils import deprecated
 
+
+class GlobalConfigs(object):
+  def __getattr__(self, param):
+    """
+    Get global config, default is None.
+    """
+    return self.__dict__.get(param, None)
+
+global_configs = GlobalConfigs()
+
+def export(param):
+  """
+  use @export(param) as decorator to export global configs to python api.
+  For example, we export `eager_mode`:
+  ```
+  @export("eager_mode")
+  def set_eager_mode(flag):
+    ...
+  ```
+  Then get the `eager_mode` configuration.
+  ```
+  >>> global_configs.eager_mode
+  None
+
+  >>> gl.set_eager_mode(False)
+  >>> global_configs.eager_mode
+  False
+
+  >>> gl.set_eager_mode(True)
+  >>> global_configs.eager_mode
+  True
+  ```
+  """
+  def decorator(func):
+    @functools.wraps(func)
+    def wrapper(value):
+      setattr(global_configs, param, value)
+      func(value)
+    return wrapper
+  return decorator
 
 def set_default_neighbor_id(nbr_id):
   pywrap.set_default_neighbor_id(nbr_id)
 
-
 def set_tracker_mode(mode):
   pywrap.set_tracker_mode(mode)
-
 
 def set_padding_mode(mode):
   pywrap.set_padding_mode(mode)
 
- 
 def set_storage_mode(mode):
   pywrap.set_storage_mode(mode)
-
 
 def set_default_int_attribute(value=0):
   """ Set default global int attribute.
   """
   pywrap.set_default_int_attr(int(value))
 
-
 def set_default_float_attribute(value=0.0):
   """ Set default global float attribute.
   """
   pywrap.set_default_float_attr(float(value))
-
 
 def set_default_string_attribute(value=''):
   """ Set default global string attribute.
   """
   pywrap.set_default_string_attr(str(value))
 
-
 def set_timeout(time_in_second):
   pywrap.set_timeout(time_in_second)
 
+def set_retry_times(retry_times):
+  pywrap.set_retry_times(retry_times)
 
 def set_inmemory_queuesize(size):
   pywrap.set_inmemory_queuesize(size)
 
-
 def set_inner_threadnum(num):
   pywrap.set_inner_threadnum(num)
-
 
 def set_inter_threadnum(num):
   pywrap.set_inter_threadnum(num)
 
-
 def set_intra_threadnum(num):
   pywrap.set_intra_threadnum(num)
-
 
 def set_datainit_batchsize(size):
   pywrap.set_datainit_batchsize(size)
 
-
 def set_shuffle_buffer_size(size):
   pywrap.set_shuffle_buffer_size(size)
 
-
 def set_rpc_message_max_size(size):
   pywrap.set_rpc_message_max_size(size)
+
+def set_dataset_capacity(size):
+  assert 0 < size < 128, "Dataset capacity should be > 0 and < 128."
+  pywrap.set_dataset_capacity(size)
+
+def set_tape_capacity(size):
+  assert 0 < size < 128, "Tape capacity should be > 0 and < 128."
+  pywrap.set_tape_capacity(size)
+
+@export("eager_mode")
+def set_eager_mode(flag):
+  assert isinstance(flag, bool)
+
+def set_ignore_invalid(value):
+  pywrap.set_ignore_invalid(value)
+

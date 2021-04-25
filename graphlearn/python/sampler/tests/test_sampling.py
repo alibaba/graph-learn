@@ -35,10 +35,10 @@ class SamplingTestCase(unittest.TestCase):
   def initialize(self):
     """ Init gl.Graph
     """
-    node1_path = utils.gen_node_data([self._node1_type], [self._node1_range],
-                                     [utils.ATTRIBUTED])[0]
-    node2_path = utils.gen_node_data([self._node2_type], [self._node2_range],
-                                     [utils.WEIGHTED, utils.LABELED])[0]
+    node1_path = utils.gen_node_data(self._node1_type, self._node1_range,
+                                     [utils.ATTRIBUTED])
+    node2_path = utils.gen_node_data(self._node2_type, self._node2_range,
+                                     [utils.WEIGHTED, utils.LABELED])
     edge1_path = utils.gen_edge_data(self._node1_type, self._node2_type,
                                      self._node1_range, self._node2_range,
                                      schema=[utils.ATTRIBUTED, utils.LABELED])
@@ -49,12 +49,43 @@ class SamplingTestCase(unittest.TestCase):
                                      self._node2_range, self._node2_range,
                                      schema=[utils.WEIGHTED])
 
+    node3_path = utils.gen_entity_node(self._node3_type) # attr labeled nodes
+    edge4_path = utils.gen_relation_edge(self._edge4_type) # weighted edges
+    cond_node_path = utils.gen_cond_node(self._cond_node_type) # attr weighted nodes
+
+    # test for mask.
+    train_node_path = utils.gen_node_data(
+      self._node1_type, self._train_node_range, schema=[utils.WEIGHTED], mask="train")
+    test_node_path = utils.gen_node_data(
+      self._node1_type, self._test_node_range, schema=[utils.WEIGHTED], mask="test")
+    val_node_path = utils.gen_node_data(
+      self._node1_type, self._val_node_range, schema=[utils.WEIGHTED], mask="val")
+    train_edge_path = utils.gen_edge_data(self._node1_type, self._node2_type,
+                                          self._train_node_range, self._node2_range,
+                                          schema=[], mask="train")
+    test_edge_path = utils.gen_edge_data(self._node1_type, self._node2_type,
+                                         self._test_node_range, self._node2_range,
+                                         schema=[], mask="test")
+    val_edge_path = utils.gen_edge_data(self._node1_type, self._node2_type,
+                                        self._val_node_range, self._node2_range,
+                                        schema=[], mask="val")
+
     self.__class__.needs_initial = False
     self.__class__.g = gl.Graph() \
       .node(source=node1_path, node_type=self._node1_type,
             decoder=self._node1_decoder) \
       .node(source=node2_path, node_type=self._node2_type,
             decoder=self._node2_decoder) \
+      .node(source=node3_path, node_type=self._node3_type,
+            decoder=self._node3_decoder) \
+      .node(source=cond_node_path, node_type=self._cond_node_type,
+            decoder=self._cond_node_deocder) \
+      .node(source=train_node_path, node_type=self._node1_type,
+            decoder=gl.Decoder(weighted=True), mask=gl.Mask.TRAIN) \
+      .node(source=test_node_path, node_type=self._node1_type,
+            decoder=gl.Decoder(weighted=True), mask=gl.Mask.TEST) \
+      .node(source=val_node_path, node_type=self._node1_type,
+            decoder=gl.Decoder(weighted=True), mask=gl.Mask.VAL) \
       .edge(source=edge1_path,
             edge_type=(self._node1_type, self._node2_type, self._edge1_type),
             decoder=self._edge1_decoder, directed=False) \
@@ -63,11 +94,29 @@ class SamplingTestCase(unittest.TestCase):
             decoder=self._edge2_decoder) \
       .edge(source=edge3_path,
             edge_type=(self._node2_type, self._node2_type, self._edge3_type),
-            decoder=self._edge3_decoder, directed=False)
+            decoder=self._edge3_decoder, directed=False) \
+      .edge(source=edge4_path,
+            edge_type=(self._node3_type, self._node3_type, self._edge4_type),
+            decoder=self._edge4_decoder, directed=False) \
+      .edge(source=edge4_path,
+            edge_type=(self._cond_node_type, self._cond_node_type, self._cond_edge_type),
+            decoder=self._edge4_decoder, directed=True) \
+      .edge(source=train_edge_path,
+            edge_type=(self._node1_type, self._node2_type, self._edge1_type),
+            decoder=gl.Decoder(), mask=gl.Mask.TRAIN) \
+      .edge(source=test_edge_path,
+            edge_type=(self._node1_type, self._node2_type, self._edge1_type),
+            decoder=gl.Decoder(), mask=gl.Mask.TEST) \
+      .edge(source=val_edge_path,
+            edge_type=(self._node1_type, self._node2_type, self._edge1_type),
+            decoder=gl.Decoder(), mask=gl.Mask.VAL)
+
     self.__class__.g.init(tracker=utils.TRACKER_PATH)
 
   @classmethod
   def setUpClass(cls):
+    gl.set_inter_threadnum(8)
+    gl.set_intra_threadnum(8)
     gl.set_default_neighbor_id(-1)
     gl.set_default_int_attribute(1000)
     gl.set_default_float_attribute(999.9)
@@ -89,16 +138,17 @@ class SamplingTestCase(unittest.TestCase):
     """
     self._node1_type = "node1"
     self._node2_type = "node2"
-
     self._edge1_type = "edge1"
     self._edge2_type = "edge2"
     self._edge3_type = "edge3"
 
-    self._node1_range = (0, 100)
-    self._node2_range = (100, 200)
+    # for subgraph sampler
+    self._node3_type = "entity"
+    self._edge4_type = "relation"
 
-    self._node1_ids = range(self._node1_range[0], self._node1_range[1])
-    self._node2_ids = utils.fixed_dst_ids(self._node1_ids, self._node2_range)
+    # for conditional negative sampler
+    self._cond_node_type = "cond_item"
+    self._cond_edge_type = "cond_sim"
 
     self._node1_decoder = gl.Decoder(attr_types=utils.ATTR_TYPES)
     self._node2_decoder = gl.Decoder(weighted=True, labeled=True)
@@ -107,7 +157,21 @@ class SamplingTestCase(unittest.TestCase):
     self._edge2_decoder = gl.Decoder(attr_types=utils.ATTR_TYPES,
                                      weighted=True)
     self._edge3_decoder = gl.Decoder(weighted=True)
+    self._node3_decoder = gl.Decoder(attr_types=utils.ENTITY_ATTR_TYPES,
+                                     labeled=True)
+    self._edge4_decoder = gl.Decoder(weighted=True)
+    self._cond_node_deocder = gl.Decoder(attr_types=utils.COND_ATTR_TYPES, weighted=True)
 
+    self._node1_range = (0, 100)
+    self._node2_range = (100, 200)
+
+    # test for mask.
+    self._train_node_range = (0, 50)
+    self._test_node_range = (50, 70)
+    self._val_node_range = (70, 100)
+
+    self._node1_ids = range(self._node1_range[0], self._node1_range[1])
+    self._node2_ids = utils.fixed_dst_ids(self._node1_ids, self._node2_range)
     self._seed_node1_ids = np.array([2, 7, 8])
     self._seed_node2_ids = np.array([102, 107, 108])
 
