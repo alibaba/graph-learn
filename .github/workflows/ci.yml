@@ -42,6 +42,7 @@ jobs:
         apt-get update
         apt-get -y install git
         python -m pip install --upgrade pip setuptools wheel
+        pip install numpy
         # install ssl
         apt-get -y install wget
         wget https://www.openssl.org/source/openssl-1.1.1f.tar.gz
