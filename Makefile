@@ -127,11 +127,11 @@ proto: $(PROTO_FILES)
 	@echo $(PROTO_OBJ)
 	@mkdir -p $(PROTO_BUILT_DIR)
 	@echo 'generating pb file'
-	@$(PROTOC) --cpp_out=. graphlearn/proto/tensor.proto
-	@$(PROTOC) --cpp_out=. graphlearn/proto/dag.proto
-	@$(PROTOC) --cpp_out=. graphlearn/proto/request.proto
-	@$(PROTOC) --cpp_out=. graphlearn/proto/service.proto
-	@$(PROTOC) --grpc_out=. --plugin=protoc-gen-grpc=$(PROTOC_GRPC_PLUGIN) graphlearn/proto/service.proto
+	@$(PROTOC) --proto_path=$(ROOT) --cpp_out=. $(PROTO_DIR)/tensor.proto
+	@$(PROTOC) --proto_path=$(ROOT) --cpp_out=. $(PROTO_DIR)/dag.proto
+	@$(PROTOC) --proto_path=$(ROOT) --cpp_out=. $(PROTO_DIR)/request.proto
+	@$(PROTOC) --proto_path=$(ROOT) --cpp_out=. $(PROTO_DIR)/service.proto
+	@$(PROTOC) --proto_path=$(ROOT) --grpc_out=. --plugin=protoc-gen-grpc=$(PROTOC_GRPC_PLUGIN) $(PROTO_DIR)/service.proto
 	@$(CXX) $(CXXFLAGS) -c $(PROTO_DIR)/tensor.pb.cc -o $(PROTO_BUILT_DIR)/tensor.pb.o
 	@$(CXX) $(CXXFLAGS) -c $(PROTO_DIR)/dag.pb.cc -o $(PROTO_BUILT_DIR)/dag.pb.o
 	@$(CXX) $(CXXFLAGS) -c $(PROTO_DIR)/request.pb.cc -o $(PROTO_BUILT_DIR)/request.pb.o
