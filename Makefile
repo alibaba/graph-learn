@@ -362,7 +362,7 @@ python: so pybind
 	@echo "__git_version__ = '$(GIT_BRANCH)-$(GIT_VERSION)'" >> $(PYTHON_DIR)/__init__.py
 	@cp $(LIB_DIR)/libgraphlearn_shared.so $(PYTHON_LIB)
 
-	python3 $(SETUP_DIR)/setup.py bdist_wheel
+	python $(SETUP_DIR)/setup.py bdist_wheel
 	@mkdir -p $(BIN_DIR)/ge_data/data
 	@mkdir -p $(BIN_DIR)/ge_data/ckpt
 	@rm -rf $(PYTHON_DIR)/__init__.py*
