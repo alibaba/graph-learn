@@ -20,53 +20,14 @@
 
 # 用户文档
 
-* [**安装部署**](docs/install_cn.md)
+## [**安装部署**](https://github.com/alibaba/graph-learn/wiki/%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2)
 
-* [**快速开始**](docs/quick_start_cn.md)
+## [**快速开始**](https://github.com/alibaba/graph-learn/wiki/%E5%BF%AB%E9%80%9F%E5%BC%80%E5%A7%8B)
 
-* **接口与概念**
+## [**图操作接口**](https://github.com/alibaba/graph-learn/wiki/%E6%95%B0%E6%8D%AE%E6%BA%90)
 
-&emsp;&emsp; [数据源](docs/data_loader_cn.md)
+## [**GNN模型开发**](https://github.com/alibaba/graph-learn/wiki/%E8%8C%83%E5%BC%8F%E4%B8%8E%E6%B5%81%E7%A8%8B)
 
-&emsp;&emsp; [图对象](docs/graph_object_cn.md)
-
-&emsp;&emsp; [图查询](docs/graph_query_cn.md)
-
-&emsp;&emsp; [图遍历](docs/graph_traverse_cn.md)
-
-&emsp;&emsp; [图采样](docs/graph_sampling_cn.md)
-
-&emsp;&emsp; [负采样](docs/negative_sampling_cn.md)
-
-&emsp;&emsp; [图采样语言](docs/gsl.md)
-
-&emsp;&emsp; [算法编程范式](docs/model_programming_cn.md)
-
-* [**系统配置**](docs/system_config.md)
-
-* **功能扩展**
-
-&emsp;&emsp; [自定义算法](docs/algo_cn.md)
-
-&emsp;&emsp; [自定义算子](docs/operator.md)
-
-&emsp;&emsp; [数据源接入](docs/other_source.md)
-
-* **模型示例**
-
-&emsp;&emsp; [GCN](examples/tf/gcn/README.md)
-
-&emsp;&emsp; [GAT](examples/tf/gat/README.md)
-
-&emsp;&emsp; [GraphSAGE](examples/tf/graphsage/README.md)
-
-&emsp;&emsp; [Bipartite GraphSAGE](examples/tf/bipartite_graphsage/README.md)
-
-&emsp;&emsp; [DeepWalk](examples/tf/deepwalk/README.md)
-
-&emsp;&emsp; [LINE](examples/tf/line/README.md)
-
-&emsp;&emsp; [TransE](examples/tf/transe/README.md)
 
 # 论文
 
