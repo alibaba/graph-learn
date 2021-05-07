@@ -60,9 +60,9 @@ def gen_cluster_info_from_launch_params():
 
   argv = sys.argv[1:]
   opts, args = getopt.getopt(
-      argv, 'p:w:j:t:a:tc',
+      argv, 'p:w:j:t:g:tc',
       ['ps_hosts=', 'worker_hosts=', 'job_name=',
-       'task_index=', 'aligraph_count=', "task_count="])
+       'task_index=', 'gl_count=', "task_count="])
   for opt, arg in opts:
     if opt in ('-p', '--ps_hosts'):
       ps_hosts = arg
@@ -72,15 +72,13 @@ def gen_cluster_info_from_launch_params():
       job_name = arg
     elif opt in ('-t', '--task_index'):
       task_index = int(arg)
-    elif opt in ('-a', '--aligraph_count'):
+    elif opt in ('-g', '--gl_count'):
       gl_count = int(arg)
     else:
       pass
 
   ps_hosts = ps_hosts.split(',')
   worker_hosts = worker_hosts.split(',')
-  if job_name == "aligraph":
-    job_name = "graphlearn"
   return ps_hosts, gl_count, worker_hosts, job_name, task_index
 
 def get_cluster():
