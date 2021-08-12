@@ -29,7 +29,7 @@ public:
       std::cerr << ", view on '" << node_view << "'";
     }
     if (!use_attrs.empty()) {
-      std::cerr << "select attributes: '" << use_attrs << "'";
+      std::cerr << ", select attributes: '" << use_attrs << "'";
     }
     std::cerr << std::endl;
 
@@ -223,7 +223,9 @@ public:
               << label << ", offset -> " << offset << std::endl;
 #endif
 
-#if 0
+// The thread_local optimization doesn't work for multiple-node graphs,
+// will be fixed later.
+#if 1
     return Attribute(arrow_line_to_attribute_value(
         offset, i32_indexes_, i64_indexes_, f32_indexes_, f64_indexes_,
         s_indexes_, ls_indexes_, vertex_table_accessors_), true);
