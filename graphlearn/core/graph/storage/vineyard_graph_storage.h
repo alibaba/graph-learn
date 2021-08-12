@@ -39,7 +39,7 @@ public:
       std::cerr << ", view on '" << edge_view << "'";
     }
     if (!use_attrs.empty()) {
-      std::cerr << "select attributes: '" << use_attrs << "'";
+      std::cerr << ", select attributes: '" << use_attrs << "'";
     }
     std::cerr << std::endl;
 
