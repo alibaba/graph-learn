@@ -22,12 +22,18 @@ class Config(object):
 
     Configurations:
       training (bool): Whether in training mode or not. Defaults to True.
+      emb_max_partitions (int): The `max_partitions` for embedding variables
+        partitioned by `min_max_variable_partitioner`. Specially,
+        `EmbeddingVariable` uses `fixed_size_partitioner`.
+        Defaults to None means no partition.
       emb_min_slice_size (int): The `min_slice_size` for embedding variables
-        partitioned by `min_max_varaible_partitioner`. Defaults to 128K.
+        partitioned by `min_max_variable_partitioner`. Defaults to 128K.
       emb_live_steps (int): Global steps to live for inactive keys in embedding
         variables. Defaults to None.
     """
     self.training = True
+    self.partitioner = 'min_max'
+    self.emb_max_partitions = None
     self.emb_min_slice_size = 128 * 1024
     self.emb_live_steps = None
 

@@ -229,6 +229,7 @@ TEST_F(ThreadDagSchedulerTest, GetNodes) {
   Status s = DagFactory::GetInstance()->Create(def, &dag);
   EXPECT_TRUE(s.ok());
 
+  SetGlobalFlagEnableActor(0);  // ThreadPoolScheduler
   SetGlobalFlagTapeCapacity(4);
 
   DagScheduler::Take(env_, dag);

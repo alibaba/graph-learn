@@ -26,11 +26,11 @@ from graphlearn.python.errors import OutOfRangeError, \
 global_dag_state = DagState()
 
 class Dataset(object):
-  def __init__(self, dag, capacity=10):
+  def __init__(self, dag, window=10):
     assert dag.is_ready(), \
-      "Query should start with E()/V() and end with value()."
-    assert isinstance(capacity, int) and 0 < capacity < 128, \
-      "Dataset capacity should in range of (0, 128)."
+      "Query should start with E()/V() and end with values()."
+    assert isinstance(window, int) and 0 < window < 128, \
+      "Dataset window should be in range of (0, 128)."
 
     self._dag = dag
     self._dag_id = dag.name
@@ -41,7 +41,7 @@ class Dataset(object):
     status = client.run_dag(self._dag.dag_def)
     raise_exception_on_not_ok_status(status)
 
-    pywrap.set_dataset_capacity(capacity)
+    pywrap.set_dataset_capacity(window)
     self._dag_dataset = pywrap.Dataset(client, self._dag_id)
     graph.add_dataset(self)
 

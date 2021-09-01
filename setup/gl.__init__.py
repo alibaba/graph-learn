@@ -22,8 +22,10 @@ from graphlearn.python.data import *  # pylint: disable=wildcard-import
 from graphlearn.python.errors import * # pylint: disable=wildcard-import
 from graphlearn.python.graph import Graph
 from graphlearn.python.gsl import Dataset
+from graphlearn.python.operator import * # pylint: disable=wildcard-import
 from graphlearn.python.sampler import * # pylint: disable=wildcard-import
 from graphlearn.python.utils import * # pylint: disable=wildcard-import
+import graphlearn.python.nn as nn
 
 EDGE_SRC = pywrap.NodeFrom.EDGE_SRC
 EDGE_DST = pywrap.NodeFrom.EDGE_DST

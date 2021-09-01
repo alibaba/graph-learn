@@ -16,16 +16,17 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import atexit
 import json
 import warnings
 import numpy as np
 
 from graphlearn import pywrap_graphlearn as pywrap
-from graphlearn.python.config import global_configs
 from graphlearn.python.server import Server
 import graphlearn.python.data as data
 import graphlearn.python.errors as errors
 import graphlearn.python.gsl as gsl
+import graphlearn.python.operator as ops
 import graphlearn.python.sampler as samplers
 import graphlearn.python.utils as utils
 
@@ -71,7 +72,6 @@ class Graph(object):
     # maintain a map of edge_type with it's decoder
     self._edge_decoders = {}
     self._undirected_edges = []
-    self._query_engine = gsl.QueryEngine(self)
 
     self._server = None
     self._client = None
@@ -80,6 +80,11 @@ class Graph(object):
     self.edge_state = data.EdgeState()
 
     self._datasets = []
+
+    def stop_sampling():
+      if self._server:
+        self._server.stop_sampling()
+    atexit.register(stop_sampling)
 
   def node(self,
            source,
@@ -221,12 +226,13 @@ class Graph(object):
       # Local mode
       pywrap.set_deploy_mode(pywrap.DeployMode.LOCAL)
       self.deploy_in_local_mode()
-    elif not cluster and task_count > 1:
-      # WORKER mode
-      pywrap.set_deploy_mode(pywrap.DeployMode.WORKER)
-      tracker = kwargs.get("tracker", "root://graphlearn")
-      hosts = kwargs.get("hosts", "")
-      self.deploy_in_worker_mode(tracker, hosts, task_index, task_count)
+    elif not cluster:
+      if task_count > 1 or kwargs.get("hosts") is not None:
+        # WORKER mode
+        pywrap.set_deploy_mode(pywrap.DeployMode.WORKER)
+        tracker = kwargs.get("tracker", "root://graphlearn")
+        hosts = kwargs.get("hosts")
+        self.deploy_in_worker_mode(tracker, hosts, task_index, task_count)
     else:
       # SERVER mode
       pywrap.set_deploy_mode(pywrap.DeployMode.SERVER)
@@ -347,67 +353,9 @@ class Graph(object):
       mask (NONE | TRAIN | TEST | VAL): The given node set is indexed by both the
         raw node type and mask value. The default mask value is NONE, which plays
         nothing on the index.
-
-    Return:
-      A 'Query' object.
-
-    Example:
-    >>> import numpy as np
-    >>> g.V("user").shuffle().batch(64)
-    >>> g.V("user", feed=np.array([1, 2, 3]))
-    >>> def gen():
-    >>>   while True:
-    >>>     yield  np.array([1, 2, 3])
-    >>> gen = gen()
-    >>> g.V("user", feed=gen)
     """
-    if not global_configs.eager_mode:
-      return self._lazy_V(t, node_from, mask=mask)
-    return gsl.VertexQuery(self._query_engine, t, feed=feed,
-                           node_from=node_from, mask=mask)
-
-  def E(self,
-        edge_type,
-        feed=None,
-        reverse=False,
-        mask=utils.Mask.NONE):
-    """ Entry of GSL, starting from EDGE.
-
-    Args:
-      edge_type (string): The type of edge which is the entry of query.
-      feed (None| (np.ndarray, np.ndarray) | types.GeneratorType | `Edges`):
-        None: Default. Sample edges with the following .shuffle and .batch API.
-          (np.ndarray, np.ndarray): src_ids, dst_ids. Get edges of the given
-          (src_ids, dst_ids) and given edge_type. src_ids and dst_ids must be
-          the same shape, dtype is int.
-        types.Generator: A generator of (numpy.ndarray, numpy.ndarray). Get
-          edges of generated (src_ids, dst_ids) and given edge_type.
-        `Edges`: An `Edges` object.
-      mask (NONE | TRAIN | TEST | VAL): The given edge set is indexed by both the
-        raw edge type and mask value. The default mask value is NONE, which plays
-        nothing on the index.
-
-    Return:
-      A 'Query' object.
-
-    Example:
-    >>> import numpy as np
-    >>> g.E("buy").shuffle().batch(64)
-    >>> g.E("buy", feed=(np.array([1, 2, 3]), np.array([4, 5, 6]))
-    >>> def gen():
-    >>>   while True:
-    >>>     yield  (np.array([1, 2, 3]), np.array([4, 5, 6]))
-    >>> gen = gen()
-    >>> g.E("buy", feed=gen)
-    """
-    if not global_configs.eager_mode:
-      return self._lazy_E(edge_type, mask=mask)
-    if reverse:
-      edge_type = edge_type + "_reverse"
-    return gsl.EdgeQuery(self._query_engine, edge_type, feed=feed, mask=mask)
-
-  def _lazy_V(self, t, node_from=pywrap.NodeFrom.NODE,
-              mask=utils.Mask.NONE):
+    if feed is not None:
+      raise NotImplementedError("`feed` is not supported for now.")
     dag = gsl.Dag(self)
     params = {pywrap.kNodeType: utils.get_mask_type(t, mask),
               pywrap.kNodeFrom: int(node_from)}
@@ -420,31 +368,39 @@ class Graph(object):
     gsl.SinkNode(dag)
     return source_node
 
-  def _lazy_E(self, t, mask=utils.Mask.NONE):
+  def E(self,
+        edge_type,
+        feed=None,
+        reverse=False):
+    """ Entry of GSL, starting from EDGE.
+
+    Args:
+      edge_type (string): The type of edge which is the entry of query.
+      feed (None| (np.ndarray, np.ndarray) | types.GeneratorType | `Edges`):
+        None: Default. Sample edges with the following .shuffle and .batch API.
+          (np.ndarray, np.ndarray): src_ids, dst_ids. Get edges of the given
+          (src_ids, dst_ids) and given edge_type. src_ids and dst_ids must be
+          the same shape, dtype is int.
+        types.Generator: A generator of (numpy.ndarray, numpy.ndarray). Get
+          edges of generated (src_ids, dst_ids) and given edge_type.
+        `Edges`: An `Edges` object.
+    """
+    if feed is not None:
+      raise NotImplementedError("`feed` is not supported for now.")
     dag = gsl.Dag(self)
-    params = {pywrap.kEdgeType: utils.get_mask_type(t, mask)}
+    if reverse:
+      edge_type = edge_type + "_reverse"
+
+    dag = gsl.Dag(self)
+    params = {pywrap.kEdgeType: edge_type}
     source_node = gsl.TraverseSourceEdgeDagNode(
       dag, op_name="GetEdges", params=params)
     source_node.set_output_field(pywrap.kEdgeIds)
-    source_node.set_path(t, pywrap.NodeFrom.NODE)
+    source_node.set_path(edge_type, pywrap.NodeFrom.NODE)
 
     # Add sink node to dag
     gsl.SinkNode(dag)
     return source_node
-
-  def run(self, q, **kwargs):
-    """ Run GSL query.
-
-    Args:
-      q (Query): A query starts from .V()/.E() and ends up with .values().
-      args : Remained args that used by sample.get()
-
-    Example:
-    >>> q = g.V("user").batch(64).values(lambda x: x)
-    >>> for i in range(10):
-    >>>   g.run(q)
-    """
-    return q.next(**kwargs)
 
   def get_topology(self):
     """ Get the topology of the graph.
@@ -825,6 +781,11 @@ class Graph(object):
         weights=weights,
         labels=labels,
         graph=self)
+
+  def search(self, node_type, inputs, option):
+    knn = ops.KnnOperator(self._client)
+    inputs = np.array(inputs)
+    return knn.search(node_type, inputs, option.k)
 
   def subgraph_sampler(self,
                        seed_type,

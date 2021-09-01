@@ -19,6 +19,7 @@ from __future__ import print_function
 import tensorflow as tf
 from graphlearn.python.nn.tf.module import Module
 
+
 class LinearLayer(Module):
   """ Do the computation `y = xW + B`.
     x: [-1, input_dim]

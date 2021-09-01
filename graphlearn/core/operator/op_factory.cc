@@ -97,8 +97,13 @@ void OpFactory::Set(GraphStore* graph_store) {
 }
 
 OpFactory* OpFactory::GetInstance() {
-  static CreateOnceOpFactory factory;
-  return &factory;
+  if (GLOBAL_FLAG(EnableActor) < 1) {
+    static CreateOnceOpFactory factory;
+    return &factory;
+  } else {
+    static CreateAlwaysOpFactory factory;
+    return &factory;
+  }
 }
 
 }  // namespace op

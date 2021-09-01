@@ -58,6 +58,12 @@ void InMemoryService::Stop() {
   thread_->join();
 }
 
+void InMemoryService::StopSampling() {
+  if (GLOBAL_FLAG(DeployMode) == kLocal) {
+    env_->SetStopping();
+  }
+}
+
 void InMemoryService::Monitor() {
   EventQueue<Call*>* queue = GetInMemoryEventQueue<Call*>();
   Call* call = NULL;

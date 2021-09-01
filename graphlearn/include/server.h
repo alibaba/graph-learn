@@ -37,6 +37,8 @@ public:
 
   void Stop();
 
+  void StopSampling();
+
 private:
   explicit Server(ServerImpl* impl);
 

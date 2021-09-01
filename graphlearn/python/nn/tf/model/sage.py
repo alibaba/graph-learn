@@ -16,6 +16,7 @@
 
 import tensorflow as tf
 
+from graphlearn.python.nn.tf.config import conf
 from graphlearn.python.nn.tf.module import Module
 from graphlearn.python.nn.tf.layers.sage_conv import SAGEConv
 
@@ -32,7 +33,6 @@ class GraphSAGE(Module):
                **kwargs):
     self.depth = depth
     self.drop_rate = drop_rate
-    self.drop_ph = tf.placeholder(tf.float32, shape=None)
 
     self.layers = []
     for i in range(depth):
@@ -42,18 +42,13 @@ class GraphSAGE(Module):
                                   agg_type=agg_type, name='conv' + str(i)))
 
   def forward(self, batchgraph):
-    h = batchgraph.forward().nodes
+    h = batchgraph.transform().nodes
     for l, layer in enumerate(self.layers):
       h = layer.forward(batchgraph.edge_index, h)
       if l != self.depth - 1:
         h = tf.nn.relu(h)
-        h = tf.nn.dropout(h, 1 - self.drop_ph)
-    src = tf.gather(h, batchgraph.node_graph_id)
-    dst = tf.gather(h, batchgraph.node_graph_id + 1)
+        if self.drop_rate and conf.training:
+          h = tf.nn.dropout(h, 1 - self.drop_rate)
+    src = tf.gather(h, batchgraph.graph_node_offsets)
+    dst = tf.gather(h, batchgraph.graph_node_offsets + 1)
     return src, dst
-
-  def feed_train_args(self):
-    return {self.drop_ph: self.drop_rate}
-
-  def feed_eval_args(self):
-    return {self.drop_ph: 0.0}

@@ -116,6 +116,10 @@ Status DistributeService::Stop() {
   return Status::OK();
 }
 
+void DistributeService::StopSampling() {
+  Env::Default()->SetStopping();
+}
+
 Coordinator* DistributeService::GetCoordinator() {
   return coord_;
 }

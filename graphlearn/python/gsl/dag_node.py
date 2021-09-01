@@ -17,6 +17,9 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
+# For python version 3.x, rename unicode as str.
+if (int(sys.version_info[0]) == 3):
+  unicode = str
 import uuid
 import numpy as np
 import warnings
@@ -76,7 +79,7 @@ class DagNode(object):
     self._degree_nodes.append(node)
 
   @property
-  def spec(self):
+  def decoder(self):
     return self._decoder
 
   @property
@@ -177,6 +180,14 @@ class DagNode(object):
     return self
 
   def sample(self, count):
+    """Sample count of neighbors for each upstream node.
+
+    Args:
+      count (int): For "full" strategy, the neighbors will be truncated by
+        the given count if `count` > 0, otherwise, the real count of neighbors
+        would return. For other sampling strategies, the returned neighbors
+        would be padded with the given PaddingMode.
+    """
     assert isinstance(count, int)
     self._add_param(pywrap.kNeighborCount, count)
     self._add_param(pywrap.kPartitionKey, pywrap.kSrcIds)
@@ -306,7 +317,8 @@ class DagNode(object):
     if self._sparse:
       assert isinstance(shape, tuple) and len(shape) == 2
       degrees = pywrap.get_dag_value(dag_values, self._nid, pywrap.kDegreeKey)
-      shape = (shape[0], shape[1] if shape[1] else max(degrees))
+      shape = (degrees.size, shape[1] if shape[1] and shape[1] > 0 \
+          else max(degrees))
     return shape, degrees
 
   def feed_values(self, dag_values):
@@ -521,30 +533,38 @@ class TraverseEdgeDagNode(DagNode):
   def _lookup(self):
     # Override
     # Generate an edge from current node to it's lookup node.
+    nbr_count = self._params.get(pywrap.kNeighborCount, 0)
     edge = self._new_edge(dst_input=pywrap.kEdgeIds)
     # Add an edge from upstream node to lookup node.
     extra_edge = self._new_edge(
       src_output=self._upstream.output_field, dst_input=pywrap.kSrcIds)
+    edges = [edge, extra_edge]
+    if self._sparse:
+      degree_edge = self._new_edge(src_output=pywrap.kDegreeKey,
+                                   dst_input=pywrap.kDegreeKey)
+      edges.append(degree_edge)
+      self._add_out_edge(degree_edge)
     self._add_out_edge(edge)
     self._upstream._add_out_edge(extra_edge)
 
     return LookupDagNode(
-        "LookupEdges", self, [edge, extra_edge],
-        {pywrap.kEdgeType: self._reverse_edge(self._type, False),
-         pywrap.kPartitionKey: pywrap.kSrcIds})
+        "LookupEdges", self, edges,
+        {pywrap.kEdgeType: self._type,
+         pywrap.kPartitionKey: pywrap.kSrcIds,
+         pywrap.kNeighborCount: nbr_count})
 
   def feed_values(self, dag_values):
     shape, degrees = self._get_shape_and_degrees(dag_values)
     edge_ids = pywrap.get_dag_value(dag_values, self._nid, pywrap.kEdgeIds)
     assert isinstance(shape, tuple) and len(shape) == 2
-    nbr_counts = degrees if self._sparse else [shape[1]] * shape[0]
     src_ids = pywrap.get_dag_value(dag_values,
                                    self._upstream.nid,
-                                   pywrap.kNodeIds)
-    src_ids = src_ids.reshape(self._upstream.shape)
-    src_ids = np.concatenate(
-      [src_ids[idx].repeat(d) for idx, d in enumerate(nbr_counts)])
+                                   self._upstream.output_field)
     dst_ids = pywrap.get_dag_value(dag_values, self._nid, pywrap.kNodeIds)
+    nbr_counts = degrees if self._sparse else [shape[1]] * shape[0]
+    nbr_counts = nbr_counts[:len(src_ids)]
+    src_ids = np.concatenate(
+            [src_ids[idx].repeat(d) for idx, d in enumerate(nbr_counts)])
     return self._graph.get_edges(
         self._type, src_ids, dst_ids, edge_ids, degrees, shape)
 
@@ -578,7 +598,7 @@ class TraverseSourceEdgeDagNode(TraverseEdgeDagNode):
 
     return LookupDagNode(
         "LookupEdges", self, [edge, extra_edge],
-        {pywrap.kEdgeType: self._reverse_edge(self._type, False),
+        {pywrap.kEdgeType: self._type,
          pywrap.kPartitionKey: pywrap.kSrcIds})
 
   def feed_values(self, dag_values):

@@ -24,7 +24,7 @@ import shlex
 from subprocess import check_output
 
 # This version string should be updated when releasing a new version.
-_VERSION = '1.0'
+_VERSION = '1.0.0'
 
 ROOT_PATH = os.path.abspath(os.path.join(os.getcwd()))
 CUT_PATH = sys.path[0]
@@ -55,8 +55,7 @@ extra_link_args.append('-Wl,-rpath=$ORIGIN/python/lib/')
 libraries.append('graphlearn_shared')
 
 sources = [ROOT_PATH + '/graphlearn/python/c/py_export.cc',
-           ROOT_PATH + '/graphlearn/python/c/py_client.cc',
-           ROOT_PATH + '/graphlearn/python/c/py_contrib.cc']
+           ROOT_PATH + '/graphlearn/python/c/py_client.cc']
 
 graphlearn_extension = Extension(
     'pywrap_graphlearn',
@@ -79,7 +78,7 @@ setup(
     description='Python Interface for Graph Neural Network',
     ext_package='graphlearn',
     ext_modules=extensions,
-    packages=find_packages(exclude=["*.examples", "*.examples.*", "examples.*", "examples"]),
+    packages=find_packages(),
     package_dir={'graphlearn' : 'graphlearn'},
     package_data={'': ['python/lib/lib*.so*']},
     )

@@ -1,4 +1,4 @@
-# Copyright 2020 Alibaba Group Holding Limited. All Rights Reserved.
+# Copyright 2021 Alibaba Group Holding Limited. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,9 +21,10 @@ import random
 import numpy as np
 import tensorflow as tf
 from graphlearn.python.data.feature_spec import *
-from graphlearn.python.nn.tf.data.entity import Vertex
+from graphlearn.python.nn.data import Data
 from graphlearn.python.nn.tf.data.feature_column import *
-from graphlearn.python.nn.tf.data.feature_group import *
+from graphlearn.python.nn.tf.data.feature_handler import *
+
 
 class FeatureHandlerTestCase(unittest.TestCase):
   @classmethod
@@ -51,29 +52,17 @@ class FeatureHandlerTestCase(unittest.TestCase):
     self.assertEqual(len(handler._fused_int_fg), 0)
     self.assertEqual(len(handler._string_fg), 0)
 
-    # input_shape = [f_num, batch_size]
-    batch1_floats = np.array([1.0 * i for i in range(10)])
-    batch2_floats = np.array([[1.0 * i, 2.0 * i] for i in range(10)])
-
-    input1 = Vertex(floats=batch1_floats)
-    input2 = Vertex(floats=batch2_floats)
-
-    # output_shape = [batch_size, f_num]
-    output1 = handler(input1)
-    output2 = handler(input2)
+    batch_floats = np.array([[1.0 * i, 2.0 * i] for i in range(10)]).transpose() # [2, 10]
+    input_data = Data(floats=tf.convert_to_tensor(batch_floats, dtype=tf.float32))
+    output = handler(input_data) # [2, 10]
 
     with tf.Session() as sess:
       sess.run(tf.local_variables_initializer())
       sess.run(tf.global_variables_initializer())
-      ret1 = sess.run(output1)
-      ret2 = sess.run(output2)
-
-      self.assertListEqual(list(ret1.shape), list(batch1_floats.transpose().shape))
-      self.assertListEqual(list(ret1), list(batch1_floats.transpose()))
-      self.assertListEqual(list(ret2.shape), list(batch2_floats.transpose().shape))
-      input2_t = batch2_floats.transpose()
-      for i in range(ret2.shape[0]):
-        self.assertListEqual(list(ret2[i]), list(input2_t[i]))
+      ret = sess.run(output)
+      self.assertListEqual(list(ret.shape), list(batch_floats.shape))
+      for i in range(ret.shape[0]):
+        self.assertListEqual(list(ret[i]), list(batch_floats[i]))
 
   def test_only_ints(self):
     spec = FeatureSpec(10)
@@ -92,24 +81,15 @@ class FeatureHandlerTestCase(unittest.TestCase):
     self.assertEqual(len(handler._fused_int_fg), 0)
     self.assertEqual(len(handler._string_fg), 0)
 
-    # input_shape = [f_num, batch_size]
-    batch1_ints = np.array([i for i in range(10)])
-    batch2_ints = np.array([[i, 2 * i] for i in range(10)])
-
-    input1 = Vertex(ints=batch1_ints)
-    input2 = Vertex(ints=batch2_ints)
-
-    # output_shape = [batch_size, total_dim]
-    output1 = handler(input1)
-    output2 = handler(input2)
+    batch_ints = np.array([[i, 2 * i] for i in range(10)]).transpose() # [2, 10]
+    input_data = Data(ints=tf.convert_to_tensor(batch_ints, dtype=tf.int64))
+    output = handler(input_data) # [2, total_dim]
 
     with tf.Session() as sess:
       sess.run(tf.local_variables_initializer())
       sess.run(tf.global_variables_initializer())
-      ret1 = sess.run(output1)
-      ret2 = sess.run(output2)
-      self.assertListEqual(list(ret1.shape), [total_dim])  # 1d array, batch_size = 1
-      self.assertListEqual(list(ret2.shape), [2, total_dim]) # 2d array, batch_size = 2
+      ret = sess.run(output)
+      self.assertListEqual(list(ret.shape), [2, total_dim]) # 2d array, batch_size = 2
 
   def test_only_ints_with_fusion(self):
     spec = FeatureSpec(10)
@@ -129,24 +109,15 @@ class FeatureHandlerTestCase(unittest.TestCase):
     self.assertEqual(len(handler._fused_int_fg) > 0, True)
     self.assertEqual(len(handler._string_fg), 0)
 
-    # input_shape = [f_num, batch_size]
-    batch1_ints = np.array([i for i in range(10)])
-    batch2_ints = np.array([[i, 2 * i] for i in range(10)])
-
-    input1 = Vertex(ints=batch1_ints)
-    input2 = Vertex(ints=batch2_ints)
-
-    # output_shape = [batch_size, total_dim]
-    output1 = handler(input1)
-    output2 = handler(input2)
+    batch_ints = np.array([[i, 2 * i] for i in range(10)]).transpose() # [2, 10]
+    input_data = Data(ints=tf.convert_to_tensor(batch_ints, dtype=tf.int64))
+    output = handler(input_data) # [2, total_dim]
 
     with tf.Session() as sess:
       sess.run(tf.local_variables_initializer())
       sess.run(tf.global_variables_initializer())
-      ret1 = sess.run(output1)
-      ret2 = sess.run(output2)
-      self.assertListEqual(list(ret1.shape), [total_dim])  # 1d array, batch_size = 1
-      self.assertListEqual(list(ret2.shape), [2, total_dim]) # 2d array, batch_size = 2
+      ret = sess.run(output)
+      self.assertListEqual(list(ret.shape), [2, total_dim]) # 2d array, batch_size = 2
 
   def test_only_strings(self):
     spec = FeatureSpec(3)
@@ -162,32 +133,20 @@ class FeatureHandlerTestCase(unittest.TestCase):
     self.assertEqual(len(handler._fused_int_fg), 0)
     self.assertEqual(len(handler._string_fg), 3)
 
-    # input_shape = [f_num, batch_size]
-    batch1_ss = np.array(
-        ["just,a,test",
-          "items,splited,by,comma",
-          "the,third,feature"])
-    batch2_ss = np.array(
+    batch_ss = np.array(
         [["f1,batch1", "f1,batch2,others"],
          ["f2,batch1,others", "f2,batch2"],
-         ["f3,batch1,haha", "f3,batch2,hh,kk"]])
-
-    input1 = Vertex(strings=batch1_ss)
-    input2 = Vertex(strings=batch2_ss)
-
-    # output_shape = [batch_size, total_dim]
-    output1 = handler(input1)
-    output2 = handler(input2)
+         ["f3,batch1,haha", "f3,batch2,hh,kk"]]).transpose() # [2, 3]
+    input_data = Data(strings=tf.convert_to_tensor(batch_ss, dtype=tf.string))
+    output = handler(input_data) # [2, total_dim]
 
     with tf.Session() as sess:
       sess.run(tf.local_variables_initializer())
       sess.run(tf.global_variables_initializer())
-      ret1 = sess.run(output1)
-      ret2 = sess.run(output2)
-      self.assertListEqual(list(ret1.shape), [total_dim])  # 1d array, batch_size = 1
-      self.assertListEqual(list(ret2.shape), [2, total_dim]) # 2d array, batch_size = 2
+      ret = sess.run(output)
+      self.assertListEqual(list(ret.shape), [2, total_dim]) # 2d array, batch_size = 2
 
-  def test_popular_cases(self):
+  def test_floats_and_fused_ints(self):
     spec = FeatureSpec(10)
     for i in range(3):
       spec.append_dense()
@@ -198,72 +157,23 @@ class FeatureHandlerTestCase(unittest.TestCase):
       spec.append_sparse(20 + 10 * i, dim, False)
       total_dim += dim
 
-    handler = FeatureHandler("popular", spec)
+    handler = FeatureHandler("floats_and_fused_ints", spec)
     self.assertEqual(len(handler._float_fg), 3)
     self.assertEqual(len(handler._int_fg), 0)
     self.assertEqual(len(handler._fused_int_fg) > 0, True)
     self.assertEqual(len(handler._string_fg), 0)
 
-    # input_shape = [f_num, batch_size]
-    batch1_floats = np.array([1.0 * i for i in range(3)], dtype=np.float32)
-    batch2_floats = np.array([[1.0 * i, 2.0 * i] for i in range(3)], dtype=np.float32)
-    batch1_ints = np.array([i for i in range(7)])
-    batch2_ints = np.array([[i, 2 * i] for i in range(7)])
-
-    input1 = Vertex(floats=batch1_floats, ints=batch1_ints)
-    input2 = Vertex(floats=batch2_floats, ints=batch2_ints)
-
-    # output_shape = [batch_size, f_num]
-    output1 = handler(input1)
-    output2 = handler(input2)
+    batch_floats = np.array([[1.0 * i, 2.0 * i] for i in range(3)], dtype=np.float32).transpose() # [2, 3]
+    batch_ints = np.array([[i, 2 * i] for i in range(7)]).transpose() # [2, 7]
+    input_data = Data(floats=tf.convert_to_tensor(batch_floats, dtype=tf.float32),
+                      ints=tf.convert_to_tensor(batch_ints, dtype=tf.int64))
+    output = handler(input_data)
 
     with tf.Session() as sess:
       sess.run(tf.local_variables_initializer())
       sess.run(tf.global_variables_initializer())
-      ret1 = sess.run(output1)
-      ret2 = sess.run(output2)
-      self.assertListEqual(list(ret1.shape), [total_dim])
-      self.assertListEqual(list(ret2.shape), [2, total_dim])
-
-  def test_popular_cases_of_tensor(self):
-    spec = FeatureSpec(10)
-    for i in range(3):
-      spec.append_dense()
-
-    total_dim = 3
-    for i in range(7):
-      dim = random.randint(8, 10)
-      spec.append_sparse(20 + 10 * i, dim, False)
-      total_dim += dim
-
-    handler = FeatureHandler("popular_tensor", spec)
-    self.assertEqual(len(handler._float_fg), 3)
-    self.assertEqual(len(handler._int_fg), 0)
-    self.assertEqual(len(handler._fused_int_fg) > 0, True)
-    self.assertEqual(len(handler._string_fg), 0)
-
-    # input_shape = [f_num, batch_size]
-    batch1_floats = np.array([1.0 * i for i in range(3)], dtype=np.float32)
-    batch2_floats = np.array([[1.0 * i, 2.0 * i] for i in range(3)], dtype=np.float32)
-    batch1_ints = np.array([i for i in range(7)])
-    batch2_ints = np.array([[i, 2 * i] for i in range(7)])
-
-    input1 = Vertex(floats=tf.convert_to_tensor(batch1_floats, dtype=tf.float32),
-                    ints=tf.convert_to_tensor(batch1_ints, dtype=tf.int64))
-    input2 = Vertex(floats=tf.convert_to_tensor(batch2_floats, dtype=tf.float32),
-                    ints=tf.convert_to_tensor(batch2_ints, dtype=tf.int64))
-
-    # output_shape = [batch_size, f_num]
-    output1 = handler(input1)
-    output2 = handler(input2)
-
-    with tf.Session() as sess:
-      sess.run(tf.local_variables_initializer())
-      sess.run(tf.global_variables_initializer())
-      ret1 = sess.run(output1)
-      ret2 = sess.run(output2)
-      self.assertListEqual(list(ret1.shape), [total_dim])
-      self.assertListEqual(list(ret2.shape), [2, total_dim])
+      ret = sess.run(output)
+      self.assertListEqual(list(ret.shape), [2, total_dim])
 
 if __name__ == "__main__":
   unittest.main()

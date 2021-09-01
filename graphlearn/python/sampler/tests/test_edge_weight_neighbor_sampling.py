@@ -138,60 +138,6 @@ class EdgeWeightNeighborSamplingTestCase(SamplingTestCase):
     utils.check_node_type(nodes, node_type=self._node1_type)
     utils.check_node_shape(nodes, ids.size * expand_factor[1])
 
-  def test_1hop_using_gsl(self):
-    """ Test case for sample 1 hop neighbor.
-    hetegerous graph with edge attrs, without edge weight.
-    """
-    gl.set_eager_mode(True)
-    expand_factor = 6
-    ids = self._seed_node1_ids
-    nbrs = self.g.V(self._node1_type, feed=ids) \
-      .outE(self._edge1_type).sample(expand_factor).by("edge_weight") \
-      .inV().emit()
-
-    edges = nbrs[1]
-    nodes = nbrs[2]
-
-    utils.check_fixed_edge_dst_ids(edges, dst_range=self._node2_range,
-                                   expected_src_ids=ids)
-    utils.check_edge_type(edges,
-                          src_type=self._node1_type,
-                          dst_type=self._node2_type,
-                          edge_type=self._edge1_type)
-    utils.check_edge_shape(edges, ids.size * expand_factor)
-    utils.check_edge_attrs(edges)
-    utils.check_edge_labels(edges)
-
-    utils.check_equal(nodes.ids, edges.dst_ids)
-    utils.check_node_ids(nodes, self._node2_ids)
-    utils.check_node_type(nodes, node_type=self._node2_type)
-    utils.check_node_shape(nodes, ids.size * expand_factor)
-    utils.check_node_weights(nodes)
-    utils.check_node_labels(nodes)
-
-  def test_2hop_using_gsl(self):
-    """ Test case for sample 2 hop neighbor with strategy of edge_weight.
-    """
-    gl.set_eager_mode(True)
-    expand_factor = [3, 2]
-    ids = self._seed_node1_ids
-    nbrs = self.g.V(self._node1_type, feed=ids) \
-      .outE(self._edge1_type).sample(expand_factor[0]).by("edge_weight") \
-      .inV() \
-      .outE(self._edge2_type).sample(expand_factor[1]).by("edge_weight") \
-      .inV().emit()
-
-    edges = nbrs[1]
-    nodes = nbrs[2]
-    utils.check_fixed_edge_dst_ids(edges, dst_range=self._node2_range,
-                                   expected_src_ids=ids)
-
-    ids = nodes.ids.reshape(-1)
-    edges = nbrs[3]
-    nodes = nbrs[4]
-    utils.check_fixed_edge_dst_ids(edges, dst_range=self._node1_range,
-                                   expected_src_ids=ids)
-
 
 if __name__ == "__main__":
   unittest.main()

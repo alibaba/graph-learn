@@ -28,11 +28,14 @@ using namespace graphlearn;
 
 void init_client_module(py::module&);
 
+#ifdef OPEN_KNN
 void init_contrib_module(py::module&);
+#endif
 
 PYBIND11_MODULE(pywrap_graphlearn, m) {
   m.doc() = "Python interface for graph-learn.";
   // setters
+  m.def("set_enable_actor", &SetGlobalFlagEnableActor);
   m.def("set_default_neighbor_id", &SetGlobalFlagDefaultNeighborId);
   m.def("set_tracker_mode", &SetGlobalFlagTrackerMode);
   m.def("set_padding_mode", &SetGlobalFlagPaddingMode);
@@ -55,9 +58,14 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
   m.def("set_server_count", &SetGlobalFlagServerCount);
   m.def("set_tracker", &SetGlobalFlagTracker);
   m.def("set_server_hosts", &SetGlobalFlagServerHosts);
+  m.def("set_knn_metric", &SetGlobalFlagKnnMetric);
   m.def("set_tape_capacity", &SetGlobalFlagTapeCapacity);
   m.def("set_dataset_capacity", &SetGlobalFlagDatasetCapacity);
   m.def("set_ignore_invalid", &SetGlobalFlagIgnoreInvalid);
+
+  // For Actor
+  m.def("set_enable_actor", &SetGlobalFlagEnableActor);
+  m.def("set_local_shard_count", &SetGlobalFlagLocalShardCount);
 
   // Constants
   m.attr("kPartitionKey") = kPartitionKey;
@@ -213,7 +221,8 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
   py::class_<Server>(m, "Server")
     .def("start", &Server::Start)
     .def("init", &Server::Init)
-    .def("stop", &Server::Stop);
+    .def("stop", &Server::Stop)
+    .def("stop_sampling", &Server::StopSampling);
 
   m.def("server",
         &NewServer,

@@ -33,9 +33,13 @@ make test
 mkdir cmake-build && cd cmake-build
 cmake -DTESTING=ON .. && make
 ```
-最后，编译python包:
+最后，编译python包，同时支持python2，python3:
 ```bash
 make python
+```
+如需要执行特定的python bin，如指定用python3.7编译，则执行：
+```bash
+make python PYTHON=python3.7
 ```
 
 ## 安装
@@ -44,17 +48,24 @@ make python
 sudo pip install dist/your_wheel_name.whl
 ```
 
-## 安装TensorFlow
-目前，**GL**提供的模型示例基于**TensorFlow 1.12**开发，需要安装对应的版本。
+## (Optional) 安装TensorFlow
+**GL**提供的Tensorflow模型示例基于**TensorFlow 1.12**开发，需要安装对应版本的库。
 ```bash
 sudo pip install tensorflow==1.12.0
 ```
 
-## 运行测试用例
+## (Optional) 安装PyTorch，PyG
+**GL**提供的PyTorch模型示例基于**PyG**开发，需要安装对应的库。
+
+```bash
+sudo pip install pytorch
+# Install PyG follow the doc: https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html
+```
+
+## 运行单元测试
 
 ```bash
 source env.sh
 ./test_cpp_ut.sh
 ./test_python_ut.sh
 ```
-

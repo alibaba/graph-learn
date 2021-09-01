@@ -44,6 +44,7 @@ public:
   Status Init();
   Status Build();
   Status Stop();
+  void StopSampling();
 
   // just for test
   Coordinator* GetCoordinator();

@@ -29,6 +29,7 @@ Return:
   NeighborSampler对象
 """
 ```
+
 ```python
 def NeighborSampler.get(ids):
 """ 采样指定ids的一跳或多跳邻居
@@ -38,7 +39,9 @@ Return:
   Layers对象
 """
 ```
+
 采样返回结果为一个`Layers`对象，其含义为“源顶点的邻居顶点，以及源顶点和邻居顶点之间的边”。每一层`Layer`的ids的shape是二维的，**[前一层ids的展开大小，当前层采样个数]。**
+
 ```python
 def Layers.layer_nodes(layer_id):
 """ 获取第i层layer的`Nodes`，layer_id从1开始。"""
@@ -48,6 +51,7 @@ def Layers.layer_edges(layer_id):
 ```
 
 <br />在GSL中，参考`g.out*`和`g.in*`系列接口。例如
+
 ```python
 # 采样一跳邻居顶点
 g.V().outV().sample(count).by(strategy)

@@ -12,63 +12,86 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =============================================================================
-import numpy as np
-import tensorflow as tf
 
-from graphlearn.python.nn.tf.data.entity import Vertex
-from graphlearn.python.nn.tf.data.subgraph import SubGraph
-from graphlearn.python.nn.tf.data.feature_group import FeatureHandler
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import numpy as np
+
+from graphlearn.python.nn.data import Data
+from graphlearn.python.nn.subgraph import SubGraph
+from graphlearn.python.nn.tf.data.feature_handler import FeatureHandler
 
 
 class BatchGraph(SubGraph):
-  def __init__(self, edge_index, nodes, node_schema, node_graph_id,
-               edges=None, edge_schema=None, edge_graph_id=None, 
-               additional_keys=[], **kwargs):
-    """Creates a BatchGraph object, which represents a batch of SubGraphs.
+  """A BatchGraph object, which represents a batch of `SubGraph`s.
+  Nodes, edges in subgraphs are concatenated together and their offsets 
+  are recorded with `graph_node_offsets` and `graph_edge_offsets`. The
+  `edge_index` of subgraph is remapped according to the order offset of 
+  each subgrpah and then form as a new `edge_index`.
 
-    Args:
-      edge_index: concatenated edge_index of SubGraphs.
-      nodes: concatenated nodes of SubGraphs with shape [batch_size, attr_num].
-      node_schema: A (name, Decoder) tuple used to describe the nodes' feature.
-      node_graph_id: indicates which SubGraph the node belong to.
-      edges: concatenated edges of SubGraphs.
-      node_schema: A (name, Decoder) tuple used to describe the edges' feature.
-      edge_graph_id: indicates which SubGraph the edge belong to.
-      additional_keys: A list of keys used to indicate the additional data. Note 
-        that these keys must not contain the above args.
-    """
+  Args:
+    edge_index: concatenated edge_index of `SubGraph`s.
+    nodes: A `Data`/Tensor object denoting concatenated nodes of `SubGraph`s 
+      with shape [batch_size, attr_num].
+    node_schema: A (name, Decoder) tuple used to describe 
+      the nodes' feature or a list of such tuple to describe src and dst nodes'
+      feature for heterogeneous graph.
+    graph_node_offsets: indicates the nodes offset of each `SubGraph`.
+    edges: A `Data`/Tensor object denoting concatenated edges of `SubGraph`s.
+    node_schema: A (name, Decoder) tuple used to describe the edges' feature.
+    graph_edge_offsets: indicates the edges offset of each `SuGraph`.
+    additional_keys: A list of keys used to indicate the additional data. Note 
+      that these keys must not contain the above args. 
+      Note that we require this argument in order to keep the correct order of 
+      the additional data when generating Tensor format of `BatchGraph`.
+  """
+  def __init__(self, edge_index, nodes, node_schema, graph_node_offsets,
+               edges=None, edge_schema=None, graph_edge_offsets=None, 
+               additional_keys=[], **kwargs):
     super(BatchGraph, self).__init__(edge_index, nodes)
     self._edge_index = edge_index
     self._nodes = nodes
     self._node_schema = node_schema
     self._edges = edges
     self._edge_schema = edge_schema
-    self._node_graph_id = node_graph_id
-    self._edge_graph_id = edge_graph_id
+    self._graph_node_offsets = graph_node_offsets
+    self._graph_edge_offsets = graph_edge_offsets
     self._additional_keys = additional_keys
     for key, item in kwargs.items():
       self[key] = item
 
   @property
+  def num_nodes(self):
+    if isinstance(self._nodes.ids, np.ndarray):
+      return self._nodes.ids.size
+    else:
+      return self._nodes.ids.shape.as_list()[0]
+
+  @property
+  def num_edges(self):
+    if isinstance(self._edge_index, np.ndarray):
+      return self._edge_index.shape[1]
+    else:
+      return self._edge_index.shape.as_list()[1]
+
+  @property
   def num_graphs(self):
     """number of SubGraphs.
     """
-    if isinstance(self.node_graph_id, np.ndarray):
-      return np.amax(self.node_graph_id) + 1
+    if isinstance(self.graph_node_offsets, np.ndarray):
+      return np.amax(self.graph_node_offsets) + 1
     else:
       return tf.reduce_max(self.node_graph_index) + 1
 
   @property
-  def node_graph_id(self):
-    """ indicates which SubGraph the node belong to.
-    """
-    return self._node_graph_id
+  def graph_node_offsets(self):
+    return self._graph_node_offsets
 
   @property
-  def edge_graph_id(self):
-    """ indicates which SubGraph the edge belong to.
-    """
-    return self._edge_graph_id
+  def graph_edge_offsets(self):
+    return self._graph_edge_offsets
 
   @property
   def node_schema(self):
@@ -88,51 +111,49 @@ class BatchGraph(SubGraph):
   def __setitem__(self, key, value):
     setattr(self, key, value)
 
-  def forward(self, shared_param=None):
-    """feature encoding function, which returns
-    encoded feature embedding as nodes with shape [batch_size, dim].
+  def transform(self, transform_func=None):
+    """transforms `BatchGraph`. Default transformation is encoding 
+    nodes feature to embedding.
+    Args:
+      transform_func: A function that takes in an `BatchGraph` object 
+        and returns a transformed version. 
     """
-
-    def tf_transpose(item):
-      if item is not None:
-        item = tf.transpose(item)
-      return item
-
     if self.node_schema is None:
       return self
+    # TODO(baole): supports heterogeneous grpah.
     vertex_handler = FeatureHandler(self.node_schema[0],
                                     self.node_schema[1].feature_spec)
-    ints, floats, strings =\
-      tf_transpose(self.nodes.int_attrs),\
-      tf_transpose(self.nodes.float_attrs),\
-      tf_transpose(self.nodes.string_attrs)
-    node = Vertex(self.nodes.ids, ints, floats, strings)
+    node = Data(self.nodes.ids, 
+                self.nodes.int_attrs, 
+                self.nodes.float_attrs, 
+                self.nodes.string_attrs)
     node_tensor = vertex_handler.forward(node)
     graph = BatchGraph(self.edge_index, node_tensor, 
-                       self.node_schema, self.node_graph_id,
+                       self.node_schema, self.graph_node_offsets,
                        additional_keys=self.additional_keys)
     for key in self.additional_keys:
       graph[key] = self[key]
     return graph
 
   def to_graphs(self):
-    """reconstructs subgraphs."""
+    """reconstructs `SubGraph`s."""
     pass
   
   def flatten(self):
+    # TODO(baole): support edges.
     flatten_list = []
     flatten_list.append(self.edge_index)
     nodes = self.nodes
     # nodes
-    flatten_list.append(nodes.ids)
     if nodes.int_attrs is not None:
       flatten_list.append(nodes.int_attrs)
     if nodes.float_attrs is not None:
       flatten_list.append(nodes.float_attrs)
     if nodes.string_attrs is not None:
       flatten_list.append(nodes.string_attrs)
-    # node_graph_id
-    flatten_list.append(self.node_graph_id)
+    flatten_list.append(nodes.ids)
+    # graph_node_offsets
+    flatten_list.append(self.graph_node_offsets)
     # additional data.
     for key in self.additional_keys:
       flatten_list.append(self[key])
@@ -140,46 +161,46 @@ class BatchGraph(SubGraph):
     
   @classmethod
   def from_graphs(cls, graphs, additional_keys=[]):
-    """create BatchGraph for a list of SubGraphs.
+    """creates `BatchGraph` from a list of `SubGraph`s.
     Note that the additional data of each SubGraph must have the same
     type and all dimensions except axis=0 must be equal.
 
     Args:
-      graphs: SubGraph objects.
+      graphs: `SubGraph` objects.
       additional_keys: Keys(a list) of the additional data.
     """
-    node_graph_id = BatchGraph._build_node_graph_id(graphs)
-    edge_graph_id = BatchGraph._build_edge_graph_id(graphs)
-    nodes = BatchGraph._build_feature(graphs, 'node')
-    edges = BatchGraph._build_feature(graphs, 'edge')
+    graph_node_offsets = BatchGraph._build_graph_node_offsets(graphs)
+    graph_edge_offsets = BatchGraph._build_graph_edge_offsets(graphs)
+    nodes = BatchGraph._build_data(graphs, 'node')
+    edges = BatchGraph._build_data(graphs, 'edge')
     edge_index = BatchGraph._build_edge_index(graphs)
-    graph = BatchGraph(edge_index, nodes, None, node_graph_id,
-                       edges, edge_graph_id, additional_keys=additional_keys)
+    graph = BatchGraph(edge_index, nodes, None, graph_node_offsets,
+                       edges, graph_edge_offsets, additional_keys=additional_keys)
     for key in additional_keys:
       item = BatchGraph._build_additional_data(graphs, key)
       graph[key] = item
     return graph
 
   @classmethod
-  def _build_node_graph_id(cls, graphs):
-    node_graph_id_list = []
+  def _build_graph_node_offsets(cls, graphs):
+    graph_node_offsets = []
     offset = 0
     for graph in graphs:
-      node_graph_id_list.append(offset)
+      graph_node_offsets.append(offset)
       offset += graph.num_nodes
-    return np.array(node_graph_id_list, dtype=np.int64)
+    return np.array(graph_node_offsets, dtype=np.int64)
 
   @classmethod
-  def _build_edge_graph_id(cls, graphs):
-    edge_graph_id_list = []
+  def _build_graph_edge_offsets(cls, graphs):
+    graph_edge_offsets = []
     offset = 0
     for graph in graphs:
-      edge_graph_id_list.append(offset)
+      graph_edge_offsets.append(offset)
       offset += graph.num_edges
-    return np.array(edge_graph_id_list, dtype=np.int64)
+    return np.array(graph_edge_offsets, dtype=np.int64)
 
   @classmethod
-  def _build_feature(cls, graphs, type='node'):
+  def _build_data(cls, graphs, type='node'):
     def list_append(list, item):
       if item is not None:
         list.append(item)
@@ -209,7 +230,7 @@ class BatchGraph(SubGraph):
     ints = np_concat(int_attrs_list)
     floats = np_concat(float_attrs_list)
     strings = np_concat(string_attrs_list)
-    return Vertex(ids, ints, floats, strings)
+    return Data(ids, ints, floats, strings)
 
   @classmethod
   def _build_edge_index(cls, graphs):
@@ -229,13 +250,13 @@ class BatchGraph(SubGraph):
 
   @classmethod
   def from_tensors(cls, tensors, node_schema, additional_keys=[], **kwargs):
-    """Build SubGraph from flatten tensors.
+    """builds `BatchGraph` object from flatten tensors.
     Args:
-      tensors: A tuple of tensors corresponding to BatchGraph flatten format.
+      tensors: A tuple of tensors corresponding to`BatchGraph` flatten format.
       node_schema: A (name, Decoder) tuple used to describe the nodes' feature.
       additional_keys: Keys(a list) of the additional data.
     Returns:
-      BatchGraph in tensor format.
+      A `BatchGraph` object in tensor format.
     """
     cursor = [0]
     def next(tensors):
@@ -244,13 +265,12 @@ class BatchGraph(SubGraph):
       return t
 
     def build_node_from_tensors(feature_schema, tensors):
-      """Constructs Vertices in Tensor format.
+      """Constructs nodes `Data` in Tensor format.
       Args:
         feature_schema: A (name, Decoder) tuple used to parse the feature.
       Returns:
-        Vertex.
+        A `Data` object in Tensor format.
       """
-      ids = next(tensors)
       if feature_schema[1].int_attr_num > 0:
         int_attrs = next(tensors)
       else:
@@ -263,26 +283,27 @@ class BatchGraph(SubGraph):
         string_attrs = next(tensors)
       else:
         string_attrs = None
-      feature_tensor = Vertex(ids,
-                              ints=int_attrs,
-                              floats=float_attrs,
-                              strings=string_attrs)
+      ids = next(tensors)
+      feature_tensor = Data(ids,
+                            ints=int_attrs,
+                            floats=float_attrs,
+                            strings=string_attrs)
       return feature_tensor
 
     # src
     edge_index = next(tensors)
     if node_schema is not None:
       node_tensor = build_node_from_tensors(node_schema, tensors)
-      node_graph_id = next(tensors)
+      graph_node_offsets = next(tensors)
     else:
       node_tensor = None
-      node_graph_id = None
+      graph_node_offsets = None
 
-    #TODO(baole.abl): support Edge.
+    #TODO(baole): support Edge.
     edge_tensor = None
-    edge_graph_id = None
+    graph_edge_offsets = None
 
-    graph = BatchGraph(edge_index, node_tensor, node_schema, node_graph_id,
+    graph = BatchGraph(edge_index, node_tensor, node_schema, graph_node_offsets,
       additional_keys=additional_keys)
     for key in additional_keys:
       item = next(tensors)

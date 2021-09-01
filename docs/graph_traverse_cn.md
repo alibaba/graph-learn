@@ -11,6 +11,7 @@
 <a name="HEDng"></a>
 ## 2.1 用法
 顶点的数据来源有3种：所有unique的顶点，所有边的源顶点，所有边的目的顶点。顶点遍历依托`NodeSampler`算子实现，Graph对象的`node_sampler()`接口返回一个`NodeSampler`对象，再调用该对象的`get()`接口返回`Nodes`格式的数据。
+
 ```python
 def node_sampler(type, batch_size=64, strategy="by_order", node_from=gl.NODE):
 """
@@ -38,19 +39,56 @@ Return:
 
 <a name="aNB50"></a>
 ## 2.2 示例
+
+user顶点表：<br />
+
 | id | attributes |
 | --- | --- |
 | 10001 | 0:0.1:0 |
 | 10002 | 1:0.2:3 |
 | 10003 | 3:0.3:4 |
 
+
+buy边表：<br />
+
+| src_id | dst_id  | attributes |
+| --- | --- | --- |
+| 10001 | 1 | 0.1 |
+| 10001 | 2 | 0.2 |
+| 10001 | 3 | 0.4 |
+| 10002 | 1 | 0.1 |
+
+
 ```python
-sampler = g.node_sampler("user", batch_size=3, strategy="random")
+# Exmaple1: 随机采样顶点。
+sampler1 = g.node_sampler("user", batch_size=3, strategy="random")
 for i in range(5):
-    nodes = sampler.get()
-    print(nodes.ids)
+  nodes = sampler1.get()
+  print(nodes.ids) # shape=(3, )
+  print(nodes.int_attrs) # shape=(3, 2)，有2个int属性
+  print(nodes.float_attrs) # shape=(3, 1)，有1个float属性
+
+# Exmaple2: 遍历图中的user顶点
+sampler2 = g.node_sampler("user", batch_size=3, strategy="by_order")
+while True:
+  try:
+    nodes = sampler1.get()
+    print(nodes.ids) # 除最后一个batch外，shape为(3, )，最后一个batch的shape为剩余的id数
     print(nodes.int_attrs)
     print(nodes.float_attrs)
+  except gl.OutOfRangError:
+    break
+
+# Exmaple3: 遍历图中的buy边的源顶点，即user顶点，为unique的
+sampler2 = g.node_sampler("user", batch_size=3, strategy="by_order", node_from=gl.EDGE_SRC)
+while True:
+  try:
+    nodes = sampler1.get()
+    print(nodes.ids) # shape=(2, )，由于buy边表中src_id只有2个unique的值，不满batch_size 3，因此这个循环只进行了一次
+    print(nodes.int_attrs)
+    print(nodes.float_attrs)
+  except gl.OutOfRangError:
+    break
 ```
 
 
@@ -59,6 +97,7 @@ for i in range(5):
 <a name="EWBuj"></a>
 ## 3.1 用法
 边遍历依托`EdgeSampler`算子实现。Graph对象的`edge_sampler()`接口返回一个`EdgeSampler`对象，再调用该对象的`get()`接口返回`Edges`格式的数据。
+
 ```python
 def edge_sampler(edge_type, batch_size=64, strategy="by_order"):
 """
@@ -71,6 +110,7 @@ Return:
   EdgeSampler对象
 """
 ```
+
 ```python
 def EdgeSampler.get():
 """

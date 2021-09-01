@@ -39,8 +39,8 @@ class InOrderNodeSubGraphSamplingTestCase(SamplingTestCase):
     for i in range(max_iter):
       try:
         subgraph = subgraph_sampler.get()
-        row_indices = subgraph.row_indices
-        col_indices = subgraph.col_indices
+        row_indices = subgraph.edge_index[0]
+        col_indices = subgraph.edge_index[1]
 
         utils.check_subgraph_node_lables(subgraph.nodes)
         utils.check_subgraph_node_attrs(subgraph.nodes)

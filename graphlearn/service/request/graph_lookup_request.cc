@@ -15,6 +15,7 @@ limitations under the License.
 
 #include "graphlearn/include/graph_request.h"
 
+#include "graphlearn/common/base/log.h"
 #include "graphlearn/core/io/element_value.h"
 #include "graphlearn/include/constants.h"
 
@@ -243,6 +244,11 @@ void LookupEdgesRequest::Init(const Tensor::Map& params) {
   ADD_TENSOR(params_, kEdgeType, kString, 1);
   params_[kEdgeType].AddString(params.at(kEdgeType).GetString(0));
 
+  if (params.find(kNeighborCount) != params.end()) {
+    ADD_TENSOR(params_, kNeighborCount, kInt32, 1);
+    params_[kNeighborCount].AddInt32(params.at(kNeighborCount).GetInt32(0));
+  }
+
   ADD_TENSOR(tensors_, kEdgeIds, kInt64, kReservedSize);
   edge_ids_ = &(tensors_[kEdgeIds]);
 
@@ -258,10 +264,42 @@ void LookupEdgesRequest::Set(const int64_t* edge_ids, const int64_t* src_ids,
 
 void LookupEdgesRequest::Set(const Tensor::Map& tensors) {
   const int64_t* edge_ids = tensors.at(kEdgeIds).GetInt64();
+  int32_t edge_size = tensors.at(kEdgeIds).Size();
+  edge_ids_ ->AddInt64(edge_ids, edge_ids + edge_size);
+
   const int64_t* src_ids = tensors.at(kSrcIds).GetInt64();
-  int32_t batch_size = tensors.at(kEdgeIds).Size();
-  edge_ids_ ->AddInt64(edge_ids, edge_ids + batch_size);
-  src_ids_ ->AddInt64(src_ids, src_ids + batch_size);
+  int32_t src_size = tensors.at(kSrcIds).Size();
+
+  if (edge_size == src_size) {
+    src_ids_->AddInt64(src_ids, src_ids + src_size);
+    return;
+  }
+
+  // Padding src_ids and edge_ids.
+
+  if (tensors.find(kDegreeKey) != tensors.end()) {
+    const int32_t* degrees = tensors.at(kDegreeKey).GetInt32();
+    for (int32_t i = 0; i < src_size; ++i) {
+      for (int32_t j = 0; j < *(degrees + i); ++j) {
+        src_ids_->AddInt64(*(src_ids + i));
+      }
+    }
+    return;
+  }
+
+  if (params_.find(kNeighborCount) != params_.end()) {
+    for (int32_t i = 0; i < src_size; ++i) {
+      for (int64_t j = 0; j < params_.at(kNeighborCount).GetInt32(0); ++j) {
+        src_ids_->AddInt64(*(src_ids + i));
+      }
+    }
+    return;
+  }
+
+  if (src_ids_->Size() != edge_ids_->Size()) {
+    LOG(FATAL) << "Internal Error: Unexcepted input LookupEdges.";
+    ::exit(-1);
+  }
 }
 
 const std::string& LookupEdgesRequest::EdgeType() const {

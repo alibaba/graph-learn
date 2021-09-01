@@ -126,6 +126,15 @@ void ServerImpl::StopBasicService() {
   }
 }
 
+void ServerImpl::StopDagService() {
+  if (in_memory_service_) {
+    in_memory_service_->StopSampling();
+  }
+  if (dist_service_) {
+    dist_service_->StopSampling();
+  }
+}
+
 DefaultServerImpl::DefaultServerImpl(int32_t server_id,
                                      int32_t server_count,
                                      const std::string& server_host,
@@ -185,11 +194,25 @@ void DefaultServerImpl::Stop() {
   USER_LOG("Server stopped.");
 }
 
+void DefaultServerImpl::StopSampling() {
+  StopDagService();
+}
+
 ServerImpl* NewDefaultServerImpl(int32_t server_id,
                                  int32_t server_count,
                                  const std::string& server_host,
                                  const std::string& tracker) {
   return new DefaultServerImpl(server_id, server_count, server_host, tracker);
 }
+
+#ifndef OPEN_ACTOR_ENGINE
+ServerImpl* NewActorServerImpl(int32_t server_id,
+                               int32_t server_count,
+                               const std::string& server_host,
+                               const std::string& tracker) {
+  USER_LOG("Actor engine is disabled!");
+  return nullptr;
+}
+#endif
 
 }  // namespace graphlearn

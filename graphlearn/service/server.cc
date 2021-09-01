@@ -40,11 +40,17 @@ void Server::Stop() {
   impl_->Stop();
 }
 
+void Server::StopSampling() {
+  impl_->StopSampling();
+}
+
 Server* NewServer(int32_t server_id,
                   int32_t server_count,
                   const std::string& server_host,
                   const std::string& tracker) {
-  ServerImpl* impl = NewDefaultServerImpl(server_id, server_count, server_host, tracker);
+  ServerImpl* impl = GLOBAL_FLAG(EnableActor) ?
+    NewActorServerImpl(server_id, server_count, server_host, tracker) :
+    NewDefaultServerImpl(server_id, server_count, server_host, tracker);
   return new Server(impl);
 }
 

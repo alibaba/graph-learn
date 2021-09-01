@@ -61,34 +61,6 @@ class FullNeighborSamplingTestCase(SamplingTestCase):
     utils.check_node_ids(nodes, self._node2_ids)
     utils.check_node_type(nodes, node_type=self._node2_type)
 
-  def test_1hop_with_agg(self):
-    gl.set_eager_mode(True)
-    ids = self._seed_node2_ids
-    res = self.g.V(self._node2_type, feed=ids).outV(self._edge2_type).sample().by("full").emit()
-    print(res[1].embedding_agg(func="sum"))
-
-  def test_1hop_using_gsl(self):
-    """ Full neighbor sample with gsl api.
-    """
-    gl.set_eager_mode(True)
-    expand_factor = 0
-    ids = self._seed_node1_ids
-    nbrs = self.g.V(self._node1_type, feed=ids) \
-      .outE(self._edge1_type).sample(expand_factor).by("full") \
-      .inV().emit()
-
-    nodes = nbrs[2]
-
-    index = 0
-    for node in nodes:
-      utils.check_sorted_equal(
-          utils.fixed_dst_ids(ids[index], self._node2_range), node.ids)
-      index += 1
-    utils.check_node_ids(nodes, self._node2_ids)
-    utils.check_node_type(nodes, node_type=self._node2_type)
-    utils.check_node_weights(nodes)
-    utils.check_node_labels(nodes)
-
 
 if __name__ == "__main__":
   unittest.main()

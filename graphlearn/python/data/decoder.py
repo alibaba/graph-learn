@@ -78,7 +78,7 @@ class Decoder(object):
         |       "int"      | 8  |   Dynamic bucket embedding variable, dim=8   |
         |    ("int",10)    | 8  |   Embedding variable, bucket size=10, dim=8  |
         |      "float"     |None|           Continues numeric tensor           |
-        Note that dynamic bucket embedding variable is only supported in tfra.
+        Note that dynamic bucket embedding variable is only supported in PAI-TF.
         For continues numeric attribute, attr_dim should be either None or 0.
     """
     self._weighted = weighted
@@ -141,7 +141,7 @@ class Decoder(object):
       elif dim:
         self._fspec.append_sparse(bucket_size, dim, type_name == "int")
       else:
-        self._fspec.append_dense(1.0, type_name == "float")
+        self._fspec.append_dense(type_name == "float")
 
   def parse(self, attr_type):
     if isinstance(attr_type, tuple) or isinstance(attr_type, list):

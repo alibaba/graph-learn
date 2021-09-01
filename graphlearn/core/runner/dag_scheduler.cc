@@ -94,6 +94,13 @@ DagScheduler* NewDefaultDagScheduler(Env* env) {
   return new ThreadDagScheduler(env);
 }
 
+#ifndef OPEN_ACTOR_ENGINE
+DagScheduler* NewActorDagScheduler(Env* env) {
+  USER_LOG("Actor engine is disabled!");
+  return nullptr;
+}
+#endif
+
 DagScheduler::DagScheduler(Env* env)
     : env_(env) {
   optimizer_ = new Optimizer();
@@ -104,8 +111,13 @@ DagScheduler::~DagScheduler() {
 }
 
 void DagScheduler::Take(Env* env, const Dag* dag) {
-  static DagScheduler* scheduler = NewDefaultDagScheduler(env);
-  scheduler->Run(dag);
+  if (GLOBAL_FLAG(EnableActor) < 1) {
+    static DagScheduler* scheduler = NewDefaultDagScheduler(env);
+    scheduler->Run(dag);
+  } else {
+    static DagScheduler* scheduler = NewActorDagScheduler(env);
+    scheduler->Run(dag);
+  }
 }
 
 }  // namespace graphlearn

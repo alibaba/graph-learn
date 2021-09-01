@@ -27,14 +27,16 @@ from graphlearn.python.tests.test_edge import EdgeTestCase
 
 class LabeledAttributedEdgeTestCase(EdgeTestCase):
   def test_labeled_attributed(self):
-    gl.set_eager_mode(True)
     file_path = self.gen_test_data([utils.LABELED, utils.ATTRIBUTED], False)
     decoder = gl.Decoder(labeled=True, attr_types=utils.ATTR_TYPES)
     g = gl.Graph() \
       .edge(source=file_path, edge_type=self.edge_tuple_, decoder=decoder)
     g.init(tracker=utils.TRACKER_PATH)
 
-    edges = g.E("first").batch(self.batch_size_).emit()
+    query = g.E("first").batch(self.batch_size_).alias('e').values()
+    ds = gl.Dataset(query)
+
+    edges = ds.next()['e']
     utils.check_ids(edges.src_ids,
                     range(self.src_range_[0], self.src_range_[1]))
     utils.check_ids(edges.dst_ids,

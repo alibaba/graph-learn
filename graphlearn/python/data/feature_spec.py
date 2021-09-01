@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =============================================================================
+"""A FeatureSpec class."""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -29,8 +31,8 @@ class DynamicSparseSpec(object):
     self.need_hash = need_hash
 
 class DenseSpec(object):
-  def __init__(self, weight):
-    self.weight = weight
+  def __init__(self):
+    pass
 
 class MultivalSpec(object):
   def __init__(self, bucket_size, dimension, delimiter):
@@ -44,14 +46,14 @@ class DynamicMultivalSpec(object):
     self.delimiter = delimiter
 
 class FeatureSpec(object):
-  def __init__(self, feature_num, weighted=False, labeled=False):
-    """ To describe how to encode the values of Vertex or Edge.
+  """ Describes how to encode the values of `Nodes` or `Edges`.
 
-    Args:
-      feature_num (int, Required): The total feature count.
-      weighted (boolean, Optional): Whether entity data has weight or not.
-      labeled (boolean, Optional): Whether entity data has label or not.
-    """
+  Args:
+    feature_num (int, Required): The total feature count.
+    weighted (boolean, Optional): Whether entity data has weight or not.
+    labeled (boolean, Optional): Whether entity data has label or not.
+  """
+  def __init__(self, feature_num, weighted=False, labeled=False):
     self._feature_num = feature_num
     self._weighted = weighted
     self._labeled = labeled
@@ -99,14 +101,15 @@ class FeatureSpec(object):
           DynamicSparseSpec(dimension, need_hash))
     self._total_dim += dimension
 
-  def append_dense(self, weight=1.0, is_float=True):
+  def append_dense(self, is_float=True):
     if is_float:
-      self._float_spec_list.append(DenseSpec(weight))
+      self._float_spec_list.append(DenseSpec())
     else:
-      self._int_spec_list.append(DenseSpec(weight))
+      self._int_spec_list.append(DenseSpec())
     self._total_dim += 1
 
   def append_multival(self, bucket_size, dimension, delimiter=","):
+    """append description of multivalent feature."""
     if bucket_size is not None:
       self._string_spec_list.append(
         MultivalSpec(bucket_size, dimension, delimiter))

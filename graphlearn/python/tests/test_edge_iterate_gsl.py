@@ -27,7 +27,6 @@ from graphlearn.python.tests.test_edge import EdgeTestCase
 
 class EdgeIterateUsingGSLTestCase(EdgeTestCase):
   def test_edge_iterate_using_gsl(self):
-    gl.set_eager_mode(True)
     file_path = self.gen_test_data([utils.WEIGHTED], False)
     decoder = gl.Decoder(weighted=True)
     g = gl.Graph() \
@@ -35,13 +34,14 @@ class EdgeIterateUsingGSLTestCase(EdgeTestCase):
     g.init(tracker=utils.TRACKER_PATH)
 
     batch_size = 4
-    query = g.E('first').batch(batch_size).values()
+    query1 = g.E('first').batch(batch_size).alias('e').values()
+    ds = gl.Dataset(query1)
     res_src = []
     res_dst = []
     max_iter = 100
     for i in range(max_iter):
       try:
-        edges = g.run(query)
+        edges = ds.next()['e']
         utils.check_edge_weights(edges)
         res_src.extend(list(edges.src_ids))
         res_dst.extend(list(edges.dst_ids))
@@ -52,12 +52,13 @@ class EdgeIterateUsingGSLTestCase(EdgeTestCase):
     utils.check_sorted_equal(res_src, src_ids)
     utils.check_sorted_equal(res_dst, dst_ids)
 
-    query = g.E('first').batch(batch_size).shuffle().values()
+    query2 = g.E('first').batch(batch_size).shuffle().alias('e').values()
+    ds2 = gl.Dataset(query2)
     max_iter = 10
     src_ids = range(self.src_range_[0], self.src_range_[1])
     dst_ids = range(self.dst_range_[0], self.dst_range_[1])
     for i in range(max_iter):
-      edges = g.run(query)
+      edges = ds2.next()['e']
       utils.check_edge_weights(edges)
       utils.check_subset(edges.src_ids, src_ids)
       utils.check_subset(edges.dst_ids, dst_ids)

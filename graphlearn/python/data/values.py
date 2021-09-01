@@ -788,24 +788,27 @@ class Layer(object):
     self._shape = shape
 
 class SubGraph(object):
-  def __init__(self, nodes, row_indices, col_indices, edges=None):
+  def __init__(self, edge_index, nodes, edges=None, **kwargs):
     self._nodes = nodes
-    self._row_indices = row_indices
-    self._col_indices = col_indices
+    self._edge_index = edge_index
     self._edges = edges
+    for key, item in kwargs.items():
+      self[key] = item
 
   @property
   def nodes(self):
     return self._nodes
 
   @property
-  def row_indices(self):
-    return self._row_indices
-
-  @property
-  def col_indices(self):
-    return self._col_indices
+  def edge_index(self):
+    return self._edge_index
 
   @property
   def edges(self):
     return self._edges
+
+  def __getitem__(self, key):
+    return getattr(self, key, None)
+
+  def __setitem__(self, key, value):
+    setattr(self, key, value)

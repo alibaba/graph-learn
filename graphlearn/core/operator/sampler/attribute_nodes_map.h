@@ -51,6 +51,11 @@ struct IdWeight{
 template<class AttrType>
 class AttributeNodesMap {
 public:
+  ~AttributeNodesMap() {
+    for (auto& iter : attr_am_) {
+      delete iter.second;
+    }
+  }
   void Insert(const AttrType& attr, int64_t id, float weight);
   void CreateAM();
   void Sample(const AttrType& attr,
@@ -80,9 +85,8 @@ void AttributeNodesMap<AttrType>::Insert(
 template<class AttrType>
 void AttributeNodesMap<AttrType>::CreateAM() {
   for (const auto& item : attr_id_weights_) {
-    AliasMethodFactory* factory = AliasMethodFactory::GetInstance();
     const std::string& name = ToString<>(item.first);
-    AliasMethod* am = factory->LookupOrCreate(name, &(item.second.weights_));
+    AliasMethod* am = new AliasMethod(&(item.second.weights_));
     if (attr_am_.find(item.first) == attr_am_.end()) {
       attr_am_.emplace(item.first, am);
     }

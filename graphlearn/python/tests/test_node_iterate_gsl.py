@@ -27,7 +27,6 @@ from graphlearn.python.tests.test_node import NodeTestCase
 
 class NodeIterateUsingGSLTestCase(NodeTestCase):
   def test_node_iterate_using_gsl(self):
-    gl.set_eager_mode(True)
     file_path = self.gen_test_data([utils.ATTRIBUTED])
     decoder = gl.Decoder(attr_types=utils.ATTR_TYPES)
     g = gl.Graph() \
@@ -35,12 +34,14 @@ class NodeIterateUsingGSLTestCase(NodeTestCase):
     g.init(tracker=utils.TRACKER_PATH)
 
     batch_size = 4
-    query = g.V('user').batch(batch_size).values()
+    query = g.V("user").batch(batch_size).alias('n').values()
+    ds = gl.Dataset(query, window=1)
+    
     res_ids = []
     max_iter = 100
     for i in range(max_iter):
       try:
-        nodes = g.run(query)
+        nodes = ds.next()['n']
         utils.check_node_attrs(nodes)
         res_ids.extend(list(nodes.ids))
       except gl.OutOfRangeError:
@@ -48,10 +49,12 @@ class NodeIterateUsingGSLTestCase(NodeTestCase):
     ids = range(self.value_range_[0], self.value_range_[1])
     utils.check_sorted_equal(res_ids, ids)
 
-    query = g.V('user').batch(batch_size).shuffle().values()
+    query = g.V('user').batch(batch_size).shuffle().alias('n').values()
+    ds = gl.Dataset(query)
+    
     max_iter = 10
     for i in range(max_iter):
-      nodes = g.run(query)
+      nodes = ds.next()['n']
       utils.check_node_attrs(nodes)
       utils.check_subset(nodes.ids, ids)
 

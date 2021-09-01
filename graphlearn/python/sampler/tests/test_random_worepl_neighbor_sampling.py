@@ -31,7 +31,6 @@ class RandomWithoutReplacementNeighborSamplingTestCase(SamplingTestCase):
   def test_1hop_circular_padding(self):
     """ Sample one hop of neighbors.
     """
-    gl.set_eager_mode(True)
     gl.set_padding_mode(gl.CIRCULAR)
     expand_factor = 6
     ids = self._seed_node1_ids
@@ -81,25 +80,6 @@ class RandomWithoutReplacementNeighborSamplingTestCase(SamplingTestCase):
     utils.check_fixed_edge_dst_ids(edges, dst_range=self._node2_range,
                                    expected_src_ids=ids,
                                    default_dst_id=self._default_dst_id)
-
-  def test_1hop_using_gsl(self):
-    """ Using gsl api.
-    """
-    gl.set_eager_mode(True)
-    gl.set_padding_mode(gl.REPLICATE)
-    expand_factor = 6
-    ids = self._seed_node1_ids
-    nbrs = self.g.V(self._node1_type, feed=ids) \
-      .outE(self._edge1_type).sample(expand_factor).by("random_without_replacement") \
-      .inV().emit()
-
-    edges = nbrs[1]
-    nodes = nbrs[2]
-
-    for iid, nbrs in zip(ids, nodes.ids):
-      full_nbrs = utils.fixed_dst_ids(iid, (100, 200))
-      full_nbrs.extend([-1])
-      utils.check_set_equal(nbrs, full_nbrs)
 
 
 if __name__ == "__main__":

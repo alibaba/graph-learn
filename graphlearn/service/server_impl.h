@@ -42,12 +42,14 @@ public:
   virtual void Init(const std::vector<io::EdgeSource>& edges,
                     const std::vector<io::NodeSource>& nodes) = 0;
   virtual void Stop() = 0;
+  virtual void StopSampling() = 0;
 
 protected:
   void RegisterBasicService(Env* env, Executor* executor);
   void InitBasicService();
   void BuildBasicService();
   void StopBasicService();
+  void StopDagService();
 
 protected:
   int32_t            server_id_;
@@ -70,6 +72,7 @@ public:
   void Init(const std::vector<io::EdgeSource>& edges,
             const std::vector<io::NodeSource>& nodes) override;
   void Stop() override;
+  void StopSampling() override;
 
 private:
   Env*        env_;
@@ -81,6 +84,10 @@ ServerImpl* NewDefaultServerImpl(int32_t server_id,
                                  int32_t server_count,
                                  const std::string& server_host,
                                  const std::string& tracker);
+ServerImpl* NewActorServerImpl(int32_t server_id,
+                               int32_t server_count,
+                               const std::string& server_host,
+                               const std::string& tracker);
 
 }  // namespace graphlearn
 

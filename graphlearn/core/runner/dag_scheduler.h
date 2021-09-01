@@ -41,6 +41,7 @@ protected:
 };
 
 DagScheduler* NewDefaultDagScheduler(Env* env);
+DagScheduler* NewActorDagScheduler(Env* env);
 
 }  // namespace graphlearn
 

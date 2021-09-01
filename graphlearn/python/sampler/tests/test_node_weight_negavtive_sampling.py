@@ -41,23 +41,6 @@ class NodeWeightNegavtiveSamplingTestCase(SamplingTestCase):
     utils.check_node_type(nodes, node_type=self._node2_type)
     utils.check_node_shape(nodes, ids.size * expand_factor)
 
-  def test_neg_using_gsl(self):
-    """ Using gsl api.
-    """
-    import graphlearn as gl
-    gl.set_eager_mode(True)
-    expand_factor = 6
-    ids = self._seed_node1_ids
-    nbrs = self.g.V(self._node2_type, feed=ids) \
-      .Neg(self._node2_type).sample(expand_factor).by("node_weight") \
-      .emit()
-
-    nodes = nbrs[1]
-
-    utils.check_ids(nodes.ids, [i for i in range(100, 200) if i not in ids])
-    utils.check_node_type(nodes, node_type=self._node2_type)
-    utils.check_node_shape(nodes, ids.size * expand_factor)
-
 
 if __name__ == "__main__":
   unittest.main()

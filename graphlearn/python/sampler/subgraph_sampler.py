@@ -16,6 +16,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import numpy as np
+
 from graphlearn import pywrap_graphlearn as pywrap
 from graphlearn.python.data.values import Edges, SubGraph
 from graphlearn.python.utils import strategy2op
@@ -82,7 +84,7 @@ class SubGraphSampler(object):
     errors.raise_exception_on_not_ok_status(status)
 
     nodes = self._graph.get_nodes(self._node_type, node_ids)
-    return SubGraph(nodes, row_idx, col_idx, Edges(edge_ids=edge_ids))
+    return SubGraph(np.stack([row_idx, col_idx], axis=0), nodes, Edges(edge_ids=edge_ids))
 
 
 class RandomNodeSubGraphSampler(SubGraphSampler):

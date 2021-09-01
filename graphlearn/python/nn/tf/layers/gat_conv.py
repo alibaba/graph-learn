@@ -12,17 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =============================================================================
-"""GAT convolutional layer"""
+"""SubGraph based GAT convolutional layer"""
 
 import tensorflow as tf
 
-from graphlearn.python.nn.tf.layers.sub_conv import SubGraphConv
+from graphlearn.python.nn.tf.config import conf
+from graphlearn.python.nn.tf.layers.sub_conv import SubConv
 from graphlearn.python.nn.tf.utils.softmax import unsorted_segment_softmax
 
-DNN_PT_SIZE = 32 * 1024
 
-
-class GATConv(SubGraphConv):
+class GATConv(SubConv):
   """multi-head GAT convolutional layer.
   """
   def __init__(self,
@@ -30,25 +29,18 @@ class GATConv(SubGraphConv):
                num_heads=1,
                concat=False,
                dropout=0.0,
-               bias=False,
-               name='',
-               ps_num=0):
+               use_bias=False,
+               name=''):
     self._out_dim = out_dim
     self._num_heads = num_heads
     self._concat = concat
     self._dropout =  dropout
-    self._bias  = bias
+    self._bias = use_bias
     self._name = name
 
-    self._partitioner = None
-    if ps_num:
-      self._partitioner = tf.min_max_variable_partitioner(
-          max_partitions=ps_num,
-          min_slice_size=DNN_PT_SIZE)
     self._vars = {}
     with tf.variable_scope(self._name + '/'  + 'layer',
-                           reuse=tf.AUTO_REUSE,
-                           partitioner=self._partitioner):
+                           reuse=tf.AUTO_REUSE):
       self._vars['attn_src'] = \
         tf.get_variable(shape=[1, self._num_heads, self._out_dim],
                         name='attention_weights_src')
@@ -103,7 +95,8 @@ class GATConv(SubGraphConv):
     dst_e = tf.gather(dst_e, edge_index[1])
     e = tf.nn.leaky_relu(src_e + dst_e)
     alpha = unsorted_segment_softmax(e, edge_index[0], num_nodes)
-    alpha = tf.nn.dropout(alpha, 1 - self._dropout)
+    if self._dropout and conf.training:
+      alpha = tf.nn.dropout(alpha, 1 - self._dropout)
     # [num_edges, num_heads, output_dim]
     nbr_input = tf.gather(dst_h, edge_index[1])
     alpha = tf.tile(tf.expand_dims(alpha, axis=2),

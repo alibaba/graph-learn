@@ -127,11 +127,11 @@ proto: $(PROTO_FILES)
 	@echo $(PROTO_OBJ)
 	@mkdir -p $(PROTO_BUILT_DIR)
 	@echo 'generating pb file'
-	@$(PROTOC) --proto_path=$(ROOT) --cpp_out=. $(PROTO_DIR)/tensor.proto
-	@$(PROTOC) --proto_path=$(ROOT) --cpp_out=. $(PROTO_DIR)/dag.proto
-	@$(PROTOC) --proto_path=$(ROOT) --cpp_out=. $(PROTO_DIR)/request.proto
-	@$(PROTOC) --proto_path=$(ROOT) --cpp_out=. $(PROTO_DIR)/service.proto
-	@$(PROTOC) --proto_path=$(ROOT) --grpc_out=. --plugin=protoc-gen-grpc=$(PROTOC_GRPC_PLUGIN) $(PROTO_DIR)/service.proto
+	@$(PROTOC) --cpp_out=. graphlearn/proto/tensor.proto
+	@$(PROTOC) --cpp_out=. graphlearn/proto/dag.proto
+	@$(PROTOC) --cpp_out=. graphlearn/proto/request.proto
+	@$(PROTOC) --cpp_out=. graphlearn/proto/service.proto
+	@$(PROTOC) --grpc_out=. --plugin=protoc-gen-grpc=$(PROTOC_GRPC_PLUGIN) graphlearn/proto/service.proto
 	@$(CXX) $(CXXFLAGS) -c $(PROTO_DIR)/tensor.pb.cc -o $(PROTO_BUILT_DIR)/tensor.pb.o
 	@$(CXX) $(CXXFLAGS) -c $(PROTO_DIR)/dag.pb.cc -o $(PROTO_BUILT_DIR)/dag.pb.o
 	@$(CXX) $(CXXFLAGS) -c $(PROTO_DIR)/request.pb.cc -o $(PROTO_BUILT_DIR)/request.pb.o
@@ -352,17 +352,19 @@ test:so gtest
 VERSION := $(shell grep "_VERSION = " ${SETUP_DIR}/setup.py | cut -d= -f2)
 GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 GIT_VERSION := $(shell git rev-parse --short HEAD)
+PYTHON := python
 python: so pybind
 	@rm -rf build
 	@rm -rf dist
 	@rm -rf graphlearn.egg-info
+	@rm -rf $(PYTHON_LIB)
 	@mkdir -p $(PYTHON_LIB)
 	@cp $(SETUP_DIR)/gl.__init__.py $(PYTHON_DIR)/__init__.py
 	@echo "__version__ = $(VERSION)" >> $(PYTHON_DIR)/__init__.py
 	@echo "__git_version__ = '$(GIT_BRANCH)-$(GIT_VERSION)'" >> $(PYTHON_DIR)/__init__.py
 	@cp $(LIB_DIR)/libgraphlearn_shared.so $(PYTHON_LIB)
 
-	python $(SETUP_DIR)/setup.py bdist_wheel
+	${PYTHON} $(SETUP_DIR)/setup.py bdist_wheel
 	@mkdir -p $(BIN_DIR)/ge_data/data
 	@mkdir -p $(BIN_DIR)/ge_data/ckpt
 	@rm -rf $(PYTHON_DIR)/__init__.py*

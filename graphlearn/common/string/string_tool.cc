@@ -161,5 +161,21 @@ bool EndWith(const std::string& s, const std::string& pattern) {
   return true;
 }
 
+std::string Join(const std::vector<std::string>& v,
+                 LiteString delim,
+                 uint32_t from,
+                 uint32_t to) {
+  int32_t size = v.size();
+  if (to > size) to = size;
+  if (from >= to) return "";
+
+  std::string s = v[from];
+  for (int32_t idx = from + 1; idx < to; ++idx) {
+    s.append(delim.data(), delim.size());
+    s.append(v[idx]);
+  }
+  return s;
+}
+
 }  // namespace strings
 }  // namespace graphlearn

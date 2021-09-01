@@ -272,7 +272,7 @@ def check_default_f_attrs(f_attrs, count, default_float_attr=0.0):
                           np.array([default_float_attr] * count),
                           decimal=4)
 
-def check_default_s_attrs(s_attrs, count, default_string_attr=""):
+def check_default_s_attrs(f_attrs, count, default_string_attr=""):
   npt.assert_equal(s_attrs.flatten(),
                    np.array([default_string_attr] * count))
 

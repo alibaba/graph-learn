@@ -13,50 +13,46 @@
 # limitations under the License.
 # =============================================================================
 
-from graphlearn.python.nn.tf.app.link_predictor import LinkPredictor, \
-  SupervisedLinkPredictor, UnsupervisedLinkPredictor
-from graphlearn.python.nn.tf.app.node_classifier import NodeClassifier
 from graphlearn.python.nn.tf.config import conf
-from graphlearn.python.nn.tf.data.data_flow import DataFlow
-from graphlearn.python.nn.tf.data.ego_graph import EgoGraph
-from graphlearn.python.nn.tf.data.entity import Vertex
+from graphlearn.python.nn.tf.data.dataset import Dataset
 from graphlearn.python.nn.tf.data.feature_column import FeatureColumn, \
   EmbeddingColumn, DynamicEmbeddingColumn, NumericColumn, FusedEmbeddingColumn, \
   SparseEmbeddingColumn, DynamicSparseEmbeddingColumn
-from graphlearn.python.nn.tf.data.feature_group import FeatureGroup, \
+from graphlearn.python.nn.tf.data.feature_handler import FeatureGroup, \
   FeatureHandler
-from graphlearn.python.nn.tf.layers.ego_gat_layer import  EgoGATLayerGroup, \
-  EgoGATLayer
-from graphlearn.python.nn.tf.layers.ego_gin_layer import EgoGINLayerGroup, \
-  EgoGINLayer
-from graphlearn.python.nn.tf.layers.ego_sage_layer import EgoSAGELayerGroup, \
-  EgoSAGELayer
-from graphlearn.python.nn.tf.layers.input_layer import InputLayer
-from graphlearn.python.nn.tf.layers.linear_layer import LinearLayer
-from graphlearn.python.nn.tf.model.ego_gat import EgoGAT, HomoEgoGAT
-from graphlearn.python.nn.tf.model.ego_gin import EgoGIN, HomoEgoGIN
-from graphlearn.python.nn.tf.model.ego_sage import EgoGraphSAGE, \
-  HomoEgoGraphSAGE
+from graphlearn.python.nn.tf.loss import sigmoid_cross_entropy_loss, \
+  unsupervised_softmax_cross_entropy_loss, triplet_margin_loss, triplet_softplus_loss
 from graphlearn.python.nn.tf.module import Module
-from graphlearn.python.nn.tf.trainer import Trainer
 
-# subgraph
+# EgoGraph
+from graphlearn.python.nn.tf.data.egograph import EgoGraph
+from graphlearn.python.nn.tf.layers.ego_gat_conv import  EgoGATConv
+from graphlearn.python.nn.tf.layers.ego_gin_conv import EgoGINConv
+from graphlearn.python.nn.tf.layers.ego_layer import EgoLayer
+from graphlearn.python.nn.tf.layers.ego_rgcn_conv import EgoRGCNConv
+from graphlearn.python.nn.tf.layers.ego_sage_conv import EgoSAGEConv
+from graphlearn.python.nn.tf.layers.linear_layer import LinearLayer
+from graphlearn.python.nn.tf.model.ego_gnn import EgoGNN
+from graphlearn.python.nn.tf.model.link_predictor import LinkPredictor
+
+# SubGraph
+from graphlearn.python.nn.dataset import SubKeys
+from graphlearn.python.nn.utils.induce_graph_with_edge import induce_graph_with_edge
 from graphlearn.python.nn.tf.data.batchgraph import BatchGraph
-from graphlearn.python.nn.tf.data.batchgraph_flow import BatchGraphFlow, SubKeys
-from graphlearn.python.nn.tf.data.subgraph import SubGraph
-from graphlearn.python.nn.tf.data.utils.induce_graph_with_edge import induce_graph_with_edge
 from graphlearn.python.nn.tf.layers.gat_conv import GATConv
 from graphlearn.python.nn.tf.layers.gcn_conv import GCNConv
 from graphlearn.python.nn.tf.layers.sage_conv import SAGEConv
-from graphlearn.python.nn.tf.layers.sub_conv import SubGraphConv
-from graphlearn.python.nn.tf.loss import softmax_cross_entropy_loss, \
-  sigmoid_cross_entropy_loss
+from graphlearn.python.nn.tf.layers.sub_conv import SubConv
 from graphlearn.python.nn.tf.model.gat import GAT
 from graphlearn.python.nn.tf.model.gcn import GCN
 from graphlearn.python.nn.tf.model.sage import GraphSAGE
 from graphlearn.python.nn.tf.model.seal import SEAL
+
+# utils
 from graphlearn.python.nn.tf.utils.compute_norm import compute_norm
 from graphlearn.python.nn.tf.utils.softmax import unsorted_segment_softmax
+from graphlearn.python.nn.tf.utils.sync_barrier import SyncBarrierHook
+
 
 # Special dunders that we choose to export:
 _exported_dunders = set([

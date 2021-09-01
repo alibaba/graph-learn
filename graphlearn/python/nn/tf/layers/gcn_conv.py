@@ -12,36 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =============================================================================
-"""GCN convolutional layer"""
+"""SubGraph based GCN convolutional layer"""
 
 import tensorflow as tf
 
-from graphlearn.python.nn.tf.layers.sub_conv import SubGraphConv
-
-DNN_PT_SIZE = 32 * 1024
+from graphlearn.python.nn.tf.layers.sub_conv import SubConv
 
 
-class GCNConv(SubGraphConv):
+class GCNConv(SubConv):
   def __init__(self, in_dim, out_dim,
                normalize=True,
-               bias=False,
-               name='',
-               ps_num=0):
+               use_bias=False,
+               name=''):
     self._in_dim = in_dim
     self._out_dim = out_dim
     self._normalize = normalize
-    self._bias  = bias
+    self._bias = use_bias
     self._name = name
 
-    self._partitioner = None
-    if ps_num:
-      self._partitioner = tf.min_max_variable_partitioner(
-          max_partitions=ps_num,
-          min_slice_size=DNN_PT_SIZE)
     self._vars = {}
     with tf.variable_scope(self._name + '/'  + 'layer',
-                           reuse=tf.AUTO_REUSE,
-                           partitioner=self._partitioner):
+                           reuse=tf.AUTO_REUSE):
       self._vars['weights'] = \
         tf.get_variable(shape=[self._in_dim, self._out_dim],
                         name='weights')

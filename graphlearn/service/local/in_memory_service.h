@@ -34,6 +34,7 @@ public:
   void Init();
   void Build();
   void Stop();
+  void StopSampling();
 
 private:
   void Monitor();

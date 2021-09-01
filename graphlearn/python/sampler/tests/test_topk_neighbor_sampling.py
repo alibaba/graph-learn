@@ -66,24 +66,5 @@ class TopkNeighborSamplingTestCase(SamplingTestCase):
         edges, default_dst_id=self._default_dst_id)
 
 
-  def test_1hop_using_gsl(self):
-    """ Topk neighbor sample with gsl api.
-    """
-    gl.set_eager_mode(True)
-    gl.set_padding_mode(gl.REPLICATE)
-    ids = self._seed_node2_ids
-    nbrs = self.g.V(self._node2_type, feed=ids) \
-      .outE(self._edge2_type).sample(2).by("topk") \
-      .inV().emit()
-
-    edges = nbrs[1]
-
-    utils.check_topk_edge_ids(edges, ids,
-                              (0, 100), expand_factor=2,
-                              default_dst_id=self._default_dst_id)
-    utils.check_half_exist_edge_weights(
-        edges, default_dst_id=self._default_dst_id)
-
-
 if __name__ == "__main__":
   unittest.main()

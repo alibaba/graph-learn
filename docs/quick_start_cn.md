@@ -21,128 +21,141 @@ cd graph-learn/examples/data/
 python cora.py
 
 # 训练、模型评估
+cd ../tf/ego_sage/
 python train_supervised.py
 ```
 
-
 # 2. **GL**接口使用
 
-**GL**为GNN的开发提供了大量基础接口，下面将会展示如何基于**GL**来构图、查询、采样、负采样。
+**GL**为GNN的开发提供了大量基础接口，我们提供了图接口使用示例以展示如何基于**GL**来构图、查询、采样、负采样。
 
-我们准备了一个生成数据的脚本[gen_test_data.py](../examples/basic/distribute/gen_test_data.py)，用于生成顶点和边的本地数据。
-在下面的分布式代码中，各个进程都读取同一个数据文件，确保所有进程都有权限访问该文件。测试代码如下。
+在开始前，我们需要准备一份图数据源，这里准备了一个生成数据的脚本[gen_test_data.py](../examples/basic/gen_test_data.py)，用于生成顶点和边的本地数据。
 
+准备测试脚本[test_dist_server_mode_fs_tracker.py](../examples/basic/test_dist_server_mode_fs_tracker.py)如下：
 ``` python
-# test.py
-import sys, os
 import getopt
+import os
+import sys
 
 import graphlearn as gl
-import numpy as np
+from query_examples import *
 
 def main(argv):
   cur_path = sys.path[0]
 
-  cluster = ""
+  server_count = -1
+  client_count = -1
+  tracker = ""
   job_name = ""
-  task_index = 0
+  task_index = -1
 
-  opts, args = getopt.getopt(argv, 'c:j:t:', ['cluster=', 'job_name=','task_index='])
+  opts, args = getopt.getopt(argv,
+                             's:c:t:j:ti:',
+                             ['server_count=', 'client_count=', 'tracker=',
+                              'job_name=', 'task_index='])
   for opt, arg in opts:
-    if opt in ('-c', '--cluster'):
-      cluster = arg
+    if opt in ('-s', '--server_count'):
+      server_count = int(arg)
+    elif opt in ('-c', '--client_count'):
+      client_count = int(arg)
+    elif opt in ('-t', '--tracker'):
+      tracker = arg
     elif opt in ('-j', '--job_name'):
       job_name = arg
-    elif opt in ('-t', '--task_index'):
+    elif opt in ('-ti', '--task_index'):
       task_index = int(arg)
     else:
       pass
 
-  # init distributed graph
-  g = gl.Graph() \
-       .node(os.path.join(cur_path, "data/user"),
-            node_type="user", decoder=gl.Decoder(weighted=True)) \
-       .node(os.path.join(cur_path, "data/item"),
-             node_type="item",
-             decoder=gl.Decoder(attr_types=['string', 'int', 'float', 'float', 'string'])) \
-       .edge(os.path.join(cur_path, "data/u-i"),
-             edge_type=("user", "item", "buy"), decoder=gl.Decoder(weighted=True), directed=False)
+  g = gl.Graph()
+
+  g.node(os.path.join(cur_path, "data/user"),
+         node_type="user", decoder=gl.Decoder(weighted=True)) \
+    .node(os.path.join(cur_path, "data/item"),
+          node_type="item", decoder=gl.Decoder(attr_types=['string', 'int', 'float', 'float', 'string'])) \
+    .edge(os.path.join(cur_path, "data/u-i"),
+          edge_type=("user", "item", "buy"), decoder=gl.Decoder(weighted=True), directed=False) 
+
+  cluster={"server_count": server_count, "client_count": client_count, "tracker":tracker}
   g.init(cluster=cluster, job_name=job_name, task_index=task_index)
-  # g.init() # For local.
 
   if job_name == "server":
+    print("Server {} started.".format(task_index))
     g.wait_for_close()
 
   if job_name == "client":
-    # Lookup a batch of user nodes with given ids.
-    nodes = g.V("item", feed=np.array([100, 102])).emit()
-    print(nodes.ids)
-    print(nodes.int_attrs)
+    print("Client {} started.".format(task_index))
 
-    # Iterate users and random sample items the user has buy.
-    q = g.V("user").batch(4) \
-             .outV("buy").sample(2).by("random") \
-             .values(lambda x: (x[0].weights, x[1].ids))
-    while True:
-      try:
-        print(g.run(q))
-      except gl.OutOfRangeError:
-        break
+    query = g.V("user").batch(32).shuffle(traverse=True).alias("src") \
+          .outV("buy").sample(5).by("edge_weight").alias("hop1") \
+          .inE("buy").sample(2).by("random").alias("hop1-hop2") \
+          .inV().alias("hop2") \
+          .values()
 
-    # Random sample seed buy edge from graph,
-    # and sample the users who did not buy the items from the seed edges.
-    q = g.E("buy").batch(4).shuffle() \
-         .inV() \
-         .inNeg("buy").sample(3).by("in_degree") \
-         .values(lambda x: x[2].ids)
-    print(g.run(q))
+    ds = gl.Dataset(query)
+    epoch = 2
+    for i in range(epoch):
+      step = 0
+      while True:
+        try:
+          res = ds.next()
+          src_nodes = res["src"]
+          print(src_nodes.ids)
+        except gl.OutOfRangeError:
+          break
 
     g.close()
+    print("Client {} stopped.".format(task_index))
+
 if __name__ == "__main__":
   main(sys.argv[1:])
 ```
 
+[query_examples.py](examples/basic/query_examples.py)脚本中展示了更多的图接口的使用示例以供参考。
 
-准备完数据和代码后，我们在本地拉起4个进程，2个worker2个server，分布式执行。
+准备完数据和代码后，我们在本地拉起5个进程，2个server，3个worker，分布式执行。
 
 ``` shell
+#!/usr/bin/env bash
 HERE=$(cd "$(dirname "$0")";pwd)
 
-rm -rf $HERE/.tmp/tracker
-mkdir -p $HERE/.tmp/tracker
+rm -rf $HERE/tracker
+mkdir -p $HERE/tracker
 
+# Only generating data when ./data folder is not existed.
+# If `gen_test_data.py` is modified, then delete the data folder first.
 if [ ! -d "$HERE/data" ]; then
   mkdir -p $HERE/data
-  python $HERE/gen_test_data.py # 你需要把gen_test_data.py、test.py放到shell脚本同一目录下
+  python $HERE/gen_test_data.py
 fi
 
-python $HERE/test.py \
-  --cluster="{\"client_count\": 2, \"server_count\": 2, \"tracker\": \"$HERE/.tmp/tracker\"}" \
-  --job_name="server" --task_index=0 &
+# Start a graphlearn cluster with 2 servers(processes) and 3 clients(processes).
+python $HERE/test_dist_server_mode_fs_tracker.py \
+  --server_count=2 --client_count=3 --tracker=$HERE/tracker --job_name="server" --task_index=0 &
 sleep 1
-python $HERE/test.py \
-  --cluster="{\"client_count\": 2, \"server_count\": 2, \"tracker\": \"$HERE/.tmp/tracker\"}" \
-  --job_name="server" --task_index=1 &
+python $HERE/test_dist_server_mode_fs_tracker.py \
+  --server_count=2 --client_count=3 --tracker=$HERE/tracker --job_name="server" --task_index=1 &
 sleep 1
-python $HERE/test.py \
-  --cluster="{\"client_count\": 2, \"server_count\": 2, \"tracker\": \"$HERE/.tmp/tracker\"}" \
-  --job_name="client" --task_index=0 &
+python $HERE/test_dist_server_mode_fs_tracker.py \
+  --server_count=2 --client_count=3 --tracker=$HERE/tracker --job_name="client" --task_index=0 &
 sleep 1
-python $HERE/test.py \
-  --cluster="{\"client_count\": 2, \"server_count\": 2, \"tracker\": \"$HERE/.tmp/tracker\"}" \
-  --job_name="client" --task_index=1
+python $HERE/test_dist_server_mode_fs_tracker.py \
+  --server_count=2 --client_count=3 --tracker=$HERE/tracker --job_name="client" --task_index=1 &
+sleep 1
+python $HERE/test_dist_server_mode_fs_tracker.py \
+  --server_count=2 --client_count=3 --tracker=$HERE/tracker --job_name="client" --task_index=2
 ```
 
 # 3. 开发一个GNN模型
 
-下面将基于**GL**和**TensorFlow**开发一个有监督的**GraphSAGE**模型，并在Cora数据上训练，更详细的参考[模型的开发](algo_cn.md)。<br />
+下面将基于**GL**和**TensorFlow**开发一个有监督的**GraphSAGE**模型，并在Cora数据上训练。<br />
 
 ## 3.1 数据准备
 
 我们使用开源数据集Cora，它包含了机器学习的一些论文，以及论文之间的引用关系，每篇论文包含1433个属性。这些论文可以划分为7种类别：Case_Based，Genetic_Algorithms，Neural_Networks，Probabilistic_Methods，Reinforcement_Learning，Rule_Learning，Theory。该GNN任务的目的是预测论文的分类。我们将开源的Cora数据进行处理，得到我们构图所需的数据格式。Cora数据下载和处理的脚本参考[cora.py](../examples/data/cora.py)。
 
 ```
-cd ../examples/data
+cd graph-learn/examples/data
 python cora.py
 ```
 
@@ -170,10 +183,8 @@ id:int64  label:int32   feature:string
 ```python
 import graphlearn as gl
 
-N_FEATURE = 1433
-
 # 描述顶点表的数据格式，包含lable和attributes
-node_decoder = gl.Decoder(labeled=True, attr_types=["float"] * N_FEATURE)
+node_decoder = gl.Decoder(labeled=True, attr_types=["float"] * args.features_num)
 
 # 表示边表的数据格式，除了端点id以外，还有边的权重
 edge_decoder = gl.Decoder(weighted=True)
@@ -187,26 +198,23 @@ edge_decoder = gl.Decoder(weighted=True)
 ```python
 import graphlearn as gl
 
-# 配置参数
-N_CLASS = 7
-N_FEATURE = 1433
-BATCH_SIZE = 140
-HIDDEN_DIM = 128
-N_HOP =  2
-HOPS = [10, 5]
-N_EPOCHES = 2
-DEPTH = 2
-
-# 定义一个Graph对象
-g = gl.Graph()
-
-# 通过`.node()`将顶点表加入到图中，并指定顶点的类型；这里只有一种类型的顶点，我们命名为"item"。
-# 通过`.edge()`将边表加入到图中，并通过一个三元组描述类型，分别为源顶点类型、目的顶点类型和边类型。
-g.node("examples/data/cora/node_table",
-       node_type="item",
-       decoder=gl.Decoder(labeled=True, attr_types=["float"] * N_FEATURE)) \
-  .edge("examples/data/cora/edge_table",
-        edge_type=("item", "item", "relation"), decoder=gl.Decoder(weighted=True), directed=False) \
+def load_graph(args):
+  dataset_folder = args.dataset_folder
+  node_type = args.node_type
+  edge_type = args.edge_type
+  g = gl.Graph()                                                           \
+        .node(dataset_folder + "node_table", node_type=node_type,
+              decoder=node_decoder)                      \
+        .edge(dataset_folder + "edge_table",
+              edge_type=(node_type, node_type, edge_type),
+              decoder=edge_decoder, directed=False)           \
+        .node(dataset_folder + "train_table", node_type=node_type,
+              decoder=gl.Decoder(weighted=True), mask=gl.Mask.TRAIN)       \
+        .node(dataset_folder + "val_table", node_type=node_type,
+              decoder=gl.Decoder(weighted=True), mask=gl.Mask.VAL)         \
+        .node(dataset_folder + "test_table", node_type=node_type,
+              decoder=gl.Decoder(weighted=True), mask=gl.Mask.TEST)
+  return g
 
 
 # 调用.init()进行初始化。这里以单机运行为例，分布式详见[图对象-初始化数据](graph_object_cn.md)。
@@ -219,121 +227,139 @@ g.init()
 (2) 采样上述顶点沿着“relation”边的1-hop邻居和2-hop邻居；<br />
 (3) 获取路径的上所有顶点的属性和种子顶点的labels。<br />
 
-这里我们定义了一个生成器，通过遍历图，得到每一次迭代的batch的样本数据。<br />
+这里我们定义了一个图采样query，通过遍历图，得到每一次迭代的batch的样本数据。<br />
 
 ``` python
-def sample_gen():
-  query = g.V('item').batch(BATCH_SIZE) \
-               .outV("relation").sample(10).by("random") \
-               .outV("relation").sample(5).by("random") \
-               .values(lambda x: (x[0].float_attrs, x[1].float_attrs, x[2].float_attrs, x[0].labels))
-  while True:
-    try:
-      res = g.run(query)
-      if res[0].shape[0] < BATCH_SIZE:
-        break
-      yield tuple([res[0].reshape(-1, N_FEATURE)]) + tuple([res[1].reshape(-1, N_FEATURE)]) \
-            + tuple([res[2].reshape(-1, N_FEATURE)]) + tuple([res[3]])
-    except gl.OutOfRangeError:
-      break
+def query(graph, args):
+  prefix = 'train'
+  assert len(args.nbrs_num) == args.hops_num
+  bs = args.train_batch_size
+  q = graph.V(args.node_type, mask=gl.Mask.TRAIN).batch(bs).alias(prefix)
+  for idx, hop in enumerate(args.nbrs_num):
+    alias = prefix + '_hop' + str(idx)
+    q = q.outV(args.edge_type).sample(hop).by('random').alias(alias)
+  return q.values()
 ```
 
 ## 3.4 模型代码
-以TensorFlow Estimator为例，说明在**GL**上自行开发GNN的方式。<br />
-
-- 将图采样的样本生成器作为`input_fn`
+- 定义loss和accuracy计算函数，并定义train函数，将图上query产生的样本输入给模型。
 
 ```python
+def supervised_loss(logits, labels):
+  loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
+      labels=labels, logits=logits)
+  return tf.reduce_mean(loss)
+
+def accuracy(logits, labels):
+  indices = tf.math.argmax(logits, 1, output_type=tf.int32)
+  correct = tf.reduce_sum(tf.cast(tf.math.equal(indices, labels), tf.float32))
+  return correct / tf.cast(tf.shape(labels)[0], tf.float32)
+
+def train(graph, model, args):
+  tfg.conf.training = True
+  query_train = query(graph, args)
+  dataset = tfg.Dataset(query_train, window=5)
+  eg_train = dataset.get_egograph('train')
+  train_embeddings = model.forward(eg_train)
+  loss = supervised_loss(train_embeddings, eg_train.src.labels)
+  return dataset.iterator, loss
+```
+
+- 定义GNN模型
+
+```python
+# ego_sage.py
 import tensorflow as tf
-def sample_input_fn():
-  ds = tf.data.Dataset.from_generator(
-    sample_gen,
-    tuple([tf.float64] * 3) + tuple([tf.int32]),
-    tuple([tf.TensorShape([BATCH_SIZE, N_FEATURE])]) + \
-    tuple([tf.TensorShape([BATCH_SIZE *  HOPS[0], N_FEATURE])] ) + \
-    tuple([tf.TensorShape([BATCH_SIZE * HOPS[0] * HOPS[1], N_FEATURE])]) + \
-    tuple([tf.TensorShape([BATCH_SIZE])])
-  )
-  value = ds.repeat(N_EPOCHES).make_one_shot_iterator().get_next()
-  layer_features = value[:3]
-  features, labels = encode_fn(layer_features, 0, DEPTH), value[3]
-  return {"logits": features}, labels
+import graphlearn.python.nn.tf as tfg
+
+
+class EgoGraphSAGE(tfg.EgoGNN):
+  def __init__(self,
+               dims,
+               agg_type="mean",
+               bn_func=None,
+               act_func=tf.nn.relu,
+               dropout=0.0,
+               **kwargs):
+    assert len(dims) > 1
+
+    layers = []
+    for i in range(len(dims) - 1):
+      conv = tfg.EgoSAGEConv("homo_" + str(i),
+                             in_dim=dims[i],
+                             out_dim=dims[i + 1],
+                             agg_type=agg_type)
+      # If the len(dims) = K, it means that (K-1) LEVEL layers will be added. At
+      # each LEVEL, computation will be performed for each two adjacent hops,
+      # such as (nodes, hop1), (hop1, hop2) ... . We have (K-1-i) such pairs at
+      # LEVEL i. In a homogeneous graph, they will share model parameters.
+      layer = tfg.EgoLayer([conv] * (len(dims) - 1 - i))
+      layers.append(layer)
+
+    super(EgoGraphSAGE, self).__init__(layers, bn_func, act_func, dropout)
 ```
 
-- 定义GNN模型的Aggregator和Encoder。
+- 开始训练
 
 ```python
-vars = {}
-def aggregate_fn(self_vecs, neigh_vecs, raw_feat_layer_index, layer_index):
-  with tf.variable_scope(str(layer_index) + '_layer', reuse=tf.AUTO_REUSE):
-    vars['neigh_weights'] = tf.get_variable(shape=[N_CLASS, N_CLASS], name='neigh_weights')
-    vars['self_weights'] = tf.get_variable(shape=[N_CLASS, N_CLASS], name='self_weights')
-    output_shape = self_vecs.get_shape()
-    dropout = 0.5
-    neigh_vecs = tf.nn.dropout(neigh_vecs, 1 - dropout)
-    self_vecs = tf.nn.dropout(self_vecs, 1 - dropout)
-    neigh_vecs = tf.reshape(neigh_vecs,
-                            [-1, HOPS[raw_feat_layer_index], N_CLASS])
-    neigh_means = tf.reduce_mean(neigh_vecs, axis=-2)
+def run(args):
+  gl.set_tape_capacity(1)
+  g = load_graph(args)
+  g.init()
+  # Define Model
+  dims = [args.features_num] + [args.hidden_dim] * (args.hops_num - 1) \
+        + [args.class_num]
+  model = EgoGraphSAGE(dims,
+                       agg_type=args.agg_type,
+                       act_func=tf.nn.relu,
+                       dropout=args.in_drop_rate)
+  # train and test
+  train_iterator, loss = train(g, model, args)
+  optimizer=tf.train.AdamOptimizer(learning_rate=args.learning_rate)
+  train_op = optimizer.minimize(loss)
+  train_ops = [loss, train_op]
+  test_iterator, test_acc = test(g, model, args)
+  with tf.Session() as sess:
+    sess.run(tf.local_variables_initializer())
+    sess.run(tf.global_variables_initializer())
+    sess.run(train_iterator.initializer)
+    step = 0
+    print("Start Training...")
+    for i in range(args.epoch):
+      try:
+        while True:
+          ret = sess.run(train_ops)
+          print("Epoch {}, Iter {}, Loss {:.5f}".format(i, step, ret[0]))
+          step += 1
+      except tf.errors.OutOfRangeError:
+        sess.run(train_iterator.initializer) # reinitialize dataset.
+  g.close()
 
-    from_neighs = tf.matmul(neigh_means, vars['neigh_weights'])
-    from_self = tf.matmul(self_vecs, vars["self_weights"])
 
-    output = tf.add_n([from_self, from_neighs])
-    output = tf.reshape(output, shape=[-1, output_shape[-1]])
-    return tf.nn.leaky_relu(output)
+if __name__ == "__main__":
+  cur_path = sys.path[0]
+  argparser = argparse.ArgumentParser("Train EgoSAGE Supervised.")
+  argparser.add_argument('--dataset_folder', type=str,
+                         default=os.path.join(cur_path, '../../data/cora/'),
+                         help="Dataset Folder, list files are node_table, edge_table, "
+                              "train_table, val_table and test_table")
+  argparser.add_argument('--class_num', type=int, default=7)
+  argparser.add_argument('--features_num', type=int, default=1433)
+  argparser.add_argument('--train_batch_size', type=int, default=140)
+  argparser.add_argument('--hidden_dim', type=int, default=128)
+  argparser.add_argument('--in_drop_rate', type=float, default=0.5)
+  argparser.add_argument('--hops_num', type=int, default=2)
+  argparser.add_argument('--nbrs_num', type=list, default=[25, 10])
+  argparser.add_argument('--agg_type', type=str, default="gcn")
+  argparser.add_argument('--learning_algo', type=str, default="adam")
+  argparser.add_argument('--learning_rate', type=float, default=0.05)
+  argparser.add_argument('--weight_decay', type=float, default=0.0005)
+  argparser.add_argument('--epoch', type=int, default=40)
+  argparser.add_argument('--node_type', type=str, default='item')
+  argparser.add_argument('--edge_type', type=str, default='relation')
+  args = argparser.parse_args()
 
-
-def encode_fn(layer_features, raw_feat_layer_index, depth_to_encode):
-  if depth_to_encode > 0:
-    h_self_vec = encode_fn(layer_features, raw_feat_layer_index, depth_to_encode - 1)
-    h_neighbor_vecs = encode_fn(layer_features, raw_feat_layer_index + 1, depth_to_encode - 1)
-    return aggregate_fn(h_self_vec, h_neighbor_vecs, raw_feat_layer_index, depth_to_encode)
-  else:
-    h_self_vec = tf.cast(layer_features[raw_feat_layer_index], tf.float32)
-    h_self_vec = tf.layers.dense(h_self_vec, N_CLASS, activation=tf.nn.leaky_relu)
-  return h_self_vec
-```
-
-- 定义features_column
-
-```python
-features, labels = sample_input_fn()
-feature_columns = []
-for key in features.keys():
-  feature_columns.append(tf.feature_column.numeric_column(key=key))
-```
-
-- 定义Loss和Model
-
-```python
-def loss_fn(logits, labels):
-    return tf.reduce_mean(
-        tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits))
-
-def model_fn(features, labels, mode, params):
-    logits = features['logits']
-    loss = loss_fn(logits, labels)
-    optimizer = tf.train.AdamOptimizer(learning_rate=params["learning_rate"])
-    train_op = optimizer.minimize(
-        loss=loss, global_step=tf.train.get_global_step())
-
-    spec = tf.estimator.EstimatorSpec(
-        mode=tf.estimator.ModeKeys.TRAIN,
-        loss=loss,
-        train_op=train_op)
-    return spec
-```
-
-- 实例化Estimator，并训练
-
-```python
-params = {"learning_rate": 1e-4,
-          'feature_columns': feature_columns}
-
-model = tf.estimator.Estimator(model_fn=model_fn,
-                               params=params)
-model.train(input_fn=sample_input_fn)
+  run(args)
 ```
 
 

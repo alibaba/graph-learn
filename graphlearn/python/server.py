@@ -73,3 +73,6 @@ class Server(object):
 
   def stop(self):
     self._server.stop()
+
+  def stop_sampling(self):
+    self._server.stop_sampling()

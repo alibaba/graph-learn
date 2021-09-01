@@ -48,6 +48,11 @@ size_t StripContext(LiteString* text);
 bool StartWith(const std::string& s, const std::string& pattern);
 bool EndWith(const std::string& s, const std::string& pattern);
 
+std::string Join(const std::vector<std::string>& v,
+                 LiteString delim,
+                 uint32_t from = 0,
+                 uint32_t to = UINT_MAX);
+
 }  // namespace strings
 }  // namespace graphlearn
 

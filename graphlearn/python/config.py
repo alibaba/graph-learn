@@ -20,45 +20,8 @@ import functools
 from graphlearn import pywrap_graphlearn as pywrap
 
 
-class GlobalConfigs(object):
-  def __getattr__(self, param):
-    """
-    Get global config, default is None.
-    """
-    return self.__dict__.get(param, None)
-
-global_configs = GlobalConfigs()
-
-def export(param):
-  """
-  use @export(param) as decorator to export global configs to python api.
-  For example, we export `eager_mode`:
-  ```
-  @export("eager_mode")
-  def set_eager_mode(flag):
-    ...
-  ```
-  Then get the `eager_mode` configuration.
-  ```
-  >>> global_configs.eager_mode
-  None
-
-  >>> gl.set_eager_mode(False)
-  >>> global_configs.eager_mode
-  False
-
-  >>> gl.set_eager_mode(True)
-  >>> global_configs.eager_mode
-  True
-  ```
-  """
-  def decorator(func):
-    @functools.wraps(func)
-    def wrapper(value):
-      setattr(global_configs, param, value)
-      func(value)
-    return wrapper
-  return decorator
+def set_enable_actor(flag):
+  pywrap.set_enable_actor(flag)
 
 def set_default_neighbor_id(nbr_id):
   pywrap.set_default_neighbor_id(nbr_id)
@@ -114,6 +77,13 @@ def set_shuffle_buffer_size(size):
 def set_rpc_message_max_size(size):
   pywrap.set_rpc_message_max_size(size)
 
+def set_knn_metric(metric):
+  '''
+  Args:
+    metric: 0 is l2 distance, 1 is inner product.
+  '''
+  pywrap.set_knn_metric(metric)
+
 def set_dataset_capacity(size):
   assert 0 < size < 128, "Dataset capacity should be > 0 and < 128."
   pywrap.set_dataset_capacity(size)
@@ -122,10 +92,13 @@ def set_tape_capacity(size):
   assert 0 < size < 128, "Tape capacity should be > 0 and < 128."
   pywrap.set_tape_capacity(size)
 
-@export("eager_mode")
-def set_eager_mode(flag):
-  assert isinstance(flag, bool)
-
 def set_ignore_invalid(value):
   pywrap.set_ignore_invalid(value)
+
+def enable_actor():
+  pywrap.set_enable_actor(1)
+
+def set_local_shard_count(count):
+  assert isinstance(count, int) and count > 0
+  pywrap.set_local_shard_count(count)
 
