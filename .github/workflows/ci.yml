@@ -37,32 +37,11 @@ jobs:
       run: source env.sh
     - name: Cpp test
       run: ./test_cpp_ut.sh
-    - name: Python package&test in docker.
-      shell: bash
+    - name: Python package&test.
       run: |
-        sudo docker run --rm --name tf112 --net=host -v $(pwd):/gl tensorflow/tensorflow:1.12.0 bash -c '
-        apt-get update
-        apt-get -y install git
         python -m pip install --upgrade pip setuptools wheel
         pip install numpy
-        # install ssl
-        apt-get -y install wget
-        wget https://www.openssl.org/source/openssl-1.1.1f.tar.gz
-        tar -xzvf openssl-1.1.1f.tar.gz
-        cd openssl-1.1.1f
-        ./config shared zlib-dynamic
-        make -j 32
-        mkdir -p /usr/lib64
-        cp libcrypto.so.1.1 /usr/lib64/
-        cp libssl.so.1.1 /usr/lib64/
-        cd /usr/lib64
-        ln -s libssl.so.1.1 libssl.so
-        ln -s libcrypto.so.1.1 libcrypto.so
-        # make&install wheel
-        cd /gl
         make python
         pip install dist/*.whl
-        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib64:/usr/local/lib/python2.7/dist-packages/graphlearn/python/lib
         # test python
         ./test_python_ut.sh
-        '
