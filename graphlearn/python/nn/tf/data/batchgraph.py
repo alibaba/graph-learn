@@ -18,6 +18,7 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
+import tensorflow as tf
 
 from graphlearn.python.nn.data import Data
 from graphlearn.python.nn.subgraph import SubGraph

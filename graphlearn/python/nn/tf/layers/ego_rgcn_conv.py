@@ -96,7 +96,7 @@ class EgoRGCNConv(EgoConv):
           shape=[num_relations, self._in_dim[1], self._out_dim])
       
       if use_bias:
-        self.bias = tf.get_variable(name="bias", shape=[output_dim])
+        self.bias = tf.get_variable(name="bias", shape=[out_dim])
       else:
         self.bias = None
 

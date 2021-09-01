@@ -115,7 +115,7 @@ class NumericColumn(FeatureColumn):
       tf.float32.
     """
     if self.normalizer_func is not None:
-      x = normalizer_func(x)
+      x = self.normalizer_func(x)
     x = tf.cast(x, tf.float32)
     return x
 
