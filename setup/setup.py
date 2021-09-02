@@ -24,7 +24,7 @@ import shlex
 from subprocess import check_output
 
 # This version string should be updated when releasing a new version.
-_VERSION = '1.0.0'
+_VERSION = '1.0.1'
 
 ROOT_PATH = os.path.abspath(os.path.join(os.getcwd()))
 CUT_PATH = sys.path[0]
