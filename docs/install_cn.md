@@ -83,18 +83,18 @@ source env.sh
 [Graphlearn Docker hub](https://hub.docker.com/r/graphlearn/graphlearn)
 
 我们提供了graphlearn的镜像，预装了对应版本的graphlearn。<br />
-根据算法开发的需求，分别提供预装Tensorflow1.12.0和Pytorch1.8.1+PyG的镜像。<br />
+根据算法开发的需求，分别提供预装Tensorflow1.13.0和Pytorch1.8.1+PyG的镜像。<br />
 您可以在Docker镜像中快速开始GraphLearn的运行。<br />
 
 1. Tensorflow1.12.0, CPU
 
 ```bash
-docker pull graphlearn/graphlearn:1.0.0-tensorflow1.12.0-cpu
+docker pull graphlearn/graphlearn:1.0.0-tensorflow1.13.0rc1-cpu
 
-# or, pull the latest graphlearn with tensorflow1.12.0-cpu
+# or, pull the latest graphlearn with tensorflow1.13.0rc1-cpu
 docker pull graphlearn/graphlearn:latest
 
-# or, pull the given version graphlearn with tensorflow1.12.0-cpu
+# or, pull the given version graphlearn with tensorflow1.13.0rc1-cpu
 docker pull graphlearn/graphlearn:1.0.0
 
 ```
