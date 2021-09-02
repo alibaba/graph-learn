@@ -77,6 +77,12 @@ setup(
     version=_VERSION,
     description='Python Interface for Graph Neural Network',
     url="https://github.com/alibaba/graph-learn",
+    python_requires='>=3.6',
+    project_urls={
+      'Bug Tracker': 'https://github.com/alibaba/graph-learn/issues',
+      'Documentation': 'https://graph-learn.readthedocs.io/en/latest/',
+      'Source Code': 'https://github.com/alibaba/graph-learn',
+    },
     ext_package='graphlearn',
     ext_modules=extensions,
     packages=find_packages(),

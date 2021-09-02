@@ -33,5 +33,5 @@ else
   echo "password=$PYPI_PWD"                          >> ~/.pypirc
 
   python -m pip install twine
-  python -m twine upload -r pypi --skip-existing dist/*
+  python -m twine upload -r pypi dist/*
 fi
