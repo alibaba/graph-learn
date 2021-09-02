@@ -8,7 +8,7 @@ Graph对象是将原始数据组织起来、供上层算子进行操作的本体
 
 
 <a name="2Kpiz"></a>
-# 1. 声明Graph对象
+## 声明Graph对象
 声明Graph对象很简单，代码如下。后续所有相关操作都基于`g`来进行。
 
 ```python
@@ -18,21 +18,24 @@ g = gl.Graph()
 
 <br />
 
-# 2. 描述拓扑结构
+## 描述拓扑结构
 拓扑结构描述的是图中的边与顶点的关联关系。这里的拓扑指的是“一类”数据的关系，而非“一条”数据。拓扑关系都是有向的，即有向图。<br />
 <br />例如，对于一个“商品-商品”同构图，其拓扑结构图1所示。图中只有item到item类型的数据关联，边类型为swing，表示通过swing算法生成的item关联关系，源顶点和目的顶点类型均为item。
 
-<div align=center> <img src ="images/i-i.png" /> <br /> 图1 item-item同构关系图<br /> </div>
+
+![i-i](../images/i-i.png)
 
 <br />对于一个“用户-商品-商品”二部关系图，其拓扑结构如图2所示。图中包含两种类型的边，click边表示user与item的点击关系，源顶点类型为user，目的顶点类型为item；swing边表示item与item的关联关系，源顶点和目的顶点类型均为item。
 
-<div align=center> <img src ="images/u-i-i.png" /> <br /> 图2 user-item-item异构关系图<br /> </div>
+![u-i-i](../images/u-i-i.png)
+
+<br /> 图2 user-item-item异构关系图<br /> </div>
 
 <br />这些点、边的类型将是进行**异构图**操作的依据，需要用户感知，并作为算子的输入。比如“采样某些user点击过的商品的关联商品”，那么系统会知道沿着“**user->click->item->swing->item**”去采样相关节点，而不是其他路径。<br />
 <br />实际中，图中边的数量要远大于顶点的数量，大部分情况下顶点都具有丰富的属性信息，为了节省空间，边和顶点往往是分开存储的。我们通过向Graph对象添加顶点数据源和边数据源的形式，来构建拓扑结构。<br />
 
 <a name="OVdVh"></a>
-## 2.1 添加顶点
+### 添加顶点
 Graph对象提供 **node()** 接口，用于添加一种顶点数据源。**node()**返回Graph对象本身，也就意味着可以连续多次调用**node()**。具体接口形式和参数如下：
 
 ```python
@@ -68,7 +71,7 @@ g.node(source="table_1", node_type="user", decoder=Decoder(attr_types=["int", "f
  .node(source="table_2", node_type="movie", decoder=Decoder(weighted=True)
 ```
 
-## 2.2 添加边
+### 添加边
 Graph对象提供 **edge()** 接口，用于添加一种边数据源，支持将同构或异构的边指定为无向边。**edge()**返回Graph对象本身，也就意味着可以连续多次调用**edge()**。通过添加边数据源，确定了图中边类型与其源点、目的点类型的对应关系，再结合对应的顶点类型数据源，共同构成一张打通连接关系的大图。具体接口形式和参数如下：
 
 ```python
@@ -152,17 +155,17 @@ user	item            ->      user	item                 item	user
 <br />在采样时，需要根据自己指定的meta-path选择合理的边方向，合理使用outV(从src到dst)和inV(从dst到src)。outV和inV接口详见GSL文档。
 
 <a name="OVdVh"></a>
-## 2.3 partition
+### partition
 分布式场景下，即存在多个GraphLeanrn Server时，构图时会自动进行图的partition, 将图分布式存储。默认partiton是按照src_id % server数进行节点和边的分配。
 
 <a name="HNiIP"></a>
-# 3. 初始化
+## 初始化
 
 顶点与边添加完成后，需要调用初始化接口，完成从原始数据到内存索引的构建。初始化过程决定了图数据被Serving的情况，单机的还是分布式的。若为分布式的，还要区分Server Mode和Client-Server Mode。初始化完成后，便可对Graph对象进行操作了。<br />
 
 <a name="nGHkF"></a>
 
-## 3.1 单机
+### 单机
 单机模式比较简单，表示该Graph对象Hold全部图数据。<br />
 
 ```python
@@ -170,10 +173,10 @@ g.init()
 ```
 
 <a name="oKpvB"></a>
-## 3.2 分布式模式
+### 分布式模式
 
 <br />分布式的模式分为Server Mode和Woker Mode。不同的分布式模式下，`Graph.init()`参数有不同的配置。<br />
-### 3.2.1 Worker Mode
+#### Worker Mode
 
 该模式下，数据分布式存在于各个Worker上，Worker之间两两互联，每个Worker对应一个Graph对象的入口。当进行图采样或查询等操作时，Graph对象把请求提交给本地Worker，由Worker决定如何分布式处理。Graph对象与本地Worker之间不存在网络通信。
 <br />
@@ -213,7 +216,7 @@ else:
   # ps.join()
 ```
 
-### 3.2.2 Server Mode
+#### Server Mode
 该模式下，数据分布式存在于各个Server上，Server之间两两互联。此时，Graph对象的入口位于Client端。每个Client都与唯一一个Server连接，该Server作为Client的响应Server。Client与Server的对应关系由负载均衡算法决定。Client作为入口，提交请求到其响应Server，由该Server决定如何分布式处理。<br />
 
 Server Mode适用于分布式规模超大的情况（百Worker以上），此时因为Worker规模很大，使用Worker Mode部署会大大增加网络互联的开销。另外，图数据的规模和Worker规模不一定匹配，例如，当1000个Worker并发训练时，并不一定需要这么多Worker去承载Graph数据，数据太分散会严重降低性能。一般而言，训练的Worker数 >= 图Server数。<br />
@@ -267,7 +270,7 @@ else:
   # ps.join()
   g.wait_for_close()
 ```
-## 3.3 同步模式
+### 同步模式
 GraphLearn的分布式任务启动需要让任务中每一个角色感知所有GraphLearn Server的hosts，同步的方式支持两种：基于文件系统的同步和基于通信的同步。<br />
 - 基于文件系统同步<br />
 

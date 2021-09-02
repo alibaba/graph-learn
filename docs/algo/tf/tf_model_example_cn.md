@@ -1,9 +1,9 @@
-# 模型示例
+## 模型示例
 
 examples/tf<br/>
 
 
-## EgoGraph based GNNs示例
+### EgoGraph based GNNs示例
 EgoGraph based GNNs我们提供了ego_sage, ego_gat, ego_bipartite_sage三个算法示例，
 
 - **ego_sage**: 同构图sage，提供了有监督点分类和无监督i2i推荐两个训练例子。
@@ -15,7 +15,7 @@ EgoGraph based GNNs我们提供了ego_sage, ego_gat, ego_bipartite_sage三个算
 EgoGraph based GNN的实现一般只需要用不同的`EgoConv`组成不同的`EgoLayer`，再传给`EgoGNN`即可。整个模型的构建类似搭积木过程，不同模型的区别，主要是`EgoConv`的不同。下面我们以`EgoGraphSAGE`为例进行说明<br/>
 
 
-### EgoGraphSAGE示例
+#### EgoGraphSAGE示例
 
 ```python
 class EgoGraphSAGE(tfg.EgoGNN):
@@ -60,7 +60,7 @@ class EgoGraphSAGE(tfg.EgoGNN):
 
 我们使用`EgoSAGEConv`组成`EgoLayer`，然后再传给`EgoGNN`，即可快速搭建出一个`EgoGraphSAGE`。<br/>
 
-## SubGraph based GNNs示例(experimental)
+### SubGraph based GNNs示例(experimental)
 SubGraph based GNNs我们提供了sage和seal两个算法示例。这两个示例都是从边遍历开始，进行1跳的full neighbor sampling和负采样，然后使用induce_func得到SubGraph。SubGraph目前只支持同构图。<br/>
 
 - **sage**： GraphSAGE，使用了BCE loss。使用了默认的induce_func
@@ -69,11 +69,11 @@ SubGraph based GNNs我们提供了sage和seal两个算法示例。这两个示�
 SubGraph的模型实现部分见nn/tf/model
 
 
-## 分布式示例
+### 分布式示例
 为了方便分布式训练过程的编写，我们对分布式的训练过程简单做了封装，封装成`DistTrainer`
 ​
 
-### DistTrainer
+#### DistTrainer
 对应examples/tf/trainer.py
 
 ```python

@@ -4,8 +4,8 @@ GraphLearn将遍历、采样的结果描述为数据对象。GraphLearn的遍历
 
 顶点的遍历和对齐的顶点采样结果为`Nodes`，非对齐的顶点采样结果为`SparseNodes`。相应地，边的遍历和对齐的边采样结果为`Edges`，非对齐的边采样结果为`SparseEdges`。<br />
 
-# Dense数据对象
-## `Nodes`
+## Dense数据对象
+### `Nodes`
 
 ```python
 @property
@@ -63,7 +63,7 @@ def labels(self):
 """ 标签，numpy.ndarray(int32)，shape为ids.shape """
 ```
 
-## `Edges`
+### `Edges`
 `Edges`接口与`Nodes`的区别为，去掉了`ids`接口，增加了以下4个接口，用于访问源顶点和目的顶点。
 
 ```python
@@ -86,9 +86,9 @@ def dst_ids(self):
 
 关于`ids`的shape，在顶点和边遍历操作中，shape为一维，大小为指定的batch size。在采样操作中，shape为二维，大小为[输入数据的一维展开大小，当前采样个数]。
 
-# Sparse数据对象
+## Sparse数据对象
 
-## `SparseNodes`
+### `SparseNodes`
 `SparseNodes`用于表达顶点的稀疏邻居顶点，相对于Nodes增加了以下接口。
 
 ```python
@@ -109,7 +109,7 @@ def __next__(self):
   return Nodes
 ```
 
-## `SparseEdges`
+### `SparseEdges`
 `SparseEdges`用于表达顶点的稀疏邻边，相对于Edges增加了以下接口。
 
 ```python

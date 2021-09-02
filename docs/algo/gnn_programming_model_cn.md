@@ -1,11 +1,11 @@
-# 范式与流程
+## 范式与流程
 
 图学习算法，尤其是图神经网络GNNs, 和一般的DNN模型最大的区别是样本间存在关系或者依赖。这种数据间依赖关系导致GNNs模型很难直接使用TensorFlow或者PyTorch这样的深度学习引擎来开发。第一是因为图数据和一般的图像、文本数据不同，无法直接使用或者无法高效使用TensorFlow和PyTorch提供的数据处理功能，尤其是对大规模异构图；第二是因为GNN是基于图结构数据进行计算，计算路径是图中的点和边，直接基于TensorFlow或者PyTorch原始的API构建模型并不是很容易。为了解决这些问题，我们从过去的实际业务经验出发，总结之前版本的缺点，实现了一套简洁的GNNs算法开发的范式和流程。我们希望通过这套范式，简化GNNs算法的开发，方便算法开发者快速构建适合自己业务场景的GNNs算法。
 
 
 
 
-## 模型范式
+### 模型范式
 大部分GNNs算法遵循消息传递或者邻居聚合的计算范式，有些框架和paper将消息传递过程又具体分为aggregate, update等阶段，但是实际上不同GNNs算法所需要的计算过程并不完全一致，我们不再提供实现细节的抽象，而是统一把消息传递/邻居聚合过程抽象成神经网络里的一个layer来实现，具体地，对于目前常见的图卷积神经网络，我们实现了若干conv层来表示消息传递过程。
 ​
 
@@ -21,7 +21,9 @@
 ​
 
 根据子图采样里邻居采样算子的区别和消息传递里NN算子的区别，我们将子图组织为EgoGraph或SubGraph的格式。EgoGraph由中心对象ego和它的fixed-size的邻居组成，是一种dense的组织格式，基于EgoGraph的conv层的实现也是基于一些dense的NN算子，我们0.4及之前的版本都是基于EgoGraph来建模。SubGraph是一种更加通用的子图组织格式，由点、边的特征和edge index(由边的行index和列index组成的二维数组)组成，一般使用full neighbor sampler产生的sparse的结果会组织成SubGraph的格式，相应地，基于SubGraph的conv层一般使用sparse的NN算子。目前SubGraph还是experimental，边特征和异构图暂时没有支持。EgoGraph和SubGraph的示例如下图。
-<div align=center> <img height=200 src="images/ego_sub.png" /></div>
+
+![ego_sub](../images/ego_sub.png)
+
 EgoGraph指Ego(中心节点)和k-hop Neighbors组成的一个子图；SubGraph是指一个广义的子图的，由nodes， edges和edge_index表示
  
 接下来，我们介绍基于EgoGraph和基于SubGraph两种不同的计算范式。
@@ -30,8 +32,7 @@ EgoGraph指Ego(中心节点)和k-hop Neighbors组成的一个子图；SubGraph�
 #### 基于EgoGraph的node-centric aggregation
 EgoGraph由ego和邻居构成，消息聚合路径通过ego和邻居间的潜在关系确定，k跳邻居只需要聚合k+1跳邻居的信息，整个消息传递过程是沿着邻居到自身的有向的meta-path进行。这种方式下，采样的邻居跳数和神经网络的层数需要完全一致。下图展示了一个2跳邻居的GNNs模型的计算过程。原始节点的向量记为h(0)； 第一层前向过程需要将2跳邻居聚合到1跳邻居上，1跳邻居聚合到自身，不同跳邻居的类型可能不同，因此第一层需要两个不同的conv层(对于同构图，这两个conv层相同)，第一层后节点的特征更新为h(1)，作为第二层的输入；第二层时，需要聚合1跳邻居的h(1) 来更新ego节点特征，最终的输出的节点特征h(2)为最终的输出ego节点的embedding。
 ​
-
-<div align=center> <img height=200 src="images/egograph.png" /></div>
+![egograph](../images/egograph.png)
 ​
 
 #### 基于SubGraph的graph message passing
@@ -58,11 +59,13 @@ GraphSAGE，二部图GraphSAGE/GAT等 | GCN, GAT, GraphSAGE, SEAL等 |
 在实际使用时，具体用EgoGraph还是SubGraph可以根据上面的对比进行选择，目前SubGraph还是实验性质的，建议优先使用EgoGraph。对于PyTorch，目前模型层直接复用pyG，我们实现了Dataset和PyGDataLoader来将GSL数据转成pyG的Data和Batch格式，pyG的Data相当于我们的SubGraph, Batch相当于BatchGraph。
 
 
-## 开发流程
+### 开发流程
 
 
 一个GNN训练/预测任务，通常包含以下步骤。
-<div align=center> <img height=200 src="images/custom_algo.png" /></div>
+
+![custom_algo](../images/custom_algo.png)
+
 首先基于业务准备图数据。图数据以顶点表和边表的形式存在，具体格式参考“图操作接口->数据源”一节。通常情况下，业务会涉及多种类型的顶点和边，使用GraphLearn提供的接口逐一添加即可。顶点和边的数据源是独立的，在添加到GraphLearn后，后台引擎会完成异构图的构建。图数据的构建是非常重要的一个环节，它决定了算法学习的上限，因此如何生成合理的边数据，如何选择合适的特征都需要和业务目标一致。欢迎大家可以在GraphLearn用户群积极分享和讨论自己的构图经验。
 
 
@@ -79,7 +82,8 @@ GSL的输出为Numpy格式，而基于TensorFlow或PyTorch的模型需要tensor�
 ​
 
 GraphLearn的算法侧整体框架如下图所示，
-<div align=center> <img height=400 src="images/algo_framwork.png" /></div>
+
+![algo_framwork](../images/algo_framwork.png)
 
 
 框架底层是一个基于分布式内存的图查询/计算引擎，提供异构，多属性，带权重，有标签，有向/无向图的点、边遍历、邻居采样、负采样、属性查询等功能，同时支持TensorFlow1.12.0和PyTorch1.8.1 backend。从下往上依次是数据层data, 模型层layers和model, 最后提供了若干基本的和常用的examples。具体各个模块的细节参考不同backend(tensorflow或者pytorch)下的“数据层”和“模型层”章节。

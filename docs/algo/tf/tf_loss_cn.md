@@ -1,12 +1,12 @@
-# 常见Loss
+## 常见Loss
 
 对应nn/tf/loss.py
 
-## 推荐场景无监督loss
+### 推荐场景无监督loss
 对于推荐无监督学习loss，我们实现了常见的两种loss函数，Sigmoid Cross Entropy loss(BCE)和Softmax Cross Entropy loss。
 ​
 
-### sigmoid_cross_entropy_loss
+#### sigmoid_cross_entropy_loss
 
 Sigmoid CE loss就是一个简单的二分类。
 
@@ -29,11 +29,11 @@ def sigmoid_cross_entropy_loss(pos_logit,
 ```
 ​
 
-### unsupervised_softmax_cross_entropy_loss
+#### unsupervised_softmax_cross_entropy_loss
 Softmax CE loss，将负样本看作一个batch里共享的形式，从而可以将原来的二分类看成一个正样本和batch_size * neg_num 的负样本的一个“多分类”任务。我们将标签看成one-hot的编码格式，也即只有正样本标记为1，那么总的loss为：
 ​
+![loss](../../images/loss.png)
 
-<div align=center> <img src="images/loss.png" /></div>
 其中，sp表示正样本的score。
 
 ```python

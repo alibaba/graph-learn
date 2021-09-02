@@ -1,4 +1,4 @@
-# 模型层
+## 模型层
 
 对应nn/tf/layers和nn/tf/model
 ​
@@ -6,16 +6,16 @@
 大部分GNNs算法遵从递归的消息传递/邻居聚合的范式，因此可以类似一般的DNN，抽象出层的概念，来表示一次消息传递操作。目前常见的GNNs都是图卷积神经网络，因此我们抽象了若干conv层表示一次图卷积过程。对于EgoGraph, 为了方便地对异构图进行消息传递，我们在conv层之上抽象了layer的概念，来表示一个子图的一次完整消息传递过程。基于这些conv或者layer，可以很方便得构建出一个GNNs模型，我们内置了若干常见的模型，也欢迎大家贡献，补充更多的GNNs模型。
 
 
-## Layers
+### Layers
 对SubGraph/BatchGraph，我们提供了若干`SubConv`层，对EgoGraph提供了`EgoConv`和`EgoLayer`。
 ​
 
-### SubGraph based layer
+#### SubGraph based layer
 
 
 SubGraph的一次卷积可以通过edge_index和node_vec来计算，我们将基本的卷积层定义为`SubConv`
 
-#### SubConv
+- SubConv
 
 ```python
 class SubConv(Module):
@@ -38,7 +38,7 @@ class SubConv(Module):
 基于SubConv基类，可以实现不同的图卷积层。
 ​
 
-#### GCNConv
+- GCNConv
 
 ```python
 class GCNConv(SubConv):
@@ -48,7 +48,7 @@ class GCNConv(SubConv):
                name='')
 ```
  
-#### GATConv
+- GATConv
 
 ```python
 class GATConv(SubConv):
@@ -63,7 +63,7 @@ class GATConv(SubConv):
                name='')
 ```
  
-#### SAGEConv
+- SAGEConv
 
 ```python
 class SAGEConv(SubConv):
@@ -75,11 +75,11 @@ class SAGEConv(SubConv):
 ```
 
 
-### EgoGraph based layers
+#### EgoGraph based layers
 对于EgoGraph， 我们将一次k+1 hop的邻居到k hop的邻居的聚合过程定义为一个`EgoConv`
 
 
-#### EgoConv
+- EgoConv
 
 ```python
 class EgoConv(Module):
@@ -102,7 +102,7 @@ class EgoConv(Module):
 基于`EgoConv`可以实现各自图卷积层
 ​
 
-#### EgoSAGEConv
+- EgoSAGEConv
 
 ```python
 class EgoSAGEConv(EgoConv):
@@ -134,7 +134,7 @@ class EgoSAGEConv(EgoConv):
                **kwargs)
 ```
 
-#### EgoGATConv
+- EgoGATConv
 
 ```python
 class EgoGATConv(EgoConv):
@@ -164,7 +164,7 @@ class EgoGATConv(EgoConv):
 ```
 
 
-#### EgoGINConv
+- EgoGINConv
 
 ```python
 class EgoGINConv(EgoConv):
@@ -198,7 +198,8 @@ class EgoGINConv(EgoConv):
 `EgoLayer`和`EgoConv`的关系如下图所示。`EgoLayer`表示的是一次EgoGraph子图上的消息传递，而`EgoConv`表示的是相邻的k跳和k+1跳邻居的一次消息传递。对于2跳邻居构成的`EgoGraph`，有2个`EgoLayer`，第一个`EgoLayer`包含2个`EgoConv`，第二个`EgoLayer`包含1个`EgoConv`。可以看出由`EgoConv`组成的`EgoLayer`自然支持异构图的meta-path消息传递过程，对于同构图常见，只需要复用`EgoConv`即可。
 ​
 
-<div align=center> <img height=200 src="images/egolayer.png" /></div>
+![egolayer](../../images/egolayer.png)
+
 
 ```python
 class EgoLayer(Module):
@@ -244,17 +245,17 @@ class EgoLayer(Module):
 ```
 
 
-## Model
+### Model
 
 
-### SubGraph based model
+#### SubGraph based model
 基于`SubConv`层，可以很方便地构建出一个GNNs模型，我们内置了一些常见的GNNs模型。所有模型都需要实现`forward`过程， `forward`接受`BatchGraph`对象，返回最后的embedding。目前只支持同构图从边遍历，并返回src和dst的embedding。
 
 ```python
 def forward(self, batchgraph)
 ```
 
-#### GCN
+- GCN
 
 ```python
 class GCN(Module):
@@ -269,7 +270,7 @@ class GCN(Module):
 ```
 ​
 
-#### GAT
+- GAT
 
 ```python
 class GAT(Module):
@@ -285,7 +286,7 @@ class GAT(Module):
 ```
 ​
 
-#### SAGE
+- SAGE
 
 ```python
 class GraphSAGE(Module):
@@ -301,7 +302,7 @@ class GraphSAGE(Module):
 ```
 ​
 
-#### SEAL
+- SEAL
 
 ```python
 class SEAL(Module):
@@ -317,13 +318,13 @@ class SEAL(Module):
 ```
 
 
-### EgoGraph based model
+#### EgoGraph based model
 
 
 基于`EgoConv`组成的`EgoLayer`，我们可以快速构建出GNN模型。由于`EgoLayer`支持一般的异构图，因此`EgoGraph` based GNN可以统一用如下的模型实现。
 ​
 
-#### EgoGNN
+- EgoGNN
 
 ```python
 class EgoGNN(Module):
@@ -411,11 +412,11 @@ class EgoGNN(Module):
 
 ​
 
-### 其他
+#### 其他
 除了常见GNNs模型，对于一些常用的模块我们也封装了对应的模型，比如链接预测模块。
 ​
 
-#### LinkPredictor
+- LinkPredictor
 链接预测模块里封装了若干dense层，对输入向量经过这些dense层后输出最终结果。
 
 ```python

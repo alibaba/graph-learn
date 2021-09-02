@@ -1,14 +1,14 @@
-# 图查询
+## 图查询
 
 图对象构建完成后，可进行图查询操作。查询是指获取图的 **元信息** 和 **数据信息**, 不涉及复杂的计算和采样逻辑。<br />
 
 <a name="WREbw"></a>
-# 1. Meta查询
+### Meta查询
 
 元信息指图结构和统计类型的信息，包括图的拓扑结构、顶点总数、边与顶点分布情况、顶点的最大出入度等。<br />
 
 <a name="EyXMf"></a>
-## 1.1 拓扑结构 <br />
+### 拓扑结构 <br />
 
 ```python
 def get_topology()
@@ -18,7 +18,10 @@ def get_topology()
 ```
 
 <br />如下所示的异构图，获取其拓扑结构及返回结果格式参见示例代码。
-<div align=center> <img height ='320' src ="images/topology.png" /> <br /> 图1 图的拓扑信息 </div>
+
+![topology](../../images//topology.png)
+
+<br /> 图1 图的拓扑信息 </div>
 
 ```python
 g = Graph(...)
@@ -35,15 +38,15 @@ egde_type:swing, src_type:item, dst_type:item
 
 
 <a name="laOmB"></a>
-## 1.2 出入度分布
+### 出入度分布
 待更新。<br />
 
 <a name="FPU74"></a>
-# 2. 数据查询
+### 数据查询
 
 **GL**有两个基本的数据类型： `Nodes` 和 `Edges` 。遍历、查询、采样操作的返回对象是一个batch的顶点或边。特别地，非对齐的采样返回的是两个基本数据类型的稀疏形式，分别为`SparseNodes`和`SparseEdges`。<br />
 
-## 2.1 顶点查询
+### 顶点查询
 
 Nodes可以从图上遍历或采样而来，也可以直接指定id。不管是哪种来源，都可以查询他们的属性、权重或标签。<br />
 
@@ -109,7 +112,7 @@ l.layer_nodes(2).int_attrs # shape=(batch_size * 3, 2, int_attr_num)
 ```
 
 <a name="q3IOm"></a>
-## 2.2 边查询<br />
+### 边查询<br />
 
 Edges可以从图上遍历或采样而来。遍历或采样的边可以查询他们的属性、权重或标签。
 <br />
@@ -142,7 +145,7 @@ l.layer_edges(2).float_attrs # shape=(batch_size *  3,  2, float_attr_num)
 ```
 
 <a name="rogkI"></a>
-## 2.3 稀疏顶点/边查询<br />
+### 稀疏顶点/边查询<br />
 
 <br />
 遍历、采样的结果一般为Nodes/Edges对象，可以用上文2.1，2.2中的接口进行查询。<br />在非对齐采样中，结果是稀疏的。例如在全邻居采样（即“full”策略的邻居采样）中，由于每个顶点的邻居数不统一，因此得到的邻居不是对齐的。<br />
@@ -225,7 +228,7 @@ for n in nodes:
 # Iterate 3: [1, 2]
 ```
 
-## 2.4 默认值设置
+### 默认值设置
 
 对于图中不存在的点和边，查询时会返回默认值：<br />
 label，默认值为-1<br />

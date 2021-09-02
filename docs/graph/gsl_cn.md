@@ -1,7 +1,7 @@
 # Graph Sampling Language（GSL）
 
 <a name="TUTVl"></a>
-# 1. 简介
+## 简介
 GNN发展至今，有一套相对成熟的编程范式。我们将一个GNN模型的开发分为两个阶段：图模式的数据处理部分和神经网络部分。
 神经网络部分，我们可以借助成熟的DL框架，如TensorFlow、PyTorch。
 如何简单高效的描述和实现适合GNN的图数据访问模式，以及如何与主流的深度学习框架对接，是GL重点关注的。<br />
@@ -18,16 +18,16 @@ GNN发展至今，有一套相对成熟的编程范式。我们将一个GNN模�
 <br />**GSL**考虑实际图数据的特点，覆盖了对超大图、异构图、属性图的支持，语法设计贴近[Gremlin](http://tinkerpop.apache.org/docs/current/reference/#_tinkerpop_documentation)形式，便于理解。<br />
 
 <a name="KFXRf"></a>
-# 2. GSL语法
+## GSL语法
 我们把一个由**GSL**描述的语句称为**Query**，一个**Query**通常由**SOURCE**、**STEP**和**SINK**三种类型的操作组成。
 其中，**SOURCE**为查询语句的入口，表示从哪些数据出发；**STEP**为查询过程中游走和采样的路径，**SINK**为对执行结果的封装。
 在GSL中，一条Query必须包含**一个SOURCE**和**一个SINK**操作。<br />
 
 <a name="5xWGq"></a>
-## 2.1 SOURCE
+## SOURCE
 
 <a name="IHxBA"></a>
-### 2.1.1 `V/E`
+### `V/E`
 SOURCE是查询语句的入口，支持 `V()` 和 `E()` 两个接口，分别表示从顶点和从边开始查询。具体如下。
 
 ```python
@@ -86,7 +86,7 @@ user	item            ->      user	item                 item	user
 `g.E("u2i")`: 遍历"加载到图中的u2i数据 "，即原始数据。<br />
 `g.E("u2i", reverse=Ture)`: 遍历“加载到图中的i2u数据”，即反向数据。<br />
 
-### 2.1.2 `batch`
+### `batch`
 当从图获取数据时，`batch()`用于指定每次获取到的V()或E()的多少。若同时要对数据进行`shuffle()`，注意在`batch()`之后。当`shuffle(traverse=True)`时，如果剩余数据不足batch_size但不为0，则返回实际数据，此时不会触发OutOfRangeError。只有剩余数据为0时，才会`OutOfRangeError`。
 
 ```python
@@ -98,7 +98,7 @@ Args:
 ```
 
 <a name="t34wT"></a>
-### 2.1.3 `shuffle`
+### `shuffle`
 `batch`之后可以接 `shuffle`。 `shuffle()` 为可选接口，当从图获取数据时，表示是否要对顶点/边进行随机获取。
 
 ```python
@@ -111,7 +111,7 @@ Args:
 ```
 
 <a name="WQ5EP"></a>
-### 2.1.4 示例
+### 示例
 （1）顺序遍历图中的user顶点，batch size为64，当遍历完全图user顶点后，OutOfRange。<br />
 
 ```python
@@ -148,7 +148,7 @@ while True:
 通过E遍历边的方式类似。
 
 <a name="5kq55"></a>
-## 2.2 STEP 图采样/负采样
+## STEP 图采样/负采样
 
 STEP用于描述查询游走的路径和采样的方式。一条查询语句中可以包含0到多个STEP。目前，STEP包含以下两类接口：描述路径游走，描述采样方式。一个完整的STEP包含**游走**+**采样**（图采样或负采样）。<br />
 
@@ -226,13 +226,13 @@ Args:
 
 <a name="wOTQV"></a>
 
-### 2.2.1 图游走
+### 图游走
 `outV(edge_type)`/`outE(edge_type)`：从边的源顶点开始到目的顶点向前推进，即源顶点沿着其出边游走。
 `inV(edge_type)`/`inE(edge_type`)：从边的目的顶点开始到源顶点向后回溯，即目的顶点沿着入边游走。其中，`edge_type`对应的边必须为无向边（在构图时，必须指定`directed=false`，即可以反向游走，参考 图对象）。
 
 例如，对于如下所示异构图，从user顶点开始，沿u2i边采样user的一跳邻居，再沿i2i边采样user的二跳邻居。
 
-<div align=center> <img height=150 src="images/gsl-u-i-i.png" /></div>
+![gsl-u-i-i](../images/gsl-u-i-i.png)
 
 ```python
 g.V("user").batch(64).alias('src')                       # (1) 获取64个user顶点
@@ -243,7 +243,7 @@ g.V("user").batch(64).alias('src')                       # (1) 获取64个user�
 
 <br />若以边为数据源，可以再获取边后分别针对其端点进行操作。一般情况下，获取边往往用于无监督学习，把边看成正样本，再对边的源顶点进行负邻居采样作为负样本。
 
-<div align=center> <img height=150 src="images/gsl-u-i-neg.png" /></div>
+![gsl-u-i-neg](../images/gsl-u-i-neg.png)
 
 ```python
 g.E("u2i").batch(64).alias('edge')                    # (1) 随机获取64条u2i的边
@@ -254,7 +254,7 @@ g.E("u2i").batch(64).alias('edge')                    # (1) 随机获取64条u2i
 
 <br />当边为无向边时，可以通过`outV(edge_type)`和`inV(edge_type)`来实现循环采样，源点和目的点互为邻居。
 
-<div align=center> <img height=150 src="images/gsl-i-i.png" /></div>
+![gsl-i-i](../images/gsl-i-i.png)
 
 ```python
 g.V("user").batch(64).alias('src')                   # (1) 随机获取64个user顶点
@@ -263,7 +263,7 @@ g.V("user").batch(64).alias('src')                   # (1) 随机获取64个user
 
 ```
 
-### 2.2.2 图采样
+### 图采样
 
 图采样的Query接口组合如下：
 
@@ -308,7 +308,7 @@ g.V("user").batch(64).alias("u") \
 ```
 
 
-### 2.2.3 负采样
+### 负采样
 
 负采样的Query接口组合如下：<br />
 
@@ -398,7 +398,7 @@ g.E("buy").batch(64).alias("e").each(
               .values()
 ```
 
-## 2.3 多路下游
+## 多路下游
 ### each
 一个典型的GNN算法对图数据的需求往往是多路的。`each()`接口用于表达Query的多分枝，当进行到某个阶段后，针对前序结果（可能有多个）分别进行不同的操作。
 
@@ -415,7 +415,7 @@ Return:
 
 例如，在二部图（user-item-item）GraphSAGE算法中，我们为了学习user和item在同一空间下的相似性，首先会随机获取图的u2i边作为训练的正样本，再对边的源点（即user顶点）采样其负邻居（item顶点）产生负样本。user通过一阶邻居进行编码（把邻域信息聚合到中心节点），即需要采样其一跳邻居。item也需要一阶邻居来编码。图数据的访问模式如下所示。
 
-<div align=center> <img height=300 src="images/gsl-u-i-i-neg.png" /></div>
+![gsl-u-i-i-neg](../images//gsl-u-i-i-neg.png)
 
 ```python
 query = g.E("u2i").batch(512).shuffle().alis('edge')       # (1) 随机获取512条u2i的边
@@ -459,7 +459,7 @@ query = edge.values()
 ```
 
 
-## 2.4 命名
+## 命名
 ### alias
 每一个SOURCE或STEP都需要由**alias**命名，便于后续对输出结果的访问。
 
@@ -474,7 +474,7 @@ Return:
 ```
 
 
-## 2.5 SINK
+## SINK
 ### values
 一句Query描述完Source、Step后，需要以.values()结尾，表示Query描述完整。Query中的任意一个节点.values()都表示该query结束。如：
 
@@ -488,12 +488,12 @@ query2 = src.values() # 等价于query2 = dst.values()
 ```
 
 
-# 3 GSL执行结果
+## GSL执行结果
 GSL表达的Query以遍历图中的顶点或边开始，因此可以循环地执行。
 GSL执行的结果是Query中描述的所有游走的顶点或边构成的对象，他们包含了自身的**id**和**属性、标签、权重**。
 ​
 
-## 3.1 Dataset
+### Dataset
 **graphlearn.Dataset**接口，用于将Query的结果构造为Numpy组成的**graphlearn.Nodes**/**graphlearn.Edges**或**graphlearn.SparseNodes**/**graphlearn.Edges**对象的生成器。Nodes等对象描述详见文档 [数据对象](https://yuque.antfin-inc.com/pai-user/manual/ochlp6)
 
 ```python
@@ -579,7 +579,7 @@ res["i-i"].weights
 res["i-i"].labels
 # Int32 np array, shape: [64 * 10, 5]([batch_size, nb_count])
 ```
-# 4 示例
+# 示例
 
 - **数据准备**
 

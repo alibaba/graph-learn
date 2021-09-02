@@ -8,13 +8,13 @@ When running distributedly, a distributed file system is needed.
 
 If it is difficult to configure your environment with KubeFlow and NFS, you `NEED` to implement a kind of file system to satisfy the requirements of GL.
 
-# File System Interface
+## File System Interface
 
 The [interface](../graphlearn/platform/file_system.h) of file system defines the basic operation for file and directory, such as **Exist**, **Create** and **Delete**.
 Besides, we abstract **three** kinds of files that a file system should implement.
 
 
-## ByteStreamAccessFile
+### ByteStreamAccessFile
 
 A **ByteStreamAccessFile** enables to read a file in byte stream.
 That is, you can create such a file reader, seek to an `offset`, and then read the next `n bytes` until reach the end.
@@ -26,7 +26,7 @@ virtual Status Read(size_t n, LiteString* result, char* buffer) = 0;
 The **GetFileSize()** interface in file system should return the size in bytes for a **ByteStreamAccessFile**.
 
 
-## StructuredAccessFile
+### StructuredAccessFile
 
 Different from **ByteStreamAccessFile**, **StructuredAccessFile** will consume the file in records instead of in bytes.
 That is, you can create such a file reader, seek to an `offset`, and then read the `next Record` until reach the end.
@@ -44,7 +44,7 @@ Refer [HERE](source_data.md) for more supported raw data formats.
 The **GetRecordCount()** interface in file system should return the size in records for a **StructuredAccessFile**.
 
 
-## WritableFile
+### WritableFile
 
 A **WritableFile** enables to append pieces of data into a file, and does not care about what the format is.
 
@@ -52,7 +52,7 @@ A **WritableFile** enables to append pieces of data into a file, and does not ca
 virtual Status Append(const LiteString& data) = 0;
 ```
 
-# Register with Scheme
+## Register with Scheme
 
 At last, register the new file system to the **Environment**.
 Each file system should has a unique scheme, such as ```hdfs://```.

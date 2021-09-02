@@ -11,7 +11,7 @@ Graph-Learn provides Python and C++ interfaces for graph sampling operations, an
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/alibaba/graph-learn/blob/master/LICENSE)
 
 
-
+[**Documentation**](https://graph-learn.readthedocs.io/en/latest/)
 ## Installation
 
 1. Install Graph-Learn with pip
@@ -30,46 +30,6 @@ pip install graphlearn
 cd examples/tf/ego_sage/
 python train_unsupervised.py
 ```
-
-## Documentation
-
-### [Quick Start](docs/quick_start_cn.md)
-
-### 1. Graph Operation API
-
-*  [Data Source](docs/data_loader_cn.md)
-*  [Graph Object](docs/graph_object_cn.md)
-*  [Data Object](docs/data_object_cn.md)
-*  [Graph Query](docs/graph_query_cn.md)
-*  [Graph Traversal](docs/graph_traverse_cn.md)
-*  [Graph Sampling](docs/graph_sampling_cn.md)
-*  [Negative Sampling](docs/negative_sampling_cn.md)
-*  [**GSL**](docs/gsl_cn.md)
-
-### 2. Model API
-  
-*  [Paradigm and Process](docs/gnn_programming_model_cn.md)
-
-*  TensorFlow
-    - [Data](docs/tf_data_layer_cn.md)
-    - [Models](docs/tf_model_layer_cn.md)
-    - [Loss](docs/tf_loss_cn.md)
-    - [Global Configuration](docs/tf_config_cn.md)
-    - [Examples](docs/tf_model_example_cn.md)
-    - [Development Guide](docs/tf_custom_model_tutorial_cn.md)
-
-*  PyTorch/PyG
-
-    - [Development Process](docs/torch_custom_model_tutorial_cn.md)
-
-
-### 3. [System Configuration](docs/global_config_cn.md)
-
-### 4. Extensions
-
-* [Custom Operators](docs/operator.md)
-
-* [Other data source](docs/other_source.md)
 
 ## Citation
 

@@ -1,17 +1,17 @@
-# 数据层
+## 数据层
 数据层的一个主要目标是提供GraphLearn图操作返回的numpy数据流到TensorFlow1.x里的tensor数据流的转换。我们使用了`tf.data.Dataset`的`from_generator`接口来完成这样转换过程。此外，为了方便对节点、边特征的统一处理，我们提供了特征处理接口来完成对原始连续特征、离散特征、多值离散特征的处理，将这些特征处理成连续的向量，作为后续模型的输入。下面我们按照数据处理的先后顺序描述整个数据层的构建过程：
 **基础数据对象**，描述模型层的基本数据对象。**Tensor数据对象**，描述TensorFlow tensor格式的数据格式。
 **特征处理**，描述对不同类型原始特征的处理的接口。
 ​
 
-## 基础数据对象
+### 基础数据对象
 对应nn/data.py, nn/subgraph.py, nn/dataset.py
 
 
 GraphLearn每个图操作的返回结果为numpy ndarray格式的`Nodes`或者`Edges`对象，为了方便模型层的处理，我们使用`Data`对象来统一表示`Nodes`和`Edges`。这样一个GSL的查询结果，可以用一个`Data` dict来表示，key是alias, value是具体的`Data`对象。
 
 
-### Data
+#### Data
 
 ```python
 class Data(object):
@@ -56,7 +56,7 @@ class Data(object):
 
 ​
 
-### SubGraph
+#### SubGraph
 为了方便GNNs算法的建模，我们使用`SubGraph`来表示一个采样的子图，它由`edge_index`, `nodes`和`edges`构成。由于目前GSL没有提供直接采样子图的功能，因此生成SubGraph时需要显示地使用一个`induce_func`。
 ```python
 class SubGraph(object):
@@ -108,13 +108,13 @@ class SubGraph(object):
 
 
 
-## Tensor数据对象
+### Tensor数据对象
 对应nn/tf/data/
 
 
 我们将一个GSL的结果首先组织成`Data` dict或者使用induce_func组成成`SubGraph`s, 这时候数据还是numpy格式。接着我们使用`tf.data.Dataset`的`from_generator`函数来完成numpy到tensor的转换。我们内置了一个`Dataset` 对象完成这样的转换。
 
-### Dataset
+#### Dataset
 `Dataset`使用`from_generator`方法，完成numpy到tensor格式的转换，对外提供一个initializable的`iterator`，以及`get_data_dict`, `get_egograph`, `get_batchgraph`的接口。
 
 ```python
@@ -340,11 +340,11 @@ class BatchGraph(SubGraph):
 
 ​
 
-# 特征处理
+## 特征处理
 对应nn/tf/data/
 ​
 
-## 特征处理模块
+### 特征处理模块
 上面我们完成了GSL的结果到tensor的转换，下面我们介绍特征处理模块。一般模型处理时需要输入的数据为一个连续的向量。在实际生产中，节点的特征往往包括int, float，string等连续、离散、多值特征，因此需要将这些特征处理成一个连续的向量。具体来说主要是对离散和多值特征通过`tf.nn.embedding_lookup`转换成一个连续的向量，然后和连续特征拼接在一起作为节点的输入特征。
 ​
 
