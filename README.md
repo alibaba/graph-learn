@@ -1,4 +1,5 @@
 ![GL](docs/images/graph-learn.png)
+简体中文 | [English](README_en.md)
 
 Graph-Learn(原AliGraph) 是面向大规模图神经网络的研发和应用而设计的一款分布式框架。
 它从大规模图训练的实际问题出发，提炼和抽象了一套适合于常见图神经网络模型的编程范式， 并已经成功应用在阿里巴巴内部的诸如搜索推荐、网络安全、知识图谱等众多场景。
@@ -7,6 +8,8 @@ Graph-Learn提供了图采样操作的Python和C++接口，并且提供了一个
 
 [![graph-learn CI](https://github.com/alibaba/graph-learn/workflows/graph-learn%20CI/badge.svg)](https://github.com/alibaba/graph-learn/actions)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/alibaba/graph-learn/blob/master/LICENSE)
+
+
 
 ## 安装部署
 
@@ -66,6 +69,23 @@ python train_unsupervised.py
 * [自定义算子](docs/operator.md)
 
 * [数据源接入](docs/other_source.md)
+
+## 论文
+
+如果**Graph-Learn**对你的工作有所帮助，请引用如下论文。
+
+```
+@article{zhu2019aligraph,
+  title={AliGraph: a comprehensive graph neural network platform},
+  author={Zhu, Rong and Zhao, Kun and Yang, Hongxia and Lin, Wei and Zhou, Chang and Ai, Baole and Li, Yong and Zhou, Jingren},
+  journal={Proceedings of the VLDB Endowment},
+  volume={12},
+  number={12},
+  pages={2094--2105},
+  year={2019},
+  publisher={VLDB Endowment}
+}
+```
 
 ## 协议
 
