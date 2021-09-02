@@ -237,7 +237,7 @@ job_name(string): 角色类型，取值为"client"或"server"
 task_index(int): 当前角色中的第几个
 """
 ```
-与TensorFlow结合，Client位于worker端，Server位于ps端，或将Server单独放置到TensorFlow的其他role里（DLC上支持“GraphLearn”的role）。大致代码如下。<br />
+与TensorFlow结合，Client位于worker端，Server位于ps端，或将Server单独放置到TensorFlow的其他role里。大致代码如下。<br />
 - 通过通信同步，这里将GraphLearn Server放到TF ps上运行，也可以放到其他机器上。<br />
 
 ```python

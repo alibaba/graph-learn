@@ -325,15 +325,15 @@ Neg(node_type).sample(expand_factor).by("node_weight")
 `sample`接口的参数expand_factor，表示对每个顶点采样做少个负样本。
 ​
 
-GL目前已支持以下几种负采样策略，对应**.by**接口的`strategy`参数。
+GL目前已支持以下几种负采样策略，对应**.by**接口的`strategy`参数。<br />
 
-| **strategy** | **说明** |
+| strategy | 说明 |
 | --- | --- |
 | random | 随机负采样，不保证true-negative |
 | in_degree | 以顶点入度分布为概率进行负采样，保证true-negative |
 | node_weight | 按照顶点权重在顶点表负采样，仅适用于Neg(node_type) |
 
-
+<br />
 
 `where`参数使用: <br />
 
@@ -494,7 +494,7 @@ GSL执行的结果是Query中描述的所有游走的顶点或边构成的对象
 ​
 
 ### Dataset
-**graphlearn.Dataset**接口，用于将Query的结果构造为Numpy组成的**graphlearn.Nodes**/**graphlearn.Edges**或**graphlearn.SparseNodes**/**graphlearn.Edges**对象的生成器。Nodes等对象描述详见文档 [数据对象](https://yuque.antfin-inc.com/pai-user/manual/ochlp6)
+**graphlearn.Dataset**接口，用于将Query的结果构造为Numpy组成的**graphlearn.Nodes**/**graphlearn.Edges**或**graphlearn.SparseNodes**/**graphlearn.Edges**对象的生成器。Nodes等对象描述详见文档 [数据对象](data_object_cn.md)
 
 ```python
 class Dataset:
@@ -584,10 +584,10 @@ res["i-i"].labels
 - **数据准备**
 
 ```powershell
-vim gen_files.py
+vim gen_test_data.py
 ```
 
-gen_files.py
+[gen_test_data.py](https://github.com/alibaba/graph-learn/blob/master/examples/basic/gen_test_data.py)
 
 ```python
 def gen_files():
@@ -623,7 +623,7 @@ gen_files()
 执行脚本
 ```powershell
 mkdir -p data
-python gen_files.py
+python gen_test_data.py
 ```
 
 
@@ -633,7 +633,7 @@ python gen_files.py
 vim test_local.py
 ```
 
-test_local.py
+[test_local.py](https://github.com/alibaba/graph-learn/blob/master/examples/basic/test_local.py)
 
 ```python
 import os
@@ -810,5 +810,5 @@ if __name__ == "__main__":
 >>> python test_local.py
 ```
 
-详细的示例见代码： [query_examples.py](examples/basic/query_examples.py)
+详细的示例见代码： [query_examples.py](https://github.com/alibaba/graph-learn/tree/master/examples/basic/query_examples.py)
 

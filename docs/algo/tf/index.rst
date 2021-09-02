@@ -11,4 +11,5 @@ Tensorflow
    tf_loss_cn
    tf_config_cn
    tf_model_example_cn
+   k8s
    tf_custom_model_tutorial_cn

@@ -40,6 +40,8 @@ EgoGraph由ego和邻居构成，消息聚合路径通过ego和邻居间的潜在
 
 
 #### EgoGraph和SubGraph的对比
+<br />
+
 |  | EgoGraph | SubGraph |
 | --- | --- | --- |
 | 数据组成 | 自身节点和k-hop邻居节点 | 节点和edge_index |
@@ -53,6 +55,7 @@ EgoGraph由ego和邻居构成，消息聚合路径通过ego和邻居间的潜在
 | 已经实现的算法 | 0.4模型都基于EgoGraph实现。
 GraphSAGE，二部图GraphSAGE/GAT等 | GCN, GAT, GraphSAGE, SEAL等 |
 
+<br />
 注：EgoGraph本身表示一个batch的点和邻居；SubGraph只表示一个子图，batch的子图用BatchGraph表示。
 
 

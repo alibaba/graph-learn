@@ -1,0 +1,75 @@
+apiVersion: kubeflow.org/v1
+kind: TFJob
+metadata:
+  name: ${your_job_name}
+  namespace: ${your_namespace}
+spec:
+  tfReplicaSpecs:
+    PS:
+      replicas: 2
+      template:
+        metadata:
+          creationTimestamp: null
+        spec:
+          containers:
+          - command:
+            - /bin/sh
+            - -c
+            - |-
+              pip install scipy;
+              cd /root/data/examples/tf/ego_sage/k8s;
+              python ../../../data/ogbl_collab.py;
+              split -l 150000 -d -a 1 ogbl_collab/ogbl_collab_node node_;
+              sed -i '1i\id:int64\tattr:string' node_1;
+              split -l 600000 -d -a 1 ogbl_collab/ogbl_collab_train_edge edge_;
+              sed -i '1i\src_id:int64\tdst_id:int64\tweight:float' edge_1;
+              python dist_train.py --tables="node_,edge_"  --batch_size=512 --outputs="emb_" --attr_types='["float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float"]' --attr_dims='[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]';
+            image: graphlearn/graphlearn
+            imagePullPolicy: Always
+            name: tensorflow
+            resources:
+              limits:
+                cpu: "4"
+                memory: 16Gi
+            volumeMounts:
+            - mountPath: /root/data/
+              name: ${your_volume}
+            workingDir: /root/
+          volumes:
+          - name: ${your_volume}
+            persistentVolumeClaim:
+              claimName: ${your_pvc_name}
+    Worker:
+      replicas: 4
+      template:
+        metadata:
+          creationTimestamp: null
+        spec:
+          containers:
+          - command:
+            - /bin/sh
+            - -c
+            - |-
+              pip install scipy;
+              cd /root/data/examples/tf/ego_sage/k8s;
+              python ../../../data/ogbl_collab.py;
+              split -l 150000 -d -a 1 ogbl_collab/ogbl_collab_node node_;
+              sed -i '1i\id:int64\tattr:string' node_1;
+              split -l 600000 -d -a 1 ogbl_collab/ogbl_collab_train_edge edge_;
+              sed -i '1i\src_id:int64\tdst_id:int64\tweight:float' edge_1;
+              python dist_train.py --tables="node_,edge_"  --batch_size=512 --outputs="emb_" --attr_types='["float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float"]' --attr_dims='[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]';
+            image: graphlearn/graphlearn
+            imagePullPolicy: Always
+            name: tensorflow
+            resources:
+              limits:
+                cpu: "8"
+                memory: 16Gi
+            volumeMounts:
+            - mountPath: /root/data/
+              name: ${your_volume}
+            workingDir: /root/
+          volumes:
+          - name: ${your_volume}
+            persistentVolumeClaim:
+              claimName: ${your_pvc_name}

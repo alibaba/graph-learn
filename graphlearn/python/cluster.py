@@ -41,6 +41,8 @@ def gen_cluster_info_from_tf_config():
       worker_hosts = value
     elif "graphlearn" == key:
       gl_hosts = value
+  if gl_hosts is None:
+    gl_hosts = ps_hosts
 
   task = tf_config.get("task", {})
   if task is None:
