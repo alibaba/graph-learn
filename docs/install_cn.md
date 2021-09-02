@@ -57,9 +57,9 @@ sudo pip install dist/your_wheel_name.whl
 ```
 
 ### (Optional) 安装TensorFlow
-**GL**提供的Tensorflow模型示例基于**TensorFlow 1.12**开发，需要安装对应版本的库。
+**GL**提供的Tensorflow模型示例基于**TensorFlow 1.13**开发，需要安装对应版本的库。
 ```bash
-sudo pip install tensorflow==1.12.0
+sudo pip install tensorflow==1.13.0
 ```
 
 ### (Optional) 安装PyTorch，PyG
@@ -83,18 +83,18 @@ source env.sh
 [Graphlearn Docker hub](https://hub.docker.com/r/graphlearn/graphlearn)
 
 我们提供了graphlearn的镜像，预装了对应版本的graphlearn。<br />
-根据算法开发的需求，分别提供预装Tensorflow1.13.0和Pytorch1.8.1+PyG的镜像。<br />
+根据算法开发的需求，分别提供预装Tensorflow1.13.0rc1和Pytorch1.8.1+PyG的镜像。<br />
 您可以在Docker镜像中快速开始GraphLearn的运行。<br />
 
-1. Tensorflow1.12.0, CPU
+1. Tensorflow1.13.0rc1, CPU
 
 ```bash
 docker pull graphlearn/graphlearn:1.0.0-tensorflow1.13.0rc1-cpu
 
-# or, pull the latest graphlearn with tensorflow1.13.0rc1-cpu
+# or, pull the latest graphlearn with 1.0.0-tensorflow1.13.0rc1-cpu
 docker pull graphlearn/graphlearn:latest
 
-# or, pull the given version graphlearn with tensorflow1.13.0rc1-cpu
+# or, pull the given version graphlearn with 1.0.0-tensorflow1.13.0rc1-cpu
 docker pull graphlearn/graphlearn:1.0.0
 
 ```
@@ -102,5 +102,5 @@ docker pull graphlearn/graphlearn:1.0.0
 2. PyTorch1.8.1, Cuda10.2, cdnn7, with PyG
 
 ```bash
-docker pull graphlearn/graphlearn:1.0.0-torch1.8.1-cuda10.2-cdnn7
+docker pull graphlearn/graphlearn:1.0.0-torch1.8.1-cuda10.2-cudnn7
 ```
