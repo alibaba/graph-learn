@@ -28,6 +28,6 @@ jobs:
         env:
           DOCKER_IMAGE: "quay.io/pypa/manylinux_2_24_x86_64"
           PYABI: ${{ matrix.python-abis }}
-          PYPI_PWD: ${{ secrets.PYPI_PASSWORD }}
+          PYPI_PWD: ${{ secrets.PYPI_PWD }}
         run: |
           source ./.github/workflows/upload_packages.sh

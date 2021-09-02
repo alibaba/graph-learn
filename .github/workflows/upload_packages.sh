@@ -29,7 +29,7 @@ else
   echo "    pypi"                                    >> ~/.pypirc
   echo "[pypi]"                                      >> ~/.pypirc
   echo "repository=https://upload.pypi.org/legacy/"  >> ~/.pypirc
-  echo "username=__token__"                             >> ~/.pypirc
+  echo "username=__token__"                          >> ~/.pypirc
   echo "password=$PYPI_PWD"                          >> ~/.pypirc
 
   python -m pip install twine
