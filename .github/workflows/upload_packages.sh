@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
+if [[ "$GITHUB_REF" =~ ^"refs/tags/" ]]; then
+  export GITHUB_TAG_REF="$GITHUB_REF"
+  export GIT_TAG=$(echo "$GITHUB_REF" | sed -e "s/refs\/tags\///g")
+fi
+
 if [ -z "$GITHUB_TAG_REF" ]; then
   echo "Not on a tag, won't deploy to pypi"
 else
@@ -8,7 +13,7 @@ else
   pyabis=$(echo $PYABI | tr ":" "\n")
   for abi in $pyabis; do
     docker run --rm -e "PYABI=$abi" -e "GIT_TAG=$GIT_TAG" -v `pwd`:/io \
-      $DOCKER_IMAGE /io/.github/workflows/build.sh
+      $DOCKER_IMAGE $PRE_CMD bash -c "chmod +x /io/.github/workflows/build.sh; /io/.github/workflows/build.sh"
     sudo chown -R $(id -u):$(id -g) ./*
     mv dist/*.whl /tmp
   done

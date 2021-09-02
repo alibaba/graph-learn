@@ -2,7 +2,7 @@
 set -e -x
 
 apt-get update
-apt-get install libssl-dev
+apt-get -y install libssl-dev
 
 PYBIN=/opt/python/${PYABI}/bin
 "${PYBIN}/pip" install numpy
