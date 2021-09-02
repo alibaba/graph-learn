@@ -73,12 +73,14 @@ GIT_BRANCH_NAME = check_output(shlex.split(
 GIT_HEAD_REV = check_output(shlex.split('git rev-parse --short HEAD')).strip()
 
 setup(
-    name='graphlearn',
+    name='graph-learn',
     version=_VERSION,
     description='Python Interface for Graph Neural Network',
+    url="https://github.com/alibaba/graph-learn",
     ext_package='graphlearn',
     ext_modules=extensions,
     packages=find_packages(),
     package_dir={'graphlearn' : 'graphlearn'},
     package_data={'': ['python/lib/lib*.so*']},
+    license='Apache License 2.0',
     )

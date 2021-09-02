@@ -14,9 +14,9 @@ Graph-Learn provides Python and C++ interfaces for graph sampling operations, an
 [**Documentation**](https://graph-learn.readthedocs.io/en/latest/)
 ## Installation
 
-1. Install Graph-Learn with pip
+1. Install Graph-Learn with pip(only for python3)
 ```
-pip install graphlearn
+pip install graph-learn
 ```
 
 2. [Build from source](docs/install_cn.md)

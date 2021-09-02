@@ -13,9 +13,9 @@ Graph-Learn提供了图采样操作的Python和C++接口，并且提供了一个
 
 ## 安装部署
 
-1. 通过wheel包安装
+1. 通过wheel包安装(只支持python3)
 ```
-pip install graphlearn
+pip install graph-learn
 ```
 
 2. [从源码编译](docs/install_cn.md)

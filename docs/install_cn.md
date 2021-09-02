@@ -3,7 +3,7 @@
 ## Wheel包安装
 
 ```bash
-pip install graphlearn
+pip install graph-learn
 ```
 
 ## 源码编译安装
