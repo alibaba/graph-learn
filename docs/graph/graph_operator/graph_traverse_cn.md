@@ -1,7 +1,7 @@
 ## 图遍历
 
 <a name="pLeth"></a>
-## 介绍
+### 介绍
 图遍历，在GNN里的语义有别于经典的图计算。主流深度学习算法的训练模式会按batch迭代。为了满足这种要求，数据要能够按batch访问，我们把这种数据的访问模式称为遍历。在GNN算法中，数据源为图，训练样本通常由图的顶点和边构成。图遍历是指为算法提供按batch获取顶点、边或子图的能力。
 
 目前**GL**支持顶点和边的batch遍历。这种随机遍历可以是无放回的，也可以是有放回的。在无放回遍历中，每当一个epoch结束后都会触发`gl.OutOfRangeError`。被遍历的数据源是划分后的，即当前worker（以分布式TF为例）只遍历与其对应的Server上的数据。
@@ -18,8 +18,7 @@ def node_sampler(type, batch_size=64, strategy="by_order", node_from=gl.NODE):
 Args:
   type(string):     当node_from为gl.NODE时，为顶点类型，否则为边类型;
   batch_size(int):  每次遍历的顶点数
-  strategy(string): 可选值为"by_order"和"random"，表示无放回遍历和随机遍历
-      当为"by_order"时，若触底后不足batch_size，则返回实际数量，若实际数量为0，则触发gl.OutOfRangeError
+  strategy(string): 可选值为"by_order"和"random"，表示无放回遍历和随机遍历。当为"by_order"时，若触底后不足batch_size，则返回实际数量，若实际数量为0，则触发gl.OutOfRangeError
   node_from:        数据来源，可选值为gl.NODE、gl.EDGE_SRC、gl.EDGE_DST;
 Return:
   NodeSampler对象
@@ -104,8 +103,7 @@ def edge_sampler(edge_type, batch_size=64, strategy="by_order"):
 Args:
   edge_type(string): 边类型
   batch_size(int):   每次遍历的边数
-  strategy(string):  可选值为"by_order"和"random"，表示无放回遍历和随机遍历
-      当为"by_order"时，若触底后不足batch_size，则返回实际数量，若实际数量为0，则触发gl.OutOfRangeError
+  strategy(string):  可选值为"by_order"和"random"，表示无放回遍历和随机遍历。当为"by_order"时，若触底后不足batch_size，则返回实际数量，若实际数量为0，则触发gl.OutOfRangeError
 Return:
   EdgeSampler对象
 """

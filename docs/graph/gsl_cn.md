@@ -65,9 +65,9 @@ item	item         ->         item	item
 2	3                           3	1
 3	3                           2	3
 1	4                           3	2
-                              3	3
-                              1	4
-                              4	1
+                                3	3
+                                1	4
+                                4	1
 ```
 `g.E("i2i")`: 遍历double and unique的i2i数据，如上"加载到图中的i2i数据 "。<br />
 `g.E("i2i", reverse=Ture)`: 不支持，因为这时候i2i是无向边，不区分正向和反向。<br />

@@ -133,22 +133,22 @@ item	item         ->         item	item
 2	3                           3	1
 3	3                           2	3
 1	4                           3	2
-                              3	3
-                              1	4
-                              4	1
+                                3	3
+                                1	4
+                                4	1
 ```
 
 - src_type和dst_type不一致，如边类型为("user", "item", "u2i")，当u2i为无向边时，在加载时实际上除了加载原始的u2i边之外，额外加载了一份i2u的反向边。<br />
 
 ```
 原始u2i数据                 加载到图中的u2i数据    +     加载到图中的i2u数据
-user	item            ->      user	item                 item	user
+user	item            ->     user	item                 item	user
 1	2                           1	2                        2	1
 2	1                           2	1                        1	2
-1	3                           1	3												 3	1
-2	3                           2	3												 3	2
-3	3                           3	3												 3	3
-1	4                           1	4												 4	1
+1	3                           1	3						 3	1
+2	3                           2	3						 3	2
+3	3                           3	3						 3	3
+1	4                           1	4						 4	1
 ```
 
 <br />在遍历时，同构的无向边和异构的无向边使用详见GSL文档。
@@ -156,14 +156,13 @@ user	item            ->      user	item                 item	user
 
 <a name="OVdVh"></a>
 ### partition
-分布式场景下，即存在多个GraphLeanrn Server时，构图时会自动进行图的partition, 将图分布式存储。默认partiton是按照src_id % server数进行节点和边的分配。
+分布式场景下，即存在多个GraphLearn Server时，构图时会自动进行图的partition, 将图分布式存储。默认partition是按照src_id % server数进行节点和边的分配。
 
-<a name="HNiIP"></a>
 ## 初始化
 
 顶点与边添加完成后，需要调用初始化接口，完成从原始数据到内存索引的构建。初始化过程决定了图数据被Serving的情况，单机的还是分布式的。若为分布式的，还要区分Server Mode和Client-Server Mode。初始化完成后，便可对Graph对象进行操作了。<br />
 
-<a name="nGHkF"></a>
+
 
 ### 单机
 单机模式比较简单，表示该Graph对象Hold全部图数据。<br />
