@@ -43,7 +43,7 @@ Some operators may return responses that need to be **stitched** together, and s
 As above, we propose the **Partition-Stitch** computing pattern for operators.
 Developers just need care about the next three functions **Partition()**, **Process()**, **Stitch()**.
 
-![op](../../images/operator_runtime.png)
+![op](../images/operator_runtime.png)
 
 
 ## Implement a New Operator
