@@ -42,7 +42,9 @@ EgoGraph consists of ego and neighbors, and the message aggregation path is dete
 Unlike EgoGraph, SubGraph contains the edge_index of the graph topology, so the message passing path (forward computation path) can be determined directly by the edge_index, and the implementation of the conv layer can be done directly by the edge_index and the nodes/edges data. In addition, SubGraph is fully compatible with the Data in PyG, so the model part of PyG can be reused.
 
 #### Comparison of EgoGraph and SubGraph
-| | EgoGraph | SubGraph |
+<br />
+
+|  | EgoGraph | SubGraph |
 | --- | --- | --- |
 | Data Composition | Self-nodes and k-hop neighbor nodes | Nodes and edge_index |
 | Topology | Tree topology with k-hop neighbors only | SubGraph topology |
@@ -54,6 +56,8 @@ Unlike EgoGraph, SubGraph contains the edge_index of the graph topology, so the 
 | PyTorch support | Not implemented | PyG-compatible, corresponding to Data in PyG |
 | Implemented algorithms | 0.4 models are based on EgoGraph implementation.
 GraphSAGE, bipartite graph GraphSAGE/GAT, etc. | GCN, GAT, GraphSAGE, SEAL, etc. |
+
+<br />
 
 Note: EgoGraph itself represents a batch of the nodes and neighbors; SubGraph represents only a subgraph, and a batch_size of subgraphs is represented by BatchGraph.
 

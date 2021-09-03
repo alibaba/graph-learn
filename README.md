@@ -6,12 +6,14 @@ It refines and abstracts a set of programming paradigms suitable for common grap
 
 Graph-Learn provides Python and C++ interfaces for graph sampling operations, and provides a gremlin-like GSL (Graph Sampling Language) interface. For upper layer graph learning models, Graph-Learn provides a set of paradigms and processes for model development, compatible with TensorFlow and PyTorch, providing data layer, model layer interfaces and rich model examples.
 
-
+[![pypi](https://img.shields.io/pypi/v/graph-learn.svg)](https://pypi.org/project/graph-learn/)
+[![docs](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://graph-learn.readthedocs.io/en/latest/)
 [![graph-learn CI](https://github.com/alibaba/graph-learn/workflows/graph-learn%20CI/badge.svg)](https://github.com/alibaba/graph-learn/actions)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/alibaba/graph-learn/blob/master/LICENSE)
 
 
 [**Documentation**](https://graph-learn.readthedocs.io/en/latest/)
+
 ## Installation
 
 1. Install Graph-Learn with pip(only for python3)
