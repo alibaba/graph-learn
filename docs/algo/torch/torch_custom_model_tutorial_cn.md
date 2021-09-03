@@ -3,10 +3,10 @@
 基于pytorch的GNNs算法开发流程包括如下步骤：
 
 1. 构造点表和边表数据并完成构图
-1. 根据需求写GSL query，完成子图采样
-1. 使用Dataset和DataLoader处理GSL的数据
-1. 编写模型
-1. 训练/预测
+2. 根据需求写GSL query，完成子图采样
+3. 使用Dataset和DataLoader处理GSL的数据
+4. 编写模型
+5. 训练/预测
 
 
 GraphLearn兼容了社区开源框架pyG([https://github.com/rusty1s/pytorch_geometric](https://github.com/rusty1s/pytorch_geometric)), 因此想基于pyG开发GNNs算法时，在写好GSL后需要实现一个induce_func完成GSL产生的`gl.nn.Data` dict到pyG的`Data`的转换。然后使用GraphLearn封装的`PyGDataLoader`即可以将`Data`合并成`Batch`对象，后面的模型部分直接使用pyG实现即可。

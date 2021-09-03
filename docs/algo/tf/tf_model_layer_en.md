@@ -1,19 +1,19 @@
-## 模型层
+## Model layers
 
-对应nn/tf/layers和nn/tf/model
-​
+nn/tf/layers and nn/tf/model
 
-大部分GNNs算法遵从递归的消息传递/邻居聚合的范式，因此可以类似一般的DNN，抽象出层的概念，来表示一次消息传递操作。目前常见的GNNs都是图卷积神经网络，因此我们抽象了若干conv层表示一次图卷积过程。对于EgoGraph, 为了方便地对异构图进行消息传递，我们在conv层之上抽象了layer的概念，来表示一个子图的一次完整消息传递过程。基于这些conv或者layer，可以很方便得构建出一个GNNs模型，我们内置了若干常见的模型，也欢迎大家贡献，补充更多的GNNs模型。
+
+Most GNNs algorithms follow a recursive message-passing/neighbor aggregation paradigm, so the concept of layers can be abstracted to represent one message-passing operation, similar to a general DNN. Currently, all common GNNs are graph convolutional neural networks, so we abstract a number of conv layers to represent a single graph convolution process. For EgoGraph, we abstract the concept of layers on top of the conv layers to represent one complete message passing process of a subgraph in order to facilitate message passing for heterogeneous graphs. Based on these conv or layers, it is easy to build a GNNs model. We have built in several common models, and welcome contributions to add more GNNs models.
 
 
 ### Layers
-对SubGraph/BatchGraph，我们提供了若干`SubConv`层，对EgoGraph提供了`EgoConv`和`EgoLayer`。
+For SubGraph/BatchGraph, we provide several `SubConv` layers, and for EgoGraph, we provide `EgoConv` and `EgoLayer`.
 ​
 
 #### SubGraph based layer
 
 
-SubGraph的一次卷积可以通过edge_index和node_vec来计算，我们将基本的卷积层定义为`SubConv`
+SubGraph's primary convolution can be calculated by edge_index and node_vec, and we define the basic convolution layer as `SubConv`
 
 - SubConv
 
@@ -35,8 +35,7 @@ class SubConv(Module):
 ```
 
 
-基于SubConv基类，可以实现不同的图卷积层。
-​
+Based on the SubConv base class, different graph convolution layers can be implemented.​
 
 - GCNConv
 
@@ -76,7 +75,7 @@ class SAGEConv(SubConv):
 
 
 #### EgoGraph based layers
-对于EgoGraph， 我们将一次k+1 hop的邻居到k hop的邻居的聚合过程定义为一个`EgoConv`
+For EgoGraph, we define the aggregation process from neighbors of one k+1 hop to neighbors of k hop as an `EgoConv`
 
 
 - EgoConv
@@ -99,7 +98,7 @@ class EgoConv(Module):
     """
 ```
  
-基于`EgoConv`可以实现各自图卷积层
+Based on `EgoConv` you can implement the respective graph convolution layer
 ​
 
 - EgoSAGEConv
@@ -194,8 +193,10 @@ class EgoGINConv(EgoConv):
 
 
 #### EgoLayer
-上述的`EgoConv`层只是表示了k+1跳到k跳邻居的聚合过程，对于一个由ego和`K`跳邻居组成的`EgoGraph`来说，一次全图的消息传递需要对EgoGraph里所有的相邻的邻居对进行`EgoConv`的前向操作，即对k ={0, 1, 2, ... `K-1`}, 都进行k+1到k跳的聚合。我们将这样由若干1跳邻居聚合`EgoConv`构成的一次EgoGraph全图的消息传递过程用`EgoLayer`表示。
-`EgoLayer`和`EgoConv`的关系如下图所示。`EgoLayer`表示的是一次EgoGraph子图上的消息传递，而`EgoConv`表示的是相邻的k跳和k+1跳邻居的一次消息传递。对于2跳邻居构成的`EgoGraph`，有2个`EgoLayer`，第一个`EgoLayer`包含2个`EgoConv`，第二个`EgoLayer`包含1个`EgoConv`。可以看出由`EgoConv`组成的`EgoLayer`自然支持异构图的meta-path消息传递过程，对于同构图，只需要复用`EgoConv`即可。
+The above `EgoConv` layer only represents the aggregation process from k+1 hops to k-hop neighbors. For an `EgoGraph` consisting of ego and `K`-hop neighbors, a full-graph messaging needs to perform `EgoConv` forward operations on all adjacent neighbor pairs in the EgoGraph, i.e., for k = {0, 1, 2, ... `K-1`}, all performing aggregation from k+1 to k hops.
+We denote the message-passing process of such a single EgoGraph full graph consisting of several 1-hop neighbor aggregations `EgoConv` by `EgoLayer`.
+The relationship between `EgoLayer` and `EgoConv` is shown in the following figure. The `EgoLayer` represents one message passing on the EgoGraph subgraph, while `EgoConv` represents one message passing on the adjacent k-hop and k+1-hop neighbors. For the `EgoGraph` composed of 2-hop neighbors, there are 2 `EgoLayers`, the first `EgoLayer` contains 2 `EgoConv` and the second `EgoLayer` contains 1 `EgoConv`. It can be seen that the `EgoLayer` composed by `EgoConv` naturally supports the meta-path message passing process for heterogeneous graphs.
+For isomorphic graphs, it is only necessary to reuse `EgoConv`.
 ​
 
 ![egolayer](../../images/egolayer.png)
@@ -249,7 +250,8 @@ class EgoLayer(Module):
 
 
 #### SubGraph based model
-基于`SubConv`层，可以很方便地构建出一个GNNs模型，我们内置了一些常见的GNNs模型。所有模型都需要实现`forward`过程， `forward`接受`BatchGraph`对象，返回最后的embedding。目前只支持同构图从边遍历，并返回src和dst的embedding。
+Based on the `SubConv` layer, it is easy to build a GNNs model, and we have some common GNNs models built-in. All models need to implement the `forward` procedure, `forward` accepts `BatchGraph` objects and returns the final embedding.
+Currently, only homogeneous graph edge traversal is supported, and the embedding of src and dst is returned.
 
 ```python
 def forward(self, batchgraph)
@@ -321,7 +323,7 @@ class SEAL(Module):
 #### EgoGraph based model
 
 
-基于`EgoConv`组成的`EgoLayer`，我们可以快速构建出GNN模型。由于`EgoLayer`支持一般的异构图，因此`EgoGraph` based GNN可以统一用如下的模型实现。
+Based on the `EgoLayer` composed by `EgoConv`, we can quickly construct a GNN model. Since `EgoLayer` supports general heterogeneous graphs, the `EgoGraph` based GNN can be implemented uniformly with the following model.
 ​
 
 - EgoGNN
@@ -410,14 +412,12 @@ class EgoGNN(Module):
 ```
 ​
 
-​
+#### Other
+In addition to the common GNNs models, we have also encapsulated corresponding models for some common modules, such as the link prediction module.
 
-#### 其他
-除了常见GNNs模型，对于一些常用的模块我们也封装了对应的模型，比如链接预测模块。
-​
 
 - LinkPredictor
-链接预测模块里封装了若干dense层，对输入向量经过这些dense层后输出最终结果。
+The Link Predictor module encapsulates a number of dense layers to output the final result after the input vector has passed through these dense layers.
 
 ```python
 class LinkPredictor(Module):

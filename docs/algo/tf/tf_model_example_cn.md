@@ -101,9 +101,6 @@ class DistTrainer(object):
   # 使用我们实现的SyncBarrierHook做个同步等待。
   def train(self, iterator, loss, learning_rate, epochs=10, **kwargs)
     
-  # 保存点的embedding过程， 传入对应的writer，写出embedding。
-  def save_node_embedding(self, emb_writer, iterator, ids, emb, batch_size)
-    
   # 上面的接口都是对tensorflow的worker节点提供, ps节点只需要执行join即可
   def join(self)
 ```

@@ -1,37 +1,36 @@
-# 快速开始
+# Quick Start
 
-本文档包含三个部分
+This document contains three sections
 
-- 如何基于**GL**快速跑通一个GNN模型
+- How to quickly run through a GNN model based on **GL**
 
-- 如何把数据加载到**GL**中，以及如何使用图数据、图采样、负采样等接口
+- How to load data into **GL** and how to use the graph data, graph sampling, negative sampling, and other interfaces
 
-- 以**GraphSAGE**为例，说明如何基于**GL**和TensorFlow开发一个自己的GNN模型
+- Using **GraphSAGE** as an example, how to develop a GNN model of your own based on **GL** and TensorFlow
 
 
-## 跑通内置模型
+## Run through the built-in model
 
-**GL**内置了一些常见模型，如**GCN**，**GraphSAGE**，以及数据集**cora、ppi**等。
-我们从跑通**cora**数据的顶点分类任务开始接触**GL**。完整模型代码请参考[模型示例](https://github.com/alibaba/graph-learn/tree/master/examples/tf)。<br />
+**GL** has some common models built-in, such as **GCN**, **GraphSAGE**, and datasets **cora, ppi**, etc.
+We start our exposure to **GL** by running through the node classification task for **cora** data. For the complete model code, please refer to[examples](https://github.com/alibaba/graph-learn/tree/master/examples/tf).
 
 
 ``` shell
-# 准备数据
 cd graph-learn/examples/data/
 python cora.py
 
-# 训练、模型评估
 cd ../tf/ego_sage/
 python train_supervised.py
 ```
 
-## **GL**接口使用
+## **GL** Interface Usage
 
-**GL**为GNN的开发提供了大量基础接口，我们提供了图接口使用示例以展示如何基于**GL**来构图、查询、采样、负采样。
+**GL** provides a number of basic interfaces for GNN development, and we provide graph interface usage examples to show how to compose, query, sample, and negatively sample based on **GL**.
 
-在开始前，我们需要准备一份图数据源，这里准备了一个生成数据的脚本[gen_test_data.py](https://github.com/alibaba/graph-learn/tree/master/examples/basic/gen_test_data.py)，用于生成顶点和边的本地数据。
+Before we start, we need to prepare a graph data source, here we prepare a script for generating data [gen_test_data.py](https://github.com/alibaba/graph-learn/tree/master/examples/basic/gen_test_data .py), which is used to generate local data for vertices and edges.
 
-准备测试脚本[test_dist_server_mode_fs_tracker.py](https://github.com/alibaba/graph-learn/tree/master/examples/basic/test_dist_server_mode_fs_tracker.py)如下：
+Prepare the test script as follows.
+[test_dist_server_mode_fs_tracker.py](https://github.com/alibaba/graph-learn/tree/master/examples/basic/test_dist_server_mode_fs_tracker.py)
 ``` python
 import getopt
 import os
@@ -111,9 +110,9 @@ if __name__ == "__main__":
   main(sys.argv[1:])
 ```
 
-[query_examples.py](https://github.com/alibaba/graph-learn/tree/master/examples/basic/query_examples.py)脚本中展示了更多的图接口的使用示例以供参考。
+[query_examples.py](https://github.com/alibaba/graph-learn/tree/master/examples/basic/query_examples.py)More examples of the use of the graph interface are shown in the script for reference.
 
-准备完数据和代码后，我们在本地拉起5个进程，2个server，3个worker，分布式执行。
+After preparing the data and code, we pull up 5 processes locally, 2 servers and 3 workers, for distributed execution.
 
 ``` shell
 #!/usr/bin/env bash
@@ -146,21 +145,21 @@ python $HERE/test_dist_server_mode_fs_tracker.py \
   --server_count=2 --client_count=3 --tracker=$HERE/tracker --job_name="client" --task_index=2
 ```
 
-## 开发一个GNN模型
+## Develop a GNN model
 
-下面将基于**GL**和**TensorFlow**开发一个有监督的**GraphSAGE**模型，并在Cora数据上训练。<br />
+The following will develop a supervised **GraphSAGE** model based on **GL** and **TensorFlow**, and train it on cora data.
 
-### 数据准备
+### Data preparation
 
-我们使用开源数据集Cora，它包含了机器学习的一些论文，以及论文之间的引用关系，每篇论文包含1433个属性。这些论文可以划分为7种类别：Case_Based，Genetic_Algorithms，Neural_Networks，Probabilistic_Methods，Reinforcement_Learning，Rule_Learning，Theory。该GNN任务的目的是预测论文的分类。我们将开源的Cora数据进行处理，得到我们构图所需的数据格式。Cora数据下载和处理的脚本参考[cora.py](https://github.com/alibaba/graph-learn/tree/master/examples/data/cora.py)。
+We use the open source dataset cora, which contains a number of papers on machine learning, as well as citation relationships between papers, each containing 1433 attributes. These papers can be classified into 7 categories: Case_Based, Genetic_Algorithms, Neural_Networks, Probabilistic_Methods, Reinforcement_Learning, Rule_Learning, Theory. this GNN task aims to predict the classification of papers. We processed the open source cora data to get the data format required for our composition. cora data download and processing script refer to [cora.py](https://github.com/alibaba/graph-learn/tree/master/examples/data/cora.py) .
 
 ```
 cd graph-learn/examples/data
 python cora.py
 ```
 
-产出边数据和顶点数据。其中，边数据即论文之间的引用关系，一篇论文由其他至少一篇论文引用；
-顶点数据，即论文的词汇表示，包括论文的属性和标签，属性总共1433个维度，论文类别有7类，因此label值域设置为0~6。
+Produces edge data and vertex data. where edge data, i.e., citation relations between papers, where a paper is cited by at least one other paper.
+The vertex data, i.e., the lexical representation of the paper, includes attributes and labels of the paper, with a total of 1433 dimensions for attributes and 7 categories for paper categories, so the label value domain is set to 0~6.
 
 ```shell
 src_id:int64   dst_id:int64
@@ -177,22 +176,20 @@ id:int64  label:int32   feature:string
 ```
 
 
-顶点数据除了id以外，包含label和attributes，其中attributes为1433个float。边数据除了两个端点id以外，还包含边的权重。
-数据格式通过`gl.Decoder`类描述。
+The vertex data contains labels and attributes in addition to ids, where attributes are 1433 floats. the edge data contains the weights of the edges in addition to the two endpoint ids.
+The data format is described by the `gl.Decoder` class.
 
 ```python
 import graphlearn as gl
 
-# 描述顶点表的数据格式，包含lable和attributes
 node_decoder = gl.Decoder(labeled=True, attr_types=["float"] * args.features_num)
 
-# 表示边表的数据格式，除了端点id以外，还有边的权重
 edge_decoder = gl.Decoder(weighted=True)
 ```
 
-### 图构建
+### Graph construction
 
-图构建的过程是将顶点数据和边数据加载到内存中，转换为逻辑上的图格式。构建完成后，可供查询和采样。<br />
+Graph construction is the process of loading vertex data and edge data into memory and converting them into a logical graph format. After the build is complete, it is available for querying and sampling
 
 
 ```python
@@ -216,18 +213,15 @@ def load_graph(args):
               decoder=gl.Decoder(weighted=True), mask=gl.Mask.TEST)
   return g
 
-
-# 调用.init()进行初始化。这里以单机运行为例，分布式详见[图对象-初始化数据](graph_object_cn.md)。
 g.init()
 ```
 
-### 图采样
-为了实现GraphSAGE，需要进行图采样以作为上层网络的输入。在这里，我们的采样顺序为：<br />
-(1) 按batch采样种子“item”顶点；<br />
-(2) 采样上述顶点沿着“relation”边的1-hop邻居和2-hop邻居；<br />
-(3) 获取路径的上所有顶点的属性和种子顶点的labels。<br />
-
-这里我们定义了一个图采样query，通过遍历图，得到每一次迭代的batch的样本数据。<br />
+### Graph sampling
+To implement GraphSAGE, graph sampling is required to serve as input to the upper layer network. Here, our sampling sequence is.
+(1) Sampling the seed "item" vertices by batch.
+(2) Sampling the 1-hop neighbors and 2-hop neighbors of the above vertices along the "relation" edge.
+(3) Get the attributes of all vertices on the path and the labels of the seed vertices.
+Here we define a graph sampling query to get the sample data of each iteration of batch by traversing the graph.
 
 ``` python
 def query(graph, args):
@@ -241,8 +235,8 @@ def query(graph, args):
   return q.values()
 ```
 
-### 模型代码
-- 定义loss和accuracy计算函数，并定义train函数，将图上query产生的样本输入给模型。
+### Model code
+- Define the loss and accuracy calculation functions, and define the train function to input the samples generated by query on the graph to the model.
 
 ```python
 def supervised_loss(logits, labels):
@@ -265,7 +259,7 @@ def train(graph, model, args):
   return dataset.iterator, loss
 ```
 
-- 定义GNN模型
+- GNN model
 
 ```python
 # ego_sage.py
@@ -299,7 +293,7 @@ class EgoGraphSAGE(tfg.EgoGNN):
     super(EgoGraphSAGE, self).__init__(layers, bn_func, act_func, dropout)
 ```
 
-- 开始训练
+- Start training
 
 ```python
 def run(args):
