@@ -1,4 +1,4 @@
-# Install ans Setup
+# Install and Setup
 
 ## Install from wheel.
 
