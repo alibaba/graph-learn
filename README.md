@@ -1,38 +1,39 @@
 ![GL](docs/images/graph-learn.png)
-简体中文 | [English](README_en.md)
+[简体中文](README_cn.md) | English
 
-Graph-Learn(原AliGraph) 是面向大规模图神经网络的研发和应用而设计的一款分布式框架。
-它从大规模图训练的实际问题出发，提炼和抽象了一套适合于常见图神经网络模型的编程范式， 并已经成功应用在阿里巴巴内部的诸如搜索推荐、网络安全、知识图谱等众多场景。
+Graph-Learn (formerly AliGraph) is a distributed framework designed for the development and application of large-scale graph neural networks.
+It refines and abstracts a set of programming paradigms suitable for common graph neural network models from the practical problems of large-scale graph training, and has been successfully applied to many scenarios such as search recommendation, network security, knowledge graph, etc. within Alibaba.
 
-Graph-Learn提供了图采样操作的Python和C++接口，并且提供了一个类似gremlin的GSL(Graph Sampling Language)接口。对于上层图学习模型，Graph-Learn提供了一套模型开发的范式和流程，兼容TensorFlow和PyTorch，提供了数据层，模型层接口和丰富的模型示例。
+Graph-Learn provides Python and C++ interfaces for graph sampling operations, and provides a gremlin-like GSL (Graph Sampling Language) interface. For upper layer graph learning models, Graph-Learn provides a set of paradigms and processes for model development, compatible with TensorFlow and PyTorch, providing data layer, model layer interfaces and rich model examples.
+
 
 [![graph-learn CI](https://github.com/alibaba/graph-learn/workflows/graph-learn%20CI/badge.svg)](https://github.com/alibaba/graph-learn/actions)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/alibaba/graph-learn/blob/master/LICENSE)
 
-[**用户文档**](https://graph-learn.readthedocs.io/en/latest/)
 
-## 安装部署
+[**Documentation**](https://graph-learn.readthedocs.io/en/latest/)
+## Installation
 
-1. 通过wheel包安装(只支持python3)
+1. Install Graph-Learn with pip(only for python3)
 ```
 pip install graph-learn
 ```
 
-2. [从源码编译](docs/install_cn.md)
+2. [Build from source](docs/en/install_en.md)
 
-3. 使用Docker
+3. Use Docker
 
-4. [k8s](docs/k8s.md)
+4. [k8s](docs/en/algo/tf/k8s.md)
 
-## 运行示例
+## example
 ```
 cd examples/tf/ego_sage/
 python train_unsupervised.py
 ```
 
-## 论文
+## Citation
 
-如果**Graph-Learn**对你的工作有所帮助，请引用如下论文。
+Please cite the following paper in your publications if **GL** helps your research.
 
 ```
 @article{zhu2019aligraph,
@@ -47,6 +48,6 @@ python train_unsupervised.py
 }
 ```
 
-## 协议
+## License
 
 Apache License 2.0.
