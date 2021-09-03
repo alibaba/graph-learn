@@ -6,7 +6,7 @@ Graph Operators
    :maxdepth: 2
    :caption: Contents:
 
-   graph_query_en
-   graph_traverse_en
-   graph_sampling_en
-   negative_sampling_en
+   graph_query
+   graph_traverse
+   graph_sampling
+   negative_sampling

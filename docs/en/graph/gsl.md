@@ -487,7 +487,7 @@ The result of GSL execution is an object consisting of all wandering vertices or
 
 
 ### datasets
-**graphlearn.Dataset** interface for constructing the result of a Query as a Numpy composed **graphlearn.Nodes**/**graphlearn.Edges** or **graphlearn. Edges** object generator. see the documentation [data_object](data_object_cn.md) for a description of objects such as Nodes.
+**graphlearn.Dataset** interface for constructing the result of a Query as a Numpy composed **graphlearn.Nodes**/**graphlearn.Edges** or **graphlearn. Edges** object generator. see the documentation [data_object](data_object.md) for a description of objects such as Nodes.
 
 ```python
 class Dataset:

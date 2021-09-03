@@ -6,4 +6,4 @@ PyTorch
    :maxdepth: 2
    :caption: Contents:
 
-   torch_custom_model_tutorial_cn
+   torch_custom_model_tutorial

@@ -57,7 +57,7 @@ git clone https://github.com/alibaba/graph-learn.git
 git submodule update --init
 ```
 
-Refer to [building from source](install_en.md) to build pass.
+Refer to [building from source](install.md) to build pass.
 
 ### Implement your operator class
 
@@ -109,6 +109,6 @@ For example, if a new sampler named **xxxSampler**, you can call it like this:
 g.sample(count).by("xxx")...
 ```
 
-More information about **API** refer to [this](graph/gsl_en.md).
+More information about **API** refer to [this](graph/gsl.md).
 
 

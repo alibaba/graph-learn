@@ -18,7 +18,7 @@ Graph-Learn提供了图采样操作的Python和C++接口，并且提供了一个
 pip install graph-learn
 ```
 
-2. [从源码编译](docs/zh_CN/install_cn.md)
+2. [从源码编译](docs/zh_CN/install.md)
 
 3. 使用Docker
 

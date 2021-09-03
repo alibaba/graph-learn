@@ -217,7 +217,7 @@ def load_graph(args):
   return g
 
 
-# 调用.init()进行初始化。这里以单机运行为例，分布式详见[图对象-初始化数据](graph_object_cn.md)。
+# 调用.init()进行初始化。这里以单机运行为例，分布式详见[图对象-初始化数据](graph_object.md)。
 g.init()
 ```
 

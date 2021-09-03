@@ -6,9 +6,9 @@ Graph
    :maxdepth: 2
    :caption: Contents:
 
-   data_loader_en
-   graph_object_en
-   data_object_en
-   graph_operator_en
+   data_loader
+   graph_object
+   data_object
+   graph_operator
    graph_operator/index
-   gsl_en
+   gsl

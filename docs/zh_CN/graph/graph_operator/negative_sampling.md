@@ -12,7 +12,7 @@
 
 - 通过`g.negative_sampler()`定义负采样算子，得到`NegativeSampler`对象`S`；
 - 调用`S.get(ids)`, 得到`Nodes`对象；
-- 调用`Nodes`对象的[接口](graph_query_cn.md#FPU74)获取具体的值；
+- 调用`Nodes`对象的[接口](graph_query.md#FPU74)获取具体的值；
 
 
 

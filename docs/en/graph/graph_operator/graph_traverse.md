@@ -32,7 +32,7 @@ Return:
 """
 ```
 
-<br />Get specific values such as id, weight, attribute, etc. from `Nodes` object, refer to [API](graph_query_en.md). In GSL, vertex traversal reference `g.V()`. <br />
+<br />Get specific values such as id, weight, attribute, etc. from `Nodes` object, refer to [API](graph_query.md). In GSL, vertex traversal reference `g.V()`. <br />
 
 #### Example
 
@@ -113,7 +113,7 @@ Return:
 """
 ```
 
-<br />Get specific values such as id, weight, attribute, etc. from `Edges` object, refer to [API](graph_query_en.md). In GSL, the edge traversal reference is `g.E()`. <br />
+<br />Get specific values such as id, weight, attribute, etc. from `Edges` object, refer to [API](graph_query.md). In GSL, the edge traversal reference is `g.E()`. <br />
 
 #### Example<br />
 

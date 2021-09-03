@@ -6,7 +6,7 @@
    :maxdepth: 2
    :caption: Contents:
 
-   graph_query_cn
-   graph_traverse_cn
-   graph_sampling_cn
-   negative_sampling_cn
+   graph_query
+   graph_traverse
+   graph_sampling
+   negative_sampling

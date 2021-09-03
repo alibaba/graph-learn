@@ -6,10 +6,10 @@ Tensorflow
    :maxdepth: 2
    :caption: Contents:
 
-   tf_data_layer_en
-   tf_model_layer_en
-   tf_loss_en
-   tf_config_en
-   tf_model_example_en
+   tf_data_layer
+   tf_model_layer
+   tf_loss
+   tf_config
+   tf_model_example
    k8s
-   tf_custom_model_tutorial_en
+   tf_custom_model_tutorial

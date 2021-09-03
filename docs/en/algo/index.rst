@@ -6,6 +6,6 @@ GNN Models
    :maxdepth: 2
    :caption: Contents:
 
-   gnn_programming_model_en
+   gnn_programming_model
    tf/index
    torch/index

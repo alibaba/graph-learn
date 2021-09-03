@@ -95,7 +95,7 @@ GL目前已支持以下几种采样策略，对应产生`NeighborSampler`对象�
 | random_without_replacement | 无放回随机采样，邻居数不够时，参考填充规则 |
 | topk | 返回边权重topK的邻居，邻居数不够时，参考填充规则 |
 | in_degree | 以顶点入度为概率采样 |
-| full | 返回全部的邻居，此时expand_factor参数不起作用，结果对象为SparseNodes或SparseEdges，对象描述详见“[数据查询](graph_query_cn.md#FPU74)” |
+| full | 返回全部的邻居，此时expand_factor参数不起作用，结果对象为SparseNodes或SparseEdges，对象描述详见“[数据查询](graph_query.md#FPU74)” |
 
 
 <br />填充规则：当采样要求的数据不足时，需要以某种方式填充返回结果。默认情况下，用`default_neighbor_id`填充补齐不足的`id`，`default_neighbor_id`默认为0，可以通过`gl.set_default_neighbor_id(xx)`来设置。如要循环填充，即循环使用已有邻居id而非`default_neighbor_id`，则设置填充模式`gl.CIRCULAR`，`gl.set_padding_mode(gl.CIRCULAR)`。

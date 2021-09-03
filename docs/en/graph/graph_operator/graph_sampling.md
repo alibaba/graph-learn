@@ -87,7 +87,7 @@ GL currently has support for the following sampling strategies, corresponding to
 | random | random_with_replacement |
 | topk | Return the neighbors with edge weight topK, if there are not enough neighbors, refer to the padding rule.
 | in_degree | Probability sampling by vertex degree.
-| full | Returns all neighbors, the expand_factor parameter does not work, the result object is SparseNodes or SparseEdges, see "[graph query](graph_query_en.md)" for the object description.
+| full | Returns all neighbors, the expand_factor parameter does not work, the result object is SparseNodes or SparseEdges, see "[graph query](graph_query.md)" for the object description.
 
 
 <br />Padding rules: When there is not enough data for the sampling request, the returned result needs to be filled in some way. By default, `default_neighbor_id` is used to fill in the insufficient `id`. `default_neighbor_id` defaults to 0 and can be set by `gl.set_default_neighbor_id(xx)`. To loop padding, i.e. to loop existing neighbor ids instead of `default_neighbor_id`, set the padding mode `gl.CIRCULAR`, `gl.set_padding_mode(gl.CIRCULAR)`.

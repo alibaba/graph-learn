@@ -39,7 +39,7 @@ A `Record` contains several columns described by **Schema**.
 Each column value may be in type of `Int32`, `Int64`, `Float`, `Double` or `String`.
 
 The raw graph data will be placed in **StructuredAccessFile**s, **GL** will load it and build graph index.
-Refer [HERE](graph/data_loader_cn.md) for more supported raw data formats.
+Refer [HERE](graph/data_loader.md) for more supported raw data formats.
 
 The **GetRecordCount()** interface in file system should return the size in records for a **StructuredAccessFile**.
 
@@ -61,4 +61,4 @@ Each file system should has a unique scheme, such as ```hdfs://```.
 REGISTER_FILE_SYSTEM("scheme", MyFileSystem);
 ```
 
-After registration, you can use such a file path when building [Graph](graph/graph_object_cn.md).
+After registration, you can use such a file path when building [Graph](graph/graph_object.md).

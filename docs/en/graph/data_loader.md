@@ -151,7 +151,7 @@ src_id:int64 dst_id:int64 weight:float feature:string
 0 9 0.097545 yellow:0:s2:10:0.1:0.5
 ```
 
-<br />With a local file as the data source, you can use the file path directly in the script. See the next chapter "[graph object](graph_object_en.md)" for details. <br />
+<br />With a local file as the data source, you can use the file path directly in the script. See the next chapter "[graph object](graph_object.md)" for details. <br />
 
 
 ## User API
@@ -289,7 +289,7 @@ user_node_decoder = gl.Decoder(attr_types=["float", "float", "float"])
 edge_decoder = gl.Decoder(weighted=True)
 ```
 
-<br />After constructing Decoder for each data source, add the data source to the graph and specify the corresponding Decoder, see [graph object](graph_object_en.md) for details.
+<br />After constructing Decoder for each data source, add the data source to the graph and specify the corresponding Decoder, see [graph object](graph_object.md) for details.
 
 ### Decoder and NN models combined
 #### attr_types, attr_dims

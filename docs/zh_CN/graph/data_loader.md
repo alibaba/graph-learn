@@ -152,7 +152,7 @@ src_id:int64  dst_id:int64  weight:float  feature:string
 0 9 0.097545  yellow:0:s2:10:0.1:0.5
 ```
 
-<br />通过本地文件作为数据源，可以直接在脚本中使用文件路径。详见下一章“[图对象](graph_object_cn.md)”。<br />
+<br />通过本地文件作为数据源，可以直接在脚本中使用文件路径。详见下一章“[图对象](graph_object.md)”。<br />
 
 <a name="mzVG6"></a>
 
@@ -294,7 +294,7 @@ user_node_decoder = gl.Decoder(attr_types=["float", "float", "float"])
 edge_decoder = gl.Decoder(weighted=True)
 ```
 
-<br />对每一个数据源构建完Decoder之后，在图中加入数据源，并指定对应的Decoder，详见[图对象](graph_object_cn.md) 。
+<br />对每一个数据源构建完Decoder之后，在图中加入数据源，并指定对应的Decoder，详见[图对象](graph_object.md) 。
 
 ### Decoder和NN模型结合
 #### attr_types, attr_dims

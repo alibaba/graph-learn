@@ -34,7 +34,7 @@ Return:
 """
 ```
 
-<br />通过`Nodes`对象获取具体的值，如id、weight、attribute等，参考[API](graph_query_cn.md)。在GSL中，顶点遍历参考`g.V()`。<br />
+<br />通过`Nodes`对象获取具体的值，如id、weight、attribute等，参考[API](graph_query.md)。在GSL中，顶点遍历参考`g.V()`。<br />
 
 <a name="aNB50"></a>
 #### 示例
@@ -117,7 +117,7 @@ Return:
 """
 ```
 
-<br />通过`Edges`对象获取具体的值，如id、weight、attribute等，参考[API](graph_query_cn.md#FPU74)。在GSL中，边遍历参考`g.E()`。<br />
+<br />通过`Edges`对象获取具体的值，如id、weight、attribute等，参考[API](graph_query.md#FPU74)。在GSL中，边遍历参考`g.E()`。<br />
 
 <a name="RVPmZ"></a>
 #### 示例<br />

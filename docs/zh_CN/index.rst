@@ -11,11 +11,11 @@ Welcome to GraphLearn's documentation!
    :caption: Contents:
 
 
-   install_cn
-   quick_start_cn
+   install
+   quick_start
    graph/index
    algo/index
-   global_config_cn
+   global_config
    operator
    other_source
 
