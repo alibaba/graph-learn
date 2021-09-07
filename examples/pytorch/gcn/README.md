@@ -9,14 +9,6 @@ to a list of pyG `Data` objects. Then, we use the `PyGDataLoader` to merge the l
 of `Data` to pyG `Batch` object. Finally, we implement the sampling-based 
 `GCN` based on pyG `GCNConv`.
 
-
-## Script arguments (partial)
-
-| Args       | Description                                                        | Default      |
-| ---------- | ------------------------------------------------------------------ | ------------ |
-| client_num | Set to value bigger than zero to enable multi-processing dataload. | 0 (int)      |
-| local_mode | Graph learn init use $PWD/tracker_path                             | False (bool) |
-
 ## How to run
 ### Supervised node classification.
 1. Prepare data
@@ -32,3 +24,7 @@ of `Data` to pyG `Batch` object. Finally, we implement the sampling-based
     cd ../pytorch/gcn/
     python train.py
     ```
+3. Training with pytorch DDP
+  ```
+  python -m torch.distributed.launch --use_env train.py --ddp
+  ```

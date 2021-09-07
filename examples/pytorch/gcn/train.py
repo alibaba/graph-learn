@@ -57,6 +57,7 @@ def load_graph(args):
   dataset_folder = args.dataset_folder
   node_type = 'item'
   edge_type = 'relation'
+  # shoud be split when distributed training.
   node_path = dataset_folder + "node_table"
   edge_path = dataset_folder + "edge_table"
   train_path = dataset_folder + "train_table"
@@ -146,11 +147,7 @@ def run(args):
     thg.set_client_num(args.client_num)
     thg.launch_server(g)
   else:
-    if args.local_mode:
-      tracker_path = './tracker_path/'
-      g.init(task_index=args.rank, task_count=args.world_size, tracker=tracker_path)
-    else:
-      g.init(task_index=args.rank, task_count=args.world_size)
+    g.init(task_index=args.rank, task_count=args.world_size)
 
   # TODO(baole): This is an estimate and an accurate value will be needed from graphlearn.
   length_per_worker = args.train_length // args.train_batch_size // args.world_size
@@ -210,9 +207,10 @@ if __name__ == "__main__":
   argparser.add_argument('--drop_rate', type=float, default=0.0)
   argparser.add_argument('--learning_rate', type=float, default=0.01)
   argparser.add_argument('--epoch', type=int, default=60)
-  argparser.add_argument('--client_num', type=int, default=0)
-  argparser.add_argument('--ddp', type=bool, default=True)
-  argparser.add_argument('--local_mode', type=bool, default=False)
+  argparser.add_argument('--client_num', type=int, default=0,
+                         help="Set to value bigger than zero to enable multi-processing dataload.")
+  argparser.add_argument('--ddp', action='store_true', 
+                         help="whether to use ddp")
   args = argparser.parse_args()
 
   init_env(args)
