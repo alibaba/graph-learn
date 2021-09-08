@@ -32,7 +32,7 @@ num_nodes = graph['num_nodes'] # 235868
 node_feat = graph['node_feat'] # shape(235868, 128)
 
 # dump to disk
-root = 'ogbl_collab'
+root = 'ogbl_collab/'
 train_table = root + 'ogbl_collab_train_edge'
 val_table = root + 'ogbl_collab_val_edge'
 test_table = root + 'ogbl_collab_test_edge'
