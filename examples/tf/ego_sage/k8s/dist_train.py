@@ -114,10 +114,12 @@ def save_node_embedding(graph, model):
 def main():
   gl.set_tracker_mode(0)
   gl_cluster, tf_cluster, job_name, task_index = gl.get_cluster()
+  ps_hosts = tf_cluster.get("ps")
+  gl_cluster["server"] = ",".join([host.split(":")[0] + ":8889" for host in ps_hosts])
   worker_count = len(tf_cluster["worker"])
 
   # global settings.
-  tfg.conf.emb_max_partitions = len(tf_cluster.get("ps", 1)) # embedding varible partition num.
+  tfg.conf.emb_max_partitions = len(ps_hosts) # embedding varible partition num.
 
   g = load_graph(task_index)
 
