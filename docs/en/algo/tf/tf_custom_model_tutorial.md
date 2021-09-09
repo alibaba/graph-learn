@@ -2,7 +2,7 @@
 
 ### GNNs
 #### Quick start
-If you want to quickly try the already implemented algorithm, please modify it according to [**examples**](../examples/tf), you mainly need to modify the data Decoder configuration for composition, configure reasonable arguments according to your own data and modify the graph sampling of GSL.  For EgoGraph based GNNs, we provide three examples **ego_sage**, **ego_gat**, **ego_bipartite_sage**, and for SubGraph based GNNs, we provide two examples **sage** and **seal**. See README.md for details.
+If you want to quickly try the already implemented algorithm, please modify it according to [**examples**](https://github.com/alibaba/graph-learn/tree/master/examples/tf), you mainly need to modify the data Decoder configuration for composition, configure reasonable arguments according to your own data and modify the graph sampling of GSL.  For EgoGraph based GNNs, we provide three examples **ego_sage**, **ego_gat**, **ego_bipartite_sage**, and for SubGraph based GNNs, we provide two examples **sage** and **seal**. See README.md for details.
 ​
 
 ### Customizing the model
@@ -13,7 +13,7 @@ For SubGraph, you need to add a new Conv layer and the corresponding model.
 ### Adding new data
 If you find that the current data format does not meet your needs, you need to modify to the data layer, including Dataset, EgoGraph, SubGraph/BatchGraph and other interfaces, to add the data you need. We are also continuing to improve EgoGraph and SubGraph/BatchGraph, hoping to achieve better compatibility.
 
-In addition, for more complex data, you can directly use the Data dict form, get the query converted tensor and organize the appropriate format by yourself.
+In addition, for more complex data, you can directly use the Data dict form, get the query converted tensor and organize the appropriate format by yourself. The example of [RGCN](https://github.com/alibaba/graph-learn/tree/master/examples/tf/ego_rgcn) is implemented by Data dict.
 ​
 ### Adding a sampling operator
 If you need to add sampling operators or other graph manipulation operators, you need to follow the already existing sampler for C++ Op development, please contact us if you have any questions.

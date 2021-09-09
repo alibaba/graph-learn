@@ -2,7 +2,7 @@
 
 ### GNNs
 #### 快速开始
-如果你想快速尝试已经封装的算法，请根据[**examples**](../examples/tf)进行修改，主要需要修改构图时的数据Decoder配置，根据你自己的数据配置合理的参数，以及GSL的图采样逻辑。对EgoGraph based GNNs, 我们提供了**ego_sage**, **ego_gat**, **ego_bipartite_sage**三个示例，对于SubGraph based GNNs, 我们提供了**sage**和**seal**两个示例。详见README.md。
+如果你想快速尝试已经封装的算法，请根据[**examples**](https://github.com/alibaba/graph-learn/tree/master/examples/tf)进行修改，主要需要修改构图时的数据Decoder配置，根据你自己的数据配置合理的参数，以及GSL的图采样逻辑。对EgoGraph based GNNs, 我们提供了**ego_sage**, **ego_gat**, **ego_bipartite_sage**三个示例，对于SubGraph based GNNs, 我们提供了**sage**和**seal**两个示例。详见README.md。
 ​
 
 ### 自定义模型
@@ -14,7 +14,7 @@
 如果你发现目前的数据格式不能满足你的需求，你需要修改到数据层，包括Dataset, EgoGraph, SubGraph/BatchGraph等接口，将自己需要的数据加进去。我们也在持续完善EgoGraph和SubGraph/BatchGraph，希望能够做到更好的兼容性。
 ​
 
-此外，对于较为复杂的数据，可以直接使用Data dict的形式，获得query转换后的tensor后自行组织合适的格式。RGCN的示例就是通过Data dict的形式实现。
+此外，对于较为复杂的数据，可以直接使用Data dict的形式，获得query转换后的tensor后自行组织合适的格式。[RGCN](https://github.com/alibaba/graph-learn/tree/master/examples/tf/ego_rgcn)的示例就是通过Data dict实现。
 ​
 
 ### 新增采样算子

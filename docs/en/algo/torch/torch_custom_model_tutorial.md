@@ -96,4 +96,4 @@ If you don't want to use pyG, you can also manipulate the data based on the dict
 
 
 ### Example
-The full example is available at [examples/pytorch](. /examples/pytorch).
+The full example is available at [examples/pytorch](https://github.com/alibaba/graph-learn/tree/master/examples/pytorch).
