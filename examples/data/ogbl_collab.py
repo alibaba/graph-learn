@@ -14,6 +14,7 @@
 # =============================================================================
 """ogbl_collab dataset.
 """
+import os
 import numpy as np
 from ogb.linkproppred import LinkPropPredDataset
 
@@ -33,6 +34,8 @@ node_feat = graph['node_feat'] # shape(235868, 128)
 
 # dump to disk
 root = 'ogbl_collab/'
+if not os.path.exists(root):
+  os.mkdir(root)
 train_table = root + 'ogbl_collab_train_edge'
 val_table = root + 'ogbl_collab_val_edge'
 test_table = root + 'ogbl_collab_test_edge'
