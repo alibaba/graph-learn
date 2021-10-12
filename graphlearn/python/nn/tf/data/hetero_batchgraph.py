@@ -34,41 +34,39 @@ class HeteroBatchGraph(HeteroSubGraph):
     edge_index_dict: concatenated edge_index_dict of `HeteroSubGraph`s 
       according keys.
     nodes_dict: A dict of `Data`/Tensor object denoting concatenated nodes.
-    node_schema: A list of (name, Decoder) tuple to describe feature of each
+    node_schema_dict: A dict of {name: Decoder} to describe feature of each
       type of node.
     graph_node_offsets_dict: A dict, keys indicate the type of nodes, 
       values indicate the offset of each HeteroSubgraph nodes.
     edges_dict: A dict of `Data`/Tensor object denoting concatenated edges.
-    edge_schema: A list of (name, Decoder) tuple to describe feature of each
+    edge_schema_dict: A dict of {name: Decoder} to describe feature of each
       type of edge.
     graph_edge_offsets_dict: A dict, keys indicate the type of edges, 
       values indicate the offset of each HeteroSubgraph edges.
   """
-  def __init__(self, edge_index_dict, nodes_dict, node_schema, 
-               graph_node_offsets_dict, edges_dict=None, edge_schema=None, 
+  def __init__(self, edge_index_dict, nodes_dict, node_schema_dict, 
+               graph_node_offsets_dict, edges_dict=None, edge_schema_dict=None, 
                graph_edge_offsets_dict=None, **kwargs):
     super(HeteroBatchGraph, self).__init__(edge_index_dict, nodes_dict)
     self._edge_index_dict = edge_index_dict
     self._nodes_dict = nodes_dict
-    self._node_schema = node_schema
+    self._node_schema_dict = node_schema_dict
     self._edges_dict = edges_dict
-    self._edge_schema = edge_schema
+    self._edge_schema_dict = edge_schema_dict
     self._graph_node_offsets_dict = graph_node_offsets_dict
     self._graph_edge_offsets_dict = graph_edge_offsets_dict
     for key, item in kwargs.items():
       self[key] = item
 
-  @property
-  def num_nodes(self, type):
-    nodes = self._nodes_dict[type]
-    if isinstance(nodes[type].ids, np.ndarray):
+  def num_nodes(self, node_type):
+    nodes = self._nodes_dict[node_type]
+    if isinstance(nodes.ids, np.ndarray):
       return nodes.ids.size
     else:
       return nodes.ids.shape.as_list()[0]
 
-  @property
-  def num_edges(self, type):
-    edge_index = self._edge_index_dict[type]
+  def num_edges(self, edge_type):
+    edge_index = self._edge_index_dict[edge_type]
     if isinstance(edge_index, np.ndarray):
       return edge_index.shape[1]
     else:
@@ -93,12 +91,12 @@ class HeteroBatchGraph(HeteroSubGraph):
     return self._graph_edge_offsets_dict
 
   @property
-  def node_schema(self):
-    return self._node_schema
+  def node_schema_dict(self):
+    return self._node_schema_dict
 
   @property
-  def edge_schema(self):
-    return self._edge_schema
+  def edge_schema_dict(self):
+    return self._edge_schema_dict
 
   def __getitem__(self, key):
     return getattr(self, key, None)
@@ -113,20 +111,20 @@ class HeteroBatchGraph(HeteroSubGraph):
       transform_func: A function that takes in an `HeteroBatchGraph` object 
         and returns a transformed version. 
     """
-    if self.node_schema is None:
+    if self.node_schema_dict is None:
       return self
     node_tensor_dict = {}
-    for type, nodes in self.nodes_dict.items():
-      vertex_handler = FeatureHandler(self.node_schema[type][0],
-                                      self.node_schema[type][1].feature_spec)
+    for node_type, nodes in self.nodes_dict.items():
+      vertex_handler = FeatureHandler(node_type,
+                                      self.node_schema_dict[node_type].feature_spec)
       node = Data(nodes.ids, 
                   nodes.int_attrs, 
                   nodes.float_attrs, 
                   nodes.string_attrs)
       node_tensor = vertex_handler.forward(node)
-      node_tensor_dict[type] = node_tensor
+      node_tensor_dict[node_type] = node_tensor
     graph = HeteroBatchGraph(self.edge_index_dict, node_tensor_dict, 
-                             self.node_schema, self.graph_node_offsets_dict)
+                             self.node_schema_dict, self.graph_node_offsets_dict)
     return graph
 
   def to_graphs(self):
@@ -146,11 +144,11 @@ class HeteroBatchGraph(HeteroSubGraph):
     """
     # TODO(baole): support edges.
     flatten_list = []
-    for type in edge_types:
-      flatten_list.append(self.edge_index_dict[type])
+    for edge_type in edge_types:
+      flatten_list.append(self.edge_index_dict[edge_type])
     # nodes
-    for type in node_types:
-      nodes = self.nodes_dict[type]
+    for node_type in node_types:
+      nodes = self.nodes_dict.get(node_type)
       if nodes.int_attrs is not None:
         flatten_list.append(nodes.int_attrs)
       if nodes.float_attrs is not None:
@@ -158,9 +156,8 @@ class HeteroBatchGraph(HeteroSubGraph):
       if nodes.string_attrs is not None:
         flatten_list.append(nodes.string_attrs)
       flatten_list.append(nodes.ids)
-    # graph_node_offsets
-    for type in node_types:
-      flatten_list.append(self.graph_node_offsets_dict[type])
+      # graph_node_offsets
+      flatten_list.append(self.graph_node_offsets_dict[node_type])
     return flatten_list
     
   @classmethod
@@ -183,29 +180,29 @@ class HeteroBatchGraph(HeteroSubGraph):
   @classmethod
   def _build_graph_node_offsets(cls, graphs):
     offsets_dict = {}
-    for type in graphs[0].node_types:
+    for node_type in graphs[0].node_types:
       offsets = []
       offset = 0
       for graph in graphs:
         offsets.append(offset)
-        offset += graph.num_nodes(type)
-      offsets_dict[type] = np.array(offsets, dtype=np.int64)
+        offset += graph.num_nodes(node_type)
+      offsets_dict[node_type] = np.array(offsets, dtype=np.int64)
     return offsets_dict
 
   @classmethod
   def _build_graph_edge_offsets(cls, graphs):
     offsets_dict = {}
-    for type in graphs[0].edge_types:
+    for edge_type in graphs[0].edge_types:
       offsets = []
       offset = 0
       for graph in graphs:
         offsets.append(offset)
-        offset += graph.num_edges(type)
-      offsets_dict[type] = np.array(offsets, dtype=np.int64)
+        offset += graph.num_edges(edge_type)
+      offsets_dict[edge_type] = np.array(offsets, dtype=np.int64)
     return offsets_dict
 
   @classmethod
-  def _build_data(cls, graphs, type='node'):
+  def _build_data(cls, graphs, data_type='node'):
     def list_append(list, item):
       if item is not None:
         list.append(item)
@@ -217,7 +214,7 @@ class HeteroBatchGraph(HeteroSubGraph):
       return None
 
     #TODO(baole): support other labels and weights.
-    if type != 'node':
+    if data_type != 'node':
       return None
 
     data_dict = {}
@@ -227,7 +224,7 @@ class HeteroBatchGraph(HeteroSubGraph):
       float_attrs_list = []
       string_attrs_list = []
       for graph in graphs:
-        item = graph.nodes[node_type]
+        item = graph.nodes_dict[node_type]
         # flatten format.
         ids_list = list_append(ids_list, item.ids)
         int_attrs_list = list_append(int_attrs_list, item.int_attrs)
@@ -243,15 +240,15 @@ class HeteroBatchGraph(HeteroSubGraph):
   @classmethod
   def _build_edge_index(cls, graphs):
     edge_index_dict = {}
-    for type in graphs[0].edge_types:
+    for edge_type in graphs[0].edge_types:
       edge_index = []
       src_offset, dst_offset = 0, 0
       for graph in graphs:
-        edge_index.append(np.array([graph.edge_index_dict[type][0] + src_offset,
-                                    graph.edge_index_dict[type][1] + dst_offset]))
-        src_offset += graph.num_nodes(type[0])
-        dst_offset += graph.num_nodes(type[2])
-      edge_index_dict[type] = np.concatenate(edge_index, axis=1)
+        edge_index.append(np.array([graph.edge_index_dict[edge_type][0] + src_offset,
+                                    graph.edge_index_dict[edge_type][1] + dst_offset]))
+        src_offset += graph.num_nodes(edge_type[0])
+        dst_offset += graph.num_nodes(edge_type[2])
+      edge_index_dict[edge_type] = np.concatenate(edge_index, axis=1)
     return edge_index_dict
 
   @classmethod
@@ -263,6 +260,9 @@ class HeteroBatchGraph(HeteroSubGraph):
       edge_schema: A list of (name, Decoder) tuple used to describe the edges' feature.
     Returns:
       A `HeteroBatchGraph` object in tensor format.
+
+    Note that the order of the parsed results must be the same as the order of the previous 
+    `flatten` function, so here we use node_schema list format instead of dict format.
     """
     cursor = [0]
     def next(tensors):
@@ -299,13 +299,16 @@ class HeteroBatchGraph(HeteroSubGraph):
     edge_index_dict = {}
     node_tensor_dict = {}
     graph_node_offsets_dict = {}
+    node_schema_dict, edge_schema_dict = {}, {}
     for item in edge_schema:
       edge_index_dict[item[0]] = next(tensors)
+      edge_schema_dict[item[0]] = item[1]
     for item in node_schema:
       node_tensor_dict[item[0]] = build_node_from_tensors(item, tensors)
       graph_node_offsets_dict[item[0]] = next(tensors)
+      node_schema_dict[item[0]] = item[1]
 
-    #TODO(baole.abl): support Edge.
+    #TODO(baole): support Edge.
     graph = HeteroBatchGraph(edge_index_dict, node_tensor_dict, 
-      node_schema, graph_node_offsets_dict)
+      node_schema_dict, graph_node_offsets_dict)
     return graph

@@ -28,7 +28,8 @@ def induce_graph_with_edge(src_nodes, dst_nodes,
     src_nbrs: The src_nodes' full neighbors with 1D shape.
     dst_nbrs: The dst_nodes' full neighbors with 1D shape.
   Returns:
-    SubGraphs.
+    SubGraphs. The nodes are concatenated in the following order:
+    [src_node, dst_node, src_nbrs, dst_nbrs].
   """
   subgraphs = []
   src_offset, dst_offset = 0,0

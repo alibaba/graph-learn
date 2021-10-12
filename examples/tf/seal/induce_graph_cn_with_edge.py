@@ -28,6 +28,9 @@ def induce_graph_cn_with_edge(src_nodes, dst_nodes,
       [batch_size, 1] for negative sample.
     src_nbrs: The src_nodes' full neighbors with 1D shape.
     dst_nbrs: The dst_nodes' full neighbors with 1D shape.
+  Returns:
+    SubGraphs. The nodes are concatenated in the following order:
+    [src_node, dst_node, src_nbrs, dst_nbrs].
   """
   subgraphs = []
   src_offset, dst_offset = 0,0

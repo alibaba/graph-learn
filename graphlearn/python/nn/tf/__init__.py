@@ -42,6 +42,7 @@ from graphlearn.python.nn.tf.data.batchgraph import BatchGraph
 from graphlearn.python.nn.tf.data.hetero_batchgraph import HeteroBatchGraph
 from graphlearn.python.nn.tf.layers.gat_conv import GATConv
 from graphlearn.python.nn.tf.layers.gcn_conv import GCNConv
+from graphlearn.python.nn.tf.layers.hetero_conv import HeteroConv
 from graphlearn.python.nn.tf.layers.sage_conv import SAGEConv
 from graphlearn.python.nn.tf.layers.sub_conv import SubConv
 from graphlearn.python.nn.tf.model.gat import GAT

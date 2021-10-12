@@ -47,16 +47,14 @@ class HeteroSubGraph(object):
     for key, item in kwargs.items():
       self[key] = item
 
-  @property
-  def num_nodes(self, type):
-    if isinstance(self._nodes_dict[type], Data):
-      return self._nodes_dict[type].ids.size
+  def num_nodes(self, node_type):
+    if isinstance(self._nodes_dict[node_type], Data):
+      return self._nodes_dict[node_type].ids.size
     else:
-      return self._nodes_dict[type].size
+      return self._nodes_dict[node_type].size
 
-  @property
-  def num_edges(self, type):
-    return self._edge_index_dict[type].shape[1]
+  def num_edges(self, edge_type):
+    return self._edge_index_dict[edge_type].shape[1]
 
   @property
   def nodes_dict(self):

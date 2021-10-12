@@ -30,8 +30,8 @@ class SubConv(Module):
     """
     Args:
       edge_index: A Tensor. Edge index of subgraph.
-      node_vec: A Tensor. node feature embeddings with shape
-      [batchsize, dim].
+      node_vec: A Tensor or a list of two Tensors(for heterogeneous graph) 
+      which means node embeddings with shape [batchsize, dim].
     Returns:
       A tensor. output embedding with shape [batch_size, output_dim].
     """

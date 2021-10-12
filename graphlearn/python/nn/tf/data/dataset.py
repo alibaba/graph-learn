@@ -50,10 +50,14 @@ class Dataset(object):
       tf.dtype and tf.TensorShape instance to describe the tensor format 
       types and shapes of additional data.
     window: dataset capacity.
+    edge_types: A list of edge types for heterogeneous subgraph. It must be 
+      specified when the query does not fetch an edge of a certain type but 
+      the induced edge_index needs it.
   """
   def __init__(self, query, window=5,                
                induce_func=None,
-               induce_additional_spec=None, 
+               induce_additional_spec=None,
+               edge_types=None, 
                **kwargs):
     self._dag = query
     self._induce_func = induce_func
@@ -61,6 +65,7 @@ class Dataset(object):
     self._additional_keys = []
     if self._additional_spec is not None:
       self._additional_keys = self._additional_spec.keys()
+    self.edge_types = edge_types if edge_types is not None else self._dag.edge_types
     self._rds = RawDataset(query, window)
     self._iterator = self._make_iterator()
     # Here we call tensorflow `Iterator.get_next()` to get values 
@@ -144,9 +149,9 @@ class Dataset(object):
     edge_schema = None
     neg_graph = None
     graph = BatchGraph
-    if len(self._dag.node_types) > 1 or len(self._dag.edge_types) > 1: # HeteroBatchGraph
+    if len(self._dag.node_types) > 1 or len(self.edge_types) > 1: # HeteroBatchGraph
       node_schema = [(x, self._dag.graph.get_node_decoder(x)) for x in self._dag.node_types]
-      edge_schema = [(x, None) for x in self._dag.edge_types]
+      edge_schema = [(x, None) for x in self.edge_types]
       graph = HeteroBatchGraph
     pos_graph = graph.from_tensors(self._values[0:self.pos_size], 
                                    node_schema, edge_schema,
@@ -220,11 +225,11 @@ class Dataset(object):
         else: # HeteroSubGraph.
           pos_batchgraph = HeteroBatchGraph.from_graphs(subgraphs)
           flatten_list = pos_batchgraph.flatten(self._dag.node_types, 
-                                                self._dag.edge_types)
+                                                self.edge_types)
           if neg_subgraphs is not None:
             neg_batchgraph = HeteroBatchGraph.from_graphs(neg_subgraphs)
             flatten_list.extend(neg_batchgraph.flatten(self._dag.node_types, 
-                                                       self._dag.edge_types))
+                                                       self.edge_types))
         yield tuple(flatten_list)
       except OutOfRangeError:
         break
@@ -246,7 +251,7 @@ class Dataset(object):
   def _batchgraph_types_and_shapes(self):
     output_types, output_shapes = tuple(), tuple()
     # edge index
-    for edge in self._dag.edge_types:
+    for edge in self.edge_types:
       output_types += tuple([tf.int32])
       output_shapes += tuple([tf.TensorShape([2, None])])
     # nodes
