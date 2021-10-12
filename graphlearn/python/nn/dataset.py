@@ -52,7 +52,10 @@ class Dataset(object):
 
     self._masks = OrderedDict()
     for alias in query.list_alias():
-      self._masks[alias] = self._get_mask(alias)
+      dag_node = self._dag.get_node(alias)
+      self._masks[alias] = self.get_mask(dag_node.decoder, 
+                                         is_edge = isinstance(dag_node, TraverseEdgeDagNode),
+                                         is_sparse = dag_node.sparse)
 
   def __iter__(self):
     def iterator():
@@ -117,7 +120,7 @@ class Dataset(object):
     return self.build_data_dict(self.get_flatten_values())
 
   def get_subgraphs(self, induce_func=induce_graph_with_edge):
-    """Induce `SubGraph`s using the `induce_func`.
+    """Induce `SubGraph`/`HeteroSubGraph` using the `induce_func`.
     Args:
       induce_func: an induce `SubGraph` function which takes the query result
       as input and induce the `SubGraph`s.
@@ -174,7 +177,7 @@ class Dataset(object):
         offsets=offsets, dst_ids=dst_ids)
     return data_dict
 
-  def _get_mask(self, alias):
+  def get_mask(self, node_decoder, is_edge=False, is_sparse=False):
     """The masks for features, ids and offsets.
     feat_masks: a list of boolean, each element indicates that data
     has int_attrs, float_attrs, string_attrs, lables, weights.
@@ -182,14 +185,11 @@ class Dataset(object):
     sparse_masks: one boolean element list that indicates whether the object 
     is sparse.
     Args:
-      alias (str): alias in GSL query.
+      node_decoder: The given node_decoder.
 
     Returns:
       (list, list, list): Masks for features, ids and offsets.
     """
-    node = self._dag.get_node(alias)
-    node_decoder = node.decoder
-
     feats = ('int_attr_num', 'float_attr_num', 'string_attr_num',
              'labeled', 'weighted')
     feat_masks = [False] * len(feats)
@@ -201,21 +201,20 @@ class Dataset(object):
         feat_masks[idx] = True
 
     id_masks = [True, False]  # Default: (ids, None), else: (src_ids, dst_ids)
-    if isinstance(node, TraverseEdgeDagNode):
+    if is_edge:
       id_masks = [True, True]
-    
-    sparse_masks = [False]
-    if node.sparse:
+    sparse_masks = [False]	
+    if is_sparse:		
       sparse_masks[-1] = True
 
     return feat_masks, id_masks, sparse_masks
 
   def _reformat_features(self,
-                           int_attrs,
-                           float_attrs,
-                           string_attrs,
-                           labels,
-                           weights):
+                         int_attrs,
+                         float_attrs,
+                         string_attrs,
+                         labels,
+                         weights):
     """ Reformats the SEED Nodes/Edges traversed from graph store, or the
     NEIGHBOR Nodes/Edges sampled from graph store.
     For SEED:

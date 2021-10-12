@@ -70,14 +70,6 @@ class SubGraph(object):
     keys = [key for key in keys if key[:2] != '__' and key[-2:] != '__']
     return keys
 
-  def apply(self, func):
-    """Applies the function `func` to all attributes.
-    """
-    for k, v in self.__dict__.items():
-      if v is not None and k[:2] != '__' and k[-2:] != '__':
-        self.__dict__[k] = func(v)
-    return self
-
   def __getitem__(self, key):
     return getattr(self, key, None)
 

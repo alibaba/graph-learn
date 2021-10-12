@@ -16,6 +16,7 @@
 from graphlearn.python.nn.data import Data
 from graphlearn.python.nn.dataset import Dataset
 from graphlearn.python.nn.subgraph import SubGraph
+from graphlearn.python.nn.hetero_subgraph import HeteroSubGraph
 
 # Special dunders that we choose to export:
 _exported_dunders = set([

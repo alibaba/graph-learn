@@ -33,8 +33,10 @@ class Dag(object):
 
     self.sink_node = None
     self.graph = graph
+    self.topo = self.graph.get_topology()
     self.value_func = None
     self._alias_to_index = OrderedDict()
+    self._edge_types, self._node_types = [], []
 
     self._ready = False
 
@@ -48,11 +50,23 @@ class Dag(object):
     return node
 
   def add_node(self, alias, node, temp=False):
+    def unique_append(item_list, item):
+      if item not in item_list:
+        item_list.append(item)
+
     if alias in self._alias_to_index.keys():
       raise ValueError("alias {} already existed.".format(alias))
     self._nodes[alias] = node
     if not temp:
       self._ud_alias.append(alias)
+      dag_node_type = node.type
+      if self.topo.is_exist(dag_node_type):
+        unique_append(self._edge_types, 
+          (self.topo.get_src_type(dag_node_type), 
+           dag_node_type, 
+           self.topo.get_dst_type(dag_node_type)))
+      else:
+        unique_append(self._node_types, dag_node_type)
 
   def list_alias(self):
     """ Return the list alias of user defined.
@@ -70,6 +84,18 @@ class Dag(object):
   @property
   def dag_def(self):
     return self._dag_def
+
+  @property
+  def node_types(self):
+    """ Return all node types in this Dag."""
+    return self._node_types
+
+  @property
+  def edge_types(self):
+    """ Return all edge types(a tuple of (src_type, edge_type, dst_type)) 
+    in this Dag.
+    """
+    return self._edge_types
 
   def is_ready(self):
     return self._ready
@@ -93,7 +119,7 @@ class Dag(object):
         self._alias_to_index[alias] = nid
         nid += 1
         pywrap.add_dag_node(self._dag_def, node.node_def)
-
+    
     self._ready = True
 
 dag_name = 0
