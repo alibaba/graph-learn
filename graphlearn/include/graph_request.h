@@ -18,7 +18,10 @@ limitations under the License.
 
 #include <string>
 #include <unordered_map>
+#include <vector>
+
 #include "graphlearn/include/constants.h"
+#include "graphlearn/include/graph_statistics.h"
 #include "graphlearn/include/op_request.h"
 
 namespace graphlearn {
@@ -317,10 +320,7 @@ public:
 class GetCountRequest : public OpRequest {
 public:
   GetCountRequest();
-  explicit GetCountRequest(const std::string& type, bool node = true);
   virtual ~GetCountRequest() = default;
-
-  const std::string& Type() const;
 };
 
 class GetCountResponse : public OpResponse {
@@ -333,10 +333,9 @@ public:
   }
 
   void Swap(OpResponse& right) override;
-
-  void Init();
-  void Set(int32_t count);
-  const int32_t Count() const;
+  void Init(int32_t type_num);
+  void Append(int32_t count);
+  const int32_t* Count() const;
 
 protected:
   void SetMembers() override;
@@ -394,19 +393,23 @@ private:
   Tensor* degrees_;
 };
 
-class GetTopologyRequest : public OpRequest {
+
+class GetStatsRequest : public OpRequest {
 public:
-  GetTopologyRequest() {}
-  virtual ~GetTopologyRequest() = default;
+  GetStatsRequest();
+  virtual ~GetStatsRequest() = default;
 };
 
-class GetTopologyResponse : public OpResponse {
+class GetStatsResponse : public OpResponse {
 public:
-  virtual ~GetTopologyResponse() = default;
+  GetStatsResponse();
+  virtual ~GetStatsResponse() = default;
 
   OpResponse* New() const override {
-    return new GetTopologyResponse;
+    return new GetStatsResponse;
   }
+  void Swap(OpResponse& right) override;
+  void SetCounts(const Counts& counts);
 };
 
 }  // namespace graphlearn

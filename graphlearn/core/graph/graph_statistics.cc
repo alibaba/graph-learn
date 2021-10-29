@@ -1,4 +1,4 @@
-/* Copyright 2020 Alibaba Group Holding Limited. All Rights Reserved.
+/* Copyright 2021 Alibaba Group Holding Limited. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,28 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/include/topology.h"
+#include "graphlearn/include/graph_statistics.h"
 
 namespace graphlearn {
 
-void Topology::Add(const std::string& edge_type,
-                   const std::string& src_type,
-                   const std::string& dst_type) {
+const Counts& GraphStatistics::GetCounts() const {
+  return counts_;
 }
 
-std::string Topology::GetSrcType(const std::string& edge_type) {
-  //TODO
-  return "";
-}
-
-std::string Topology::GetDstType(const std::string& edge_type) {
-  //TODO
-  return "";
-}
-
-std::string Topology::Print() const {
-  //TODO
-  return "";
+void GraphStatistics::AppendCount(const std::string& type, int32_t count){
+  counts_[type].push_back(count);
 }
 
 }  // namespace graphlearn

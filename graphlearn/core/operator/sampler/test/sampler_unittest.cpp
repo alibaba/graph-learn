@@ -155,11 +155,9 @@ TEST_F(SamplerTest, RandomWithoutReplacement) {
   std::unordered_set<int64_t> nbr_set({11, 21});
   const int64_t* neighbor_ids = res->GetNeighborIds();
   // check neighbors of 1
-  for (int32_t i = 0; i < 2; ++i) {
+  for (int32_t i = 0; i < nbr_count; ++i) {
     EXPECT_TRUE(nbr_set.find(neighbor_ids[i]) != nbr_set.end());
-    nbr_set.erase(nbr_set.find(neighbor_ids[i]));
   }
-  EXPECT_TRUE(neighbor_ids[2] == GLOBAL_FLAG(DefaultNeighborId));
 
   // check neighbors of 2, fill with default id
   for (int32_t i = nbr_count; i < batch_size * nbr_count; ++i) {

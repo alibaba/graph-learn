@@ -44,7 +44,7 @@ void init_client_module(py::module& m) {
   DEF_REQ(ConditionalSamplingRequest);
   DEF_REQ(AggregatingRequest);
   DEF_REQ(SubGraphRequest);
-  DEF_REQ(GetCountRequest);
+  DEF_REQ(GetStatsRequest);
   DEF_REQ(GetDegreeRequest);
 
   DEF_RES(GetNodesResponse);
@@ -54,7 +54,7 @@ void init_client_module(py::module& m) {
   DEF_RES(SamplingResponse);
   DEF_RES(AggregatingResponse);
   DEF_RES(SubGraphResponse);
-  DEF_RES(GetCountResponse);
+  DEF_RES(GetStatsResponse);
   DEF_RES(GetDegreeResponse);
 
   // Client
@@ -88,8 +88,8 @@ void init_client_module(py::module& m) {
          CALL_FUNC(SubGraph),
          py::arg("request"),
          py::arg("response"))
-    .def("get_count",
-         CALL_FUNC(GetCount),
+    .def("get_stats",
+         CALL_FUNC(GetStats),
          py::arg("request"),
          py::arg("response"))
     .def("get_degree",
@@ -426,20 +426,18 @@ void init_client_module(py::module& m) {
         },
         py::return_value_policy::reference);
 
-  // GetCount
-  m.def("new_get_count_request",
-        &new_get_count_request,
-        py::return_value_policy::reference,
-        py::arg("type"),
-        py::arg("is_node"));
-
-  m.def("new_get_count_response",
-        &new_get_count_response,
+  // GetStats
+  m.def("new_get_stats_request",
+        &new_get_stats_request,
         py::return_value_policy::reference);
 
-  m.def("get_count",
-        [](GetCountResponse* res) {
-          return get_count(res);
+  m.def("new_get_stats_response",
+        &new_get_stats_response,
+        py::return_value_policy::reference);
+
+  m.def("get_stats",
+        [](GetStatsResponse* res) {
+          return get_stats(res);
         },
         py::return_value_policy::reference);
 

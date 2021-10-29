@@ -94,7 +94,7 @@ DEFINE_INT32_GLOBAL_FLAG(InterThreadNum, 32)
 DEFINE_INT32_GLOBAL_FLAG(IntraThreadNum, 32)
 DEFINE_INT32_GLOBAL_FLAG(PartitionMode, 1)
 DEFINE_INT32_GLOBAL_FLAG(StorageMode, 2)
-DEFINE_INT32_GLOBAL_FLAG(PaddingMode, 0) // 0: Local, 1: Server, 2: Worker
+DEFINE_INT32_GLOBAL_FLAG(PaddingMode, 1) // 0: replic, 1: circular
 DEFINE_INT32_GLOBAL_FLAG(TrackerMode, 1)  // 0: Rpc, 1: FileSystem
 DEFINE_INT64_GLOBAL_FLAG(AverageNodeCount, 10000)
 DEFINE_INT64_GLOBAL_FLAG(AverageEdgeCount, 10000)

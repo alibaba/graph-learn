@@ -719,10 +719,11 @@ TEST_F(GraphOpTest, NodeCountGetter) {
 
   Status s = store.Load(edge_source, node_source);
   EXPECT_TRUE(s.ok());
-
-  std::string node_types[3] = {"user", "item", "movie"};
+  s = store.Build(edge_source, node_source);
+  EXPECT_TRUE(s.ok());
+  
   for (int32_t i = 0; i < 3; ++i) {
-    GetCountRequest* req = new GetCountRequest(node_types[i], true);
+    GetCountRequest* req = new GetCountRequest();
     GetCountResponse* res = new GetCountResponse();
 
     Operator* op = OpFactory::GetInstance()->Create(req->Name());
@@ -730,8 +731,10 @@ TEST_F(GraphOpTest, NodeCountGetter) {
 
     Status s = op->Process(req, res);
     EXPECT_TRUE(s.ok());
-    int32_t count = res->Count();
-    EXPECT_EQ(count, 100);
+    const int32_t* count = res->Count();
+    EXPECT_EQ(count[0], 100);
+    EXPECT_EQ(count[1], 100);
+    EXPECT_EQ(count[2], 100);
     delete res;
     delete req;
   }
@@ -757,10 +760,11 @@ TEST_F(GraphOpTest, EdgeCountGetter) {
 
   Status s = store.Load(edge_source, node_source);
   EXPECT_TRUE(s.ok());
+  s = store.Build(edge_source, node_source);
+  EXPECT_TRUE(s.ok());
 
-  std::string edge_types[3] = {"click", "buy", "watch"};
   for (int32_t i = 0; i < 3; ++i) {
-    GetCountRequest* req = new GetCountRequest(edge_types[i], false);
+    GetCountRequest* req = new GetCountRequest();
     GetCountResponse* res = new GetCountResponse();
 
     Operator* op = OpFactory::GetInstance()->Create(req->Name());
@@ -768,8 +772,10 @@ TEST_F(GraphOpTest, EdgeCountGetter) {
 
     Status s = op->Process(req, res);
     EXPECT_TRUE(s.ok());
-    int32_t count = res->Count();
-    EXPECT_EQ(count, 100);
+    const int32_t* count = res->Count();
+    EXPECT_EQ(count[0], 100);
+    EXPECT_EQ(count[1], 100);
+    EXPECT_EQ(count[2], 100);
     delete res;
     delete req;
   }

@@ -46,12 +46,12 @@ DEFINE_METHOD(GetEdges);
 DEFINE_METHOD(LookupEdges);
 DEFINE_METHOD(GetNodes);
 DEFINE_METHOD(LookupNodes);
-DEFINE_METHOD(GetTopology);
 DEFINE_METHOD(Sampling);
 DEFINE_METHOD(Aggregating);
 DEFINE_METHOD(SubGraph);
 DEFINE_METHOD(GetCount);
 DEFINE_METHOD(GetDegree);
+DEFINE_METHOD(GetStats);
 
 #undef DEFINE_METHOD
 

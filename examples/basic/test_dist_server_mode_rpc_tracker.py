@@ -82,6 +82,7 @@ def main(argv):
     test_edge_iterate(g)
     test_truncated_full_edge_sample(g)
     test_conditional_negtaive_sample(g)
+    test_get_stats(g)
 
     g.close()
     print("Client {} stopped.".format(task_index))

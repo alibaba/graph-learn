@@ -183,9 +183,18 @@ void DefaultServerImpl::Init(const std::vector<io::EdgeSource>& edges,
     LOG(FATAL) << "Server build data failed: " << s.ToString();
     ::exit(-1);
   }
+
   BuildBasicService();
   LOG(INFO) << "Data is ready for serving.";
   USER_LOG("Data is ready for serving.");
+
+  s = graph_store_->BuildStatistics();
+  if (!s.ok()) {
+    USER_LOG("Server build statistics failed and exit now.");
+    USER_LOG(s.ToString());
+    LOG(FATAL) << "Server build statistics failed: " << s.ToString();
+    ::exit(-1);
+  }  
 }
 
 void DefaultServerImpl::Stop() {

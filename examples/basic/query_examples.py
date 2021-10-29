@@ -208,3 +208,6 @@ def test_conditional_negtaive_sample(graph):
       print('neg_id_4:%d\tstr_0_attr:%s\n' %(neg_nodes.ids[i][3], neg_nodes.string_attrs[i][3][0]))
   except gl.OutOfRangeError:
     print("OutOfRange...")
+
+def test_get_stats(graph):
+  print(graph.get_stats())

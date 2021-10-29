@@ -18,6 +18,7 @@ limitations under the License.
 #include <memory>
 #include "graphlearn/common/base/errors.h"
 #include "graphlearn/common/base/log.h"
+#include "graphlearn/common/base/macros.h"
 #include "graphlearn/common/base/progress.h"
 #include "graphlearn/common/threading/sync/cond.h"
 #include "graphlearn/core/io/element_value.h"
@@ -25,6 +26,7 @@ limitations under the License.
 #include "graphlearn/core/io/node_loader.h"
 #include "graphlearn/core/operator/op_factory.h"
 #include "graphlearn/core/runner/op_runner.h"
+#include "graphlearn/include/client.h"
 #include "graphlearn/include/config.h"
 #include "graphlearn/include/graph_request.h"
 #include "graphlearn/platform/env.h"
@@ -182,12 +184,19 @@ GraphStore* GraphStore::GetInstance() {
 Status GraphStore::Init(
     const std::vector<io::EdgeSource>& edges,
     const std::vector<io::NodeSource>& nodes) {
+  
   for (const auto& e : edges) {
-    topo_.Add(e.edge_type, e.src_id_type, e.dst_id_type);
     graphs_->LookupOrCreate(e.edge_type);
+    auto it = e_types_.find(e.edge_type);
+    if (it == e_types_.end()) {
+      e_types_.insert({e.edge_type, 1});
+    } else {  // for undirected homogeneous edges.
+      e_types_[e.edge_type] = 2;
+    }
   }
   for (const auto& n : nodes) {
     noders_->LookupOrCreate(n.id_type);
+    n_types_.insert({n.id_type, 1});
   }
   return Status::OK();
 }
@@ -250,8 +259,50 @@ Status GraphStore::Build(
       return s;
     }
   }
+  BuildLocalCount();
   LOG(INFO) << "GraphStore build OK.";
   return Status();
+}
+
+Status GraphStore::BuildStatistics() {
+  Status s;
+  for (int32_t i = 0; i < env_->GetServerCount(); ++i) {
+    if (i == env_->GetServerId()) {
+      FillCounts(local_count_.data());       
+    } else {
+      std::unique_ptr<Client> client(NewRpcClient(i));
+      std::unique_ptr<GetCountRequest> req(new GetCountRequest());
+      std::unique_ptr<GetCountResponse> res(new GetCountResponse());
+      s = client->GetCount(req.get(), res.get());
+      RETURN_IF_NOT_OK(s);
+      FillCounts(res->Count());
+    }
+  }
+  return s;
+}
+
+void GraphStore::FillCounts(const int32_t * counts) {
+  int32_t j = 0;
+  for (auto it = e_types_.begin(); it != e_types_.end(); ++it, ++j) {
+    stats_.AppendCount(it->first, counts[j]);
+  }
+  for (auto it = n_types_.begin(); it != n_types_.end(); ++it, ++j) {
+    stats_.AppendCount(it->first, counts[j]);
+  }
+}
+
+void GraphStore::BuildLocalCount() {
+  local_count_.reserve(e_types_.size() + n_types_.size());
+  for (auto it = e_types_.begin(); it != e_types_.end(); ++it) {
+    Graph* graph = graphs_->LookupOrCreate(it->first);
+    ::graphlearn::io::GraphStorage* storage = graph->GetLocalStorage();
+    local_count_.push_back(storage->GetEdgeCount() * it->second);
+  }
+  for (auto it = n_types_.begin(); it != n_types_.end(); ++it) {
+    Noder* noder = noders_->LookupOrCreate(it->first);
+    ::graphlearn::io::NodeStorage* storage = noder->GetLocalStorage();
+    local_count_.push_back(storage->GetIds()->size() * it->second);
+  }
 }
 
 Graph* GraphStore::GetGraph(const std::string& edge_type) {
@@ -262,8 +313,13 @@ Noder* GraphStore::GetNoder(const std::string& node_type) {
   return noders_->LookupOrCreate(node_type);
 }
 
-const Topology& GraphStore::GetTopology() const {
-  return topo_;
+const GraphStatistics& GraphStore::GetStatistics() const {
+  return stats_;
 }
+
+const std::vector<int32_t>& GraphStore::GetLocalCount() const {
+  return local_count_;
+}
+
 
 }  // namespace graphlearn

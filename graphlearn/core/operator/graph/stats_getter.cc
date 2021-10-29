@@ -14,7 +14,6 @@ limitations under the License.
 ==============================================================================*/
 
 #include "graphlearn/core/graph/graph_store.h"
-#include "graphlearn/core/graph/storage/graph_storage.h"
 #include "graphlearn/core/operator/operator.h"
 #include "graphlearn/core/operator/op_registry.h"
 #include "graphlearn/include/graph_request.h"
@@ -22,22 +21,20 @@ limitations under the License.
 namespace graphlearn {
 namespace op {
 
-class EdgeCountGetter : public RemoteOperator {
+class StatsGetter : public RemoteOperator {
 public:
-  virtual ~EdgeCountGetter() = default;
+  virtual ~StatsGetter() = default;
 
   Status Process(const OpRequest* req,
                  OpResponse* res) override {
-    const GetCountRequest* request =
-      static_cast<const GetCountRequest*>(req);
-    GetCountResponse* response =
-      static_cast<GetCountResponse*>(res);
-
-    Graph* graph = graph_store_->GetGraph(request->Type());
-    ::graphlearn::io::GraphStorage* storage = graph->GetLocalStorage();
-
-    response->Init();
-    response->Set(storage->GetEdgeCount());
+    const GetStatsRequest* request =
+      static_cast<const GetStatsRequest*>(req);
+    GetStatsResponse* response =
+      static_cast<GetStatsResponse*>(res);
+    if (graph_store_->GetStatistics().GetCounts().empty()) {
+      graph_store_->BuildStatistics();
+    }
+    response->SetCounts(graph_store_->GetStatistics().GetCounts());
     return Status::OK();
   }
 
@@ -48,7 +45,7 @@ public:
   }
 };
 
-REGISTER_OPERATOR("GetEdgeCount", EdgeCountGetter);
+REGISTER_OPERATOR("GetStats", StatsGetter);
 
 }  // namespace op
 }  // namespace graphlearn

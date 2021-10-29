@@ -1,4 +1,4 @@
-/* Copyright 2020 Alibaba Group Holding Limited. All Rights Reserved.
+/* Copyright 2021 Alibaba Group Holding Limited. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,34 +13,31 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef GRAPHLEARN_INCLUDE_TOPOLOGY_H_
-#define GRAPHLEARN_INCLUDE_TOPOLOGY_H_
+#ifndef GRAPHLEARN_INCLUDE_GRAPH_STATISTICS_H_
+#define GRAPHLEARN_INCLUDE_GRAPH_STATISTICS_H_
 
 #include <string>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 namespace graphlearn {
 
-class Topology {
+using Counts = std::unordered_map<std::string, std::vector<int32_t>>;
+
+class GraphStatistics {
 public:
-  Topology() = default;
-  ~Topology() = default;
+  GraphStatistics() = default;
+  ~GraphStatistics() = default;
 
-  void Add(const std::string& edge_type,
-           const std::string& src_type,
-           const std::string& dst_type);
-
-  std::string GetSrcType(const std::string& edge_type);
-  std::string GetDstType(const std::string& edge_type);
-
-  std::string Print() const;
-
+  const Counts& GetCounts() const;
+  void AppendCount(const std::string& type, int32_t count);
+  
 private:
-  typedef std::pair<std::string, std::string> Tuple;
-  std::unordered_map<std::string, Tuple> topo_;
+  // Number of nodes/edges of each type on each graph server.
+  Counts counts_;
 };
 
 }  // namespace graphlearn
 
-#endif  // GRAPHLEARN_INCLUDE_TOPOLOGY_H_
+#endif  // GRAPHLEARN_INCLUDE_GRAPH_STATISTICS_H_

@@ -546,27 +546,13 @@ LookupNodesResponse::LookupNodesResponse()
     : LookupResponse() {
 }
 
-GetCountRequest::GetCountRequest() : OpRequest() {
-}
-
-GetCountRequest::GetCountRequest(const std::string& type, bool node)
+GetCountRequest::GetCountRequest()
     : OpRequest() {
   ADD_TENSOR(params_, kOpName, kString, 1);
-  if (node) {
-    params_[kOpName].AddString("GetNodeCount");
-  } else {
-    params_[kOpName].AddString("GetEdgeCount");
-  }
-
-  ADD_TENSOR(params_, kNodeType, kString, 1);
-  params_[kNodeType].AddString(type);
+  params_[kOpName].AddString("GetCount");
 }
 
-const std::string& GetCountRequest::Type() const {
-  return params_.at(kNodeType).GetString(0);
-}
-
-GetCountResponse::GetCountResponse() : OpResponse() {
+GetCountResponse::GetCountResponse() : OpResponse(), count_(nullptr) {
 }
 
 void GetCountResponse::SetMembers() {
@@ -579,17 +565,17 @@ void GetCountResponse::Swap(OpResponse& right) {
   std::swap(count_, res.count_);
 }
 
-void GetCountResponse::Init() {
-  ADD_TENSOR(tensors_, kCount, kInt32, 1);
+void GetCountResponse::Init(int32_t type_num) {
+  ADD_TENSOR(tensors_, kCount, kInt32, type_num);
   count_ = &(tensors_[kCount]);
 }
 
-void GetCountResponse::Set(int32_t count) {
+void GetCountResponse::Append(int32_t count) {
   count_->AddInt32(count);
 }
 
-const int32_t GetCountResponse::Count() const {
-  return *(count_->GetInt32());
+const int32_t* GetCountResponse::Count() const {
+  return count_->GetInt32();
 }
 
 GetDegreeRequest::GetDegreeRequest() : OpRequest(), node_ids_(nullptr) {
@@ -703,11 +689,34 @@ int32_t* GetDegreeResponse::GetDegrees() {
   return const_cast<int32_t*>(degrees_->GetInt32());
 }
 
+GetStatsRequest::GetStatsRequest() : OpRequest() {
+  ADD_TENSOR(params_, kOpName, kString, 1);
+  params_[kOpName].AddString("GetStats");
+}
+
+GetStatsResponse::GetStatsResponse() : OpResponse() {
+}
+
+void GetStatsResponse::Swap(OpResponse& right) {
+  OpResponse::Swap(right);
+  GetCountResponse& res = static_cast<GetCountResponse&>(right);
+}
+
+void GetStatsResponse::SetCounts(const Counts& counts) {
+  for (const auto& it : counts) {
+    ADD_TENSOR(tensors_, it.first, kInt32, 1);
+    for (const auto& count : it.second) {
+      tensors_[it.first].AddInt32(count);
+    }
+  }
+}
+
+
 REGISTER_REQUEST(GetEdges, GetEdgesRequest, GetEdgesResponse);
 REGISTER_REQUEST(GetNodes, GetNodesRequest, GetNodesResponse);
 REGISTER_REQUEST(LookupEdges, LookupEdgesRequest, LookupEdgesResponse);
 REGISTER_REQUEST(LookupNodes, LookupNodesRequest, LookupNodesResponse);
-REGISTER_REQUEST(GetNodeCount, GetCountRequest, GetCountResponse);
-REGISTER_REQUEST(GetEdgeCount, GetCountRequest, GetCountResponse);
+REGISTER_REQUEST(GetCount, GetCountRequest, GetCountResponse);
 REGISTER_REQUEST(GetDegree, GetDegreeRequest, GetDegreeResponse);
+REGISTER_REQUEST(GetStats, GetStatsRequest, GetStatsResponse);
 }  // namespace graphlearn

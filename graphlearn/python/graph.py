@@ -811,29 +811,17 @@ class Graph(object):
                                       batch_size=batch_size,
                                       strategy=strategy)
 
-  def get_node_count(self, type):
-    if type not in self.get_node_decoders().keys():
-      raise ValueError('Graph has no node type of {}'.format(type))
-
-    return self.get_entity_count(type, True)
-
-  def get_edge_count(self, type):
-    if type not in self.get_edge_decoders().keys():
-      raise ValueError('Graph has no edge type of {}'.format(type))
-
-    return self.get_entity_count(type, False)
-
-  def get_entity_count(self, type, is_node):
-    req = pywrap.new_get_count_request(type, is_node=is_node)
-    res = pywrap.new_get_count_response()
-    status = self._client.get_count(req, res)
+  def get_stats(self):
+    req = pywrap.new_get_stats_request()
+    res = pywrap.new_get_stats_response()
+    status = self._client.get_stats(req, res)
+    stats = None
     if status.ok():
-      count = pywrap.get_count(res)
-
+      stats = pywrap.get_stats(res)
     pywrap.del_op_response(res)
     pywrap.del_op_request(req)
     errors.raise_exception_on_not_ok_status(status)
-    return count
+    return stats
 
   def _get_degree(self, edge_type, node_from, ids):
     req = pywrap.new_get_degree_request(edge_type, node_from)

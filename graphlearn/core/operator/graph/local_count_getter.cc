@@ -14,7 +14,6 @@ limitations under the License.
 ==============================================================================*/
 
 #include "graphlearn/core/graph/graph_store.h"
-#include "graphlearn/core/graph/storage/node_storage.h"
 #include "graphlearn/core/operator/operator.h"
 #include "graphlearn/core/operator/op_registry.h"
 #include "graphlearn/include/graph_request.h"
@@ -22,9 +21,9 @@ limitations under the License.
 namespace graphlearn {
 namespace op {
 
-class NodeCountGetter : public RemoteOperator {
+class CountGetter : public RemoteOperator {
 public:
-  virtual ~NodeCountGetter() = default;
+  virtual ~CountGetter() = default;
 
   Status Process(const OpRequest* req,
                  OpResponse* res) override {
@@ -32,12 +31,11 @@ public:
       static_cast<const GetCountRequest*>(req);
     GetCountResponse* response =
       static_cast<GetCountResponse*>(res);
-
-    Noder* noder = graph_store_->GetNoder(request->Type());
-    ::graphlearn::io::NodeStorage* storage = noder->GetLocalStorage();
-
-    response->Init();
-    response->Set(storage->GetIds()->size());
+    const auto& local_count = graph_store_->GetLocalCount();
+    response->Init(local_count.size());
+    for (const auto& count : local_count) {
+      response->Append(count);
+    }
     return Status::OK();
   }
 
@@ -48,7 +46,7 @@ public:
   }
 };
 
-REGISTER_OPERATOR("GetNodeCount", NodeCountGetter);
+REGISTER_OPERATOR("GetCount", CountGetter);
 
 }  // namespace op
 }  // namespace graphlearn

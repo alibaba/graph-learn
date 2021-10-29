@@ -43,12 +43,12 @@ public:
   DECLARE_METHOD(LookupEdges);
   DECLARE_METHOD(GetNodes);
   DECLARE_METHOD(LookupNodes);
-  DECLARE_METHOD(GetTopology);
   DECLARE_METHOD(Sampling);
   DECLARE_METHOD(Aggregating);
   DECLARE_METHOD(SubGraph);
   DECLARE_METHOD(GetCount);
   DECLARE_METHOD(GetDegree);
+  DECLARE_METHOD(GetStats);
 
   Status RunOp(const OpRequest* request, OpResponse* response);
 

@@ -387,22 +387,33 @@ void TestInOrderNodeSampleSubGraph(Client* client) {
   }
 }
 
-void TestGetNodeCount(Client* client) {
-  GetCountRequest req("user", true);
+void TestGetCount(Client* client) {
+  GetCountRequest req;
   GetCountResponse res;
   Status s = client->GetCount(&req, &res);
-  std::cout << "GetNodeCount: " << s.ToString() << std::endl;
-  int32_t count = res.Count();
-  std::cout << "Node user Count: " << count << std::endl;
+  std::cout << "GetCount: " << s.ToString() << std::endl;
+  const int32_t* count = res.Count();
+  int i = 0;
+  for (; i < 4; ++i) {
+    std::cout << "edge count: " << count[i] << std::endl;
+  }
+  for (int j = 0; j < 4; ++j) {
+    std::cout << "node count: " << count[i+j] << std::endl;
+  }
 }
 
-void TestGetEdgeCount(Client* client) {
-  GetCountRequest req("click", false);
-  GetCountResponse res;
-  Status s = client->GetCount(&req, &res);
-  std::cout << "GetEdgeCount: " << s.ToString() << std::endl;
-  int32_t count = res.Count();
-  std::cout << "Edge click Count: " << count << std::endl;
+void TestGetStats(Client* client) {
+  GetStatsRequest req;
+  GetStatsResponse res;
+  Status s = client->GetStats(&req, &res);
+  std::cout << "GetStats: " << s.ToString() << std::endl;
+  for(const auto& it : res.tensors_) {
+    std::cout << "type " << it.first << ", count :" << std::endl;
+    for (int32_t i = 0; i < it.second.Size(); ++i) {
+      std::cout << it.second.GetInt32(i) << ",";
+    }
+    std::cout << std::endl;
+  }
 }
 
 void TestConditionalNegativeSample(Client* client) {
@@ -488,9 +499,9 @@ int main(int argc, char** argv) {
   TestNodeWeightNegativeSample(client);
   TestRandomNodeSampleSubGraph(client);
   TestInOrderNodeSampleSubGraph(client);
-  TestGetNodeCount(client);
-  TestGetEdgeCount(client);
+  TestGetCount(client);
   TestConditionalNegativeSample(client);
+  TestGetStats(client);
 
   Status s = client->Stop();
   std::cout << client_id << " in " << client_count << " client stop " << s.ToString() << std::endl;

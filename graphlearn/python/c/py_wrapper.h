@@ -19,6 +19,8 @@ limitations under the License.
 #include <cstdarg>
 #include <cstring>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "graphlearn/include/aggregating_request.h"
 #include "graphlearn/include/graph_request.h"
@@ -548,17 +550,22 @@ PyObject* get_edge_set(SubGraphResponse* res) {
   return obj;
 }
 
-GetCountRequest* new_get_count_request(
-    const std::string& type, bool is_node) {
-  return new GetCountRequest(type, is_node);
+GetStatsRequest* new_get_stats_request() {
+  return new GetStatsRequest();
 }
 
-GetCountResponse* new_get_count_response() {
-  return new GetCountResponse();
+GetStatsResponse* new_get_stats_response() {
+  return new GetStatsResponse();
 }
 
-int32_t get_count(GetCountResponse* res) {
-  return res->Count();
+Counts get_stats(GetStatsResponse* res) {
+  Counts counts;
+  for(const auto& it : res->tensors_) {
+    for (int32_t i = 0; i < it.second.Size(); ++i) {
+      counts[it.first].push_back(it.second.GetInt32(i));
+    }
+  }
+  return counts;
 }
 
 GetDegreeRequest* new_get_degree_request(
