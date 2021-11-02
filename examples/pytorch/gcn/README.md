@@ -3,10 +3,10 @@
 ## Introduction
 Sampling-based GCN based on pyG.
 
-We first use GSL 1-hop full neighbor sampling to get the 1-hop neighbor 
+We first use GSL 1-hop full neighbor sampling to get the 1-hop neighbor
 of nodes, and then implement an induce_func to convert the GSL results
-to a list of pyG `Data` objects. Then, we use the `PyGDataLoader` to merge the list 
-of `Data` to pyG `Batch` object. Finally, we implement the sampling-based 
+to a list of pyG `Data` objects. Then, we use the `PyGDataLoader` to merge the list
+of `Data` to pyG `Batch` object. Finally, we implement the sampling-based
 `GCN` based on pyG `GCNConv`.
 
 ## How to run
@@ -15,16 +15,16 @@ of `Data` to pyG `Batch` object. Finally, we implement the sampling-based
     - cora for supervised model.
     ```shell script
     cd ../../data/
-    python cora.py
+    python3 cora.py
     ```
 2. Train and evaluate
 
-    - supervised: 
+    - supervised:
     ```shell script
     cd ../pytorch/gcn/
-    python train.py
+    python3 train.py
     ```
 3. Training with pytorch DDP
   ```
-  python -m torch.distributed.launch --use_env train.py --ddp
+  python3 -m torch.distributed.launch --use_env train.py --clinet_num 2 --ddp
   ```

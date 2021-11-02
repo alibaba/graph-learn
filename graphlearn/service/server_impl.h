@@ -20,6 +20,7 @@ limitations under the License.
 #include <string>
 #include <vector>
 #include "graphlearn/include/data_source.h"
+#include "graphlearn/include/graph_request.h"
 
 namespace graphlearn {
 
@@ -43,6 +44,7 @@ public:
                     const std::vector<io::NodeSource>& nodes) = 0;
   virtual void Stop() = 0;
   virtual void StopSampling() = 0;
+  virtual const Counts& GetStats() const = 0;
 
 protected:
   void RegisterBasicService(Env* env, Executor* executor);
@@ -73,6 +75,7 @@ public:
             const std::vector<io::NodeSource>& nodes) override;
   void Stop() override;
   void StopSampling() override;
+  const Counts& GetStats() const override;
 
 private:
   Env*        env_;

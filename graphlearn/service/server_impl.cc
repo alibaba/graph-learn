@@ -203,6 +203,10 @@ void DefaultServerImpl::Stop() {
   USER_LOG("Server stopped.");
 }
 
+const Counts& DefaultServerImpl::GetStats() const {
+  return graph_store_->GetStatistics().GetCounts();
+}
+
 void DefaultServerImpl::StopSampling() {
   StopDagService();
 }

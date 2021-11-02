@@ -76,3 +76,6 @@ class Server(object):
 
   def stop_sampling(self):
     self._server.stop_sampling()
+
+  def get_stats(self):
+    return self._server.get_stats()

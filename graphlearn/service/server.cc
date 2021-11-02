@@ -44,6 +44,11 @@ void Server::StopSampling() {
   impl_->StopSampling();
 }
 
+const Counts& Server::GetStats() const {
+  return impl_->GetStats();
+}
+
+
 Server* NewServer(int32_t server_id,
                   int32_t server_count,
                   const std::string& server_host,

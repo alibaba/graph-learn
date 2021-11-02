@@ -58,7 +58,6 @@ class Collater(object):
     return self.collate(batch)
 
 
-# TODO(baole): Support evenly dataset splitting in C++ layer.
 class PyGDataLoader():
     """pyG Data loader which needs specified length.
 

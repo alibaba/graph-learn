@@ -24,12 +24,15 @@ import multiprocessing as mp
 import torch
 import torch.distributed as dist
 
+
 SERVER_LAUNCHED = False
 
 CLUSTER_SPEC = None
 WORLD_SIZE = None
 RANK = None
 NUM_CLIENT = None
+STATS_DICT = []
+
 
 def get_world_size():
   global WORLD_SIZE
@@ -100,19 +103,21 @@ def bootstrap(world_size, rank):
     cluster_server_info = ','.join([tensor_to_addr(t) for t in comm_tensor])
     return cluster_server_info
 
-  if not dist.is_initialized():
-    raise RuntimeError('graph learn bootstrap relies on torch.distributed, which is not initilaized.')
   local_ip = socket.gethostbyname(socket.gethostname())
   port = str(get_free_port(local_ip))
+  if not dist.is_initialized(): # stand-alone
+    return local_ip + ':' + port
   gl_server_info = exchange_gl_server_info(addr_to_tensor(local_ip, port), world_size, rank)
   return gl_server_info
 
-def _server_manager(graph, cluster, task_index):
+def _server_manager(graph, cluster, task_index, counts_dict):
   graph.init(cluster=cluster, job_name="server", task_index=task_index)
-  graph.wait_for_close()
+  counts_dict.update(graph.server_get_stats())
+  graph.close()
 
 def launch_server(g, cluster=None, task_index=None):
   global SERVER_LAUNCHED
+  global STATS_DICT
   if SERVER_LAUNCHED:
     raise RuntimeError('duplicate server launch detected')
   if cluster is None:
@@ -120,10 +125,16 @@ def launch_server(g, cluster=None, task_index=None):
     task_index = get_rank()
   elif task_index is None:
     raise UserWarning('task_index should be explicitly defined when cluster defined by user')
-  p = mp.Process(target=_server_manager, args=(g, cluster, task_index, ))
+  
+  counts_dict = mp.Manager().dict()
+  p = mp.Process(target=_server_manager, args=(g, cluster, task_index, counts_dict))
   p.daemon = True
   p.start()
   SERVER_LAUNCHED = True
+  STATS_DICT.append(counts_dict)
+
+def get_counts():
+  return STATS_DICT[0]
 
 def is_server_launched():
   global SERVER_LAUNCHED

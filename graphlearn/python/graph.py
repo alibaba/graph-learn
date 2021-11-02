@@ -823,6 +823,9 @@ class Graph(object):
     errors.raise_exception_on_not_ok_status(status)
     return stats
 
+  def server_get_stats(self):
+    return self._server.get_stats()
+
   def _get_degree(self, edge_type, node_from, ids):
     req = pywrap.new_get_degree_request(edge_type, node_from)
     pywrap.set_degree_request(req, ids)

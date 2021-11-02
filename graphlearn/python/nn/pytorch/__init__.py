@@ -14,7 +14,8 @@
 # =============================================================================
 
 from graphlearn.python.nn.pytorch.data.dataset import Dataset
-from graphlearn.python.nn.pytorch.data.utils import launch_server, set_client_num
+from graphlearn.python.nn.pytorch.data.utils import get_cluster_spec, \
+get_counts, launch_server, set_client_num
 from graphlearn.python.nn.pytorch.data.pyg_dataloader import PyGDataLoader
 
 # Special dunders that we choose to export:

@@ -20,6 +20,7 @@ limitations under the License.
 #include <string>
 #include <vector>
 #include "graphlearn/include/data_source.h"
+#include "graphlearn/include/graph_request.h"
 #include "graphlearn/include/status.h"
 
 namespace graphlearn {
@@ -38,6 +39,8 @@ public:
   void Stop();
 
   void StopSampling();
+
+  const Counts& GetStats() const;
 
 private:
   explicit Server(ServerImpl* impl);

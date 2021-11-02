@@ -20,6 +20,7 @@ import argparse
 import datetime
 import os
 import sys
+import time
 import torch
 
 import graphlearn as gl
@@ -34,7 +35,7 @@ from tqdm import tqdm
 
 from gcn import GCN
 
-
+os.environ["ODPS_CONFIG_FILE_PATH"] = "odps_config.ini"
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def init_env(args):
@@ -47,7 +48,7 @@ def init_env(args):
       dist.init_process_group('gloo')
     world_size = dist.get_world_size()
     rank = dist.get_rank()
-  print(f'world_size: {world_size}, rank: {rank}')
+  print('world_size:', world_size, 'rank:', rank)
   args.use_mp = args.client_num > 0
   args.world_size = world_size
   args.rank = rank
@@ -109,7 +110,7 @@ def induce_func(data_dict):
       row.append(j)
     offset += nbr.offsets[i]
     edge_index = np.stack([np.array(row), np.array(col)], axis=0)
-    subgraph = Data(torch.from_numpy(float_attrs), 
+    subgraph = Data(torch.from_numpy(float_attrs),
                     torch.from_numpy(edge_index).to(torch.long),
                     y=torch.from_numpy(labels).to(torch.long))
     subgraphs.append(subgraph)
@@ -142,24 +143,34 @@ def test(model, loader, args):
 def run(args):
   gl.set_tape_capacity(1)
   g = load_graph(args)
+  gl.set_tracker_mode(0)
   if args.use_mp:
-    gl.set_tracker_mode(0)
     thg.set_client_num(args.client_num)
     thg.launch_server(g)
   else:
-    g.init(task_index=args.rank, task_count=args.world_size)
+    g.init(task_index=args.rank, hosts=thg.get_cluster_spec())
 
-  # TODO(baole): This is an estimate and an accurate value will be needed from graphlearn.
-  length_per_worker = args.train_length // args.train_batch_size // args.world_size
-  print('length_per_worker being set to: ' + str(length_per_worker))
-
-  # data loader
+  # train loader
   train_query = query(g, args, mask=gl.Mask.TRAIN)
   if args.use_mp:
     train_dataset = thg.Dataset(train_query, window=5, induce_func=induce_func, graph=g)
+    graph_counts = thg.get_counts()
+    while True:
+      if not graph_counts:
+        time.sleep(1)
+      else:
+        item_count_per_server = graph_counts[gl.get_mask_type('item', gl.Mask.TRAIN)]
+        break
   else:
     train_dataset = thg.Dataset(train_query, window=5, induce_func=induce_func)
+    item_count_per_server = g.server_get_stats()[gl.get_mask_type('item', gl.Mask.TRAIN)]
+
+  print('item node count per server: ', item_count_per_server)
+  length_per_worker =  min(item_count_per_server) // args.train_batch_size
+  print('length_per_worker being set to: ' + str(length_per_worker))
   train_loader = thg.PyGDataLoader(train_dataset, multi_process=args.use_mp, length=length_per_worker)
+
+  # test loader
   test_query = query(g, args, mask=gl.Mask.TEST)
   if args.use_mp:
     test_dataset = thg.Dataset(test_query, window=5, induce_func=induce_func, graph=g)
@@ -195,10 +206,9 @@ if __name__ == "__main__":
                          default=os.path.join(cur_path, '../../data/cora/'),
                          help="Dataset Folder, list files are node_table, edge_table, "
                               "train_table, val_table and test_table")
-  argparser.add_argument('--train_length', type=int, default=140)
   argparser.add_argument('--class_num', type=int, default=7)
   argparser.add_argument('--features_num', type=int, default=1433)
-  argparser.add_argument('--train_batch_size', type=int, default=70)
+  argparser.add_argument('--train_batch_size', type=int, default=140)
   argparser.add_argument('--val_batch_size', type=int, default=300)
   argparser.add_argument('--test_batch_size', type=int, default=1000)
   argparser.add_argument('--hidden_dim', type=int, default=128)
@@ -208,9 +218,9 @@ if __name__ == "__main__":
   argparser.add_argument('--learning_rate', type=float, default=0.01)
   argparser.add_argument('--epoch', type=int, default=60)
   argparser.add_argument('--client_num', type=int, default=0,
-                         help="Set to value bigger than zero to enable multi-processing dataload.")
-  argparser.add_argument('--ddp', action='store_true', 
-                         help="whether to use ddp")
+                         help="The number of graphlearn client on each pytorch worker, "
+                              "which is used as `num_workers` of pytorh dataloader.")
+  argparser.add_argument('--ddp', action="store_true", help="Whether use pytorch ddp.")
   args = argparser.parse_args()
 
   init_env(args)

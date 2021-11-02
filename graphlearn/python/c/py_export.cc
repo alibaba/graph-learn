@@ -222,7 +222,8 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
     .def("start", &Server::Start)
     .def("init", &Server::Init)
     .def("stop", &Server::Stop)
-    .def("stop_sampling", &Server::StopSampling);
+    .def("stop_sampling", &Server::StopSampling)
+    .def("get_stats", &Server::GetStats);
 
   m.def("server",
         &NewServer,
