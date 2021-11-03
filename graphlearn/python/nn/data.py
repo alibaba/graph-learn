@@ -26,17 +26,24 @@ class Data(object):
                strings=None,
                labels=None,
                weights=None,
-               offsets=None,
                dst_ids=None,
+               offsets=None,
+               indices=None,
+               dense_shape=None,
                **kwargs):
     """ ints, floats and strings are attributes in numpy or Tensor format 
       with the shape
       [batch_size, int_attr_num],
       [batch_size, float_attr_num],
       [batch_size, string_attr_num].
+
       labels and weights are in numpy or Tensor format with the shape 
       [batch_size], [batch_size].
-      offsets is used for SpareNodes/SparseEdges, and dst_ids is used for Edges/SparseEdges.
+
+      dst_ids is used for Edges/SparseEdges.
+
+      offsets, indices and dense_shpae is used for SpareNodes/SparseEdges.
+
       The data object can be extented by any other additional data.
     """
     self.ids = ids
@@ -45,8 +52,10 @@ class Data(object):
     self.string_attrs = strings
     self.labels = labels
     self.weights = weights
+    self.dst_ids = dst_ids    
     self.offsets = offsets
-    self.dst_ids = dst_ids
+    self.indices = indices
+    self.dense_shape = dense_shape
     for key, item in kwargs.items():
       self[key] = item
 

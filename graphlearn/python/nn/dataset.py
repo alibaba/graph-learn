@@ -87,7 +87,7 @@ class Dataset(object):
       feat_masks, id_masks, sparse_masks = masks
       assert len(feat_masks) == 5  # i_attrs, f_attrs, s_attrs, lables, weights
       assert len(id_masks) == 2  # src_ids, dst_ids
-      assert len(sparse_masks) == 1 # offsets
+      assert len(sparse_masks) == 3 # offsets, indices, dense_shape
       # Features
       values = self._reformat_features(
         value.int_attrs, value.float_attrs, value.string_attrs,
@@ -100,8 +100,10 @@ class Dataset(object):
       # Offsets for Sparse Neighbors
       if sparse_masks[-1]:
         values.extend([value.offsets])
+        values.extend([value.indices])
+        values.extend([value.dense_shape])
       else:
-        values.extend([None])
+        values.extend([None, None, None])
       return list(np.array(values)[feat_masks + id_masks + sparse_masks])
 
     try:
@@ -170,11 +172,11 @@ class Dataset(object):
       return None
 
     for alias, masks in self._masks.items():
-      ints, floats, strings, labels, weights, ids, dst_ids, offsets = \
-        [pop(msk) for msk in sum(masks, [])]
+      ints, floats, strings, labels, weights, ids, dst_ids, \
+      offsets, indices, dense_shape = [pop(msk) for msk in sum(masks, [])]
       data_dict[alias] = Data(
-        ids, ints, floats, strings, labels, weights, 
-        offsets=offsets, dst_ids=dst_ids)
+        ids, ints, floats, strings, labels, weights, dst_ids=dst_ids,
+        offsets=offsets, indices=indices, dense_shape=dense_shape)
     return data_dict
 
   def get_mask(self, node_decoder, is_edge=False, is_sparse=False):
@@ -182,8 +184,8 @@ class Dataset(object):
     feat_masks: a list of boolean, each element indicates that data
     has int_attrs, float_attrs, string_attrs, lables, weights.
     id_masks: for Nodes is [True, False], for Edges is [True, True].
-    sparse_masks: one boolean element list that indicates whether the object 
-    is sparse.
+    sparse_masks: three boolean element list which indicates whether the object 
+      is sparse.
     Args:
       node_decoder: The given node_decoder.
 
@@ -203,9 +205,9 @@ class Dataset(object):
     id_masks = [True, False]  # Default: (ids, None), else: (src_ids, dst_ids)
     if is_edge:
       id_masks = [True, True]
-    sparse_masks = [False]	
+    sparse_masks = [False, False, False]	
     if is_sparse:		
-      sparse_masks[-1] = True
+      sparse_masks = [True, True, True]
 
     return feat_masks, id_masks, sparse_masks
 

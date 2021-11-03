@@ -21,6 +21,7 @@ import tensorflow as tf
 
 from graphlearn import pywrap_graphlearn as pywrap
 from graphlearn.python.errors import OutOfRangeError
+from graphlearn.python.gsl.dag_node import TraverseEdgeDagNode
 from graphlearn.python.nn.dataset import Dataset as RawDataset
 from graphlearn.python.nn.dataset import SubKeys
 from graphlearn.python.nn.subgraph import SubGraph
@@ -187,8 +188,10 @@ class Dataset(object):
     output_types = []
     output_shapes = []
     for alias in self._rds.masks.keys():
-      node_decoder = self._dag.get_node(alias).decoder
-      types, shapes = self._data_types_and_shapes(node_decoder)
+      node = self._dag.get_node(alias)
+      types, shapes = self._data_types_and_shapes(node.decoder, 
+                                                  is_edge=isinstance(node, TraverseEdgeDagNode),
+                                                  is_sparse=node.sparse)
       output_types.extend(types)
       output_shapes.extend(shapes)
     return output_types, output_shapes
@@ -234,8 +237,8 @@ class Dataset(object):
       except OutOfRangeError:
         break
 
-  def _data_types_and_shapes(self, node_decoder):
-    feat_masks, id_masks, _ = self._rds.get_mask(node_decoder)
+  def _data_types_and_shapes(self, node_decoder, is_edge=False, is_sparse=False):
+    feat_masks, id_masks, sparse_masks = self._rds.get_mask(node_decoder, is_edge, is_sparse)
     feat_types = np.array([tf.int64, tf.float32, tf.string,
                            tf.int32, tf.float32])[feat_masks]
     feat_shapes = np.array([tf.TensorShape([None, node_decoder.int_attr_num]),
@@ -246,7 +249,13 @@ class Dataset(object):
 
     id_types = np.array([tf.int64, tf.int64])[id_masks] # ids, dst_ids
     id_shapes = np.array([tf.TensorShape([None]), tf.TensorShape([None])])[id_masks]
-    return list(feat_types) + list(id_types), list(feat_shapes) + list(id_shapes) 
+    # offsets, indices and dense_shape for sparse Data.
+    sparse_types = np.array([tf.int64, tf.int64, tf.int64])[sparse_masks]
+    sparse_shapes = np.array([tf.TensorShape([None]), 
+                              tf.TensorShape([None, 2]), 
+                              tf.TensorShape([None])])[sparse_masks]
+    return list(feat_types) + list(id_types) + list(sparse_types), \
+      list(feat_shapes) + list(id_shapes) + list(sparse_shapes)
 
   def _batchgraph_types_and_shapes(self):
     output_types, output_shapes = tuple(), tuple()
