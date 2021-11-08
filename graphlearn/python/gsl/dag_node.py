@@ -525,6 +525,8 @@ class TraverseEdgeDagNode(DagNode):
     next_node = FakeNode(self)
     next_node.set_path(self._path, pywrap.NodeFrom.EDGE_DST)
     next_node.set_output_field(pywrap.kNodeIds)
+    next_node._sparse = self.sparse
+    self._pos_downstreams.append(next_node)
     return next_node
 
   def outV(self):

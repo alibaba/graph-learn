@@ -26,9 +26,9 @@ class Decoder(object):
   def __init__(self,
                weighted=False,
                labeled=False,
-               attr_types=None,
+               attr_types=[],
                attr_delimiter=":",
-               attr_dims=None):
+               attr_dims=[]):
     """ Initialize a data source decoder.
 
     Args:

@@ -53,7 +53,9 @@ class Dataset(object):
     window: dataset capacity.
     edge_types: A list of edge types for heterogeneous subgraph. It must be 
       specified when the query does not fetch an edge of a certain type but 
-      the induced edge_index needs it.
+      the induced edge_index needs it. For example, when getting neighbor nodes
+      like q.outV('u-i'), the 'u-i' type will not be added in query dag, so it
+      must be specified.
   """
   def __init__(self, query, window=5,                
                induce_func=None,
@@ -105,21 +107,23 @@ class Dataset(object):
       return decoder.feature_spec
 
     source_node = self._dag.get_node(source)
-    nbrs = []
-    hops = []
+    nbr_nodes, nbr_edges, nbr_nums = [], [], []
     if neighbors:
       # Use specified neighbors to construct EgoGraph.
       if not isinstance(neighbors, list):
         raise ValueError("`neighbors` should be a list of alias")
       pre = source_node
       for nbr in neighbors:
-        nbr_node = self._dag.get_node(nbr)
-        if not nbr_node in pre.pos_downstreams + pre.neg_downstreams:
+        dag_node = self._dag.get_node(nbr)
+        if not dag_node in pre.pos_downstreams + pre.neg_downstreams:
           raise ValueError("{} is not the downstream of {}.".format(
-            nbr_node.get_alias(), pre.get_alias()))
-        nbrs.append(nbr_node.get_alias())
-        hops.append(nbr_node.shape[-1])
-        pre = nbr_node
+            dag_node.get_alias(), pre.get_alias()))
+        if isinstance(pre, TraverseEdgeDagNode):
+          nbr_edges.append(dag_node.get_alias())
+        else:
+          nbr_nodes.append(dag_node.get_alias())
+          nbr_nums.append(dag_node.shape[-1])
+        pre = dag_node
     else:
       # Use default receptive neighbors to construct EgoGraph.
       pre = source_node
@@ -130,17 +134,19 @@ class Dataset(object):
                            " which has multiple downstreams. You should"
                            " assign specific neighbors for {}."
                            .format(pre.get_alias(), source))
-        pre = recepts[0]
-        nbrs.append(pre.get_alias())
-        hops.append(pre.shape[-1])
-        recepts = pre.pos_downstreams
-    n_neighbors = []
-    for idx in range(len(nbrs)):
-      n_neighbors.append(hops[idx])
+        cur = recepts[0]
+        if isinstance(cur, TraverseEdgeDagNode):
+          nbr_edges.append(cur.get_alias())
+        else: 
+          nbr_nodes.append(cur.get_alias())
+          nbr_nums.append(cur.shape[-1])
+        recepts = cur.pos_downstreams
     return EgoGraph(data_dict[source],
-                    [data_dict[nbr] for nbr in nbrs],
-                    [(self._dag.get_node(v).type, _get_feat_spec(v)) for v in [source] + nbrs],
-                    n_neighbors)
+                    [data_dict[nbr] for nbr in nbr_nodes],
+                    [(self._dag.get_node(v).type, _get_feat_spec(v)) for v in [source] + nbr_nodes],
+                    nbr_nums,
+                    [data_dict[nbr] for nbr in nbr_edges],
+                    [(self._dag.get_node(v).type, _get_feat_spec(v)) for v in nbr_edges])
 
   def get_batchgraph(self, alias):
     """get `BatchGraph`/`HeteroBatchGraph` by given alias. Alias must be an element 

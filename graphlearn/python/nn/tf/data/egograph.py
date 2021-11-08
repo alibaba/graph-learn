@@ -34,7 +34,7 @@ class EgoGraph(object):
       neighbor nodes. Each tuple is formatted with (name, spec), in which `name`
       is node's type, and `spec` is a FeatureSpec object. Be sure that
       `len(node_schema) == len(neighbors) + 1`.
-    nbr_nums: A list of number of neighbor per hop.
+    nbr_nums: A list of number of neighbor nodes per hop.
     nbr_edges: A list of `Data`/Tensor instance to describe neighborhood edges.
     edge_schema: A list of tuple to describe the `FeatureSpec` of neighbor edges.
   """
@@ -43,8 +43,8 @@ class EgoGraph(object):
                nbr_nodes,
                node_schema,
                nbr_nums,
-               nbr_edges=None,
-               edge_schema=None,
+               nbr_edges=[],
+               edge_schema=[],
                **kwargs):
     self._src = src
     self._nbr_nodes = nbr_nodes
@@ -77,7 +77,7 @@ class EgoGraph(object):
 
   @property
   def nbr_edges(self):
-    return self._nbr_nodes
+    return self._nbr_edges
 
   def hop_node(self, i):
     """ Get the hop ith neighbors nodes of centric src, where i starts 
@@ -89,11 +89,10 @@ class EgoGraph(object):
     return self._nbr_nodes[i]
   
   def hop_edge(self, i):
-    if self._nbr_edges is not None:
-      return self._nbr_edges[i]
-    else:
+    if len(self._nbr_edges) == 0:
       raise ValueError("No edge data.")
-
+    return self._nbr_edges[i]
+      
   def transform(self, transform_func=None):
     """transforms `EgoGraph`. Default transformation is encoding nodes feature 
     to embedding.
@@ -101,23 +100,29 @@ class EgoGraph(object):
       transform_func: A function that takes in an `EgoGraph` object and returns 
         a transformed version. 
     """
+    def transform_feat(feat, schema):
+      feat_handler = FeatureHandler(schema[0], schema[1])
+      return feat_handler.forward(feat)
+
     if self.node_schema is None:
       return self
-
     assert len(self.node_schema) == (len(self.nbr_nodes) + 1)
-
+    
     s = self.node_schema[0]
     vertex_handler = FeatureHandler(s[0], s[1])
     vertex_tensor = vertex_handler.forward(self.src)
 
-    neighbors = []
+    nbr_nodes = []
     for i, nbr in enumerate(self.nbr_nodes):
-      s = self.node_schema[i + 1]
-      neighbor_handler = FeatureHandler(s[0], s[1])
-      neighbor_tensor = neighbor_handler.forward(self.nbr_nodes[i])
-      neighbors.append(neighbor_tensor)
+      nbr_nodes.append(transform_feat(self.nbr_nodes[i], self.node_schema[i + 1]))
 
-    return EgoGraph(vertex_tensor, neighbors, None, self.nbr_nums)
+    nbr_edges = []
+    if self.nbr_edges:
+      assert len(self.edge_schema) == len(self.nbr_edges)
+      for i, nbr in enumerate(self.nbr_edges):
+        nbr_edges.append(transform_feat(self.nbr_edges[i], self.edge_schema[i + 1]))
+
+    return EgoGraph(vertex_tensor, nbr_nodes, None, self.nbr_nums, nbr_edges)
 
 
   def __getitem__(self, key):

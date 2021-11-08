@@ -155,7 +155,6 @@ class Dataset(object):
     except OutOfRangeError:
       raise OutOfRangeError("out of range.")
 
-
   def build_data_dict(self, flatten_values):
     """Build the dict of Data from flatten value lists.
 
