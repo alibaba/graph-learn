@@ -107,10 +107,8 @@ class EgoGraph(object):
     if self.node_schema is None:
       return self
     assert len(self.node_schema) == (len(self.nbr_nodes) + 1)
-    
-    s = self.node_schema[0]
-    vertex_handler = FeatureHandler(s[0], s[1])
-    vertex_tensor = vertex_handler.forward(self.src)
+
+    src = transform_feat(self.src, self.node_schema[0])
 
     nbr_nodes = []
     for i, nbr in enumerate(self.nbr_nodes):
@@ -122,7 +120,7 @@ class EgoGraph(object):
       for i, nbr in enumerate(self.nbr_edges):
         nbr_edges.append(transform_feat(self.nbr_edges[i], self.edge_schema[i + 1]))
 
-    return EgoGraph(vertex_tensor, nbr_nodes, None, self.nbr_nums, nbr_edges)
+    return EgoGraph(src, nbr_nodes, None, self.nbr_nums, nbr_edges)
 
 
   def __getitem__(self, key):

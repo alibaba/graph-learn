@@ -22,7 +22,7 @@ import tensorflow as tf
 import graphlearn.python.nn.tf as tfg
 
 from bipartite_sage import BipartiteGraphSAGE
-from induce_hetero_graph import induce_hetero_graph
+from hetero_edge_inducer import HeteroEdgeInducer
 
 # TODO(baole): use a benchmark u2i recommender dataset.
 def load_graph(config):
@@ -37,18 +37,17 @@ def load_graph(config):
 
 def train(g, model, config):
   seed = g.E('u-i').batch(config['batch_size']).shuffle(traverse=True)
-  src = seed.outV().alias(tfg.SubKeys.POS_SRC)
+  src = seed.outV().alias('pos_src')
   # only support 1-hop now.
   src.outV('u-i').sample(config['nbrs_num']).by('full').alias('src_hop1')
-  dst = seed.inV().alias(tfg.SubKeys.POS_DST)
+  dst = seed.inV().alias('pos_dst')
   dst.inV('u-i').sample(config['nbrs_num']).by('full').alias('dst_hop1')
-  src.outNeg('u-i').sample(1).by('random').alias(tfg.SubKeys.NEG_DST).\
+  src.outNeg('u-i').sample(1).by('random').alias('neg_dst').\
     outV('u-i').sample(config['nbrs_num']).by('full').alias('neg_hop1')
   query = seed.values()
-  dataset = tfg.Dataset(query, induce_func=induce_hetero_graph, 
-                        edge_types=[('u', 'u-i', 'i'), ('i', 'u-i_reverse', 'u')])
-  pos_graph = dataset.get_batchgraph(tfg.SubKeys.POS_SRC)
-  neg_graph = dataset.get_batchgraph(tfg.SubKeys.NEG_DST)
+  dataset = tfg.Dataset(query, inducer=HeteroEdgeInducer(use_neg=True, 
+    edge_types=[('u', 'u-i', 'i'), ('i', 'u-i_reverse', 'u')]))
+  pos_graph, neg_graph = dataset.get_batchgraph()
   pos_src, pos_dst = model.forward(batchgraph=pos_graph)
   neg_src, neg_dst = model.forward(batchgraph=neg_graph)
   pos_h = tf.reduce_sum(pos_src * pos_dst, axis=-1)

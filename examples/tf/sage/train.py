@@ -21,7 +21,7 @@ import graphlearn as gl
 import tensorflow as tf
 import graphlearn.python.nn.tf as tfg
 
-from graphlearn.python.nn.utils.induce_graph_with_edge import induce_graph_with_edge
+from edge_inducer import EdgeInducer
 
 def load_graph(config):
   data_dir = config['dataset_folder']
@@ -36,16 +36,15 @@ def load_graph(config):
 
 def train(g, model, config):
   seed = g.E('train').batch(config['batch_size']).shuffle(traverse=True)
-  src = seed.outV().alias(tfg.SubKeys.POS_SRC)
+  src = seed.outV().alias('pos_src')
   src.outV('train').sample(config['nbrs_num']).by('full').alias('src_hop1')
-  dst = seed.inV().alias(tfg.SubKeys.POS_DST)
+  dst = seed.inV().alias('pos_dst')
   dst.outV('train').sample(config['nbrs_num']).by('full').alias('dst_hop1')
-  src.outNeg('train').sample(1).by('random').alias(tfg.SubKeys.NEG_DST).\
+  src.outNeg('train').sample(1).by('random').alias('neg_dst').\
     outV('train').sample(config['nbrs_num']).by('full').alias('neg_hop1')
   query = seed.values()
-  dataset = tfg.Dataset(query, induce_func=induce_graph_with_edge)
-  pos_graph = dataset.get_batchgraph(tfg.SubKeys.POS_SRC)
-  neg_graph = dataset.get_batchgraph(tfg.SubKeys.NEG_DST)
+  dataset = tfg.Dataset(query, inducer=EdgeInducer(use_neg=True))
+  pos_graph, neg_graph = dataset.get_batchgraph()
   pos_src, pos_dst = model.forward(batchgraph=pos_graph)
   neg_src, neg_dst = model.forward(batchgraph=neg_graph)
   pos_h = tf.reduce_sum(pos_src * pos_dst, axis=-1)

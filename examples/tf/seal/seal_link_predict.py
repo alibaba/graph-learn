@@ -22,7 +22,7 @@ import tensorflow as tf
 
 import graphlearn.python.nn.tf as tfg
 
-from induce_graph_cn_with_edge import induce_graph_cn_with_edge
+from edge_cn_inducer import EdgeCNInducer
 
 def load_graph(config):
   data_dir = config['dataset_folder']
@@ -58,18 +58,16 @@ def eval_hits(y_pred_pos, y_pred_neg, k):
 def train(g, model, predictor, config):
   tfg.conf.training = True
   seed = g.E('train').batch(config['batch_size']).shuffle(traverse=True)
-  src = seed.outV().alias(tfg.SubKeys.POS_SRC)
+  src = seed.outV().alias('pos_src')
   src.outV('train').sample(config['nbrs_num']).by('full').alias('src_hop1')
-  dst = seed.inV().alias(tfg.SubKeys.POS_DST)
+  dst = seed.inV().alias('pos_dst')
   dst.outV('train').sample(config['nbrs_num']).by('full').alias('dst_hop1')
-  src.outNeg('train').sample(1).by('random').alias(tfg.SubKeys.NEG_DST).\
+  src.outNeg('train').sample(1).by('random').alias('neg_dst').\
     outV('train').sample(config['nbrs_num']).by('full').alias('neg_hop1')
   query = seed.values()
-  dataset = tfg.Dataset(query, 
-                        induce_func=induce_graph_cn_with_edge, 
-                        induce_additional_spec=config['strut_label_spec'])
-  pos_graph = dataset.get_batchgraph(tfg.SubKeys.POS_SRC)
-  neg_graph = dataset.get_batchgraph(tfg.SubKeys.NEG_DST)
+  dataset = tfg.Dataset(query, inducer=EdgeCNInducer(
+    use_neg=True, addl_types_and_shapes=config['strut_label_spec']))
+  pos_graph, neg_graph = dataset.get_batchgraph()
   pos_src, pos_dst = model.forward(batchgraph=pos_graph)
   neg_src, neg_dst = model.forward(batchgraph=neg_graph)
   pos_h = predictor(pos_src * pos_dst)
@@ -81,15 +79,14 @@ def train(g, model, predictor, config):
 def test(g, model, predictor, config, edge_type='test'):
   tfg.conf.training = False
   seed = g.E(edge_type).batch(config['batch_size'])
-  src = seed.outV().alias(tfg.SubKeys.POS_SRC)
+  src = seed.outV().alias('pos_src')
   src.outV('train').sample(config['nbrs_num']).by('full').alias('src_hop1')
-  dst = seed.inV().alias(tfg.SubKeys.POS_DST)
+  dst = seed.inV().alias('pos_dst')
   dst.outV('train').sample(config['nbrs_num']).by('full').alias('dst_hop1')
   query = seed.values()
-  dataset = tfg.Dataset(query, 
-                        induce_func=induce_graph_cn_with_edge,
-                        induce_additional_spec=config['strut_label_spec'])
-  pos_graph = dataset.get_batchgraph(tfg.SubKeys.POS_SRC)
+  dataset = tfg.Dataset(query, inducer=EdgeCNInducer(
+    addl_types_and_shapes=config['strut_label_spec']))
+  pos_graph, _ = dataset.get_batchgraph()
   pos_src, pos_dst = model.forward(batchgraph=pos_graph)
   logits = predictor(pos_src * pos_dst)
   return dataset.iterator, logits

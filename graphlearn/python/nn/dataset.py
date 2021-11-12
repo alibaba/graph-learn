@@ -26,16 +26,6 @@ from graphlearn.python.errors import OutOfRangeError
 from graphlearn.python.gsl.dag_dataset import Dataset as DagDataset
 from graphlearn.python.gsl.dag_node import TraverseEdgeDagNode
 from graphlearn.python.nn.data import Data
-from graphlearn.python.nn.utils.induce_graph_with_edge import \
-  induce_graph_with_edge
-
-class SubKeys(Enum):
-  POS_SRC = 0
-  NGE_SRC = 1 # not support yet.
-  POS_DST = 2
-  NEG_DST = 3
-  POS_EDGE = 4 # not support yet.
-  NEG_EDGE = 5 # not support yet.
 
 
 class Dataset(object):
@@ -121,37 +111,17 @@ class Dataset(object):
     """
     return self.build_data_dict(self.get_flatten_values())
 
-  def get_subgraphs(self, induce_func=induce_graph_with_edge):
+  def get_subgraphs(self, inducer):
     """Induce `SubGraph`/`HeteroSubGraph` using the `induce_func`.
     Args:
-      induce_func: an induce `SubGraph` function which takes the query result
+      inducer: A `SubGraphInducer` instance to generate SubGraph/HeteroSubGraph.
       as input and induce the `SubGraph`s.
     Return:
       a tuple of positive subgraphs and negative subgraphs.
     """
-    #TODO(baole): supports generator with node.
     try:
       values = self._ds.next()
-      pos_src = values[SubKeys.POS_SRC]
-      # TODO(baole): support multi-hops
-      src_nbrs = values[self._dag.get_node(SubKeys.POS_SRC).\
-        pos_downstreams[0].get_alias()]
-      if SubKeys.POS_DST in self._dag.list_alias():
-        pos_dst = values[SubKeys.POS_DST]
-        dst_nbrs = values[self._dag.get_node(SubKeys.POS_DST).\
-          pos_downstreams[0].get_alias()]
-      else: # fake a src-src edge.
-        pos_dst, dst_nbrs = pos_src, src_nbrs
-      subgraphs = induce_func(pos_src, pos_dst, src_nbrs, dst_nbrs)
-      # negative samples.
-      neg_subgraphs = None
-      if SubKeys.NEG_DST in self._dag.list_alias():
-        neg_dst = values[SubKeys.NEG_DST]
-        neg_dst_nbrs = values[self._dag.get_node(SubKeys.NEG_DST).\
-          pos_downstreams[0].get_alias()]
-        neg_subgraphs = induce_func(pos_src, neg_dst, 
-          src_nbrs, neg_dst_nbrs)
-      return subgraphs, neg_subgraphs
+      return inducer.induce_func(values)
     except OutOfRangeError:
       raise OutOfRangeError("out of range.")
 

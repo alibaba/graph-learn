@@ -112,22 +112,37 @@ class BatchGraph(SubGraph):
 
   def transform(self, transform_func=None):
     """transforms `BatchGraph`. Default transformation is encoding 
-    nodes feature to embedding.
+    nodes and edges(if exist) feature to embedding.
     Args:
       transform_func: A function that takes in an `BatchGraph` object 
         and returns a transformed version. 
     """
+    def transform_feat(feat, schema):
+      feat_handler = FeatureHandler(schema[0], schema[1])
+      return feat_handler.forward(feat)
+
     if self.node_schema is None:
       return self
-    vertex_handler = FeatureHandler(self.node_schema[0],
-                                    self.node_schema[1].feature_spec)
+
     node = Data(self.nodes.ids, 
                 self.nodes.int_attrs, 
                 self.nodes.float_attrs, 
                 self.nodes.string_attrs)
-    node_tensor = vertex_handler.forward(node)
-    graph = BatchGraph(self.edge_index, node_tensor, 
-                       self.node_schema, self.graph_node_offsets,
+    node_tensor = transform_feat(node, 
+      [self.node_schema[0], self.node_schema[1].feature_spec])
+
+    edge_tensor = None
+    if self.edge_schema is not None:
+      edge = Data(self.edges.ids, 
+                  self.edges.int_attrs, 
+                  self.edges.float_attrs, 
+                  self.edges.string_attrs)
+      edge_tensor = transform_feat(edge, 
+        [self.edge_schema[0], self.edge_schema[1].feature_spec])
+
+    graph = BatchGraph(self.edge_index, 
+                       node_tensor, self.node_schema, self.graph_node_offsets,
+                       edge_tensor, self.edge_schema, self.graph_edge_offsets,
                        additional_keys=self.additional_keys)
     for key in self.additional_keys:
       graph[key] = self[key]
@@ -138,21 +153,22 @@ class BatchGraph(SubGraph):
     pass
   
   def flatten(self):
-    # TODO(baole): support edges.
-    flatten_list = []
-    flatten_list.append(self.edge_index)
-    nodes = self.nodes
-    # nodes
-    if nodes.int_attrs is not None:
-      flatten_list.append(nodes.int_attrs)
-    if nodes.float_attrs is not None:
-      flatten_list.append(nodes.float_attrs)
-    if nodes.string_attrs is not None:
-      flatten_list.append(nodes.string_attrs)
-    flatten_list.append(nodes.ids)
-    # graph_node_offsets
+    """ Flatten `BatchGraph` to numpy array in the order of
+    [edge_index, nodes, graph_node_offsets, edges, graph_edge_offsets, 
+    additional_keys]
+    """
+    def append_flatten_data(flatten_list, data) :
+      data_list = [data.int_attrs, data.float_attrs, data.string_attrs, 
+                   data.labels, data.weights, data.ids]
+      flatten_list.extend([item for item in data_list if item is not None])
+      return flatten_list
+
+    flatten_list = [self.edge_index]
+    flatten_list = append_flatten_data(flatten_list, self.nodes)
     flatten_list.append(self.graph_node_offsets)
-    # additional data.
+    if self.edges is not None:
+      flatten_list = append_flatten_data(flatten_list, self.edges)
+      flatten_list.append(self.graph_edge_offsets)
     for key in self.additional_keys:
       flatten_list.append(self[key])
     return flatten_list
@@ -198,37 +214,29 @@ class BatchGraph(SubGraph):
     return np.array(graph_edge_offsets, dtype=np.int64)
 
   @classmethod
-  def _build_data(cls, graphs, type='node'):
-    def list_append(list, item):
-      if item is not None:
-        list.append(item)
-      return list
-
+  def _build_data(cls, graphs, name='node'):
     def np_concat(list):
       if list:
         return np.concatenate(list, axis=0)
       return None
 
-    #TODO(baole): support other labels and weights.
-    ids_list = []
-    int_attrs_list = []
-    float_attrs_list = []
-    string_attrs_list = []
+    data_list = [[],[],[],[],[],[]]
+    ele_name = ['ids', 'int_attrs', 'float_attrs', 'string_attrs', 'labels', 'weights']
+    if (not name == 'node') and (graphs[0].edges is None):
+      return None
+
     for graph in graphs:
-      if type == 'node':
+      if name == 'node':
         item = graph.nodes
       else:
-        return None
+        item = graph.edges
       # flatten format.
-      ids_list = list_append(ids_list, item.ids)
-      int_attrs_list = list_append(int_attrs_list, item.int_attrs)
-      float_attrs_list = list_append(float_attrs_list, item.float_attrs)
-      string_attrs_list = list_append(string_attrs_list, item.string_attrs)
-    ids = np_concat(ids_list)
-    ints = np_concat(int_attrs_list)
-    floats = np_concat(float_attrs_list)
-    strings = np_concat(string_attrs_list)
-    return Data(ids, ints, floats, strings)
+      for i, ele in enumerate(ele_name):
+        if getattr(item, ele) is not None:
+          data_list[i].append(getattr(item, ele)) 
+    data_list = [np_concat(x) for x in data_list]
+    return Data(data_list[0], data_list[1], data_list[2], 
+      data_list[3], data_list[4], data_list[5])
 
   @classmethod
   def _build_edge_index(cls, graphs):
@@ -247,11 +255,15 @@ class BatchGraph(SubGraph):
     return np.concatenate(items, axis=0)
 
   @classmethod
-  def from_tensors(cls, tensors, node_schema, edge_schema=None, additional_keys=[], **kwargs):
-    """builds `BatchGraph` object from flatten tensors.
+  def from_tensors(cls, tensors, node_schema, 
+    edge_schema=None, use_edges=False, additional_keys=[], **kwargs):
+    """Builds `BatchGraph` object from flatten tensors.
+    The order of the build and the order of the flattening needs to be 
+    strictly consistent
     Args:
       tensors: A tuple of tensors corresponding to`BatchGraph` flatten format.
       node_schema: A (name, Decoder) tuple used to describe the nodes' feature.
+      use_edges: True if this graph contains edges.
       additional_keys: Keys(a list) of the additional data.
     Returns:
       A `BatchGraph` object in tensor format.
@@ -262,46 +274,46 @@ class BatchGraph(SubGraph):
       cursor[0] += 1
       return t
 
-    def build_node_from_tensors(feature_schema, tensors):
+    def _build_data_from_tensors(feature_schema, tensors):
       """Constructs nodes `Data` in Tensor format.
       Args:
         feature_schema: A (name, Decoder) tuple used to parse the feature.
       Returns:
         A `Data` object in Tensor format.
       """
+      int_attrs, float_attrs, string_attrs, labels, weights, ids = [None]*6
       if feature_schema[1].int_attr_num > 0:
         int_attrs = next(tensors)
-      else:
-        int_attrs = None
       if feature_schema[1].float_attr_num > 0:
         float_attrs = next(tensors)
-      else:
-        float_attrs = None
       if feature_schema[1].string_attr_num > 0:
         string_attrs = next(tensors)
-      else:
-        string_attrs = None
+      if feature_schema[1].labeled:
+        labels = next(tensors)
+      if feature_schema[1].weighted:
+        weights = next(tensors)
       ids = next(tensors)
       feature_tensor = Data(ids,
                             ints=int_attrs,
                             floats=float_attrs,
-                            strings=string_attrs)
+                            strings=string_attrs,
+                            labels=labels,
+                            weights=weights)
       return feature_tensor
 
-    # src
     edge_index = next(tensors)
+    node_tensor, graph_node_offsets, edge_tensor, graph_edge_offsets = [None] * 4
     if node_schema is not None:
-      node_tensor = build_node_from_tensors(node_schema, tensors)
+      node_tensor = _build_data_from_tensors(node_schema, tensors)
       graph_node_offsets = next(tensors)
-    else:
-      node_tensor = None
-      graph_node_offsets = None
 
-    #TODO(baole): support Edge.
-    edge_tensor = None
-    graph_edge_offsets = None
+    if use_edges and edge_schema is not None:
+      edge_tensor = _build_data_from_tensors(edge_schema, tensors)
+      graph_edge_offsets = next(tensors)
 
-    graph = BatchGraph(edge_index, node_tensor, node_schema, graph_node_offsets,
+    graph = BatchGraph(edge_index, node_tensor, 
+      node_schema, graph_node_offsets,
+      edge_schema, graph_edge_offsets,
       additional_keys=additional_keys)
     for key in additional_keys:
       item = next(tensors)
