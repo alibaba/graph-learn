@@ -105,9 +105,9 @@ def induce_func(data_dict):
     labels = np.concatenate((labels, nbr.labels[begin:end]), axis=0)
     for j in range(nbr.offsets[i]):
       row.append(0)
-      col.append(j)
+      col.append(j+1)
       col.append(0)
-      row.append(j)
+      row.append(j+1)
     offset += nbr.offsets[i]
     edge_index = np.stack([np.array(row), np.array(col)], axis=0)
     subgraph = Data(torch.from_numpy(float_attrs),
