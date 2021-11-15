@@ -77,6 +77,7 @@ void ChannelManager::SetCapacity(int32_t capacity) {
 }
 
 void ChannelManager::Stop() {
+  ScopedLocker<std::mutex> _(&mtx_);
   bool to_stop = true;
   for (size_t i = 0; i < channels_.size(); ++i) {
     if (!channels_[i]->IsStopped()) {
@@ -149,6 +150,7 @@ std::string ChannelManager::GetEndpoint(int32_t server_id) {
 
 void ChannelManager::Refresh() {
   while (!stopped_) {
+    ScopedLocker<std::mutex> _(&mtx_);
     for (size_t i = 0; i < channels_.size(); ++i) {
       if (channels_[i] && channels_[i]->IsBroken()) {
         std::string endpoint = engine_->Get(i);
