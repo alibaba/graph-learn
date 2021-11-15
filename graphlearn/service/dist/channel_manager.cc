@@ -43,7 +43,8 @@ ChannelManager* ChannelManager::GetInstance() {
 #endif
 }
 
-ChannelManager::ChannelManager() : stopped_(false) {
+ChannelManager::ChannelManager() {
+  stopped_.store(false);
   channels_.resize(GLOBAL_FLAG(ServerCount), nullptr);
 
   engine_ = NamingEngine::GetInstance();
@@ -86,7 +87,7 @@ void ChannelManager::Stop() {
   }
   if (to_stop) {
     engine_->Stop();
-    stopped_ = true;
+    stopped_.store(true);
     sleep(1);
   }
 }
@@ -149,8 +150,11 @@ std::string ChannelManager::GetEndpoint(int32_t server_id) {
 }
 
 void ChannelManager::Refresh() {
-  while (!stopped_) {
+  while (!stopped_.load()) {
     ScopedLocker<std::mutex> _(&mtx_);
+    if (stopped_.load()) {
+      break;
+    }
     for (size_t i = 0; i < channels_.size(); ++i) {
       if (channels_[i] && channels_[i]->IsBroken()) {
         std::string endpoint = engine_->Get(i);
