@@ -1,9 +1,16 @@
 .vscode/
 
+*.pyc
+.ipynb_checkpoints
+*.egg-info/
+*.eggs
 built/*
 build/
 cmake-build/
+__pycache__/
 graphlearn/proto/service.pb*
 graphlearn/proto/service.grpc*
 graphlearn.egg-info/
 graphlearn/python/lib
+graphlearn/*.so
+graphlearn/*.dylib
