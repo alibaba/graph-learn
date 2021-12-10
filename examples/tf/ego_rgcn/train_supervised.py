@@ -139,7 +139,7 @@ def reformat_node_feature(data_dict, alias_list, feature_handler):
 def train(graph, model):
   tfg.conf.training = True
   query_train = query(graph, gl.Mask.TRAIN)
-  dataset = tfg.Dataset(query_train, window=5)
+  dataset = tfg.Dataset(query_train, window=10)
   data_dict = dataset.get_data_dict()
   feature_handler = tfg.FeatureHandler('feature_handler',
     query_train.get_node("train").decoder.feature_spec)
@@ -152,7 +152,7 @@ def train(graph, model):
 def test(graph, model):
   tfg.conf.training = False
   query_test = query(graph, gl.Mask.TEST)
-  dataset = tfg.Dataset(query_test, window=5)
+  dataset = tfg.Dataset(query_test, window=10)
   data_dict = dataset.get_data_dict()
   feature_handler = tfg.FeatureHandler('feature_handler',
     query_test.get_node("test").decoder.feature_spec)

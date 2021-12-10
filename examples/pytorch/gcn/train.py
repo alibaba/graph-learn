@@ -153,7 +153,7 @@ def run(args):
   # train loader
   train_query = query(g, args, mask=gl.Mask.TRAIN)
   if args.use_mp:
-    train_dataset = thg.Dataset(train_query, window=5, induce_func=induce_func, graph=g)
+    train_dataset = thg.Dataset(train_query, window=10, induce_func=induce_func, graph=g)
     graph_counts = thg.get_counts()
     while True:
       if not graph_counts:
@@ -162,7 +162,7 @@ def run(args):
         item_count_per_server = graph_counts[gl.get_mask_type('item', gl.Mask.TRAIN)]
         break
   else:
-    train_dataset = thg.Dataset(train_query, window=5, induce_func=induce_func)
+    train_dataset = thg.Dataset(train_query, window=10, induce_func=induce_func)
     item_count_per_server = g.server_get_stats()[gl.get_mask_type('item', gl.Mask.TRAIN)]
 
   print('item node count per server: ', item_count_per_server)
@@ -173,9 +173,9 @@ def run(args):
   # test loader
   test_query = query(g, args, mask=gl.Mask.TEST)
   if args.use_mp:
-    test_dataset = thg.Dataset(test_query, window=5, induce_func=induce_func, graph=g)
+    test_dataset = thg.Dataset(test_query, window=10, induce_func=induce_func, graph=g)
   else:
-    test_dataset = thg.Dataset(test_query, window=5, induce_func=induce_func)
+    test_dataset = thg.Dataset(test_query, window=10, induce_func=induce_func)
   test_loader = thg.PyGDataLoader(test_dataset, multi_process=args.use_mp)
 
   # define model

@@ -26,7 +26,7 @@ from graphlearn.python.nn.dataset import Dataset as RawDataset
 from graphlearn.python.nn.pytorch.data.utils import get_cluster_spec, is_server_launched
 
 class Dataset(th.utils.data.IterableDataset):
-  def __init__(self, query, window=5, induce_func=None, graph=None, cluster=None):
+  def __init__(self, query, window=10, induce_func=None, graph=None, cluster=None):
     """Dataset reformats the sampled batch from GSL query as `Data` object
     consists of Pytorch Tensors.
     Args:

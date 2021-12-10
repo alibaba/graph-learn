@@ -118,7 +118,7 @@ class EgoGraph(object):
     if self.nbr_edges:
       assert len(self.edge_schema) == len(self.nbr_edges)
       for i, nbr in enumerate(self.nbr_edges):
-        nbr_edges.append(transform_feat(self.nbr_edges[i], self.edge_schema[i + 1]))
+        nbr_edges.append(transform_feat(self.nbr_edges[i], self.edge_schema[i]))
 
     return EgoGraph(src, nbr_nodes, None, self.nbr_nums, nbr_edges)
 

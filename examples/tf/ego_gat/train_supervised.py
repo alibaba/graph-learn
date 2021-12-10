@@ -70,7 +70,7 @@ def accuracy(logits, labels):
 def train(graph, model, args):
   tfg.conf.training = True
   query_train = query(gl.Mask.TRAIN, args, graph)
-  dataset = tfg.Dataset(query_train, window=5)
+  dataset = tfg.Dataset(query_train, window=10)
   eg_train = dataset.get_egograph('train')
   train_embeddings = model.forward(eg_train)
   loss = supervised_loss(train_embeddings, eg_train.src.labels)
@@ -79,7 +79,7 @@ def train(graph, model, args):
 def test(graph, model, args):
   tfg.conf.training = False
   query_test = query(gl.Mask.TEST, args, graph)
-  dataset = tfg.Dataset(query_test, window=5)
+  dataset = tfg.Dataset(query_test, window=10)
   eg_test = dataset.get_egograph('test')
   test_embeddings = model.forward(eg_test)
   test_acc = accuracy(test_embeddings, eg_test.src.labels)

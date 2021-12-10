@@ -39,7 +39,7 @@ class Dataset(object):
     window: dataset capacity.
     inducer: A `SubGraphInducer` instance to generate SubGraph/HeteroSubGraph.
   """
-  def __init__(self, query, window=5, inducer=None, **kwargs):
+  def __init__(self, query, window=10, inducer=None, **kwargs):
     self._dag = query
     self.inducer = inducer
     self._additional_keys = []

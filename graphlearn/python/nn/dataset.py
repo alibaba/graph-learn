@@ -36,7 +36,7 @@ class Dataset(object):
     query (Dag): A GSL query, starts from .V()/.E(), ends up with .values().
     window (int, optional): Count of prefetched batches. Defaults to 5.
   """
-  def __init__(self, query, window=5):
+  def __init__(self, query, window=10):
     self._dag = query
     self._ds = DagDataset(query, window)
 

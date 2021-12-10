@@ -60,7 +60,7 @@ def query(graph, config):
 def train(graph, model, config):
   tfg.conf.training = True
   query_train = query(graph, config)
-  dataset = tfg.Dataset(query_train, window=5)
+  dataset = tfg.Dataset(query_train, window=10)
   src_ego = dataset.get_egograph('src')
   dst_ego = dataset.get_egograph('dst')
   neg_dst_ego = dataset.get_egograph('neg_dst')
