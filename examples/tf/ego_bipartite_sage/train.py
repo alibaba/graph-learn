@@ -24,15 +24,17 @@ import graphlearn.python.nn.tf as tfg
 
 from ego_bipartite_sage import EgoBipartiteGraphSAGE
 
-# TODO(baole): use a benchmark u2i recommender dataset.
+# TODO(baole): use a benchmark book_data recommender dataset.
 def load_graph(config):
   g = gl.Graph()\
-        .node("../../data/u2i/u2i_node_attrs", node_type="i",
-              decoder=gl.Decoder(attr_types=config['i_attr_types'], attr_dims=config['i_attr_dims']))\
-        .node("../../data/u2i/u2i_node_attrs", node_type="u",
-              decoder=gl.Decoder(attr_types=config['u_attr_types'], attr_dims=config['u_attr_dims']))\
-        .edge("../../data/u2i/u2i_20200222_train", edge_type=("u", "i", "u-i"),
-              decoder=gl.Decoder(weighted=True), directed=False)
+        .node("../../data/books_data/gl_item.txt", node_type="i",
+              decoder=gl.Decoder(attr_types=config['i_attr_types'], 
+                                 attr_dims=config['i_attr_dims']))\
+        .node("../../data/books_data/gl_user.txt", node_type="u",
+              decoder=gl.Decoder(attr_types=config['u_attr_types'], 
+                                 attr_dims=config['u_attr_dims']))\
+        .edge("../../data/books_data/gl_train.txt", edge_type=("u", "i", "u-i"),
+              decoder=gl.Decoder(weighted=False), directed=False)
   return g
 
 def meta_path_sample(ego, ego_type, ego_name, nbrs_num, sampler):
@@ -78,6 +80,36 @@ def train(graph, src_model, dst_model, config):
     temperature=config['temperature'])
   return dataset.iterator, loss
 
+def node_embedding(graph, model, node_type, config):
+  """ save node embedding.
+  Args:
+    node_type: 'u' or 'i'.
+  Return:
+    iterator, ids, embedding.
+  """
+  tfg.conf.training = False
+  ego_name = 'save_node_'+node_type
+  seed = graph.V(node_type).batch(config['batch_size']).alias(ego_name)
+  nbrs_num = config['u_nbrs_num'] if node_type == 'u' else config['i_nbrs_num']
+  query_save = meta_path_sample(seed, node_type, ego_name, nbrs_num, config['sampler']).values()
+  dataset = tfg.Dataset(query_save, window=10)
+  ego_graph = dataset.get_egograph(ego_name)
+  emb = model.forward(ego_graph)
+  return dataset.iterator, ego_graph.src.ids, emb
+
+def dump_embedding(sess, iter, ids, emb, emb_writer):
+  sess.run(iter.initializer)
+  while True:
+    try:
+      outs = sess.run([ids, emb])
+      # [B,], [B,dim]
+      feat = [','.join(str(x) for x in arr) for arr in outs[1]]
+      for id, feat in zip(outs[0], feat):
+        emb_writer.write('%d\t%s\n' % (id, feat))
+    except tf.errors.OutOfRangeError:
+      print('Save node embeddings done.')
+      break
+
 def run(config):
   g = load_graph(config)
   g.init()
@@ -97,8 +129,10 @@ def run(config):
                                   i_hidden_dims,
                                   agg_type=config['agg_type'],
                                   dropout=config['drop_out'])
-  # train and test
+  # train and save node embeddings.
   train_iterator, loss = train(g, u_model, i_model, config)
+  u_save_iter, u_ids, u_emb = node_embedding(g, u_model, 'u', config)
+  i_save_iter, i_ids, i_emb = node_embedding(g, i_model, 'i', config)
   optimizer=tf.train.AdamOptimizer(learning_rate=config['learning_rate'])
   train_op = optimizer.minimize(loss)
   train_ops = [loss, train_op]
@@ -112,30 +146,38 @@ def run(config):
       try:
         while True:
           ret = sess.run(train_ops)
-          print("Epoch {}, Iter {}, Loss {:.5f}".format(i, step, ret[0]))
+          if step % 100 == 0:
+            print("Epoch {}, Iter {}, Loss {:.5f}".format(i, step, ret[0]))
           step += 1
       except tf.errors.OutOfRangeError:
         sess.run(train_iterator.initializer) # reinitialize dataset.
+    print("Start saving embeddings...")
+    u_emb_writer = open('u_emb.txt', 'w')
+    i_emb_writer = open('i_emb.txt', 'w')
+    u_emb_writer.write('id:int64\temb:string\n')
+    i_emb_writer.write('id:int64\temb:string\n')
+    dump_embedding(sess, u_save_iter, u_ids, u_emb, u_emb_writer)
+    dump_embedding(sess, i_save_iter, i_ids, i_emb, i_emb_writer)
   g.close()
 
 
 if __name__ == "__main__":
-  config = {'batch_size': 128,
-            'u_attr_types': [("string", 10000)],
+  config = {'batch_size': 512,
+            'u_attr_types': [("int", 53000)],
             'u_attr_dims': [128],
-            'i_attr_types': [("string", 10000)],
+            'i_attr_types': [("int", 92000)],
             'i_attr_dims': [128],
             'hidden_dim': 128,
             'output_dim': 128,
             'u_nbrs_num': [10, 5],
-            'i_nbrs_num': [10],
+            'i_nbrs_num': [10, 5],
             'neg_num': 5,
             'learning_rate': 0.0001,
             'epoch': 10,
             'agg_type': 'mean',
             'drop_out': 0.0,
             'sampler': 'random',
-            'neg_sampler': 'in_degree',
+            'neg_sampler': 'random',
             'temperature': 0.07
             }
   run(config)
