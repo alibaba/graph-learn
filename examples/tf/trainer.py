@@ -72,8 +72,9 @@ class DistTrainer(object):
         worker_device='/job:worker/task:%d' % self.task_index,
         cluster=self.cluster_spec))
 
-  def init_session(self):
-    hooks = [self.sync_barrier]
+  def init_session(self, hooks=[]):
+    hooks_ = [self.sync_barrier]
+    hooks_.extend(hooks)
     conf = tf.ConfigProto()
     conf.gpu_options.allow_growth = True
     conf.allow_soft_placement = False
