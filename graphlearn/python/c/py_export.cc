@@ -62,6 +62,7 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
   m.def("set_tape_capacity", &SetGlobalFlagTapeCapacity);
   m.def("set_dataset_capacity", &SetGlobalFlagDatasetCapacity);
   m.def("set_ignore_invalid", &SetGlobalFlagIgnoreInvalid);
+  m.def("set_neg_sampler_retry_times", &SetGlobalFlagNegativeSamplingRetryTimes);
 
   // For Actor
   m.def("set_enable_actor", &SetGlobalFlagEnableActor);
