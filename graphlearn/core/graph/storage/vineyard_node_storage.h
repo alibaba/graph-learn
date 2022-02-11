@@ -93,21 +93,21 @@ public:
       auto range = frag_->InnerVertices(node_label_);
       #ifndef NDEBUG
           std::cerr << "node: get ids (no view): " << node_label_
-                    << ", range begin = " << range.begin().GetValue()
-                    << ", range end = " << range.end().GetValue() << std::endl;
+                    << ", range begin = " << range.begin_value()
+                    << ", range end = " << range.end_value() << std::endl;
       #endif
 #if defined(VINEYARD_USE_OID)
       all_ids_ = IdArray(oid_array_->raw_values(), oid_array_->length());
 #else
-      all_ids_ = IdArray(frag_->GetInnerVertexGid(range.begin()),
-                         frag_->GetInnerVertexGid(range.end()));
+      all_ids_ = IdArray(frag_->GetInnerVertexGid(*range.begin()),
+                         frag_->GetInnerVertexGid(*range.end()));
 #endif
     } else {
       auto range = frag_->InnerVertices(node_label_);
       #ifndef NDEBUG
           std::cerr << "node: get ids: " << node_label_ << " with view '" << node_view << "'"
-                    << ", range begin = " << range.begin().GetValue()
-                    << ", range end = " << range.end().GetValue() << std::endl;
+                    << ", range begin = " << range.begin_value()
+                    << ", range end = " << range.end_value() << std::endl;
       #endif
       std::mt19937 rng(seed);
       std::uniform_int_distribution<> rng_gen(0, nsplit);
@@ -297,7 +297,7 @@ public:
     auto id_range = frag_->InnerVertices(node_label_);
     auto vtable = frag_->vertex_data_table(node_label_);
     for (auto id = id_range.begin(); id < id_range.end(); ++id) {
-      auto offset = frag_->vertex_offset(id);
+      auto offset = frag_->vertex_offset(*id);
       value_list->emplace_back(arrow_line_to_attribute_value(
         offset, i32_indexes_, i64_indexes_, f32_indexes_, f64_indexes_,
         s_indexes_, ls_indexes_, vertex_table_accessors_), true);
