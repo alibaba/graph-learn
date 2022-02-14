@@ -109,7 +109,7 @@ const IndexList *get_all_in_degree(std::shared_ptr<gl_frag_t> const &frag,
   for (int label_id = 0; label_id < v_label_num; ++label_id) {
     auto id_range = frag->InnerVertices(label_id);
     for (auto id = id_range.begin(); id < id_range.end(); ++id) {
-      auto degree = frag->GetLocalInDegree(id, edge_label);
+      auto degree = frag->GetLocalInDegree(*id, edge_label);
       if (degree > 0) {
         degree_list->emplace_back(degree);
       }
@@ -126,7 +126,7 @@ const IndexList *get_all_out_degree(std::shared_ptr<gl_frag_t> const &frag,
   for (int label_id = 0; label_id < v_label_num; ++label_id) {
     auto id_range = frag->InnerVertices(label_id);
     for (auto id = id_range.begin(); id < id_range.end(); ++id) {
-      auto degree = frag->GetLocalOutDegree(id, edge_label);
+      auto degree = frag->GetLocalOutDegree(*id, edge_label);
       if (degree > 0) {
         degree_list->emplace_back(degree);
       }
@@ -264,11 +264,11 @@ void init_src_dst_list(std::shared_ptr<gl_frag_t> const &frag,
                        std::vector<std::pair<IdType, IdType>> &edge_offsets) {
   auto id_range = frag->InnerVertices(src_node_label);
   for (auto id = id_range.begin(); id < id_range.end(); ++id) {
-    auto oes = frag->GetOutgoingAdjList(id, edge_label);
+    auto oes = frag->GetOutgoingAdjList(*id, edge_label);
 #if defined(VINEYARD_USE_OID)
-    auto sid = frag->GetInnerVertexId(id);
+    auto sid = frag->GetInnerVertexId(*id);
 #else
-    auto sid = frag->GetInnerVertexGid(id);
+    auto sid = frag->GetInnerVertexGid(*id);
 #endif
     auto e = oes.begin();
     IdType csr_begin = dst_lists.size();
