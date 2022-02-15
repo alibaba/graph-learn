@@ -156,18 +156,29 @@ class LocalTFTrainer(TFTrainer):
   def __init__(self,
                model_func,
                epoch=100,
-               optimizer=tf.train.AdamOptimizer()):
+               optimizer=tf.train.AdamOptimizer(),
+               checkpoint_dir=None,
+               save_checkpoint_secs=None,
+               save_checkpoint_steps=None):
     super(LocalTFTrainer, self).__init__(model_func,
                                          epoch,
                                          optimizer)
     self.model = self._model_func()
+    self.checkpoint_dir = checkpoint_dir
+    self.save_checkpoint_secs = save_checkpoint_secs
+    self.save_checkpoint_steps = save_checkpoint_steps
 
   def init(self, **kwargs):
     config = tf.ConfigProto(allow_soft_placement=True)
     config.gpu_options.allow_growth = True
-    self.sess = tf.Session(config=config)
-    self.sess.run(tf.local_variables_initializer())
-    self.sess.run(tf.global_variables_initializer())
+    checkpoint_args = dict()
+    if self.checkpoint_dir is not None:
+        checkpoint_args['checkpoint_dir'] = self.checkpoint_dir
+    if self.save_checkpoint_secs is not None:
+        checkpoint_args['save_checkpoint_secs'] = self.save_checkpoint_secs
+    if self.save_checkpoint_steps is not None:
+        checkpoint_args['save_checkpoint_steps'] = self.save_checkpoint_steps
+    self.sess = tf.train.MonitoredTrainingSession(config=config, **checkpoint_args)
 
   def train(self, **kwargs):
     """tf.worker method.
@@ -229,7 +240,10 @@ class DistTFTrainer(TFTrainer):
                task_index,
                epoch=100,
                optimizer=tf.train.AdamOptimizer(),
-               val_frequency=10):
+               val_frequency=10,
+               checkpoint_dir=None,
+               save_checkpoint_secs=None,
+               save_checkpoint_steps=None):
     super(DistTFTrainer, self).__init__(model_func,
                                         epoch,
                                         optimizer)
@@ -237,6 +251,10 @@ class DistTFTrainer(TFTrainer):
     self.task_name = task_name
     self.task_index = task_index
     self._val_frequency = val_frequency
+
+    self.checkpoint_dir = checkpoint_dir
+    self.save_checkpoint_secs = save_checkpoint_secs
+    self.save_checkpoint_steps = save_checkpoint_steps
 
     conf = tf.ConfigProto()
     conf.gpu_options.allow_growth = True
@@ -250,9 +268,17 @@ class DistTFTrainer(TFTrainer):
       self.model = self._model_func()
 
   def init(self, **kwargs):
+    checkpoint_args = dict()
+    if self.checkpoint_dir is not None:
+        checkpoint_args['checkpoint_dir'] = self.checkpoint_dir
+    if self.save_checkpoint_secs is not None:
+        checkpoint_args['save_checkpoint_secs'] = self.save_checkpoint_secs
+    if self.save_checkpoint_steps is not None:
+        checkpoint_args['save_checkpoint_steps'] = self.save_checkpoint_steps
     self.sess = tf.train.MonitoredTrainingSession(
         master=self.server.target,
-        is_chief=(self.task_index == 0))
+        is_chief=(self.task_index == 0),
+        **checkpoint_args)
 
   def context(self, **kwargs):
     return tf.device(tf.train.replica_device_setter(
