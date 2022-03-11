@@ -501,7 +501,7 @@ execute_process (
 string(STRIP ${VERSION} VERSION)
 
 # python
-add_custom_target (python EXCLUDE_FROM_ALL)
+add_custom_target (python)
 add_dependencies (python pybind_target graphlearn_shared)
 add_custom_command (TARGET python
     COMMAND /bin/sh -c "rm -rf build"
