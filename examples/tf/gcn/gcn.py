@@ -71,7 +71,7 @@ class GCN(gl.LearningBasedModel):
     self.hidden_dim = hidden_dim
     self.in_drop_rate = in_drop_rate
     self.output_dim = output_dim
-    self.neighs_num = neighs_num
+    self.neighs_num = [10] * hops_num if neighs_num is None else neighs_num
     self.val_batch_size = val_batch_size if val_batch_size else batch_size
     self.test_batch_size = test_batch_size if test_batch_size else batch_size
     self.node_type=node_type
