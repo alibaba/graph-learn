@@ -135,7 +135,7 @@ class UltraGCN(object):
       output_shapes = [tf.TensorShape([None])]
     dataset = tf.data.Dataset.from_generator(generator,
                                              tuple(output_types),
-                                             tuple(output_shapes))
+                                             tuple(output_shapes)).prefetch(5)
     return dataset.make_initializable_iterator()
 
   def train_generator(self):
