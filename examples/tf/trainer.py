@@ -18,6 +18,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import atexit
 import datetime
 import os
 import time
@@ -48,12 +49,14 @@ class DistTrainer(object):
                task_index,
                worker_count,
                ckpt_dir=None,
+               ckpt_freq=None,
                profiling=False):
     self.cluster_spec = cluster_spec
     self.job_name = job_name
     self.task_index = task_index
     self.worker_count = worker_count
     self.ckpt_dir = ckpt_dir
+    self.ckpt_freq = ckpt_freq
     self.profiling = profiling
 
     conf = tf.ConfigProto()
@@ -68,11 +71,7 @@ class DistTrainer(object):
                                   config=conf)
     self.context = self.context
     self.sync_barrier = tfg.SyncBarrierHook(self.worker_count, self.task_index == 0)
-
-  def __exit__(self, exc_type, exc_value, tracebac):
-    if self.sess:
-      self.sess.close()
-    return True
+    self.sess = None
 
   def context(self):
     return tf.device(tf.train.replica_device_setter(
@@ -92,7 +91,7 @@ class DistTrainer(object):
       self.sess = tf.train.MonitoredTrainingSession(
           master=self.server.target,
           checkpoint_dir=self.ckpt_dir,
-          save_checkpoint_secs=1800,
+          save_checkpoint_secs=self.ckpt_freq,
           is_chief=(self.task_index == 0),
           hooks=hooks_,
           config=conf)
@@ -102,6 +101,11 @@ class DistTrainer(object):
           is_chief=(self.task_index == 0),
           hooks=hooks_,
           config=conf)
+
+    def _close_session():
+      if self.sess is not None:
+        self.sess.close()
+    atexit.register(_close_session)
 
   def train(self, iterator, loss, learning_rate, epochs=10, hooks=[], **kwargs):
     with self.context():
@@ -122,7 +126,7 @@ class DistTrainer(object):
       t = time.time()
       last_global_step = 0
       epoch = 0
-      while not self.sess.should_stop():
+      while (not self.sess.should_stop()) and (epoch < epochs):
         try:
           if self.profiling and self.task_index == 1 and \
             local_step % 100 == 0 and local_step > 500 and local_step < 1000:
@@ -145,29 +149,29 @@ class DistTrainer(object):
           epoch += 1
           print('End of an epoch.')
           self.sess._tf_sess().run(iterator.initializer)
-          if epoch >= epochs:
-            self.sync_barrier.end(self.sess)
-            break
-          else:
-            continue
         train_loss = outs[1]
         global_step = outs[-1]
         # Print results
         if local_step % 10 == 0:
           print(datetime.datetime.now(),
                 'Epoch {}, Iter {}, Global_step/sec {:.2f}, Time(s) {:.4f}, '
-                'Loss {:.5f}'
+                'Loss {:.5f}, Global_step {}'
                 .format(epoch, local_step,
                         (global_step - last_global_step) * 1.0 / (time.time() - t),
                         (time.time() - t) * 1.0 / 10,
-                        train_loss))
+                        train_loss, global_step))
           t = time.time()
           last_global_step = global_step
         local_step += 1
 
+      self.sync_barrier.end(self.sess)
+
   def save_node_embedding(self, emb_writer, iterator, ids, emb, batch_size):
     print('Start saving embeddings...')
     with self.context():
+      self.global_step = tf.train.get_or_create_global_step()
+      if self.sess is None:
+        self.init_session()
       local_step = 0
       self.sess._tf_sess().run(iterator.initializer)
       while True:

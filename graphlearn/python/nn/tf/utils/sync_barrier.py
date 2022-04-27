@@ -14,6 +14,7 @@
 # =============================================================================
 """sync barrier for distributed training."""
 
+import logging
 import time
 import tensorflow as tf
 
@@ -31,7 +32,7 @@ class SyncBarrierHook(tf.train.SessionRunHook):
   def begin(self):
     """Setup barrier queue.
     """
-    print('Number of workers: %d' % self._num_worker)
+    logging.info('Number of workers: %d' % self._num_worker)
     with tf.device(tf.DeviceSpec(job='ps', task=0,
                                  device_type='CPU', device_index=0)):
       self._queue = tf.FIFOQueue(capacity=self._num_worker,
@@ -50,7 +51,7 @@ class SyncBarrierHook(tf.train.SessionRunHook):
       while queue_size > 0:
         session.run(self._dequeue)
         queue_size = session.run(self._queue_size)
-      print('SyncBarrier queue cleared: %d' % queue_size)
+      logging.info('SyncBarrier queue cleared: %d' % queue_size)
 
   def end(self, session):
     if not self._end:
@@ -59,7 +60,7 @@ class SyncBarrierHook(tf.train.SessionRunHook):
       while queue_size < self._num_worker:
         queue_size = session.run(self._queue_size)
         time.sleep(5)
-        print('Waiting for other worker, finished %d, total %d' %
+        logging.info('Waiting for other worker, finished %d, total %d' %
               (queue_size, self._num_worker))
-      print('SyncBarrier passed.')
+      logging.info('SyncBarrier passed.')
       self._end = True
