@@ -39,7 +39,7 @@ void init_table_accessors(std::shared_ptr<arrow::Table> const &table,
       continue;
     }
     auto array = table->column(idx)->chunk(0);
-    table_accessors[idx] = vineyard::get_arrow_array_ptr(array);
+    table_accessors[idx] = vineyard::get_arrow_array_data(array);
     if (array->type()->Equals(arrow::int32())) {
       i32_indexes.emplace_back(idx);
     } else if (array->type()->Equals(arrow::int64())) {
