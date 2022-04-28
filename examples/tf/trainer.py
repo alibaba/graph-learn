@@ -18,6 +18,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import atexit
 import datetime
 import os
 import time
@@ -43,30 +44,28 @@ class DistTrainer(object):
                job_name,
                task_index,
                worker_count,
-               ckpt_dir=None):
+               ckpt_dir=None,
+               ckpt_freq=None):
     self.cluster_spec = cluster_spec
     self.job_name = job_name
     self.task_index = task_index
     self.worker_count = worker_count
     self.ckpt_dir = ckpt_dir
+    self.ckpt_freq = ckpt_freq
 
     conf = tf.ConfigProto()
     conf.gpu_options.allow_growth = True
     conf.allow_soft_placement = False
     conf.device_filters.append('/job:ps')
     conf.device_filters.append('/job:worker/task:%d' % self.task_index)
-    conf.inter_op_parallelism_threads = 1
+    # conf.inter_op_parallelism_threads = 1
     self.server = tf.train.Server(self.cluster_spec,
                                   job_name=self.job_name,
                                   task_index=self.task_index,
                                   config=conf)
     self.context = self.context
     self.sync_barrier = tfg.SyncBarrierHook(self.worker_count, self.task_index == 0)
-
-  def __exit__(self, exc_type, exc_value, tracebac):
-    if self.sess:
-      self.sess.close()
-    return True
+    self.sess = None
 
   def context(self):
     return tf.device(tf.train.replica_device_setter(
@@ -80,12 +79,12 @@ class DistTrainer(object):
     conf.allow_soft_placement = False
     conf.device_filters.append('/job:ps')
     conf.device_filters.append('/job:worker/task:%d' % self.task_index)
-    conf.inter_op_parallelism_threads = 1
+    # conf.inter_op_parallelism_threads = 1
     if self.ckpt_dir is not None:
       self.sess = tf.train.MonitoredTrainingSession(
           master=self.server.target,
           checkpoint_dir=self.ckpt_dir,
-          save_checkpoint_secs=1800,
+          save_checkpoint_secs=self.ckpt_freq,
           is_chief=(self.task_index == 0),
           hooks=hooks,
           config=conf)
@@ -96,45 +95,48 @@ class DistTrainer(object):
           hooks=hooks,
           config=conf)
 
+    def _close_session():
+      if self.sess is not None:
+        self.sess.close()
+    atexit.register(_close_session)
+
   def train(self, iterator, loss, learning_rate, epochs=10, **kwargs):
     with self.context():
       self.global_step = tf.train.get_or_create_global_step()
-      optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+      try:
+        optimizer = tf.train.AdamAsyncOptimizer(learning_rate=learning_rate)
+      except AttributeError:
+        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
       train_op = optimizer.minimize(loss, global_step=self.global_step)
       # if self._use_input_bn:
       #   update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
       #   train_op = tf.group([train_op, update_ops])
-      train_ops = [train_op, loss,
-                   self.global_step]
+      train_ops = [train_op, loss, self.global_step]
+      tf.add_to_collection(tf.GraphKeys.TABLE_INITIALIZERS, iterator.initializer)
       self.init_session()
       print('Start training...')
       local_step = 0
       t = time.time()
       last_global_step = 0
       epoch = 0
-      self.sess._tf_sess().run(iterator.initializer)
-      while not self.sess.should_stop():
+      while (not self.sess.should_stop()) and (epoch < epochs):
         try:
           outs = self.sess.run(train_ops)
         except tf.errors.OutOfRangeError:
           epoch += 1
           print('End of an epoch.')
           self.sess._tf_sess().run(iterator.initializer)
-          if epoch >= epochs:
-            break
-          else:
-            continue
         train_loss = outs[1]
         global_step = outs[-1]
         # Print results
         if local_step % 10 == 0:
           print(datetime.datetime.now(),
                 'Epoch {}, Iter {}, Global_step/sec {:.2f}, Time(s) {:.4f}, '
-                'Loss {:.5f}'
+                'Loss {:.5f}, Global_step {}'
                 .format(epoch, local_step,
                         (global_step - last_global_step) * 1.0 / (time.time() - t),
                         (time.time() - t) * 1.0 / 10,
-                        train_loss))
+                        train_loss, global_step))
           t = time.time()
           last_global_step = global_step
         local_step += 1

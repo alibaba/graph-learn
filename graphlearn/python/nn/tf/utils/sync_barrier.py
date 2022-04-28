@@ -26,6 +26,7 @@ class SyncBarrierHook(tf.train.SessionRunHook):
     self._queue = None
     self._enqueue = None
     self._dequeue = None
+    self._end = False
 
   def begin(self):
     """Setup barrier queue.
@@ -52,11 +53,13 @@ class SyncBarrierHook(tf.train.SessionRunHook):
       print('SyncBarrier queue cleared: %d' % queue_size)
 
   def end(self, session):
-    session.run(self._enqueue)
-    queue_size = session.run(self._queue_size)
-    while queue_size < self._num_worker:
+    if not self._end:
+      session.run(self._enqueue)
       queue_size = session.run(self._queue_size)
-      time.sleep(5)
-      print('Waiting for other worker, finished %d, total %d' %
-            (queue_size, self._num_worker))
-    print('SyncBarrier passed.')
+      while queue_size < self._num_worker:
+        queue_size = session.run(self._queue_size)
+        time.sleep(5)
+        print('Waiting for other worker, finished %d, total %d' %
+              (queue_size, self._num_worker))
+      print('SyncBarrier passed.')
+      self._end = True
