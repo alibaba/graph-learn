@@ -12,6 +12,8 @@
 namespace vineyard {
 template class ArrowFragment<graphlearn::io::vineyard_oid_t,
                              graphlearn::io::vineyard_vid_t>;
+template class ArrowVertexMap<graphlearn::io::vineyard_oid_t,
+                              graphlearn::io::vineyard_vid_t>;
 }
 #endif
 
