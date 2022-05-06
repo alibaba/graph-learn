@@ -229,46 +229,38 @@ class BipartiteGraphSage(gl.LearningBasedModel):
 
 
   def build(self):
-    ego_flow = gl.EgoFlow(self._sample_seed,
+    self.ego_flow = gl.EgoFlow(self._sample_seed,
                           self._positive_sample,
                           self._receptive_fn,
                           self.u_ego_spec,
                           dst_ego_spec=self.i_ego_spec,
                           negative_sample=self._negative_sample)
-    iterator = ego_flow.iterator
-    pos_src_ego_tensor = ego_flow.pos_src_ego_tensor
-    pos_dst_ego_tensor = ego_flow.pos_dst_ego_tensor
-    neg_dst_ego_tensor = ego_flow.neg_dst_ego_tensor
+    iterator = self.ego_flow.iterator
+    self.pos_src_ego_tensor = self.ego_flow.pos_src_ego_tensor
+    self.pos_dst_ego_tensor = self.ego_flow.pos_dst_ego_tensor
+    self.neg_dst_ego_tensor = self.ego_flow.neg_dst_ego_tensor
 
-    src_emb = self.encoders['src'].encode(pos_src_ego_tensor)
-    pos_dst_emb = self.encoders['dst'].encode(pos_dst_ego_tensor)
-    neg_dst_emb = self.encoders['dst'].encode(neg_dst_ego_tensor)
-    loss = self._unsupervised_loss(src_emb, pos_dst_emb, neg_dst_emb)
+    pos_src_emb = self.encoders['src'].encode(self.pos_src_ego_tensor)
+    pos_dst_emb = self.encoders['dst'].encode(self.pos_dst_ego_tensor)
+    neg_dst_emb = self.encoders['dst'].encode(self.neg_dst_ego_tensor)
+    self.pos_src_emb = pos_src_emb
+    self.pos_dst_emb = pos_dst_emb
+    self.neg_dst_emb = neg_dst_emb
+    loss = self._unsupervised_loss(pos_src_emb, pos_dst_emb, neg_dst_emb)
     return loss[0], iterator
 
 
   def node_embedding(self, type='u'):
     """Return embeddings for saving"""
+    iterator = self.ego_flow.iterator
     if type == 'u':
       # for save u embeddings
-      ego_flow = gl.EgoFlow(self._u_sample_seed,
-                            self._positive_sample,
-                            self._receptive_fn,
-                            self.u_ego_spec)
-      iterator = ego_flow.iterator
-      ego_tensor = ego_flow.pos_src_ego_tensor
-      emb = self.encoders['src'].encode(ego_tensor)
-      ids = ego_tensor.src.ids
+      emb = self.pos_src_emb
+      ids = self.pos_src_ego_tensor.src.ids
     else:
       # for save i embeddings
-      ego_flow = gl.EgoFlow(self._i_sample_seed,
-                            self._positive_sample,
-                            self._receptive_fn,
-                            self.i_ego_spec)
-      iterator = ego_flow.iterator
-      ego_tensor = ego_flow.pos_src_ego_tensor
-      emb = self.encoders['dst'].encode(ego_tensor)
-      ids = ego_tensor.src.ids
+      emb = self.pos_dst_emb
+      ids = self.pos_dst_ego_tensor.src.ids
 
     return ids, emb, iterator
 
