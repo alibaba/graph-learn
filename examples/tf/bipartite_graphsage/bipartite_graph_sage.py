@@ -230,11 +230,11 @@ class BipartiteGraphSage(gl.LearningBasedModel):
 
   def build(self):
     self.ego_flow = gl.EgoFlow(self._sample_seed,
-                          self._positive_sample,
-                          self._receptive_fn,
-                          self.u_ego_spec,
-                          dst_ego_spec=self.i_ego_spec,
-                          negative_sample=self._negative_sample)
+                               self._positive_sample,
+                               self._receptive_fn,
+                               self.u_ego_spec,
+                               dst_ego_spec=self.i_ego_spec,
+                               negative_sample=self._negative_sample)
     iterator = self.ego_flow.iterator
     self.pos_src_ego_tensor = self.ego_flow.pos_src_ego_tensor
     self.pos_dst_ego_tensor = self.ego_flow.pos_dst_ego_tensor
