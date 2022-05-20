@@ -126,6 +126,7 @@ class DistTrainer(object):
       t = time.time()
       last_global_step = 0
       epoch = 0
+      outs = None
       while (not self.sess.should_stop()) and (epoch < epochs):
         try:
           if self.profiling and self.task_index == 1 and \
@@ -149,20 +150,21 @@ class DistTrainer(object):
           epoch += 1
           print('End of an epoch.')
           self.sess._tf_sess().run(iterator.initializer)
-        train_loss = outs[1]
-        global_step = outs[-1]
-        # Print results
-        if local_step % 10 == 0:
-          print(datetime.datetime.now(),
-                'Epoch {}, Iter {}, Global_step/sec {:.2f}, Time(s) {:.4f}, '
-                'Loss {:.5f}, Global_step {}'
-                .format(epoch, local_step,
-                        (global_step - last_global_step) * 1.0 / (time.time() - t),
-                        (time.time() - t) * 1.0 / 10,
-                        train_loss, global_step))
-          t = time.time()
-          last_global_step = global_step
-        local_step += 1
+        if outs is not None:
+          train_loss = outs[1]
+          global_step = outs[-1]
+          # Print results
+          if local_step % 10 == 0:
+            print(datetime.datetime.now(),
+                  'Epoch {}, Iter {}, Global_step/sec {:.2f}, Time(s) {:.4f}, '
+                  'Loss {:.5f}, Global_step {}'
+                  .format(epoch, local_step,
+                          (global_step - last_global_step) * 1.0 / (time.time() - t),
+                          (time.time() - t) * 1.0 / 10,
+                          train_loss, global_step))
+            t = time.time()
+            last_global_step = global_step
+          local_step += 1
 
       self.sync_barrier.end(self.sess)
 
