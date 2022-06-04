@@ -16,6 +16,9 @@ limitations under the License.
 #include "graphlearn/service/dist/channel_manager.h"
 
 #include <unistd.h>
+#include <memory>
+#include <unordered_map>
+
 #include "graphlearn/common/base/log.h"
 #include "graphlearn/common/string/string_tool.h"
 #include "graphlearn/common/threading/sync/lock.h"
@@ -27,11 +30,21 @@ limitations under the License.
 namespace graphlearn {
 
 ChannelManager* ChannelManager::GetInstance() {
+#if defined(WITH_VINEYARD)
+  static std::unordered_map<uint64_t, std::shared_ptr<ChannelManager>> managers;
+  uint64_t key = GLOBAL_FLAG(VineyardGraphID);
+  if (managers.find(key) == managers.end()) {
+    managers[key] = std::shared_ptr<ChannelManager>(new ChannelManager());
+  }
+  return managers[key].get();
+#else
   static ChannelManager manager;
   return &manager;
+#endif
 }
 
-ChannelManager::ChannelManager() : stopped_(false) {
+ChannelManager::ChannelManager() {
+  stopped_.store(false);
   channels_.resize(GLOBAL_FLAG(ServerCount), nullptr);
 
   engine_ = NamingEngine::GetInstance();
@@ -65,9 +78,18 @@ void ChannelManager::SetCapacity(int32_t capacity) {
 }
 
 void ChannelManager::Stop() {
-  engine_->Stop();
-  stopped_ = true;
-  sleep(1);
+  ScopedLocker<std::mutex> _(&mtx_);
+  bool to_stop = true;
+  for (size_t i = 0; i < channels_.size(); ++i) {
+    if (!channels_[i]->IsStopped()) {
+      to_stop = false;
+    }
+  }
+  if (to_stop) {
+    engine_->Stop();
+    stopped_.store(true);
+    sleep(1);
+  }
 }
 
 GrpcChannel* ChannelManager::ConnectTo(int32_t server_id) {
@@ -101,6 +123,12 @@ GrpcChannel* ChannelManager::AutoSelect() {
   return ConnectTo(servers[0]);
 }
 
+std::vector<int32_t> ChannelManager::GetOwnServers() {
+  std::vector<int32_t> servers;
+  balancer_->GetPart(GLOBAL_FLAG(ClientId), &servers);
+  return servers;
+}
+
 std::string ChannelManager::GetEndpoint(int32_t server_id) {
   if (engine_->Size() < channels_.size()) {
     LOG(WARNING) << "Waiting for all servers started: "
@@ -122,13 +150,19 @@ std::string ChannelManager::GetEndpoint(int32_t server_id) {
 }
 
 void ChannelManager::Refresh() {
-  while (!stopped_) {
-    for (size_t i = 0; i < channels_.size(); ++i) {
-      if (channels_[i] && channels_[i]->IsBroken()) {
-        std::string endpoint = engine_->Get(i);
-        if (!endpoint.empty()) {
-          LOG(WARNING) << "Reset channel " << i << " with " << endpoint;
-          channels_[i]->Reset(endpoint);
+  while (!stopped_.load()) {
+    {
+      ScopedLocker<std::mutex> _(&mtx_);
+      if (stopped_.load()) {
+        break;
+      }
+      for (size_t i = 0; i < channels_.size(); ++i) {
+        if (channels_[i] && channels_[i]->IsBroken()) {
+          std::string endpoint = engine_->Get(i);
+          if (!endpoint.empty()) {
+            LOG(WARNING) << "Reset channel " << i << " with " << endpoint;
+            channels_[i]->Reset(endpoint);
+          }
         }
       }
     }

@@ -34,6 +34,7 @@ public:
   ~ChannelManager();
 
   void SetCapacity(int32_t capacity);
+  std::vector<int32_t> GetOwnServers();
 
   /// Stop the background refresh thread.
   /// Be sure that ChannelManager shoud stop after NamingEngine.
@@ -50,7 +51,7 @@ private:
 
 private:
   std::mutex    mtx_;
-  bool          stopped_;
+  std::atomic<bool> stopped_;
   NamingEngine* engine_;
   LoadBalancer* balancer_;
   std::vector<GrpcChannel*> channels_;

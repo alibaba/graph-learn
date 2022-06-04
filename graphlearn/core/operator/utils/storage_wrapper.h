@@ -30,9 +30,9 @@ public:
       GraphStore* graph_store);
   ~StorageWrapper() {}
 
-  const ::graphlearn::io::IdList* GetIds();
-  const std::vector<float>* GetNodeWeights() const;
-  const std::vector<int32_t>* GetAllInDegrees() const;
+  const ::graphlearn::io::IdArray GetIds();
+  const ::graphlearn::io::Array<float> GetNodeWeights() const;
+  const ::graphlearn::io::IndexList* GetAllInDegrees() const;
   ::graphlearn::io::Array<int64_t> GetNeighbors(int64_t src_id) const;
   void Lock(); 
   void Unlock();

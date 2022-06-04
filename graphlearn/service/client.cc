@@ -76,6 +76,10 @@ Status Client::Report(const StateRequestPb* request) {
   return impl_->Report(request);
 }
 
+std::vector<int32_t> Client::GetOwnServers() {
+  return impl_->GetOwnServers();
+}
+
 Client* NewInMemoryClient() {
   return new Client(NewInMemoryClientImpl());
 }
@@ -111,9 +115,9 @@ private:
   std::vector<ClientImpl*> clients_;
 };
 
-Client* NewRpcClient(int32_t server_id, bool server_own) {
+Client* NewRpcClient(int32_t server_id, bool server_own, bool client_own) {
   static ClientManager manager;
-  if (server_id < 0) {
+  if (server_id < 0 || client_own) {
     // auto select
     return new Client(NewRpcClientImpl(server_id, server_own), true);
   } else {

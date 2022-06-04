@@ -90,7 +90,7 @@ protected:
           }
         }
 
-        int64_t item = dst_ids->at(indices[cursor++]);
+        int64_t item = dst_ids[indices[cursor++]];
         if (sets.find(item) == sets.end()) {
           res->AppendNeighborId(item);
           ++count;
@@ -125,7 +125,7 @@ protected:
       am->Sample(count, indices.get());
       for (int32_t j = 0; j < count; ++j) {
         int32_t idx = indices[j];
-        res->AppendNeighborId((*dst_ids)[idx]);
+        res->AppendNeighborId(dst_ids[idx]);
       }
     }
   }

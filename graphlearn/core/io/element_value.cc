@@ -58,6 +58,10 @@ public:
     s_attrs_ = right.s_attrs_;
   }
 
+  ~DataHeldAttributeValue() override {
+    this->Clear();
+  }
+
   void Clear() override {
     i_attrs_.clear();
     f_attrs_.clear();
@@ -155,6 +159,10 @@ class DataRefAttributeValue : public AttributeValue {
 public:
   DataRefAttributeValue()
     : i_attrs_(nullptr), i_len_(0), f_attrs_(nullptr), f_len_(0) {
+  }
+
+  ~DataRefAttributeValue() override {
+    this->Clear();
   }
 
   void Clear() override {

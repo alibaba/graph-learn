@@ -39,7 +39,9 @@ TEST(ThreadTest, LaunchWithFunction) {
     Closure<void>* func = NewClosure(&ThreadFunc);
     ThreadHandle handle = CreateThread(func);
     ::usleep(10000);
+#if !__APPLE__
     EXPECT_NE(0u, handle);
+#endif
     EXPECT_EQ(1, sCount);
 }
 
@@ -48,7 +50,9 @@ TEST(ThreadTest, LaunchWithMethod) {
     Closure<void>* func = NewClosure(&foo, &Foo::Bar);
     ThreadHandle handle = CreateThread(func);
     ::usleep(10000);
+#if !__APPLE__
     EXPECT_NE(0u, handle);
+#endif
     EXPECT_EQ(1, foo.count_);
 }
 

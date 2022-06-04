@@ -131,6 +131,10 @@ public:
     return s;
   }
 
+  std::vector<int32_t> GetOwnServers() override {
+    return manager_->GetOwnServers();
+  }
+
 private:
   bool IsRetryable(const Status& s) {
     return error::IsUnavailable(s) || error::IsDeadlineExceeded(s);

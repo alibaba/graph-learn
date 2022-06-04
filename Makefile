@@ -360,7 +360,7 @@ python: so pybind
 	@rm -rf $(PYTHON_LIB)
 	@mkdir -p $(PYTHON_LIB)
 	@cp $(SETUP_DIR)/gl.__init__.py $(PYTHON_DIR)/__init__.py
-	@echo "__version__ = $(VERSION)" >> $(PYTHON_DIR)/__init__.py
+	@echo "__version__ = \"$(VERSION)\"" >> $(PYTHON_DIR)/__init__.py
 	@echo "__git_version__ = '$(GIT_BRANCH)-$(GIT_VERSION)'" >> $(PYTHON_DIR)/__init__.py
 	@cp $(LIB_DIR)/libgraphlearn_shared.so $(PYTHON_LIB)
 

@@ -45,7 +45,7 @@ void SetContext(::grpc::ClientContext* ctx) {
 }  // anonymous namespace
 
 GrpcChannel::GrpcChannel(const std::string& endpoint)
-    : broken_(false), endpoint_(endpoint) {
+    : broken_(false), stopped_(false), endpoint_(endpoint) {
   if (endpoint.empty()) {
     broken_ = true;
   } else {
@@ -63,6 +63,10 @@ void GrpcChannel::MarkBroken() {
 
 bool GrpcChannel::IsBroken() const {
   return broken_;
+}
+
+bool GrpcChannel::IsStopped() const {
+  return stopped_;
 }
 
 void GrpcChannel::Reset(const std::string& endpoint) {
@@ -108,6 +112,7 @@ Status GrpcChannel::CallDagValues(const DagValuesRequestPb* req,
 }
 
 Status GrpcChannel::CallStop(const StopRequestPb* req, StatusResponsePb* res) {
+  stopped_ = true;
   if (broken_) {
     return error::Unavailable("Channel is broken, please retry later");
   }

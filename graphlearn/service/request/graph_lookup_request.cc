@@ -485,6 +485,7 @@ void LookupResponse::AppendLabel(int32_t label) {
 
 void LookupResponse::AppendAttribute(const io::AttributeValue* value) {
   if (info_->IsAttributed()) {
+#if 0
     auto ints = value->GetInts(nullptr);
     for (int32_t i = 0; i < info_->i_num; ++i) {
       i_attrs_->AddInt64(ints[i]);
@@ -499,6 +500,11 @@ void LookupResponse::AppendAttribute(const io::AttributeValue* value) {
     for (int32_t i = 0; i < info_->s_num; ++i) {
       s_attrs_->AddString(ss[i]);
     }
+#else
+    value->FillInts(i_attrs_);
+    value->FillFloats(f_attrs_);
+    value->FillStrings(s_attrs_);
+#endif
   }
 }
 

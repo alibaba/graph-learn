@@ -136,30 +136,30 @@ protected:
       }
     }
 
-    const IdList* node_ids = storage->GetIds();
-    EXPECT_EQ(node_ids->size(), node_count);
+    const IdArray node_ids = storage->GetIds();
+    EXPECT_EQ(node_ids.Size(), node_count);
     for (IdType index = 0; index < node_count; ++index) {
-      EXPECT_EQ(node_ids->at(index), index);
+      EXPECT_EQ(node_ids[index], index);
     }
 
-    const IndexList* labels = storage->GetLabels();
+    const Array<int32_t> labels = storage->GetLabels();
     if (info_.IsLabeled()) {
-      EXPECT_EQ(labels->size(), node_count);
+      EXPECT_EQ(labels.Size(), node_count);
       for (IdType index = 0; index < node_count; ++index) {
-        EXPECT_EQ(labels->at(index), index);
+        EXPECT_EQ(labels.at(index), index);
       }
     } else {
-      EXPECT_EQ(labels->size(), 0);
+      EXPECT_EQ(labels.Size(), 0);
     }
 
-    const std::vector<float>* weights = storage->GetWeights();
+    const Array<float> weights = storage->GetWeights();
     if (info_.IsWeighted()) {
-      EXPECT_EQ(weights->size(), node_count);
+      EXPECT_EQ(weights.Size(), node_count);
       for (IdType index = 0; index < node_count; ++index) {
-        EXPECT_EQ(weights->at(index), float(index));
+        EXPECT_EQ(weights[index], float(index));
       }
     } else {
-      EXPECT_EQ(weights->size(), 0);
+      EXPECT_EQ(weights.Size(), 0);
     }
   }
 

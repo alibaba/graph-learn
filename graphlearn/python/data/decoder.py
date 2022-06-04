@@ -16,6 +16,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
+import numpy as np
+
 from graphlearn.python.data.feature_spec import FeatureSpec
 
 class Decoder(object):
@@ -217,6 +220,9 @@ class Decoder(object):
       float_attrs = float_attrs.reshape(-1, self._float_attr_num)
 
     if string_attrs is not None:
-      string_attrs = string_attrs.reshape(-1, self._string_attr_num)
+      string_attrs = np.array([s.decode('utf-8', errors='ignore') for s in string_attrs])
+      if (sys.version_info[0] == '3'):
+        # For Python 3.X, encode string attributes as Unicode.
+        string_attrs = string_attrs.astype('U')
 
     return int_attrs, float_attrs, string_attrs

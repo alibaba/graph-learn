@@ -37,7 +37,7 @@ public:
     ::graphlearn::io::NodeStorage* storage = noder->GetLocalStorage();
 
     response->Init();
-    response->Set(storage->GetIds()->size());
+    response->Set(storage->GetIds().Size());
     return Status::OK();
   }
 

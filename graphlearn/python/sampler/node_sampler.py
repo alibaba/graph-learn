@@ -101,7 +101,17 @@ class NodeSampler(object):
     res = pywrap.new_get_nodes_response()
     status = self._client.get_nodes(req, res)
     if not status.ok():
-      self._graph.node_state.inc(mask_type)
+      if self._client.connect_to_next_server():
+        req = pywrap.new_get_nodes_request(mask_type,
+                                           self._strategy,
+                                           self._node_from,
+                                           self._batch_size,
+                                           state)
+        res = pywrap.new_get_nodes_response()
+        status = self._client.get_nodes(req, res)
+        ids = pywrap.get_node_ids(res)
+      else:
+        self._graph.node_state.inc(mask_type)
     else:
       ids = pywrap.get_node_ids(res)
 

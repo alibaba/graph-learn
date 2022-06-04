@@ -102,3 +102,9 @@ def set_local_shard_count(count):
   assert isinstance(count, int) and count > 0
   pywrap.set_local_shard_count(count)
 
+def set_vineyard_graph_id(graph_id):
+  pywrap.set_vineyard_graph_id(graph_id)
+
+
+def set_vineyard_ipc_socket(ipc_socket):
+  pywrap.set_vineyard_ipc_socket(ipc_socket)

@@ -18,10 +18,11 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy
-import os, sys
+import os
 from setuptools import setup, Extension, find_packages
 import shlex
 from subprocess import check_output
+import sys
 
 # This version string should be updated when releasing a new version.
 _VERSION = '1.0.1'
@@ -49,8 +50,11 @@ library_dirs.append(ROOT_PATH + '/built/lib')
 extra_compile_args.append('-D__USE_XOPEN2K8')
 extra_compile_args.append('-std=c++11')
 extra_compile_args.append('-fvisibility=hidden')
-extra_link_args.append('-Wl,-rpath=$ORIGIN/python/lib/')
+if sys.platform == 'linux' or sys.platform == 'linux2':
+    extra_link_args.append('-Wl,-rpath=$ORIGIN/python/lib/')
 
+include_dirs.append('/usr/include')
+include_dirs.append('/usr/local/include')
 
 libraries.append('graphlearn_shared')
 
@@ -88,4 +92,4 @@ setup(
     package_dir={'graphlearn' : 'graphlearn'},
     package_data={'': ['python/lib/lib*.so*']},
     license='Apache License 2.0',
-    )
+)

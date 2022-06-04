@@ -21,6 +21,7 @@ limitations under the License.
 #include "graphlearn/include/client.h"
 #include "graphlearn/include/dag_request.h"
 #include "graphlearn/common/threading/runner/threadpool.h"
+#include "graphlearn/common/threading/sync/semaphore_shim.h"
 
 namespace graphlearn {
 
@@ -43,7 +44,11 @@ private:
   int32_t cap_;
   int32_t cursor_;
 
+#if __APPLE__
+  std::vector<macos_sem_t> occupied_;
+#else
   std::vector<sem_t> occupied_;
+#endif
   std::atomic<int32_t> head_;
   std::unique_ptr<ThreadPool> tp_;
   std::vector<GetDagValuesResponse*> buffer_;

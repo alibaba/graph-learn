@@ -110,6 +110,9 @@ DEFINE_INT32_GLOBAL_FLAG(IgnoreInvalid, 1) // 1 is True, 0 is False.
 DEFINE_INT32_GLOBAL_FLAG(LocalShardCount, 8)
 
 
+DEFINE_INT64_GLOBAL_FLAG(VineyardGraphID, 0)
+DEFINE_STRING_GLOBAL_FLAG(VineyardIPCSocket, "/tmp/vineyard.sock")
+
 // Define the setters
 DEFINE_SET_INT32_GLOBAL_FLAG(DeployMode)
 DEFINE_SET_INT32_GLOBAL_FLAG(EnableActor)
@@ -147,5 +150,8 @@ DEFINE_SET_INT32_GLOBAL_FLAG(LocalShardCount)
 // Define the getters
 /// Only export flags that are needed by system.
 DEFINE_GET_INT32_GLOBAL_FLAG(TrackerMode)
+
+DEFINE_SET_INT64_GLOBAL_FLAG(VineyardGraphID)
+DEFINE_SET_STRING_GLOBAL_FLAG(VineyardIPCSocket)
 
 }  // namespace graphlearn

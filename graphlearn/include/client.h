@@ -57,13 +57,14 @@ public:
 
   Status Stop();
   Status Report(const StateRequestPb* request);
-
 #undef DECLARE_METHOD
+
+  std::vector<int32_t> GetOwnServers();
 
 private:
   explicit Client(ClientImpl* impl, bool own = true);
   friend Client* NewInMemoryClient();
-  friend Client* NewRpcClient(int32_t server_id, bool server_own);
+  friend Client* NewRpcClient(int32_t server_id, bool server_own, bool client_own);
 
 private:
   ClientImpl* impl_;
@@ -71,7 +72,8 @@ private:
 };
 
 Client* NewInMemoryClient();
-Client* NewRpcClient(int32_t server_id = -1, bool server_own = true);
+Client* NewRpcClient(int32_t server_id = -1, bool server_own = true,
+                     bool client_own = false);
 
 }  // namespace graphlearn
 

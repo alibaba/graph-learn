@@ -34,6 +34,7 @@ public:
 
   void MarkBroken();
   bool IsBroken() const;
+  bool IsStopped() const;
   void Reset(const std::string& endpoint);
 
   Status CallMethod(const OpRequestPb* req, OpResponsePb* res);
@@ -50,6 +51,7 @@ private:
 private:
   std::mutex mtx_;
   volatile bool broken_;
+  bool stopped_;
   std::string endpoint_;
   std::shared_ptr<::grpc::Channel> channel_;
   std::unique_ptr<GraphLearn::Stub> stub_;

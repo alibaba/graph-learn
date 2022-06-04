@@ -106,7 +106,14 @@ public:
 
 #else
 
-#error ARCHITECT NOT SUPPORTED
+template<>
+class AtomicDetail<8> : public AtomicDetailDefault {
+public:
+  template<typename T>
+  static void Set(volatile T* target, T value) {
+    __sync_lock_test_and_set(target, value);
+  }
+};
 
 #endif
 
