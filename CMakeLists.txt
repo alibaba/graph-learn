@@ -271,11 +271,23 @@ endif()
 
 set (GL_CXX_FLAGS ${MODEFLAGS} -std=c++14 -fPIC
     -pthread -mavx -msse4.2 -msse4.1 
-    -D${PROFILING_FLAG} 
-    -I. -I${ROOT} -I${BUILT_DIR} 
-    -I${PROTOBUF_INCLUDE} 
-    -I${GLOG_INCLUDE} 
-    -I${GRPC_INCLUDE})
+    -D${PROFILING_FLAG})
+include_directories(.)
+if(ROOT)
+    include_directories(${ROOT})
+endif()
+if(BUILT_DIR)
+    include_directories(${BUILT_DIR})
+endif()
+if(PROTOBUF_INCLUDE)
+    include_directories(${PROTOBUF_INCLUDE})
+endif()
+if(GLOG_INCLUDE)
+    include_directories(${GLOG_INCLUDE})
+endif()
+if(GRPC_INCLUDE)
+    include_directories(${GRPC_INCLUDE})
+endif()
 
 add_library (graphlearn_shared SHARED
     ${proto_generated_files}
