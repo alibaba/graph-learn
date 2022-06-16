@@ -108,7 +108,7 @@ DEFINE_INT32_GLOBAL_FLAG(KnnMetric, 0)  // 0 is l2, 1 is inner product.
 DEFINE_INT32_GLOBAL_FLAG(NegativeSamplingRetryTimes, 5)
 DEFINE_INT32_GLOBAL_FLAG(IgnoreInvalid, 1) // 1 is True, 0 is False.
 DEFINE_INT32_GLOBAL_FLAG(LocalShardCount, 8)
-
+DEFINE_STRING_GLOBAL_FLAG(FieldDelimiter, "\t")
 
 // Define the setters
 DEFINE_SET_INT32_GLOBAL_FLAG(DeployMode)
@@ -143,6 +143,7 @@ DEFINE_SET_INT32_GLOBAL_FLAG(KnnMetric)
 DEFINE_SET_INT32_GLOBAL_FLAG(NegativeSamplingRetryTimes)
 DEFINE_SET_INT32_GLOBAL_FLAG(IgnoreInvalid)
 DEFINE_SET_INT32_GLOBAL_FLAG(LocalShardCount)
+DEFINE_SET_STRING_GLOBAL_FLAG(FieldDelimiter)
 
 // Define the getters
 /// Only export flags that are needed by system.

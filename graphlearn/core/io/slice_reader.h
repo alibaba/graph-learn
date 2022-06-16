@@ -19,7 +19,9 @@ limitations under the License.
 #include <algorithm>
 #include <cstdint>
 #include <memory>
+#include <type_traits>
 #include <vector>
+
 #include "graphlearn/common/base/errors.h"
 #include "graphlearn/common/base/macros.h"
 #include "graphlearn/common/string/string_tool.h"
@@ -55,31 +57,51 @@ public:
     Status s = env_->GetFileSystem(current_->path, &fs);
     LOG_RETURN_IF_NOT_OK(s)
 
-    uint64_t file_size = 0;
-    s = fs->GetRecordCount(current_->path, &file_size);
-    LOG_RETURN_IF_NOT_OK(s)
+    if (! SingleThreadMode(current_->path)) {
+      uint64_t file_size = 0;
+      s = fs->GetRecordCount(current_->path, &file_size);
+      LOG_RETURN_IF_NOT_OK(s)
 
-    int32_t slice_id = 0;
-    int32_t slice_count = 1;
-    if (IsDistributeShared(current_->path)) {
-      slice_id = env_->GetServerId() * thread_num_ + thread_id_;
-      slice_count = env_->GetServerCount() * thread_num_;
-    } else if (current_->local_shared) {
-      slice_id = thread_id_;
-      slice_count = thread_num_;
+      int32_t slice_id = 0;
+      int32_t slice_count = 1;
+      if (IsDistributeShared(current_->path)) {
+        slice_id = env_->GetServerId() * thread_num_ + thread_id_;
+        slice_count = env_->GetServerCount() * thread_num_;
+      } else if (current_->local_shared) {
+        slice_id = thread_id_;
+        slice_count = thread_num_;
+      }
+
+      DataSlicer slicer(slice_id, slice_count, file_size);
+      offset_ = slicer.LocalStart();
+      end_ = offset_ + slicer.LocalSize();
+      LOG(INFO) << "file_size:" << file_size
+                << "thread id:" << thread_id_
+                << ", thread num:" << thread_num_
+                << ", offset:" << offset_
+                << ", end:" << end_;
+      s = fs->NewStructuredAccessFile(current_->path, offset_, end_, &reader_);
+    } else {
+      s = fs->NewStructuredAccessFile(current_->path, 0, 0, &reader_);
     }
-
-    DataSlicer slicer(slice_id, slice_count, file_size);
-    offset_ = slicer.LocalStart();
-    end_ = offset_ + slicer.LocalSize();
-    LOG(INFO) << "file_size:" << file_size
-              << "thread id:" << thread_id_
-              << ", thread num:" << thread_num_
-              << ", offset:" << offset_
-              << ", end:" << end_;
-
-    s = fs->NewStructuredAccessFile(current_->path, offset_, end_, &reader_);
     RETURN_IF_NOT_OK(s)
+
+    // set schema for hdfsFS
+    std::vector<DataType> types;
+    types.push_back(kInt64);
+    if (std::is_same<typename std::decay<SourceType>::type, EdgeSource>::value){
+      types.push_back(kInt64);
+    }
+    if (current_->IsWeighted()) {
+      types.push_back(kFloat);
+    }
+    if (current_->IsLabeled()) {
+      types.push_back(kInt32);
+    }
+    if (current_->IsAttributed()) {
+      types.push_back(kString);
+    }
+    reader_->SetSchema(types);
 
     schema_ = reader_->GetSchema();
     *ret = current_;
@@ -87,8 +109,14 @@ public:
   }
 
   Status Read(Record* record) {
-    if (offset_ >= end_) {
-      return error::OutOfRange("Current file completed");
+    if (!SingleThreadMode(current_->path)) {
+      if (offset_ >= end_) {
+        return error::OutOfRange("Current file completed");
+      }
+    } else {
+      if (thread_id_ != 0) {
+        return error::OutOfRange("Just return in Single Thread Mode.");
+      }
     }
 
     Status s = reader_->Read(record);
@@ -115,7 +143,7 @@ private:
         ListFiles(src.path, &files);
 
         for (auto& file : files) {
-          if (index++ % thread_num_ == thread_id_) {
+          if (index++ % env_->GetServerCount() == env_->GetServerId()) {
             source_.emplace_back(src);
             source_.back().path += file;
             source_.back().local_shared = false;
@@ -146,6 +174,12 @@ private:
 
   bool IsDirectory(const std::string& path) const {
     return ::graphlearn::strings::EndWith(path, "/");
+  }
+
+  bool SingleThreadMode(const std::string& path) const {
+    return ::graphlearn::strings::StartWith(path, "hdfs://") || 
+        ::graphlearn::strings::StartWith(path, "viewfs://") ||
+        ::graphlearn::strings::StartWith(path, "file://");
   }
 
 private:

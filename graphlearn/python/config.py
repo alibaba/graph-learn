@@ -104,3 +104,6 @@ def set_local_shard_count(count):
 
 def set_neg_sampler_retry_times(times):
   pywrap.set_neg_sampler_retry_times(times)
+
+def set_field_delimiter(delimiter="\t"):
+  pywrap.set_field_delimiter(delimiter)

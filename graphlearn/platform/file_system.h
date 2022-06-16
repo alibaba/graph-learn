@@ -100,9 +100,14 @@ public:
 
   virtual const io::Schema& GetSchema() const = 0;
 
+  virtual void SetSchema(const std::vector<DataType>& types) {
+    schema_ = io::Schema(types);
+  }
+
 protected:
   uint64_t offset_;
   uint64_t end_;
+  io::Schema schema_;
 };
 
 class WritableFile : private Uncopyable {

@@ -76,9 +76,14 @@ struct Register {
 // Register a FileSystem implementation for a scheme.
 // Files whose name start with "scheme://" will be routed to
 // use this implementation.
+
 #define REGISTER_FILE_SYSTEM_ENV(env, scheme, factory) \
-  static ::graphlearn::register_file_system::Register<factory> \
-      register_##factory =  \
+  REGISTER_FILE_SYSTEM_UNIQ_HELPER(__COUNTER__, env, scheme, factory)
+#define REGISTER_FILE_SYSTEM_UNIQ_HELPER(ctr, env, scheme, factory) \
+  REGISTER_FILE_SYSTEM_UNIQ(ctr, env, scheme, factory)
+#define REGISTER_FILE_SYSTEM_UNIQ(ctr, env, scheme, factory)        \
+  static ::graphlearn::register_file_system::Register<factory>      \
+      register_ff##ctr =                                            \
           ::graphlearn::register_file_system::Register<factory>(env, scheme)
 
 #define REGISTER_FILE_SYSTEM(scheme, factory) \

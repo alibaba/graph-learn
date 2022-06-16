@@ -198,7 +198,7 @@ common:$(COMMON_OBJ)
 ####################################### platform begin ########################################
 PLATFORM_DIR := $(ROOT)/graphlearn/platform
 PLATFORM_BUILT_DIR := $(BUILT_DIR)/graphlearn/platform
-PLATFORM_DIRS := graphlearn/platform graphlearn/platform/local
+PLATFORM_DIRS := graphlearn/platform graphlearn/platform/local graphlearn/platform/hadoop
 PLATFORM_H := $(foreach dir,$(PLATFORM_DIRS),$(wildcard $(dir)/*.h))
 PLATFORM_CC := $(foreach dir,$(PLATFORM_DIRS),$(wildcard $(dir)/*.cc))
 PLATFORM_OBJ := $(addprefix $(BUILT_DIR)/,$(patsubst %.cc,%.o,$(PLATFORM_CC)))
@@ -209,6 +209,10 @@ $(PLATFORM_BUILT_DIR)/%.o:$(PLATFORM_DIR)/%.cc $(PLATFORM_H)
 
 $(PLATFORM_BUILT_DIR)/local/%.o:$(PLATFORM_DIR)/local/%.cc $(PLATFORM_H)
 	@mkdir -p $(PLATFORM_BUILT_DIR)/local
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(PLATFORM_BUILT_DIR)/hadoop/%.o:$(PLATFORM_DIR)/hadoop/%.cc $(PLATFORM_H)
+	@mkdir -p $(PLATFORM_BUILT_DIR)/hadoop
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 platform:$(PLATFORM_OBJ)

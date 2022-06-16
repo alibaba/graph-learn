@@ -23,6 +23,10 @@ namespace io {
 
 std::string GetScheme(const std::string& path);
 std::string GetFilePath(const std::string& path);
+std::string BaseName(const std::string& uri);
+void ParseURI(const std::string& uri, std::string* scheme,
+              std::string* host, std::string* path);
+
 
 }  // namespace io
 }  // namespace graphlearn

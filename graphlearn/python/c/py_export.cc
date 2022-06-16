@@ -63,6 +63,7 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
   m.def("set_dataset_capacity", &SetGlobalFlagDatasetCapacity);
   m.def("set_ignore_invalid", &SetGlobalFlagIgnoreInvalid);
   m.def("set_neg_sampler_retry_times", &SetGlobalFlagNegativeSamplingRetryTimes);
+  m.def("set_field_delimiter", &SetGlobalFlagFieldDelimiter);
 
   // For Actor
   m.def("set_enable_actor", &SetGlobalFlagEnableActor);

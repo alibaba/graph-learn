@@ -34,5 +34,34 @@ std::string GetFilePath(const std::string& path) {
   return path.substr(pos + 3);
 }
 
+void ParseURI(const std::string& uri, std::string* scheme,
+              std::string* host, std::string* path) {
+  std::string remain = uri;
+  std::string::size_type pos = remain.find("://");
+  if (pos == std::string::npos) {
+    *path = remain;
+    return;
+  }
+  *scheme = remain.substr(0, pos);
+  remain = remain.substr(pos + 3);
+  pos = remain.find("/");
+  if (pos == std::string::npos) {
+    *host = remain;
+    return;
+  }
+  *host = remain.substr(0, pos);
+  *path = remain.substr(pos);
+}
+
+std::string BaseName(const std::string& uri) {
+  std::string scheme, host, path;
+  ParseURI(uri, &scheme, &host, &path);
+  std::string::size_type pos = path.rfind("/");
+  if (pos == std::string::npos) {
+    return path;
+  }
+  return path.substr(pos + 1);
+}
+
 }  // namespace io
 }  // namespace graphlearn

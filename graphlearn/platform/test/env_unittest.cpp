@@ -49,7 +49,4 @@ TEST_F(EnvTest, FileSystemSupported) {
   Status s = env_->GetFileSystem("/dir/file1", &fs);
   EXPECT_TRUE(s.ok());
   EXPECT_TRUE(fs != NULL);
-
-  s = env_->GetFileSystem("hdfs://dir/file1", &fs);
-  EXPECT_TRUE(!s.ok());
 }
