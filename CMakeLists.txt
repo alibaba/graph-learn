@@ -131,7 +131,9 @@ else()
 endif()
 
 # pybind11
-find_package(pybind11)
+if(NOT APPLE)
+    find_package(pybind11)
+endif()
 if(pybind11_FOUND)
     set (PYBIND_DIR ${pybind11_INCLUDE_DIR}/..)
     set (PYBIND_INCLUDE ${pybind11_INCLUDE_DIR})
