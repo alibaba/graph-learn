@@ -52,7 +52,7 @@ Unlike EgoGraph, SubGraph contains the edge_index of the graph topology, so the 
 | programming paradigm | node-centric aggregation(GraphSAGE like) | graph message passing(like DGL/PyG) |
 | NN operator | dense | sparse(segment_sum/mean...) | dense
 | compute paths | neighbor node to center node | source node to destination node |
-| support | support | not yet supported |
+| hetero graph | support | support(since v1.1.0) |
 | PyTorch support | Not implemented | PyG-compatible, corresponding to Data in PyG |
 | Implemented algorithms | 0.4 models are based on EgoGraph implementation.
 GraphSAGE, bipartite graph GraphSAGE/GAT, etc. | GCN, GAT, GraphSAGE, SEAL, etc. |

@@ -50,7 +50,7 @@ EgoGraph由ego和邻居构成，消息聚合路径通过ego和邻居间的潜在
 | 编程范式 | node-centric aggregation(GraphSAGE like) | graph message passing(like DGL/PyG) |
 | NN算子 | dense | sparse(segment_sum/mean...) |
 | 计算路径 | 邻居节点到中心节点 | source节点到destination节点 |
-| 异构图支持 | 支持 | 目前还未支持 |
+| 异构图支持 | 支持 | 支持(since v1.1.0) |
 | PyTorch支持 | 未实现 | 兼容PyG，对应PyG里的Data |
 | 已经实现的算法 | 0.4模型都基于EgoGraph实现。
 GraphSAGE，二部图GraphSAGE/GAT等 | GCN, GAT, GraphSAGE, SEAL等 |

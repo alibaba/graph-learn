@@ -8,7 +8,7 @@
 元信息指图结构和统计类型的信息，包括图的拓扑结构、顶点总数、边与顶点分布情况、顶点的最大出入度等。<br />
 
 <a name="EyXMf"></a>
-### 拓扑结构 <br />
+#### 拓扑结构 <br />
 
 ```python
 def get_topology()
@@ -37,11 +37,19 @@ egde_type:swing, src_type:item, dst_type:item
 ```
 
 
-<a name="laOmB"></a>
-### 出入度分布
-待更新。<br />
+#### 出入度分布
 
-<a name="FPU74"></a>
+#### 图统计信息
+```
+# get the number of nodes and edges on each server.
+g = Graph(...)
+g.init(...)
+# client method
+g.get_stats()
+
+# server method
+g.server_get_stats()
+```
 ### 数据查询
 
 **GL**有两个基本的数据类型： `Nodes` 和 `Edges` 。遍历、查询、采样操作的返回对象是一个batch的顶点或边。特别地，非对齐的采样返回的是两个基本数据类型的稀疏形式，分别为`SparseNodes`和`SparseEdges`。<br />

@@ -6,7 +6,7 @@ After the graph object is constructed, graph query operation can be performed. Q
 
 Meta-information refers to information about the graph structure and statistical types, including the topology of the graph, the total number of vertices, the distribution of edges and vertices, the maximum discrepancy of vertices, etc. <br />
 
-### Topology <br />
+#### Topology <br />
 
 ```python
 def get_topology()
@@ -36,9 +36,21 @@ egde_type:swing, src_type:item, dst_type:item
 ```
 
 
-### InDegree and OutDegree
+#### InDegree and OutDegree
 
 To be updated. <br />
+
+#### Graph Statistics
+```
+# get the number of nodes and edges on each server.
+g = Graph(...)
+g.init(...)
+# client method
+g.get_stats()
+
+# server method
+g.server_get_stats()
+```
 
 ### Data
 

@@ -111,7 +111,7 @@ ID是组成顶点和边数据源的必选信息，weight，label，attribute为�
 
 ![data_source](../../images/data_source.png)
 
-<br />系统抽象了数据接入层，可方便对接多种类型的数据源，目前开源支持LocalFileSystem，HDFS等数据源可以mount到本地。数据表现为二维结构化，行代表一个顶点或一条边数据，列表示顶点或边的某一项信息。<br />
+<br />系统抽象了数据接入层，可方便对接多种类型的数据源，目前开源支持LocalFileSystem，HDFS，其他类型数据源可以mount到本地。数据表现为二维结构化，行代表一个顶点或一条边数据，列表示顶点或边的某一项信息。<br />
 
 
 <a name="9Im2p"></a>
@@ -155,6 +155,15 @@ src_id:int64  dst_id:int64  weight:float  feature:string
 <br />通过本地文件作为数据源，可以直接在脚本中使用文件路径。详见下一章“[图对象](graph_object.md)”。<br />
 
 <a name="mzVG6"></a>
+
+
+### HDFS(since v1.1.0)
+列之间的分隔符可以通过如下命令指定：
+```
+gl.set_field_delimiter("\001")
+```
+读目录下所有文件(相同schema，表示一个点表或者边表)的话，路径为：hdfs://cluster/xxx/directory/
+读单个文件的话，路径为：hdfs://cluster/xxx/directory/file
 
 ## 用户API
 <a name="IqJlv"></a>

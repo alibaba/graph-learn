@@ -110,7 +110,7 @@ ID is the mandatory information for composing vertex and edge data sources, and 
 
 ![data_source](../../images/data_source.png)
 
-<br /> The system abstracts the data access layer to easily dock multiple types of data sources, currently open source support for LocalFileSystem, HDFS and other data sources can be mounted to local. The data representation is two-dimensional structured, the row represents a vertex or an edge data, the column represents a vertex or an edge information. <br />
+<br /> The system abstracts the data access layer to easily dock multiple types of data sources, currently GL supports LocalFileSystem and HDFS, other data sources can be mounted to local. The data representation is two-dimensional structured, the row represents a vertex or an edge data, the column represents a vertex or an edge information. <br />
 
 
 
@@ -152,6 +152,15 @@ src_id:int64 dst_id:int64 weight:float feature:string
 ```
 
 <br />With a local file as the data source, you can use the file path directly in the script. See the next chapter "[graph object](graph_object.md)" for details. <br />
+
+
+### HDFS(since v1.1.0)
+The separator between columns can be specified by the following command.
+```
+gl.set_field_delimiter("\001")
+```
+read all the files in the directory (the same schema, indicating a node table or edge table), the path is: hdfs://cluster/xxx/directory/
+read a single file, the path is: hdfs://cluster/xxx/directory/file
 
 
 ## User API
