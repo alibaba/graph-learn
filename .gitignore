@@ -1,6 +1,10 @@
 built/*
 build/
-graphlearn/proto/service.pb*
+graphlearn/proto/*.pb*
 graphlearn/proto/service.grpc*
 graphlearn.egg-info/
 graphlearn/python/lib
+dist/
+*.log.*
+examples/basic/distribute/*.log.*
+examples/tf/*.tar.gz
