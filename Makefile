@@ -319,7 +319,7 @@ core:$(CORE_OBJ)
 ####################################### contrib begin ########################################
 contrib:glog protobuf gtest
 	@echo "start building KNN ..."
-	@if [ "${KNN}" == "OPEN" ]; then $(MAKE) -C graphlearn/contrib/knn; fi
+	@if [ "$(KNN)" = "OPEN" ]; then $(MAKE) -C graphlearn/contrib/knn; fi
 	@echo "build KNN done."
 ####################################### contrib done ########################################
 
@@ -366,7 +366,7 @@ test:so gtest
 	$(CXX) $(CXXFLAGS) graphlearn/service/dist/test/channel_manager_unittest.cpp -o built/bin/channel_manager_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/service/dist/test/service_unittest.cpp -o built/bin/service_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/service/dist/test/service_with_hosts_unittest.cpp -o built/bin/service_with_hosts_unittest $(TEST_FLAG)
-	@if [ "${KNN}" == "OPEN" ]; then $(MAKE) ut -C graphlearn/contrib/knn; fi
+	@if [ "$(KNN)" = "OPEN" ]; then $(MAKE) ut -C graphlearn/contrib/knn; fi
 
 VERSION := $(shell grep "_VERSION = " ${SETUP_DIR}/setup.py | cut -d= -f2)
 GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
@@ -383,8 +383,7 @@ python: so pybind
 	@echo "__git_version__ = '$(GIT_BRANCH)-$(GIT_VERSION)'" >> $(PYTHON_DIR)/__init__.py
 	@cp $(LIB_DIR)/libgraphlearn_shared.so $(PYTHON_LIB)
 
-	@if [ "${KNN}" == "OPEN" ]; then cp $(LIB_DIR)/libknn_shared.so $(PYTHON_LIB); fi
-	@if [ "${KNN}" == "OPEN" ]; then cp /lib64/libopenblas.so.0 $(PYTHON_LIB); fi
+	@if [ "$(KNN)" = "OPEN" ]; then cp $(LIB_DIR)/libknn_shared.so $(PYTHON_LIB); fi
 
 	OPEN_KNN=${KNN} ${PYTHON} $(SETUP_DIR)/setup.py bdist_wheel
 	@mkdir -p $(BIN_DIR)/ge_data/data
