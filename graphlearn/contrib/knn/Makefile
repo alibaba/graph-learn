@@ -41,6 +41,7 @@ endif
 GXXVERSIONGTEQ5 := $(shell expr `g++ -dumpversion | cut -f1 -d.` \>= 5)
 ifeq "$(GXXVERSIONGTEQ5)" "1"
 	CXXFLAGS += -D_GLIBCXX_USE_CXX11_ABI=0
+	FAISS_PKG := faiss.tar.gz
 	FAISS_RESOURCE := https://graphlearn.oss-cn-hangzhou.aliyuncs.com/data/github/faiss.tar.gz
 endif
 
