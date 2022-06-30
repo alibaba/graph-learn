@@ -88,6 +88,7 @@ else
 	MODEFLAGS := -DNDEBUG -O2
 endif
 
+KNN := OPEN
 PROFILING := CLOSE
 
 CXX := g++
@@ -95,6 +96,7 @@ CXXSTD := c++11
 CXXFLAGS := $(MODEFLAGS) -std=$(CXXSTD) -fPIC \
             -fvisibility-inlines-hidden       \
             -pthread -mavx -msse4.2 -msse4.1  \
+            -D$(KNN)_KNN                      \
             -D$(PROFILING)_PROFILING          \
             -I. -I$(ROOT) -I$(BUILT_DIR)      \
             -I$(PROTOBUF_INCLUDE)             \
@@ -104,9 +106,11 @@ CXXFLAGS := $(MODEFLAGS) -std=$(CXXSTD) -fPIC \
 LINKFLAGS := -L$(ROOT) -L$(LIB_DIR)                        \
              -L$(GLOG_LIB) -L$(PROTOBUF_LIB) -L$(GRPC_LIB) \
              -lglog -lprotobuf -lgrpc++ -lgrpc -lssl -lz
-
+ifeq "$(KNN)" "OPEN"
+	LINKFLAGS += -lknn_shared
+endif
 # c++ shared library
-so: protobuf grpc glog gtest proto common platform service core
+so: protobuf grpc glog gtest proto common platform service core contrib
 	@mkdir -p $(INCLUDE_DIR)
 	@mkdir -p $(LIB_DIR)
 	@mkdir -p $(BIN_DIR)
@@ -312,8 +316,16 @@ $(CORE_BUILT_DIR)/dag/%.o:$(CORE_DIR)/dag/%.cc $(CORE_H)
 core:$(CORE_OBJ)
 ####################################### core done ########################################
 
+####################################### contrib begin ########################################
+contrib:glog protobuf gtest
+	@if [ "${KNN}" == "OPEN" ]; then make -C graphlearn/contrib/knn; fi
+####################################### contrib done ########################################
+
 TEST_FLAG := -I$(GTEST_INCLUDE) -L$(GTEST_LIB) -L$(LIB_DIR) -L$(GRPC_LIB) -L/lib64 \
              -lgraphlearn_shared -lgtest -lgtest_main -lstdc++ -lssl -lz
+ifeq "$(KNN)" "OPEN"
+	TEST_FLAG += -lknn_shared
+endif
 
 test:so gtest
 	$(CXX) $(CXXFLAGS) graphlearn/common/base/test/closure_unittest.cpp -o built/bin/closure_unittest $(TEST_FLAG)
@@ -352,6 +364,7 @@ test:so gtest
 	$(CXX) $(CXXFLAGS) graphlearn/service/dist/test/channel_manager_unittest.cpp -o built/bin/channel_manager_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/service/dist/test/service_unittest.cpp -o built/bin/service_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/service/dist/test/service_with_hosts_unittest.cpp -o built/bin/service_with_hosts_unittest $(TEST_FLAG)
+	@if [ "${KNN}" == "OPEN" ]; then make ut -C graphlearn/contrib/knn; fi
 
 VERSION := $(shell grep "_VERSION = " ${SETUP_DIR}/setup.py | cut -d= -f2)
 GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
@@ -368,7 +381,10 @@ python: so pybind
 	@echo "__git_version__ = '$(GIT_BRANCH)-$(GIT_VERSION)'" >> $(PYTHON_DIR)/__init__.py
 	@cp $(LIB_DIR)/libgraphlearn_shared.so $(PYTHON_LIB)
 
-	${PYTHON} $(SETUP_DIR)/setup.py bdist_wheel
+	@if [ "${KNN}" == "OPEN" ]; then cp $(LIB_DIR)/libknn_shared.so $(PYTHON_LIB); fi
+	@if [ "${KNN}" == "OPEN" ]; then cp /lib64/libopenblas.so.0 $(PYTHON_LIB); fi
+
+	OPEN_KNN=${KNN} ${PYTHON} $(SETUP_DIR)/setup.py bdist_wheel
 	@mkdir -p $(BIN_DIR)/ge_data/data
 	@mkdir -p $(BIN_DIR)/ge_data/ckpt
 	@rm -rf $(PYTHON_DIR)/__init__.py*

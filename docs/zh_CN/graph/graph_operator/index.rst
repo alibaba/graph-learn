@@ -10,3 +10,4 @@
    graph_traverse
    graph_sampling
    negative_sampling
+   knn
