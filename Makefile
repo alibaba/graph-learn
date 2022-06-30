@@ -324,10 +324,11 @@ contrib:glog protobuf gtest
 ####################################### contrib done ########################################
 
 TEST_FLAG := -I$(GTEST_INCLUDE) -L$(GTEST_LIB) -L$(LIB_DIR) -L$(GRPC_LIB) -L/lib64 \
-             -lgraphlearn_shared -lgtest -lgtest_main -lstdc++ -lssl -lz
+             -lgtest -lgtest_main -lstdc++ -lssl -lz
 ifeq "$(KNN)" "OPEN"
 	TEST_FLAG += -lknn_shared
 endif
+TEST_FLAG += -lgraphlearn_shared
 
 test:so gtest
 	$(CXX) $(CXXFLAGS) graphlearn/common/base/test/closure_unittest.cpp -o built/bin/closure_unittest $(TEST_FLAG)

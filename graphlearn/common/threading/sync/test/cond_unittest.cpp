@@ -82,7 +82,7 @@ TEST(ConditionVariableTest, Timeout) {
   EXPECT_TRUE(!cond.TimedWait(5));
 }
 
-TEST(ConditionVariableTest, Broadcast) {
+TEST(ConditionVariableTest, DISABLED_Broadcast) {
   SimpleMutex mutex;
   ConditionVariable cond(&mutex);
   int count = 0;

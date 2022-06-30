@@ -47,9 +47,6 @@ include_dirs.append(ROOT_PATH + '/third_party/protobuf/build/include')
 include_dirs.append(numpy.get_include())
 
 library_dirs.append(ROOT_PATH + '/built/lib')
-GXXGTEQ5 = os.popen("expr `g++ -dumpversion | cut -f1 -d.` \>= 5").read()[0]
-if GXXGTEQ5 == '1':
-  extra_compile_args.append('-D_GLIBCXX_USE_CXX11_ABI=0')
 if OPEN_KNN == 'OPEN':
   extra_compile_args.append('-DOPEN_KNN')
 extra_compile_args.append('-D__USE_XOPEN2K8')
@@ -59,6 +56,9 @@ extra_link_args.append('-Wl,-rpath=$ORIGIN/python/lib/')
 
 
 libraries.append('graphlearn_shared')
+if OPEN_KNN == 'OPEN':
+  libraries.append('knn_shared')
+
 
 sources = [ROOT_PATH + '/graphlearn/python/c/py_export.cc',
            ROOT_PATH + '/graphlearn/python/c/py_client.cc']

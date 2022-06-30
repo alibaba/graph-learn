@@ -30,8 +30,8 @@ CXXFLAGS := $(MODEFLAGS) -std=c++11 -fPIC          \
             -I$(GLOG_INCLUDE) -I$(PROTOBUF_INCLUDE)
 
 CUDA_PATH := /usr/local/cuda-10.0
-LINKFLAGS := -L$(ROOT) -L$(FAISS_LIB)  \
-             -lfaiss_static -lopenblas -lgomp -lm -lquadmath -lgfortran
+LINKFLAGS := -L$(ROOT) -L$(ROOT)/built/lib -L$(FAISS_LIB)  \
+             -lfaiss_static -lblas -lgomp -lm -lquadmath -lgfortran
 
 ifeq "$(GPU)" "OPEN"
 	LINKFLAGS += -L$(CUDA_PATH)/lib64 -lcudart -lcublas
@@ -40,7 +40,6 @@ endif
 
 GXXVERSIONGTEQ5 := $(shell expr `g++ -dumpversion | cut -f1 -d.` \>= 5)
 ifeq "$(GXXVERSIONGTEQ5)" "1"
-	CXXFLAGS += -D_GLIBCXX_USE_CXX11_ABI=0
 	FAISS_PKG := faiss.tar.gz
 	FAISS_RESOURCE := https://graphlearn.oss-cn-hangzhou.aliyuncs.com/data/github/faiss.tar.gz
 endif
@@ -69,7 +68,7 @@ faiss:
 	@if [ ! -d "${FAISS_DIR}/include" ]; then cd "${FAISS_DIR}"; wget "${FAISS_RESOURCE}"; tar -zxf "$(FAISS_PKG)"; fi
 	@echo "faiss done"
 
-TEST_FLAG := -I$(GTEST_INCLUDE) -L$(GTEST_LIB) -L$(LIB_DIR) -L/lib64 -lgraphlearn_shared -lknn_shared -lgtest -lgtest_main -lstdc++ -lssl
+TEST_FLAG := -I$(GTEST_INCLUDE) -L$(GTEST_LIB) -L$(LIB_DIR) -L/lib64 -lknn_shared -lgraphlearn_shared -lgtest -lgtest_main -lstdc++ -lssl
 
 ut:knn
 	@mkdir -p $(BIN_DIR)

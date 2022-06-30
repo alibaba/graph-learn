@@ -34,11 +34,10 @@ jobs:
     - name: prepare env
       run: |
         sudo apt-get -y update
-        sudo apt-get -y install libopenblas-dev libopenblas-pthread-dev
+        sudo apt-get -y install libopenblas-dev
+        source env.sh
     - name: Make test
       run: make test
-    - name: Test env
-      run: source env.sh
     - name: Cpp test
       run: ./test_cpp_ut.sh
     - name: Python package&test.
