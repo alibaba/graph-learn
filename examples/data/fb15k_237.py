@@ -23,5 +23,5 @@ from utils import download, extract
 
 
 if __name__ == "__main__":
-  download('http://graph-learn-dataset.oss-cn-zhangjiakou.aliyuncs.com/FB15k-237.zip', 'FB15k-237.zip')
+  download('https://graphlearn.oss-cn-hangzhou.aliyuncs.com/data/github/BlogCatalog-dataset.zip', 'FB15k-237.zip')
   extract('FB15k-237.zip', 'FB15k-237')

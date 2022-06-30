@@ -110,6 +110,6 @@ def feature_normalize(sparse_matrix):
   return sparse_matrix
 
 if __name__ == "__main__":
-  download('http://graph-learn-dataset.oss-cn-zhangjiakou.aliyuncs.com/cora.zip', 'cora.zip')
+  download('https://graphlearn.oss-cn-hangzhou.aliyuncs.com/data/github/cora.zip', 'cora.zip')
   extract('cora.zip', 'cora')
   preprocess('cora')

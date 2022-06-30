@@ -41,7 +41,7 @@ def load_data(prefix):
   return edges
 
 if __name__ == "__main__":
-  download('http://graph-learn-dataset.oss-cn-zhangjiakou.aliyuncs.com/BlogCatalog-dataset.zip',
+  download('https://graphlearn.oss-cn-hangzhou.aliyuncs.com/data/github/BlogCatalog-dataset.zip',
            'blogcatelog.zip')
   extract('blogcatelog.zip', 'blogcatelog')
 

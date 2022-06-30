@@ -23,7 +23,7 @@ import sys
 from utils import download, extract
 
 if __name__ == "__main__":
-  download('https://graphlearn.oss-cn-hangzhou.aliyuncs.com/data/gl_books0.zip', 'gl_books0.zip')
+  download('https://graphlearn.oss-cn-hangzhou.aliyuncs.com/data/github/gl_books0.zip', 'gl_books0.zip')
   extract('gl_books0.zip', 'books_data')
   u_count = 52643
   i_count = 91599

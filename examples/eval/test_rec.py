@@ -59,7 +59,7 @@ def main(config):
     gt_record = f.readlines()
     gt_record = [record.rstrip().split('\t') for record in gt_record]
     src_ids = np.array([int(src_items[0]) for src_items in gt_record])
-    gt_items = [map(int, src_items[1].split(',')) for src_items in gt_record]
+    gt_items = [list(map(int, src_items[1].split(','))) for src_items in gt_record]
     src_type = 'u' if config['recall_type'] == 'u2i' else 'i'
     recall_ids, _ = g.search('i', g.get_nodes(src_type, src_ids).float_attrs,
                              gl.KnnOption(k=config['top_k']))
@@ -80,6 +80,6 @@ if __name__ == "__main__":
             'top_k': 20,
             'knn_metric': 1, # 1 means inner product and 0 means L2 distance.
             }
-  download('https://graphlearn.oss-cn-hangzhou.aliyuncs.com/data/eval_test.tar.gz', 'eval_test.tar.gz')
+  download('https://graphlearn.oss-cn-hangzhou.aliyuncs.com/data/github/eval_test.tar.gz', 'eval_test.tar.gz')
   extract('eval_test.tar.gz', 'eval_test')
   main(config)

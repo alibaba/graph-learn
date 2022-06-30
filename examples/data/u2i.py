@@ -21,5 +21,5 @@ from __future__ import print_function
 from utils import download, extract
 
 if __name__ == "__main__":
-  download('http://graph-learn-dataset.oss-cn-zhangjiakou.aliyuncs.com/u2i.zip', 'u2i.zip')
+  download('https://graphlearn.oss-cn-hangzhou.aliyuncs.com/data/github/u2i.zip', 'u2i.zip')
   extract('u2i.zip', 'u2i')

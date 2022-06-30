@@ -48,7 +48,7 @@ def load_data(prefix):
 
 
 if __name__ == "__main__":
-  download('http://graph-learn-dataset.oss-cn-zhangjiakou.aliyuncs.com/ppi.zip', 'ppi.zip')
+  download('https://graphlearn.oss-cn-hangzhou.aliyuncs.com/data/github/ppi.zip', 'ppi.zip')
   extract('ppi.zip', '')
   G, feats = load_data('ppi/ppi')
 

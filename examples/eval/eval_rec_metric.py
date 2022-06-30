@@ -23,14 +23,14 @@ def eval_metrics(gt_ids, recall_ids):
   '''Evaluates Recall, NDCG and HitRate.
 
   Args:
-    gt_ids: A 2D array. Ground-truth ids for a batch of trigger ids where 
+    gt_ids: A 2D array. Ground-truth ids for a batch of trigger ids where
       each row is an array of ground-truth ids for each trigger.
     recall_ids: A 2D array. Each row is an array of recall ids for each trigger.
   Returns:
     total_recall: Total recall of per-user average.
     total_ndcg: Total NDCG.
     total_hits: Total hit count.
-  Note: Each return value is the sum of the input batch data, 
+  Note: Each return value is the sum of the input batch data,
     and the final result should be averaged by batch size.
   '''
   total_hits = 0.0
@@ -51,5 +51,5 @@ def eval_metrics(gt_ids, recall_ids):
       total_ndcg += dcg / idcg
       total_hits += 1
     total_recall += recall * 1.0 / len(gt_id_list)
-  
+
   return total_recall, total_ndcg, total_hits

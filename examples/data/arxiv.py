@@ -37,7 +37,7 @@ def load_data(prefix):
   return G, id_map
 
 if __name__ == "__main__":
-  download('http://graph-learn-dataset.oss-cn-zhangjiakou.aliyuncs.com/arxiv.zip', 'arxiv.zip')
+  download('https://graphlearn.oss-cn-hangzhou.aliyuncs.com/data/github/arxiv.zip', 'arxiv.zip')
   extract('arxiv.zip', 'arxiv')
   save_data_dir = "arxiv/"
 
