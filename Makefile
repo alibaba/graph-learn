@@ -318,7 +318,9 @@ core:$(CORE_OBJ)
 
 ####################################### contrib begin ########################################
 contrib:glog protobuf gtest
-	@if [ "${KNN}" == "OPEN" ]; then make -C graphlearn/contrib/knn; fi
+	@echo "start building KNN ..."
+	@if [ "${KNN}" == "OPEN" ]; then $(MAKE) -C graphlearn/contrib/knn; fi
+	@echo "build KNN done."
 ####################################### contrib done ########################################
 
 TEST_FLAG := -I$(GTEST_INCLUDE) -L$(GTEST_LIB) -L$(LIB_DIR) -L$(GRPC_LIB) -L/lib64 \
@@ -364,7 +366,7 @@ test:so gtest
 	$(CXX) $(CXXFLAGS) graphlearn/service/dist/test/channel_manager_unittest.cpp -o built/bin/channel_manager_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/service/dist/test/service_unittest.cpp -o built/bin/service_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) graphlearn/service/dist/test/service_with_hosts_unittest.cpp -o built/bin/service_with_hosts_unittest $(TEST_FLAG)
-	@if [ "${KNN}" == "OPEN" ]; then make ut -C graphlearn/contrib/knn; fi
+	@if [ "${KNN}" == "OPEN" ]; then $(MAKE) ut -C graphlearn/contrib/knn; fi
 
 VERSION := $(shell grep "_VERSION = " ${SETUP_DIR}/setup.py | cut -d= -f2)
 GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
