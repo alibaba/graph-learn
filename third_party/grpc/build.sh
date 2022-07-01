@@ -16,4 +16,5 @@ cmake -DCMAKE_CXX_FLAGS="-fPIC" \
   -DgRPC_SSL_PROVIDER=package \
   -DgRPC_ZLIB_PROVIDER=package \
   ../.. && \
-make -j"${cores}" && make install
+make -j"${cores}" && make install &&
+cp -r "${code_src}"/third_party/abseil-cpp/absl "${install_prefix}"/include
