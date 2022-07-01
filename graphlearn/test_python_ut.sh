@@ -1,4 +1,6 @@
 #!/bin/bash
+#
+# A script to perform python unit tests for graphlearn.
 
 set -eo pipefail
 

@@ -1,4 +1,6 @@
 #!/bin/bash
+#
+# A script to perform cpp unit tests for graphlearn.
 
 set -eo pipefail
 

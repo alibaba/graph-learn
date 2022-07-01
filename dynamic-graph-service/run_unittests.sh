@@ -5,8 +5,8 @@
 set -eo pipefail
 
 script_dir=$(dirname "$(realpath "$0")")
-build_dir=${script_dir}/../build
-built_bin_dir=${script_dir}/../built/bin
+build_dir=${script_dir}/build
+built_bin_dir=${script_dir}/built/bin
 
 ########################################################
 # Deploy local kafka cluster
@@ -14,14 +14,14 @@ built_bin_dir=${script_dir}/../built/bin
 #   None
 ########################################################
 function deploy_kafka_cluster() {
-  mkdir -p "${script_dir}"/kafka
-  rm -rf "${script_dir}"/kafka/*
-  pushd "${script_dir}"/kafka
+  mkdir -p "${build_dir}"/kafka_cluster
+  rm -rf "${build_dir}"/kafka_cluster/*
+  pushd "${build_dir}"/kafka_cluster
   wget -q https://graphlearn.oss-cn-hangzhou.aliyuncs.com/tool/kafka_2.13-3.0.0.tgz
   tar -xvzf kafka_2.13-3.0.0.tgz
   popd
 
-  pushd "${script_dir}"/kafka/kafka_2.13-3.0.0
+  pushd "${build_dir}"/kafka_cluster/kafka_2.13-3.0.0
   ./bin/zookeeper-server-start.sh config/zookeeper.properties &
   ./bin/kafka-server-start.sh config/server.properties &
   for topic in record-poller-ut-1 record-poller-ut-2 sampling-actor-ut sample-publisher-ut service-record-polling-ut service-sample-publishing-ut
@@ -37,7 +37,7 @@ function deploy_kafka_cluster() {
 #   None
 ########################################################
 function stop_kafka_cluster() {
-  pushd "${script_dir}"/kafka/kafka_2.13-3.0.0
+  pushd "${build_dir}"/kafka_cluster/kafka_2.13-3.0.0
   ./bin/kafka-server-stop.sh config/server.properties
   ./bin/zookeeper-server-stop.sh config/zookeeper.properties
   rm -rf /tmp/kafka-logs
@@ -77,5 +77,5 @@ function make_code_cov() {
 
 deploy_kafka_cluster
 run_ut
-make_code_cov
 stop_kafka_cluster
+make_code_cov
