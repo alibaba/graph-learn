@@ -1,10 +1,39 @@
-built/*
-build/
-graphlearn/proto/*.pb*
-graphlearn/proto/service.grpc*
-graphlearn.egg-info/
-graphlearn/python/lib
-dist/
-*.log.*
-examples/basic/distribute/*.log.*
-examples/tf/*.tar.gz
+# vscode
+.vscode
+
+# jet brains
+**/.idea/
+**/cmake-build-release/
+**/cmake-build-debug/
+
+# python env
+**/venv/
+**/__pycache__/
+
+# build dir
+**/build/
+**/built/
+
+# codegen dir
+**/generated/
+
+# codegen files
+**/*_generated.h
+
+# protobuf codegen files
+**/*.pb.h
+**/*.pb.cc
+**/*_pb2.py
+**/*_pb2_grpc.py
+
+# hiactor codegen files
+**/*.act.autogen.h
+**/*.act.autogen.cc
+
+# code coverage files
+**/*.gcov
+**/*.gcno
+**/*.gcda
+
+# glog files
+**/*.log.*

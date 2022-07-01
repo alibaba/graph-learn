@@ -14,7 +14,7 @@
 
 cmake_minimum_required (VERSION 3.5)
 
-project (GraphLearn VERSION 1.0 LANGUAGES CXX)
+project (src VERSION 1.0 LANGUAGES CXX)
 
 set (CMAKE_CXX_COMPILER g++)
 
@@ -233,149 +233,149 @@ if (TESTING)
     endfunction()
 
     gl_add_test (closure_unittest
-        SOURCES 
-        graphlearn/common/base/test/closure_unittest.cpp)
+        SOURCES
+      src/common/base/test/closure_unittest.cpp)
 
     gl_add_test (status_unittest
-        SOURCES 
-        graphlearn/common/base/test/status_unittest.cpp
+        SOURCES
+      src/common/base/test/status_unittest.cpp
     )
 
     gl_add_test (atomic_unittest
-        SOURCES 
-        graphlearn/common/threading/atomic/test/atomic_unittest.cpp
+        SOURCES
+      src/common/threading/atomic/test/atomic_unittest.cpp
     )
 
     gl_add_test (lockfree_queue_unittest
         SOURCES
-        graphlearn/common/threading/lockfree/test/lockfree_queue_unittest.cpp
+      src/common/threading/lockfree/test/lockfree_queue_unittest.cpp
     )
 
     gl_add_test (lockfree_stack_unittest
         SOURCES
-        graphlearn/common/threading/lockfree/test/lockfree_stack_unittest.cpp
+      src/common/threading/lockfree/test/lockfree_stack_unittest.cpp
     )
 
     gl_add_test (dynamic_worker_thread_pool_unittest
         SOURCES
-        graphlearn/common/threading/runner/test/dynamic_worker_thread_pool_unittest.cpp
+      src/common/threading/runner/test/dynamic_worker_thread_pool_unittest.cpp
     )
 
     gl_add_test (cond_unittest
         SOURCES
-        graphlearn/common/threading/sync/test/cond_unittest.cpp)
+      src/common/threading/sync/test/cond_unittest.cpp)
 
     gl_add_test (lock_unittest
         SOURCES
-        graphlearn/common/threading/sync/test/lock_unittest.cpp)
+      src/common/threading/sync/test/lock_unittest.cpp)
 
     gl_add_test (waitable_event_unittest
         SOURCES
-        graphlearn/common/threading/sync/test/waitable_event_unittest.cpp)
+      src/common/threading/sync/test/waitable_event_unittest.cpp)
 
     gl_add_test (this_thread_unittest
         SOURCES
-        graphlearn/common/threading/test/this_thread_unittest.cpp)
+      src/common/threading/test/this_thread_unittest.cpp)
 
     gl_add_test (thread_unittest
         SOURCES
-        graphlearn/common/threading/thread/test/thread_unittest.cpp)
+      src/common/threading/thread/test/thread_unittest.cpp)
 
     gl_add_test (graph_store_unittest
         SOURCES
-        graphlearn/core/graph/test/graph_store_unittest.cpp)
+      src/core/graph/test/graph_store_unittest.cpp)
 
     gl_add_test (node_storage_unittest
         SOURCES
-        graphlearn/core/graph/storage/test/node_storage_unittest.cpp)
+      src/core/graph/storage/test/node_storage_unittest.cpp)
 
     gl_add_test (graph_storage_unittest
         SOURCES
-        graphlearn/core/graph/storage/test/graph_storage_unittest.cpp)
+      src/core/graph/storage/test/graph_storage_unittest.cpp)
 
     gl_add_test (data_slicer_unittest
         SOURCES
-        graphlearn/core/io/test/data_slicer_unittest.cpp)
+      src/core/io/test/data_slicer_unittest.cpp)
 
     gl_add_test (edge_loader_unittest
         SOURCES
-        graphlearn/core/io/test/edge_loader_unittest.cpp)
+      src/core/io/test/edge_loader_unittest.cpp)
 
     gl_add_test (node_loader_unittest
         SOURCES
-        graphlearn/core/io/test/node_loader_unittest.cpp)
+      src/core/io/test/node_loader_unittest.cpp)
 
     gl_add_test (graph_op_unittest
         SOURCES
-        graphlearn/core/operator/graph/test/graph_op_unittest.cpp)
+      src/core/operator/graph/test/graph_op_unittest.cpp)
 
     gl_add_test (sampler_unittest
         SOURCES
-        graphlearn/core/operator/sampler/test/sampler_unittest.cpp)
+      src/core/operator/sampler/test/sampler_unittest.cpp)
 
     gl_add_test (negative_sampler_unittest
         SOURCES
-        graphlearn/core/operator/sampler/test/negative_sampler_unittest.cpp)
+      src/core/operator/sampler/test/negative_sampler_unittest.cpp)
 
     gl_add_test (aggregating_op_unittest
         SOURCES
-        graphlearn/core/operator/aggregator/test/aggregating_op_unittest.cpp)
+      src/core/operator/aggregator/test/aggregating_op_unittest.cpp)
 
     gl_add_test (env_unittest
         SOURCES
-        graphlearn/platform/test/env_unittest.cpp)
+      src/platform/test/env_unittest.cpp)
 
     gl_add_test (local_fs_unittest
         SOURCES
-        graphlearn/platform/test/local_fs_unittest.cpp)
+      src/platform/test/local_fs_unittest.cpp)
 
     gl_add_test (event_queue_unittest
         SOURCES
-        graphlearn/service/test/event_queue_unittest.cpp)
+      src/service/test/event_queue_unittest.cpp)
 
     gl_add_test (tensor_unittest
         SOURCES
-        graphlearn/service/test/tensor_unittest.cpp)
+      src/service/test/tensor_unittest.cpp)
 
     gl_add_test (client_test
         SOURCES
-        graphlearn/service/test/client_test.cpp)
+      src/service/test/client_test.cpp)
 
     gl_add_test (server_test
         SOURCES
-        graphlearn/service/test/server_test.cpp)
+      src/service/test/server_test.cpp)
 
     gl_add_test (dist_in_memory_test
         SOURCES
-        graphlearn/service/test/dist_in_memory_test.cpp)
+      src/service/test/dist_in_memory_test.cpp)
 
     gl_add_test (graph_request_unittest
         SOURCES
-        graphlearn/service/request/test/graph_request_unittest.cpp)
+      src/service/request/test/graph_request_unittest.cpp)
 
     gl_add_test (aggregating_request_unittest
         SOURCES
-        graphlearn/service/request/test/aggregating_request_unittest.cpp)
+      src/service/request/test/aggregating_request_unittest.cpp)
 
     gl_add_test (naming_engine_unittest
         SOURCES
-        graphlearn/service/dist/test/naming_engine_unittest.cpp)
+      src/service/dist/test/naming_engine_unittest.cpp)
 
     gl_add_test (coordinator_unittest
         SOURCES
-        graphlearn/service/dist/test/coordinator_unittest.cpp)
+      src/service/dist/test/coordinator_unittest.cpp)
 
     gl_add_test (channel_manager_unittest
         SOURCES
-        graphlearn/service/dist/test/channel_manager_unittest.cpp)
+      src/service/dist/test/channel_manager_unittest.cpp)
 
     gl_add_test (service_unittest
         SOURCES
-        graphlearn/service/dist/test/service_unittest.cpp)
+      src/service/dist/test/service_unittest.cpp)
 
     gl_add_test (service_with_hosts_unittest
         SOURCES
-        graphlearn/service/dist/test/service_with_hosts_unittest.cpp)
+      src/service/dist/test/service_with_hosts_unittest.cpp)
 endif()
 
 execute_process (

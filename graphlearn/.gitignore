@@ -1,0 +1,4 @@
+./graphlearn.egg-info/
+./python/lib/
+./dist/
+./examples/tf/*.tar.gz

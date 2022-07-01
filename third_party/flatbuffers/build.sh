@@ -1,15 +1,14 @@
 #!/bin/bash
 
 script_dir=$(dirname "$(realpath "$0")")
-code_src=${script_dir}/glog
+code_src=${script_dir}/flatbuffers
 install_prefix=${script_dir}/build
 cores=$(cat < /proc/cpuinfo | grep -c "processor")
 
 cd "${code_src}" && \
-mkdir -p cmake/build && cd cmake/build && \
-cmake -DCMAKE_CXX_FLAGS="-fPIC" \
+cmake -G "Unix Makefiles" \
   -DCMAKE_INSTALL_PREFIX="${install_prefix}" \
-  -DBUILD_SHARED_LIBS=OFF \
-  -DBUILD_TESTING=OFF \
-  ../.. && \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DFLATBUFFERS_CXX_FLAGS="-fPIC" \
+  -DFLATBUFFERS_BUILD_TESTS=OFF && \
 make -j"${cores}" && make install
