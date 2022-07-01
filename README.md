@@ -21,9 +21,9 @@ Graph-Learn provides both Python and C++ interfaces for graph sampling operation
 pip install graph-learn
 ```
 
-2. [Build from source](docs/en/install.md)
+2. [Build from source](graphlearn/docs/en/install.md)
 
-3. [Use Docker](docs/en/install.md)
+3. [Use Docker](graphlearn/docs/en/install.md)
 
 
 ## Getting Started
@@ -33,7 +33,7 @@ cd examples/tf/ego_sage/
 python train_unsupervised.py
 ```
 
-[Distributed training example](docs/en/algo/tf/k8s)
+[Distributed training example](graphlearn/docs/en/algo/tf/k8s)
 
 
 
