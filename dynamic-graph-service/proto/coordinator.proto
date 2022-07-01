@@ -1,0 +1,176 @@
+syntax = "proto3";
+
+package dgs;
+
+enum WorkerType {
+  DataLoader = 0;
+  Sampling   = 1;
+  Serving    = 2;
+};
+
+message RegisterWorkerRequestPb {
+  WorkerType worker_type = 1;
+  uint32     worker_id = 2;
+  string     worker_ip = 3;
+}
+
+message RegisterWorkerResponsePb {
+  bool   suc = 1;
+  uint32 num_workers = 2;
+}
+
+message GetInitInfoRequestPb {
+  WorkerType worker_type = 1;
+  uint32     worker_id = 2;
+}
+
+message UpStreamInfoPb {
+  repeated string sub_kafka_servers = 1;
+  string sub_kafka_topic = 2;
+  uint32 sub_kafka_partition_num = 3;
+  repeated uint32 sub_kafka_pids = 4;
+}
+
+message DownStreamInfoPb {
+  string store_partition_strategy = 1;
+  uint32 store_partition_num = 2;
+  string worker_partition_strategy = 3;
+  uint32 worker_partition_num = 4;
+  repeated string pub_kafka_servers = 5;
+  string pub_kafka_topic = 6;
+  uint32 pub_kafka_partition_num = 7;
+  // size of pub_kafka_pids is store_partition_num
+  repeated uint32 pub_kafka_pids = 8;
+}
+
+message ManagedStorePids {
+  uint32 worker_id = 1;
+  repeated uint32 pids = 2;
+}
+
+message StorePartitionInfoPb {
+  string partition_strategy = 1;
+  uint32 partition_num = 2;
+  repeated ManagedStorePids managed_pids_group = 3;
+}
+
+message KafkaPartitionOffsetInfoPb {
+  uint32 pid = 1;
+  int64  ready_offset = 2;
+}
+
+message StorePartitionBackupInfoPb {
+  uint32  pid = 1;
+  bool    valid = 2;
+  uint32  vertex_bid = 3;
+  uint32  edge_bid = 4;
+}
+
+message SubsPartitionBackupInfoPb {
+  uint32  pid = 1;
+  bool    valid = 2;
+  uint32  bid = 3;
+}
+
+message CheckpointInfoPb {
+  repeated KafkaPartitionOffsetInfoPb sub_kafka_offsets = 1;
+  repeated StorePartitionBackupInfoPb sample_store_backups = 2;
+  repeated SubsPartitionBackupInfoPb  subs_table_backups = 3;
+}
+
+message DataLoaderInitInfoPb {
+  DownStreamInfoPb downstream_info = 1;
+}
+
+message SamplingInitInfoPb {
+  string query_plan = 1;
+  uint32 num_local_shards = 2;
+  repeated string ipaddrs = 3;
+  StorePartitionInfoPb store_partition_info = 4;
+  UpStreamInfoPb   upstream_info = 5;
+  DownStreamInfoPb downstream_info = 6;
+  CheckpointInfoPb checkpoint_info = 7;
+}
+
+message ServingInitInfoPb {
+  string query_plan = 1;
+  uint32 num_local_shards = 2;
+  StorePartitionInfoPb store_partition_info = 3;
+  UpStreamInfoPb   upstream_info = 4;
+  CheckpointInfoPb checkpoint_info = 5;
+}
+
+message GetInitInfoResponsePb {
+  DataLoaderInitInfoPb dataloader_info = 1;
+  SamplingInitInfoPb   sampling_info = 2;
+  ServingInitInfoPb    serving_info = 3;
+  bool                 terminate_service = 4;
+}
+
+message ReportInitedRequestPb {
+  WorkerType worker_type = 1;
+  uint32     worker_id = 2;
+}
+
+message ReportInitedResponsePb {
+  bool terminate_service = 1;
+}
+
+message CheckReadyInfoRequestPb {
+  WorkerType worker_type = 1;
+  uint32     worker_id = 2;
+}
+
+message CheckReadyInfoResponsePb {
+  bool terminate_service  = 1;
+}
+
+message ServerIsReadyRequestPb {
+  WorkerType worker_type = 1;
+  uint32     worker_id = 2;
+}
+
+message ServerIsReadyResponsePb {
+  bool terminate_service = 1;
+}
+
+message ReportStatisticsRequestPb {
+  WorkerType worker_type = 1;
+  uint32     worker_id = 2;
+  repeated KafkaPartitionOffsetInfoPb ready_kafka_offsets = 3;
+}
+
+message ReportStatisticsResponsePb {
+  bool terminate_service = 1;
+  bool do_backup = 2;
+}
+
+message ReportBackupFinishedRequestPb {
+  WorkerType worker_type = 1;
+  uint32     worker_id = 2;
+  repeated StorePartitionBackupInfoPb sample_store_backups = 3;
+  repeated SubsPartitionBackupInfoPb  subs_table_backups = 4;
+}
+
+message ReportBackupFinishedResponsePb {
+  bool is_valid = 1;
+}
+
+service Coordinator {
+  // From DataLoader, SamplingWorkers and ServingWorkers, register worker and get init info.
+  rpc RegisterWorker (RegisterWorkerRequestPb) returns (RegisterWorkerResponsePb) {}
+
+  rpc GetInitInfo (GetInitInfoRequestPb) returns (GetInitInfoResponsePb) {}
+
+  // SamplingWorkers report local inited state to Coordinator, and return after all the
+  // SamplingWorkers have reported inited.
+  rpc ReportInited (ReportInitedRequestPb) returns (ReportInitedResponsePb) {}
+
+  rpc GetCheckReadyInfo (CheckReadyInfoRequestPb) returns (CheckReadyInfoResponsePb) {}
+
+  rpc ReportServerIsReady (ServerIsReadyRequestPb) returns (ServerIsReadyResponsePb) {}
+
+  rpc ReportStatistics (ReportStatisticsRequestPb) returns (ReportStatisticsResponsePb) {}
+
+  rpc ReportBackupFinished (ReportBackupFinishedRequestPb) returns (ReportBackupFinishedResponsePb) {}
+}

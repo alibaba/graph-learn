@@ -1,0 +1,157 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "dgs.coordinator.name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dgs.labels" . | nindent 4 }}
+    {{- if .Values.commonLabels }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+    app.kubernetes.io/component: coordinator
+  {{- if .Values.commonAnnotations }}
+  annotations:
+    {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "dgs.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: coordinator
+  serviceName: {{ include "dgs.coordinator.name" . }}-headless
+  updateStrategy:
+    {{- include "common.tplvalues.render" (dict "value" .Values.coordinator.updateStrategy "context" $ ) | nindent 4 }}
+  template:
+    metadata:
+      labels:
+        {{- include "dgs.labels" . | nindent 8 }}
+        app.kubernetes.io/component: coordinator
+        {{- if .Values.coordinator.podLabels }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.coordinator.podLabels "context" $) | nindent 8 }}
+        {{- end }}
+      {{- if .Values.coordinator.podAnnotations }}
+      annotations:
+        {{- include "common.tplvalues.render" (dict "value" .Values.coordinator.podAnnotations "context" $) | nindent 8 }}
+      {{- end }}
+    spec:
+      affinity:
+      {{- if .Values.coordinator.affinity }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.coordinator.affinity "context" $) | nindent 8 }}
+      {{- else }}
+        podAffinity:
+          {{- include "common.affinities.pods" (dict "type" .Values.coordinator.podAffinityPreset "component" "coordinator" "context" $) | nindent 10 }}
+        podAntiAffinity:
+          {{- include "common.affinities.pods" (dict "type" .Values.coordinator.podAntiAffinityPreset "component" "coordinator" "context" $) | nindent 10 }}
+        nodeAffinity:
+          {{- include "common.affinities.nodes" (dict "type" .Values.coordinator.nodeAffinityPreset.type "key" .Values.coordinator.nodeAffinityPreset.key "values" .Values.coordinator.nodeAffinityPreset.values) | nindent 10 }}
+      {{- end }}
+      {{- if .Values.coordinator.nodeSelector }}
+      nodeSelector:
+        {{- include "common.tplvalues.render" (dict "value" .Values.coordinator.nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.coordinator.tolerations }}
+      tolerations:
+        {{- include "common.tplvalues.render" (dict "value" .Values.coordinator.tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "dgs.serviceAccountName" . }}
+      {{- include "dgs.images.pullSecrets" (dict "imageRoot" .Values.image.dgs) | nindent 6 }}
+      initContainers:
+        - name: coordinator-init
+          image: {{ include "dgs.images.image" (dict "imageRoot" .Values.image.dgs) }}
+          imagePullPolicy: {{ .Values.image.dgs.pullPolicy | quote }}
+          command:
+            - /bin/bash
+            - -c
+            - |
+              mkdir -p {{ .Values.coordinator.persistence.mountPath }}/coordinator_meta
+
+              mkdir -p {{ .Values.coordinator.workdir }}/package
+              wget {{ .Values.remoteFileRepoURL }}/package/dgs-built.tgz -q -P /tmp
+              tar zxvf /tmp/dgs-built.tgz -C {{ .Values.coordinator.workdir }}/package --strip-components 1
+              rm -f /tmp/dgs-built.tgz
+          volumeMounts:
+            - name: ephemeral
+              mountPath: {{ .Values.coordinator.workdir }}
+            - name: checkpoint-data
+              mountPath: {{ .Values.coordinator.persistence.mountPath }}
+      containers:
+        - name: coordinator
+          image: {{ include "dgs.images.image" (dict "imageRoot" .Values.image.dgs) }}
+          imagePullPolicy: {{ .Values.image.dgs.pullPolicy | quote }}
+          command:
+            - /bin/bash
+            - -c
+            - |
+              cd {{ .Values.coordinator.workdir }}/package/python/coordinator
+              python3 -m grpc_tools.protoc -I{{ .Values.coordinator.workdir }}/package/proto \
+                --python_out=. --grpc_python_out=. {{ .Values.coordinator.workdir }}/package/proto/coordinator.proto
+              python3 coordinator.py --config-file {{ .Values.configPath }}/coordinator.cnf
+          ports:
+            - name: http-port
+              containerPort: 8080
+            - name: rpc-port
+              containerPort: 50051
+          {{- if .Values.coordinator.livenessProbe.enabled }}
+          livenessProbe:
+            tcpSocket:
+              port: http-port
+            {{- include "common.tplvalues.render" (dict "value" (omit .Values.coordinator.livenessProbe "enabled") "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.coordinator.readinessProbe.enabled }}
+          readinessProbe:
+            tcpSocket:
+              port: http-port
+            {{- include "common.tplvalues.render" (dict "value" (omit .Values.coordinator.readinessProbe "enabled") "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.coordinator.resources }}
+          resources:
+            {{- toYaml .Values.coordinator.resources | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: {{ .Values.configPath }}
+            - name: ephemeral
+              mountPath: {{ .Values.coordinator.workdir }}
+            - name: checkpoint-data
+              mountPath: {{ .Values.coordinator.persistence.mountPath }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "dgs.configmap.name" . }}
+            items:
+              - key: schema.json
+                path: schema.json
+              - key: coordinator.cnf
+                path: coordinator.cnf
+        - name: ephemeral
+          emptyDir: {}
+        {{- if not .Values.coordinator.persistence.enabled }}
+        - name: checkpoint-data
+          emptyDir: {}
+        {{- else if .Values.coordinator.persistence.existingClaim }}
+        - name: checkpoint-data
+          persistentVolumeClaim:
+            claimName: {{ tpl .Values.coordinator.persistence.existingClaim . }}
+        {{- end }}
+  {{- if and .Values.coordinator.persistence.enabled (not .Values.coordinator.persistence.existingClaim) }}
+  volumeClaimTemplates:
+    - metadata:
+        name: checkpoint-data
+        {{- if .Values.coordinator.persistence.annotations }}
+        annotations: {{- include "common.tplvalues.render" (dict "value" .Values.coordinator.persistence.annotations "context" $) | nindent 10 }}
+        {{- end }}
+      spec:
+        accessModes:
+          {{- range .Values.coordinator.persistence.accessModes }}
+          - {{ . | quote }}
+          {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.coordinator.persistence.size | quote }}
+        {{- include "dgs.storage.class" .Values.coordinator.persistence | nindent 8 }}
+        {{- if .Values.coordinator.persistence.selector }}
+        selector: {{- include "common.tplvalues.render" (dict "value" .Values.coordinator.persistence.selector "context" $) | nindent 10 }}
+        {{- end -}}
+  {{- end }}

@@ -1,0 +1,8 @@
+# vscode
+.vscode
+
+# target dir
+target/
+
+# flatbuffers autogen files
+src/main/java/org/aliyun/dgs

@@ -1,0 +1,31 @@
+schema-file: "../../conf/testing_schema.json"
+
+meta-dir: "./coordinator_meta"
+
+data-loading:
+  worker-num: 1
+
+sampling:
+  worker-num: 2
+  actor-local-shard-num: 4
+  store-partitions: 8
+  store-partition-strategy: "hash"
+  downstream-partition-strategy: "hash"
+
+serving:
+  worker-num: 4
+  actor-local-shard-num: 4
+  store-partitions: 16
+  store-partition-strategy: "hash"
+
+kafka:
+  dl2spl:
+    servers:
+      - "100.82.16.15:9092"
+    topic: "record-batches"
+    partitions: 2
+  spl2srv:
+    servers:
+      - "100.82.16.15:9092"
+    topic: "sample-batches"
+    partitions: 4

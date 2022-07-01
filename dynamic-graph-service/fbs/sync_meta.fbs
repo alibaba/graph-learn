@@ -1,0 +1,7 @@
+namespace dgs;
+
+table SyncMetaRequestRep {
+  meta: uint32;
+}
+
+root_type SyncMetaRequestRep;

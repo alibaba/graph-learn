@@ -1,0 +1,55 @@
+{
+  "attr_defs": [
+    {
+      "type": 1,
+      "name": "timestamp",
+      "value_type": "INT64"
+    },
+    {
+      "type": 2,
+      "name": "weight",
+      "value_type": "FLOAT32"
+    },
+    {
+      "type": 3,
+      "name": "attributes",
+      "value_type": "STRING"
+    }
+  ],
+  "vertex_defs": [
+    {
+      "vtype": 1,
+      "name": "user",
+      "attr_types": [1, 2, 3]
+    },
+    {
+      "vtype": 2,
+      "name": "item",
+      "attr_types": [1, 2, 3]
+    }
+  ],
+  "edge_defs": [
+    {
+      "etype": 3,
+      "name": "u2i",
+      "attr_types": [1, 2, 3]
+    },
+    {
+      "etype": 4,
+      "name": "i2i",
+      "attr_types": [1, 2, 3]
+    }
+  ],
+  "edge_relation_defs": [
+    {
+      "etype": 3,
+      "src_vtype": 1,
+      "dst_vtype": 2
+    },
+    {
+      "etype": 4,
+      "src_vtype": 2,
+      "dst_vtype": 2
+    }
+  ]
+}
