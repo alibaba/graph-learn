@@ -12,7 +12,7 @@ This document contains three sections
 ## Run through the built-in model
 
 **GL** has some common models built-in, such as **GCN**, **GraphSAGE**, and datasets **cora, ppi**, etc.
-We start our exposure to **GL** by running through the node classification task for **cora** data. For the complete model code, please refer to [examples](https://github.com/alibaba/graph-learn/tree/master/examples/tf).
+We start our exposure to **GL** by running through the node classification task for **cora** data. For the complete model code, please refer to [examples](../../examples/tf).
 
 
 ``` shell
@@ -26,10 +26,10 @@ python train_supervised.py
 
 **GL** provides a number of basic interfaces for GNN development, and we provide graph interface usage examples to show how to compose, query, sample, and negatively sample based on **GL**.
 
-Before we start, we need to prepare a graph data source, here we prepare a script for generating data [gen_test_data.py](https://github.com/alibaba/graph-learn/tree/master/examples/basic/gen_test_data.py), which is used to generate local data for vertices and edges.
+Before we start, we need to prepare a graph data source, here we prepare a script for generating data [gen_test_data.py](../../examples/basic/gen_test_data.py), which is used to generate local data for vertices and edges.
 
 Prepare the test script as follows.
-[test_dist_server_mode_fs_tracker.py](https://github.com/alibaba/graph-learn/tree/master/examples/basic/test_dist_server_mode_fs_tracker.py)
+[test_dist_server_mode_fs_tracker.py](../../examples/basic/test_dist_server_mode_fs_tracker.py)
 ``` python
 import getopt
 import os
@@ -96,7 +96,7 @@ if __name__ == "__main__":
   main(sys.argv[1:])
 ```
 
-[query_examples.py](https://github.com/alibaba/graph-learn/tree/master/examples/basic/query_examples.py)More examples of the use of the graph interface are shown in the script for reference.
+[query_examples.py](../../examples/basic/query_examples.py)More examples of the use of the graph interface are shown in the script for reference.
 
 After preparing the data and code, we pull up 5 processes locally, 2 servers and 3 workers, for distributed execution.
 
@@ -134,7 +134,7 @@ The following will develop a supervised **GraphSAGE** model based on **GL** and 
 
 ### Data preparation
 
-We use the open source dataset cora, which contains a number of papers on machine learning, as well as citation relationships between papers, each containing 1433 attributes. These papers can be classified into 7 categories: Case_Based, Genetic_Algorithms, Neural_Networks, Probabilistic_Methods, Reinforcement_Learning, Rule_Learning, Theory. this GNN task aims to predict the classification of papers. We processed the open source cora data to get the data format required for our composition. cora data download and processing script refer to [cora.py](https://github.com/alibaba/graph-learn/tree/master/examples/data/cora.py) .
+We use the open source dataset cora, which contains a number of papers on machine learning, as well as citation relationships between papers, each containing 1433 attributes. These papers can be classified into 7 categories: Case_Based, Genetic_Algorithms, Neural_Networks, Probabilistic_Methods, Reinforcement_Learning, Rule_Learning, Theory. this GNN task aims to predict the classification of papers. We processed the open source cora data to get the data format required for our composition. cora data download and processing script refer to [cora.py](../../examples/data/cora.py) .
 
 ```
 cd graph-learn/examples/data

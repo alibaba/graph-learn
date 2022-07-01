@@ -9,7 +9,7 @@ The system framework will help run it distributedly.
 
 ## Programming Interface
 
-To customize an **operator**, class [**Operator**](../graphlearn/core/operator/operator.h) should be inherited.
+To customize an **operator**, class [**Operator**](../../src/core/operator/operator.h) should be inherited.
 And then override the following virtual function.
 
 ```c++
@@ -17,11 +17,11 @@ virtual Status Process(const OpRequest* req, OpResponse* res) = 0;
 ```
 
 If you just want to implement a kind of neighborhood **sampler**,
-inheriting from class [**Sampler**](../graphlearn/core/operator/sampler/sampler.h) may be an easy way.
+inheriting from class [**Sampler**](../../src/core/operator/sampler/sampler.h) may be an easy way.
 
-The context of each **operator** is [**OpRequest**](../graphlearn/include/op_request.h) and [**OpResponse**](../graphlearn/include/op_request.h).
+The context of each **operator** is [**OpRequest**](../../src/include/op_request.h) and [**OpResponse**](../../include/op_request.h).
 Two kinds of data map are contained in the context. `params_` is the description of the context.
-It is usually made up of some **scalar** [**Tensor**](../graphlearn/include/tensor.h), such as "node type" and "sampling strategy".
+It is usually made up of some **scalar** [**Tensor**](../../src/include/tensor.h), such as "node type" and "sampling strategy".
 `tensors_` is the body of the context. It usually takes data **vectors**.
 For example, sampling one-hop neighbors for a batch of node ids, in which the ids should be put in `tensors_`.
 
@@ -30,7 +30,7 @@ When a server receives an operator execution request, part of the request may be
 The data that needs to be partitioned should be placed into `tensors_`, and rewrite the **Partition()** function.
 
 Till now, we have abstracted the partition rules for all the existed operators.
-You can just use the [**Partitioner**](../graphlearn/core/partition/partitioner.h) in most cases.
+You can just use the [**Partitioner**](../../src/core/partition/partitioner.h) in most cases.
 
 
 ## Distributed Runtime Design
@@ -83,7 +83,7 @@ REGISTER_OPERATOR("OpName", MyOperator);
 ```
 
 Please make sure that the registered name should be the same with **OpRequest.Name()**.
-Refer to an existed operator, such as [**RandomSampler**](../graphlearn/core/operator/sampler/random_sampler.cc) for details.
+Refer to an existed operator, such as [**RandomSampler**](../../src/core/operator/sampler/random_sampler.cc) for details.
 
 ### Compile
 
@@ -109,7 +109,7 @@ For example, if a new sampler named **xxxSampler**, you can call it like this:
 g.sample(count).by("xxx")...
 ```
 
-More information about **API** refer to [this](query.md).
+[comment]: <> (More information about **API** refer to [this]&#40;query.md&#41;.)
 
 
-[Home](../README.md)
+[Home](../../../README.md)

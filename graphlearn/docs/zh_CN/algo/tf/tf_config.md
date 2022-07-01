@@ -1,6 +1,6 @@
 ## 全局配置
 
-对应[nn/tf/config.py](https://github.com/alibaba/graph-learn/tree/master/graphlearn/python/nn)
+对应[nn/tf/config.py](../../../../python/nn/tf/config.py)
 
 
 在模型实现中，往往需要区分training和evaluation过程，比如dropout, batchnorm等在training和evaulation阶段的用法不一样。此外，对于比较大的embedding，还需要考虑根据ps个数对其进行partition。<br />

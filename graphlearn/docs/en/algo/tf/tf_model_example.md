@@ -72,7 +72,7 @@ In order to facilitate the writing of the distributed training process, we have 
 ​
 
 #### DistTrainer
-[examples/tf/trainer.py](https://github.com/alibaba/graph-learn/blob/master/examples/tf/trainer.py)
+[examples/tf/trainer.py](../../../../examples/tf/trainer.py)
 
 ```python
 class DistTrainer(object):

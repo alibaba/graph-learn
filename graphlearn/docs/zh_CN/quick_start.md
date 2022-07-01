@@ -12,7 +12,7 @@
 ## 跑通内置模型
 
 **GL**内置了一些常见模型，如**GCN**，**GraphSAGE**，以及数据集**cora、ppi**等。
-我们从跑通**cora**数据的顶点分类任务开始接触**GL**。完整模型代码请参考[模型示例](https://github.com/alibaba/graph-learn/tree/master/examples/tf)。<br />
+我们从跑通**cora**数据的顶点分类任务开始接触**GL**。完整模型代码请参考[模型示例](../../examples/tf)。<br />
 
 
 ``` shell
@@ -29,9 +29,9 @@ python train_supervised.py
 
 **GL**为GNN的开发提供了大量基础接口，我们提供了图接口使用示例以展示如何基于**GL**来构图、查询、采样、负采样。
 
-在开始前，我们需要准备一份图数据源，这里准备了一个生成数据的脚本[gen_test_data.py](https://github.com/alibaba/graph-learn/tree/master/examples/basic/gen_test_data.py)，用于生成顶点和边的本地数据。
+在开始前，我们需要准备一份图数据源，这里准备了一个生成数据的脚本[gen_test_data.py](../../examples/basic/gen_test_data.py)，用于生成顶点和边的本地数据。
 
-准备测试脚本[test_dist_server_mode_fs_tracker.py](https://github.com/alibaba/graph-learn/tree/master/examples/basic/test_dist_server_mode_fs_tracker.py)如下：
+准备测试脚本[test_dist_server_mode_fs_tracker.py](../../examples/basic/test_dist_server_mode_fs_tracker.py)如下：
 ``` python
 import getopt
 import os
@@ -111,7 +111,7 @@ if __name__ == "__main__":
   main(sys.argv[1:])
 ```
 
-[query_examples.py](https://github.com/alibaba/graph-learn/tree/master/examples/basic/query_examples.py)脚本中展示了更多的图接口的使用示例以供参考。
+[query_examples.py](../../examples/basic/query_examples.py)脚本中展示了更多的图接口的使用示例以供参考。
 
 准备完数据和代码后，我们在本地拉起5个进程，2个server，3个worker，分布式执行。
 
@@ -152,7 +152,7 @@ python $HERE/test_dist_server_mode_fs_tracker.py \
 
 ### 数据准备
 
-我们使用开源数据集Cora，它包含了机器学习的一些论文，以及论文之间的引用关系，每篇论文包含1433个属性。这些论文可以划分为7种类别：Case_Based，Genetic_Algorithms，Neural_Networks，Probabilistic_Methods，Reinforcement_Learning，Rule_Learning，Theory。该GNN任务的目的是预测论文的分类。我们将开源的Cora数据进行处理，得到我们构图所需的数据格式。Cora数据下载和处理的脚本参考[cora.py](https://github.com/alibaba/graph-learn/tree/master/examples/data/cora.py)。
+我们使用开源数据集Cora，它包含了机器学习的一些论文，以及论文之间的引用关系，每篇论文包含1433个属性。这些论文可以划分为7种类别：Case_Based，Genetic_Algorithms，Neural_Networks，Probabilistic_Methods，Reinforcement_Learning，Rule_Learning，Theory。该GNN任务的目的是预测论文的分类。我们将开源的Cora数据进行处理，得到我们构图所需的数据格式。Cora数据下载和处理的脚本参考[cora.py](../../examples/data/cora.py)。
 
 ```
 cd graph-learn/examples/data

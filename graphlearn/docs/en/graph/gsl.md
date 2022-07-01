@@ -580,7 +580,7 @@ res["i-i"].labels
 vim gen_test_data.py
 ```
 
-[gen_test_data.py](https://github.com/alibaba/graph-learn/blob/master/examples/basic/gen_test_data.py)
+[gen_test_data.py](../../../examples/basic/gen_test_data.py)
 
 ```python
 def gen_files():
@@ -628,7 +628,7 @@ The "buy" edge in this example is an undirected edge.
 vim test_local.py
 ```
 
-[test_local.py](https://github.com/alibaba/graph-learn/blob/master/examples/basic/test_local.py)
+[test_local.py](../../../examples/basic/test_local.py)
 
 ```python
 import os
@@ -806,5 +806,5 @@ Execute the script
 >>> python test_local.py
 ```
 
-For a detailed example see the code:  [query_examples.py](https://github.com/alibaba/graph-learn/tree/master/examples/basic/query_examples.py)
+For a detailed example see the code:  [query_examples.py](../../../examples/basic/query_examples.py)
 

@@ -74,7 +74,7 @@ SubGraph的模型实现部分见nn/tf/model
 ​
 
 #### DistTrainer
-对应[examples/tf/trainer.py](https://github.com/alibaba/graph-learn/blob/master/examples/tf/trainer.py)
+对应[examples/tf/trainer.py](../../../../examples/tf/trainer.py)
 
 ```python
 class DistTrainer(object):

@@ -10,7 +10,7 @@ If it is difficult to configure your environment with KubeFlow and NFS, you `NEE
 
 ## File System Interface
 
-The [interface](https://github.com/alibaba/graph-learn/blob/master/graphlearn/platform/file_system.h) of file system defines the basic operation for file and directory, such as **Exist**, **Create** and **Delete**.
+The [interface](../../src/platform/file_system.h) of file system defines the basic operation for file and directory, such as **Exist**, **Create** and **Delete**.
 Besides, we abstract **three** kinds of files that a file system should implement.
 
 

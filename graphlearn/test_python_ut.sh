@@ -1,5 +1,11 @@
-#!/usr/bin/env bash
-usage() { echo "Usage: $0 [-p <python | python3>" 1>&2; exit 1; }
+#!/bin/bash
+
+set -eo pipefail
+
+usage() {
+  echo "Usage: $0 [-p <python | python3>" 1>&2; exit 1;
+}
+
 PYTHON=python
 while getopts ":p:" o; do
     case "${o}" in
@@ -17,11 +23,12 @@ if [ -z "${PYTHON}" ]; then
     usage
 fi
 
-for file in $(ls -ld $(find ./graphlearn/python))
+script_dir=$(dirname "$(realpath "$0")")
+
+pushd "${script_dir}"/python
+for file in */test_*.py
 do
-  if [[ $file == */test_*.py ]]
-  then
-    echo $file
-    ${PYTHON} $file
-  fi
+  echo "$file"
+  ${PYTHON} "$file"
 done
+popd

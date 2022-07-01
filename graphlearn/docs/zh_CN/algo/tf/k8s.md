@@ -4,7 +4,7 @@
 
 You need to make sure that a distributed file system (eg, NFS) is mounted successfully either on each host machine or with [PVC](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolumeclaims).
 
-Put directory [examples](https://github.com/alibaba/graph-learn/tree/master/examples) on it.
+Put directory [examples](../../../../examples) on it.
 
 2. Train and evaluate with local mode.
 

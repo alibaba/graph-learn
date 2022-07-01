@@ -1,6 +1,6 @@
 ## Global Configuration
 
-[nn/tf/config.py](https://github.com/alibaba/graph-learn/tree/master/graphlearn/python/nn)
+[nn/tf/config.py](../../../../python/nn/tf/config.py)
 
 
 In model implementation, it is often necessary to distinguish between training and evaluation processes, e.g., dropout, batchnorm, etc. are used differently in training and evaulation phases. In addition, for larger embedding, it is also necessary to consider partitioning them according to the number of ps.

@@ -415,7 +415,7 @@ Return:
 
 例如，在二部图（user-item-item）GraphSAGE算法中，我们为了学习user和item在同一空间下的相似性，首先会随机获取图的u2i边作为训练的正样本，再对边的源点（即user顶点）采样其负邻居（item顶点）产生负样本。user通过一阶邻居进行编码（把邻域信息聚合到中心节点），即需要采样其一跳邻居。item也需要一阶邻居来编码。图数据的访问模式如下所示。
 
-![gsl-u-i-i-neg](../../images//gsl-u-i-i-neg.png)
+![gsl-u-i-i-neg](../../images/gsl-u-i-i-neg.png)
 
 ```python
 query = g.E("u2i").batch(512).shuffle().alis('edge')       # (1) 随机获取512条u2i的边
@@ -587,7 +587,7 @@ res["i-i"].labels
 vim gen_test_data.py
 ```
 
-[gen_test_data.py](https://github.com/alibaba/graph-learn/blob/master/examples/basic/gen_test_data.py)
+[gen_test_data.py](../../../examples/basic/gen_test_data.py)
 
 ```python
 def gen_files():
@@ -633,7 +633,7 @@ python gen_test_data.py
 vim test_local.py
 ```
 
-[test_local.py](https://github.com/alibaba/graph-learn/blob/master/examples/basic/test_local.py)
+[test_local.py](../../../examples/basic/test_local.py)
 
 ```python
 import os
@@ -810,5 +810,5 @@ if __name__ == "__main__":
 >>> python test_local.py
 ```
 
-详细的示例见代码： [query_examples.py](https://github.com/alibaba/graph-learn/tree/master/examples/basic/query_examples.py)
+详细的示例见代码： [query_examples.py](../../../examples/basic/query_examples.py)
 
