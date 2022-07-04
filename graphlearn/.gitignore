@@ -1,4 +1,3 @@
-./graphlearn.egg-info/
-./python/lib/
-./dist/
-./examples/tf/*.tar.gz
+graphlearn.egg-info/
+dist/
+examples/tf/*.tar.gz

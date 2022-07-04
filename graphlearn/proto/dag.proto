@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-import "graphlearn/proto/tensor.proto";
+import "tensor.proto";
 
 package graphlearn;
 

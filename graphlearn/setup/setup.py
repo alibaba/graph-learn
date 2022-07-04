@@ -39,11 +39,10 @@ extra_compile_args=[]
 extra_link_args=[]
 
 include_dirs.append(ROOT_PATH)
-include_dirs.append(ROOT_PATH + '/graphlearn/include')
-include_dirs.append(ROOT_PATH + '/built')
-include_dirs.append(ROOT_PATH + '/third_party/pybind11/pybind11/include')
-include_dirs.append(ROOT_PATH + '/third_party/glog/build')
-include_dirs.append(ROOT_PATH + '/third_party/protobuf/build/include')
+include_dirs.append(ROOT_PATH + '/src/include')
+include_dirs.append(ROOT_PATH + '/../third_party/pybind11/pybind11/include')
+include_dirs.append(ROOT_PATH + '/../third_party/glog/build')
+include_dirs.append(ROOT_PATH + '/../third_party/grpc/build/include')
 include_dirs.append(numpy.get_include())
 
 library_dirs.append(ROOT_PATH + '/built/lib')
@@ -52,18 +51,16 @@ if OPEN_KNN == 'OPEN':
 extra_compile_args.append('-D__USE_XOPEN2K8')
 extra_compile_args.append('-std=c++11')
 extra_compile_args.append('-fvisibility=hidden')
-extra_link_args.append('-Wl,-rpath=$ORIGIN/python/lib/')
-
+# extra_link_args.append('-Wl,-rpath=$ORIGIN/python/lib/')
 
 libraries.append('graphlearn_shared')
 if OPEN_KNN == 'OPEN':
   libraries.append('knn_shared')
 
-
-sources = [ROOT_PATH + '/graphlearn/python/c/py_export.cc',
-           ROOT_PATH + '/graphlearn/python/c/py_client.cc']
+sources = [ROOT_PATH + '/python/c/py_export.cc',
+           ROOT_PATH + '/python/c/py_client.cc']
 if OPEN_KNN == 'OPEN':
-  sources.append(ROOT_PATH + '/graphlearn/python/c/py_contrib.cc')
+  sources.append(ROOT_PATH + '/python/c/py_contrib.cc')
 
 graphlearn_extension = Extension(
     'pywrap_graphlearn',

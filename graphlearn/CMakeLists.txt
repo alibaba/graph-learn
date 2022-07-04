@@ -14,405 +14,258 @@
 
 cmake_minimum_required (VERSION 3.5)
 
-project (src VERSION 1.0 LANGUAGES CXX)
+project (GraphLearn VERSION 1.0 LANGUAGES CXX)
 
-set (CMAKE_CXX_COMPILER g++)
+## options
+option (GL_CXX_DIALECT
+  "c++11"
+  CACHE
+  STRING
+  "Compile graphlearn according to the named C++ standard.")
 
-option (TESTING "ENABLE testing" OFF)
-option (GL_DEBUG "Enable debug mode" OFF)
-option (PROFILING "Enable profiling" OFF)
+option (TESTING
+  "Enable testing"
+  OFF)
 
-set (HERE ${CMAKE_CURRENT_SOURCE_DIR})
-set (ROOT ${HERE})
-set (BUILT_DIR ${ROOT}/built)
-set (INCLUDE_DIR ${BUILT_DIR}/include)
-set (LIB_DIR ${BUILT_DIR}/lib)
-set (BIN_DIR ${BUILT_DIR}/bin)
-set (THIRD_PARTY_DIR ${ROOT}/third_party)
-set (SETUP_DIR ${ROOT}/setup)
-set (PYTHON_DIR ${ROOT}/graphlearn)
-set (PYTHON_LIB ${PYTHON_DIR}/python/lib)
+option (DEBUG
+  "Enable debug mode"
+  OFF)
 
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BIN_DIR})
-set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${LIB_DIR})
-set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${LIB_DIR})
+option (PROFILING
+  "Enable profiling"
+  OFF)
 
-# protobuf
-set (PROTOBUF_DIR ${THIRD_PARTY_DIR}/protobuf)
-set (PROTOBUF_INCLUDE ${PROTOBUF_DIR}/build/include)
-set (PROTOBUF_LIB ${PROTOBUF_DIR}/build/lib)
-set (PROTOC ${PROTOBUF_DIR}/build/bin/protoc)
-add_custom_target (protobuf_target)
-add_custom_command (TARGET protobuf_target
-    COMMAND ${CMAKE_COMMAND} -E echo "prepare protobuf library ..."
-    COMMAND /bin/sh -c "if [ ! -d '${PROTOBUF_DIR}/build' ]; then cd '${PROTOBUF_DIR}'; ./build.sh; fi"
-    COMMAND ${CMAKE_COMMAND} -E echo "protobuf done"
-    VERBATIM
-)
+option (KNN
+  "Enable knn"
+  ON)
 
-# grpc
-set (GRPC_DIR ${THIRD_PARTY_DIR}/grpc)
-set (GRPC_INCLUDE ${GRPC_DIR}/build/include)
-set (GRPC_LIB ${GRPC_DIR}/build/lib)
-set (PROTOC_GRPC_PLUGIN ${GRPC_DIR}/build/bin/grpc_cpp_plugin)
-add_custom_target (grpc_target)
-add_custom_command (TARGET grpc_target
-    COMMAND ${CMAKE_COMMAND} -E echo "prepare grpc library ..."
-    COMMAND /bin/sh -c "if [ ! -d '${GRPC_DIR}/build' ]; then cd '${GRPC_DIR}'; ./build.sh; fi"
-    COMMAND ${CMAKE_COMMAND} -E echo "grpc done"
-    VERBATIM
-)
-add_dependencies (grpc_target protobuf_target)
+option (GPU
+  "Enable gpu"
+  OFF)
 
-# glog
-set (GLOG_DIR ${THIRD_PARTY_DIR}/glog)
-set (GLOG_INCLUDE ${GLOG_DIR}/build)
-set (GLOG_LIB ${GLOG_DIR}/build)
-add_custom_target (glog_target)
-add_custom_command (TARGET glog_target
-    COMMAND ${CMAKE_COMMAND} -E echo "prepare glog library ..."
-    COMMAND /bin/sh -c "if [ ! -d '${GLOG_DIR}/build' ]; then cd '${GLOG_DIR}'; ./build.sh; fi"
-    COMMAND ${CMAKE_COMMAND} -E echo "glog done"
-    VERBATIM
-)
+## project source paths
+set (GL_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
+set (GL_SRC_DIR ${GL_ROOT}/src)
+set (GL_PYTHON_DIR ${GL_ROOT}/python)
+set (GL_SETUP_DIR ${GL_ROOT}/setup)
+set (GL_PROTO_DIR ${GL_ROOT}/proto)
+set (THIRD_PARTY_DIR ${GL_ROOT}/../third_party)
 
-# pybind11
-set (PYBIND_DIR ${THIRD_PARTY_DIR}/pybind11)
-set (PYBIND_INCLUDE ${PYBIND_DIR}/pybind11/include/)
-add_custom_target (pybind_target)
-add_custom_command (TARGET pybind_target
-    COMMAND ${CMAKE_COMMAND} -E echo "prepare pybind11 library ..."
-    COMMAND /bin/sh -c "if [ ! -d '${PYBIND_DIR}/build' ]; then cd '${PYBIND_DIR}'; ./build.sh; fi"
-    COMMAND ${CMAKE_COMMAND} -E echo "pybind11 done"
-    VERBATIM
-)
+## project target paths
+set (GL_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
+set (GL_BUILT_DIR ${GL_ROOT}/built)
+set (GL_BUILT_LIB_DIR ${GL_BUILT_DIR}/lib)
+set (GL_BUILT_BIN_DIR ${GL_BUILT_DIR}/bin)
 
-# gtest
-set (GTEST_DIR ${THIRD_PARTY_DIR}/googletest)
-set (GTEST_INCLUDE ${GTEST_DIR}/googletest/googletest/include)
-set (GTEST_LIB ${GTEST_DIR}/build/googlemock/gtest)
-add_custom_target (gtest_target)
-add_custom_command (TARGET gtest_target
-    COMMAND ${CMAKE_COMMAND} -E echo "prepare gtest library ..."
-    COMMAND /bin/sh -c "if [ ! -d '${GTEST_DIR}/build' ]; then cd '${GTEST_DIR}'; ./build.sh; fi"
-    COMMAND ${CMAKE_COMMAND} -E echo "gtest done"
-    VERBATIM
-)
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${GL_BUILT_BIN_DIR})
+set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${GL_BUILT_LIB_DIR})
+set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${GL_BUILT_LIB_DIR})
 
-# gflags
-set (GFLAGS_DIR ${THIRD_PARTY_DIR}/gflags)
-set (GFLAGS_LIB ${GFLAGS_DIR}/build/lib)
-add_custom_target (gflags_target)
-add_custom_command (TARGET gflags_target
-    COMMAND ${CMAKE_COMMAND} -E echo "prepare gflags library ..."
-    COMMAND /bin/sh -c "if [ ! -d '${GFLAGS_DIR}/build' ]; then cd '${GFLAGS_DIR}'; ./build.sh; fi"
-    COMMAND ${CMAKE_COMMAND} -E echo "gflags done"
-    VERBATIM
-)
+## glog package
+set (glog_INSTALL_DIR ${THIRD_PARTY_DIR}/glog/build)
+list (APPEND CMAKE_PREFIX_PATH ${glog_INSTALL_DIR})
+find_package (glog CONFIG REQUIRED)
 
-# proto
-set (PROTO_DIR ${ROOT}/graphlearn/proto)
-set (proto_generated_files
-    ${PROTO_DIR}/service.pb.h 
-    ${PROTO_DIR}/service.pb.cc
-    ${PROTO_DIR}/service.grpc.pb.h 
-    ${PROTO_DIR}/service.grpc.pb.cc)
+## grpc package
+set (gRPC_INSTALL_DIR ${THIRD_PARTY_DIR}/grpc/build)
+list (APPEND CMAKE_PREFIX_PATH ${gRPC_INSTALL_DIR})
+find_package (protobuf CONFIG REQUIRED)
+find_package (gRPC CONFIG REQUIRED)
 
-add_custom_command (
-    DEPENDS grpc_target
-    OUTPUT ${proto_generated_files}
-    COMMAND ${PROTOC} --cpp_out=. service.proto
-    COMMAND ${PROTOC} --grpc_out=. service.proto
-        --plugin=protoc-gen-grpc=${PROTOC_GRPC_PLUGIN}
-    WORKING_DIRECTORY ${PROTO_DIR}
-    VERBATIM
-)
+## grpc codegen
+set (GL_GRPC_CPP_PLUGIN ${gRPC_INSTALL_DIR}/bin/grpc_cpp_plugin)
+set (GL_PROTO_GEN_DIR ${GL_SRC_DIR}/generated/proto)
+file (MAKE_DIRECTORY ${GL_PROTO_GEN_DIR})
+set (GL_PROTO_SRC_FILES
+  ${GL_PROTO_DIR}/dag.proto
+  ${GL_PROTO_DIR}/request.proto
+  ${GL_PROTO_DIR}/service.proto
+  ${GL_PROTO_DIR}/tensor.proto)
 
-add_custom_target (proto_target
-    DEPENDS ${proto_generated_files})
+function (generate_grpc_files target_name grpc_gen_files)
+  set (${grpc_gen_files})
+  foreach (FIL ${GL_PROTO_SRC_FILES})
+    get_filename_component (FIL_WE ${FIL} NAME_WE)
+    set (GEN_FILES
+      ${GL_PROTO_GEN_DIR}/${FIL_WE}.pb.h
+      ${GL_PROTO_GEN_DIR}/${FIL_WE}.pb.cc
+      ${GL_PROTO_GEN_DIR}/${FIL_WE}.grpc.pb.h
+      ${GL_PROTO_GEN_DIR}/${FIL_WE}.grpc.pb.cc)
+    list (APPEND ${grpc_gen_files} ${GEN_FILES})
+    add_custom_command (
+      OUTPUT ${GEN_FILES}
+      DEPENDS protobuf::protoc ${GL_GRPC_CPP_PLUGIN} ${FIL}
+      COMMENT "Generating for proto file: ${FIL_WE}.proto ..."
+      COMMAND protobuf::protoc -I ${GL_PROTO_DIR} --cpp_out=${GL_PROTO_GEN_DIR} ${FIL}
+      COMMAND protobuf::protoc -I ${GL_PROTO_DIR} --grpc_out=${GL_PROTO_GEN_DIR}
+        --plugin=protoc-gen-grpc=${GL_GRPC_CPP_PLUGIN} ${FIL}
+      VERBATIM)
+  endforeach ()
 
-# common
-set (COMMON_DIR ${ROOT}/graphlearn/common)
-file (GLOB_RECURSE COMMON_FILES
-    ${COMMON_DIR}/*.cc ${COMMON_DIR}/*.h)
+  set_source_files_properties (${${grpc_gen_files}} PROPERTIES GENERATED TRUE)
+  set (${grpc_gen_files} ${${grpc_gen_files}} PARENT_SCOPE)
 
-# core
-set (CORE_DIR ${ROOT}/graphlearn/core)
-file (GLOB_RECURSE CORE_FILES
-    ${CORE_DIR}/*.cc ${CORE_DIR}/*.h)
+  add_custom_target (${target_name}
+    DEPENDS ${${grpc_gen_files}})
+endfunction ()
 
-# include
-set (INCLUDE_DIR ${ROOT}/graphlearn/include)
-file (GLOB_RECURSE INCLUDE_FILES
-    ${INCLUDE_DIR}/*.h)
-
-# platform
-set (PLATFORM_DIR ${ROOT}/graphlearn/platform)
-file (GLOB_RECURSE PLATFORM_FILES
-    ${PLATFORM_DIR}/*.cc ${PLATFORM_DIR}/*.h)
-
-# service
-set (SERVICE_DIR ${ROOT}/graphlearn/service)
-file (GLOB_RECURSE SERVICE_FILES
-    ${SERVICE_DIR}/*.cc ${SERVICE_DIR}/*.h)
-
-
-if (GL_DEBUG)
-    set (MODEFLAGS -DDEBUG -g)
-else()
-    set (MODEFLAGS -DNDEBUG -O2)
-endif()
-
-if (PROFILING)
-    set (PROFILING_FLAG OPEN_PROFILING)
-else()
-    set (PROFILING_FLAG CLOSE_PROFILING)
-endif()
-
-set (GL_CXX_FLAGS ${MODEFLAGS} -std=c++11 -fPIC 
-    -pthread -mavx -msse4.2 -msse4.1 
-    -D${PROFILING_FLAG} 
-    -I. -I${ROOT} -I${BUILT_DIR} 
-    -I${PROTOBUF_INCLUDE} 
-    -I${GLOG_INCLUDE} 
-    -I${GRPC_INCLUDE})
-
-add_library (graphlearn_shared SHARED
-    ${proto_generated_files}
-    ${COMMON_FILES}
-    ${CORE_FILES}
-    ${INCLUDE_FILES}
-    ${PLATFORM_FILES}
-    ${SERVICE_FILES})
-
-target_compile_options(graphlearn_shared 
-    PRIVATE ${GL_CXX_FLAGS})
-
-set (LINK_DIRS -L${GLOG_LIB} -L${ROOT} -L${PROTOBUF_LIB}
-    -L${GRPC_LIB} -L${GFLAGS_LIB})
-
-target_link_libraries (graphlearn_shared
-    PUBLIC
-    pthread
-    glog
-    protobuf
-    gflags
-    grpc++
-    gpr
-    upb
-    ${LINK_DIRS})
-
-add_dependencies (graphlearn_shared 
-    protobuf_target
-    grpc_target
-    glog_target
-    pybind_target
-    gtest_target
-    gflags_target
-    proto_target)
+generate_grpc_files (grpc_codegen GL_GRPC_AUTOGEN_FILES)
 
 if (TESTING)
-    function (gl_add_test name)
-        cmake_parse_arguments (args
-        "" "" "SOURCES" ${ARGN})
+  # googletest package
+  set (GTest_INSTALL_DIR ${THIRD_PARTY_DIR}/googletest/build)
+  list (APPEND CMAKE_PREFIX_PATH ${GTest_INSTALL_DIR})
+  find_package (GTest CONFIG REQUIRED)
+endif ()
 
-        add_executable (${name} ${args_SOURCES})
-        target_include_directories(${name}
-            PUBLIC ${GTEST_INCLUDE} 
-            ${ROOT} ${PROTOBUF_INCLUDE} 
-            ${GLOG_INCLUDE} ${GRPC_INCLUDE})
-        target_link_libraries (${name}
-            -L${GTEST_LIB} -L${LIB_DIR} -L${GRPC_LIB} 
-            -L/lib64 -lgraphlearn_shared -lgtest 
-            -lgtest_main -lstdc++ -lgrpc++ 
-            -lgrpc -lgpr -lupb -lpthread)
-        target_compile_options (${name}
-            PRIVATE ${GL_CXX_FLAGS})
-        add_dependencies (${name}
-            gtest_target graphlearn_shared)
-    endfunction()
+## project files
+# common
+set (GL_COMMON_DIR ${GL_SRC_DIR}/common)
+file (GLOB_RECURSE GL_COMMON_FILES
+  ${GL_COMMON_DIR}/*.cc
+  ${GL_COMMON_DIR}/*.h)
+# core
+set (GL_CORE_DIR ${GL_SRC_DIR}/core)
+file (GLOB_RECURSE GL_CORE_FILES
+  ${GL_CORE_DIR}/*.cc
+  ${GL_CORE_DIR}/*.h)
+# include
+set (GL_INCLUDE_DIR ${GL_SRC_DIR}/include)
+file (GLOB_RECURSE GL_INCLUDE_FILES
+  ${GL_INCLUDE_DIR}/*.h)
+# platform
+set (GL_PLATFORM_DIR ${GL_SRC_DIR}/platform)
+file (GLOB_RECURSE GL_PLATFORM_FILES
+  ${GL_PLATFORM_DIR}/*.cc
+  ${GL_PLATFORM_DIR}/*.h)
+# service
+set (GL_SERVICE_DIR ${GL_SRC_DIR}/service)
+file (GLOB_RECURSE GL_SERVICE_FILES
+  ${GL_SERVICE_DIR}/*.cc
+  ${GL_SERVICE_DIR}/*.h)
+# contrib knn
+set (GL_CONTRIB_DIR ${GL_SRC_DIR}/service)
+if (KNN)
+  add_subdirectory (${GL_CONTRIB_DIR}/knn)
+endif ()
 
-    gl_add_test (closure_unittest
-        SOURCES
-      src/common/base/test/closure_unittest.cpp)
+## cxx flags
+if (DEBUG)
+  set (GL_MODE_FLAGS -DDEBUG -g)
+  set (CMAKE_BUILD_TYPE Debug)
+else ()
+  set (GL_MODE_FLAGS -DNDEBUG -O2)
+endif ()
 
-    gl_add_test (status_unittest
-        SOURCES
-      src/common/base/test/status_unittest.cpp
-    )
+## knn flag
+if (KNN)
+  set (KNN_FLAG OPEN_KNN)
+else ()
+  set (KNN_FLAG CLOSE_KNN)
+endif ()
 
-    gl_add_test (atomic_unittest
-        SOURCES
-      src/common/threading/atomic/test/atomic_unittest.cpp
-    )
-
-    gl_add_test (lockfree_queue_unittest
-        SOURCES
-      src/common/threading/lockfree/test/lockfree_queue_unittest.cpp
-    )
-
-    gl_add_test (lockfree_stack_unittest
-        SOURCES
-      src/common/threading/lockfree/test/lockfree_stack_unittest.cpp
-    )
-
-    gl_add_test (dynamic_worker_thread_pool_unittest
-        SOURCES
-      src/common/threading/runner/test/dynamic_worker_thread_pool_unittest.cpp
-    )
-
-    gl_add_test (cond_unittest
-        SOURCES
-      src/common/threading/sync/test/cond_unittest.cpp)
-
-    gl_add_test (lock_unittest
-        SOURCES
-      src/common/threading/sync/test/lock_unittest.cpp)
-
-    gl_add_test (waitable_event_unittest
-        SOURCES
-      src/common/threading/sync/test/waitable_event_unittest.cpp)
-
-    gl_add_test (this_thread_unittest
-        SOURCES
-      src/common/threading/test/this_thread_unittest.cpp)
-
-    gl_add_test (thread_unittest
-        SOURCES
-      src/common/threading/thread/test/thread_unittest.cpp)
-
-    gl_add_test (graph_store_unittest
-        SOURCES
-      src/core/graph/test/graph_store_unittest.cpp)
-
-    gl_add_test (node_storage_unittest
-        SOURCES
-      src/core/graph/storage/test/node_storage_unittest.cpp)
-
-    gl_add_test (graph_storage_unittest
-        SOURCES
-      src/core/graph/storage/test/graph_storage_unittest.cpp)
-
-    gl_add_test (data_slicer_unittest
-        SOURCES
-      src/core/io/test/data_slicer_unittest.cpp)
-
-    gl_add_test (edge_loader_unittest
-        SOURCES
-      src/core/io/test/edge_loader_unittest.cpp)
-
-    gl_add_test (node_loader_unittest
-        SOURCES
-      src/core/io/test/node_loader_unittest.cpp)
-
-    gl_add_test (graph_op_unittest
-        SOURCES
-      src/core/operator/graph/test/graph_op_unittest.cpp)
-
-    gl_add_test (sampler_unittest
-        SOURCES
-      src/core/operator/sampler/test/sampler_unittest.cpp)
-
-    gl_add_test (negative_sampler_unittest
-        SOURCES
-      src/core/operator/sampler/test/negative_sampler_unittest.cpp)
-
-    gl_add_test (aggregating_op_unittest
-        SOURCES
-      src/core/operator/aggregator/test/aggregating_op_unittest.cpp)
-
-    gl_add_test (env_unittest
-        SOURCES
-      src/platform/test/env_unittest.cpp)
-
-    gl_add_test (local_fs_unittest
-        SOURCES
-      src/platform/test/local_fs_unittest.cpp)
-
-    gl_add_test (event_queue_unittest
-        SOURCES
-      src/service/test/event_queue_unittest.cpp)
-
-    gl_add_test (tensor_unittest
-        SOURCES
-      src/service/test/tensor_unittest.cpp)
-
-    gl_add_test (client_test
-        SOURCES
-      src/service/test/client_test.cpp)
-
-    gl_add_test (server_test
-        SOURCES
-      src/service/test/server_test.cpp)
-
-    gl_add_test (dist_in_memory_test
-        SOURCES
-      src/service/test/dist_in_memory_test.cpp)
-
-    gl_add_test (graph_request_unittest
-        SOURCES
-      src/service/request/test/graph_request_unittest.cpp)
-
-    gl_add_test (aggregating_request_unittest
-        SOURCES
-      src/service/request/test/aggregating_request_unittest.cpp)
-
-    gl_add_test (naming_engine_unittest
-        SOURCES
-      src/service/dist/test/naming_engine_unittest.cpp)
-
-    gl_add_test (coordinator_unittest
-        SOURCES
-      src/service/dist/test/coordinator_unittest.cpp)
-
-    gl_add_test (channel_manager_unittest
-        SOURCES
-      src/service/dist/test/channel_manager_unittest.cpp)
-
-    gl_add_test (service_unittest
-        SOURCES
-      src/service/dist/test/service_unittest.cpp)
-
-    gl_add_test (service_with_hosts_unittest
-        SOURCES
-      src/service/dist/test/service_with_hosts_unittest.cpp)
+## profiling flag
+if (PROFILING)
+  set (PROFILING_FLAG OPEN_PROFILING)
+else()
+  set (PROFILING_FLAG CLOSE_PROFILING)
 endif()
 
-execute_process (
-    COMMAND /bin/sh -c "cat ${SETUP_DIR}/setup.py | grep '_VERSION =' | cut -d= -f2"
-    OUTPUT_VARIABLE VERSION
-    WORKING_DIRECTORY ${ROOT}
-)
+set (GL_CXX_FLAGS
+  ${GL_MODE_FLAGS}
+  -std=${GL_CXX_DIALECT}
+  -D${KNN_FLAG}
+  -D${PROFILING_FLAG}
+  -fPIC
+  -fvisibility-inlines-hidden
+  -pthread
+  -mavx
+  -msse4.2
+  -msse4.1)
 
-string(STRIP ${VERSION} VERSION)
+## add library
+add_library (graphlearn_shared SHARED
+  ${GL_COMMON_FILES}
+  ${GL_CORE_FILES}
+  ${GL_INCLUDE_FILES}
+  ${GL_PLATFORM_FILES}
+  ${GL_SERVICE_FILES}
+  ${GL_GRPC_AUTOGEN_FILES})
+
+add_dependencies (graphlearn_shared
+  grpc_codegen)
+
+target_compile_options (graphlearn_shared
+  PRIVATE ${GL_CXX_FLAGS})
+
+target_include_directories (graphlearn_shared
+  PUBLIC ${GL_SRC_DIR})
+
+target_link_libraries (graphlearn_shared
+  PUBLIC
+    glog::glog
+    gRPC::grpc++)
+
+if (KNN)
+  target_link_libraries (graphlearn_shared
+    PUBLIC knn_shared)
+endif ()
+
+## tests
+if (TESTING)
+  add_custom_target (gl_tests)
+  function (add_gl_tests)
+    if (NOT ARGN)
+      message (SEND_ERROR "Error: add_gl_tests() called without any test files")
+      return ()
+    endif ()
+    foreach (TEST_FILE ${ARGN})
+      get_filename_component (TEST_NAME ${TEST_FILE} NAME_WE)
+      add_executable (${TEST_NAME} ${TEST_FILE})
+      add_dependencies (${TEST_NAME} graphlearn_shared)
+      target_compile_options (${TEST_NAME} PRIVATE ${GL_CXX_FLAGS})
+      target_link_libraries (${TEST_NAME}
+        PUBLIC
+          graphlearn_shared
+          GTest::gtest
+          GTest::gtest_main)
+      add_dependencies (gl_tests ${TEST_NAME})
+    endforeach ()
+  endfunction ()
+
+  file (GLOB_RECURSE GL_TEST_FILES
+    ${GL_COMMON_DIR}/*.cpp
+    ${GL_CORE_DIR}/*.cpp
+    ${GL_INCLUDE_DIR}/*.cpp
+    ${GL_PLATFORM_DIR}/*.cpp
+    ${GL_SERVICE_DIR}/*.cpp)
+  add_gl_tests (${GL_TEST_FILES})
+endif()
 
 # python
-add_custom_target (python)
-add_dependencies (python pybind_target)
-add_custom_command (TARGET python
-    COMMAND /bin/sh -c "rm -rf build"
-    COMMAND /bin/sh -c "rm -rf dist"
-    COMMAND /bin/sh -c "rm -rf graphlearn.egg-info"
-    COMMAND /bin/sh -c "mkdir -p ${PYTHON_LIB}"
-    COMMAND /bin/sh -c "cp ${SETUP_DIR}/gl.__init__.py ${PYTHON_DIR}/__init__.py"
-    COMMAND /bin/sh -c "echo '__version__ = ${VERSION}' > ${PYTHON_DIR}/__init__.py"
-    COMMAND /bin/sh -c "cp ${THIRD_PARTY_DIR}/grpc/build/lib/libgrpc++.so.1.26.0 ${PYTHON_LIB}/libgrpc++.so.1.26.0"
-    COMMAND /bin/sh -c "cp ${THIRD_PARTY_DIR}/grpc/build/lib/libgrpc.so.9.0.0 ${PYTHON_LIB}/libgrpc.so.9.0.0"
-    COMMAND /bin/sh -c "cp ${THIRD_PARTY_DIR}/grpc/build/lib/libgpr.so.9.0.0 ${PYTHON_LIB}/libgpr.so.9.0.0"
-    COMMAND /bin/sh -c "cp ${THIRD_PARTY_DIR}/grpc/build/lib/libupb.so.9.0.0 ${PYTHON_LIB}/libupb.so.9.0.0"
-    COMMAND /bin/sh -c "if [ ! -f '${PYTHON_LIB}/libgrpc++.so' ]; then ln -s ${PYTHON_LIB}/libgrpc++.so.1.26.0 ${PYTHON_LIB}/libgrpc++.so; fi"
-    COMMAND /bin/sh -c "if [ ! -f '${PYTHON_LIB}/libgrpc++.so.1' ]; then ln -s ${PYTHON_LIB}/libgrpc++.so.1.26.0 ${PYTHON_LIB}/libgrpc++.so.1; fi"
-    COMMAND /bin/sh -c "if [ ! -f '${PYTHON_LIB}/libgrpc.so' ]; then ln -s ${PYTHON_LIB}/libgrpc.so.9.0.0 ${PYTHON_LIB}/libgrpc.so; fi"
-    COMMAND /bin/sh -c "if [ ! -f '${PYTHON_LIB}/libgrpc.so.9' ]; then ln -s ${PYTHON_LIB}/libgrpc.so.9.0.0 ${PYTHON_LIB}/libgrpc.so.9; fi"
-    COMMAND /bin/sh -c "if [ ! -f '${PYTHON_LIB}/libgpr.so' ]; then ln -s ${PYTHON_LIB}/libgpr.so.9.0.0 ${PYTHON_LIB}/libgpr.so; fi"
-    COMMAND /bin/sh -c "if [ ! -f '${PYTHON_LIB}/libgpr.so.9' ]; then ln -s ${PYTHON_LIB}/libgpr.so.9.0.0 ${PYTHON_LIB}/libgpr.so.9; fi"
-    COMMAND /bin/sh -c "if [ ! -f '${PYTHON_LIB}/libupb.so' ]; then ln -s ${PYTHON_LIB}/libupb.so.9.0.0 ${PYTHON_LIB}/libupb.so; fi"
-    COMMAND /bin/sh -c "if [ ! -f '${PYTHON_LIB}/libupb.so.9' ]; then ln -s ${PYTHON_LIB}/libupb.so.9.0.0 ${PYTHON_LIB}/libupb.so.9; fi"
-    COMMAND /bin/sh -c "cp ${LIB_DIR}/libgraphlearn_shared.so ${PYTHON_LIB}"
-    COMMAND python ${SETUP_DIR}/setup.py bdist_wheel
-    COMMAND /bin/sh -c "mkdir -p ${BIN_DIR}/ge_data/data"
-    COMMAND /bin/sh -c "mkdir -p ${BIN_DIR}/ge_data/ckpt"
-    COMMAND /bin/sh -c "rm -rf ${PYTHON_DIR}/__init__.py*"
-    WORKING_DIRECTORY ${ROOT}
-    VERBATIM
+execute_process (
+  COMMAND /bin/sh -c "grep '_VERSION = ' ${GL_SETUP_DIR}/setup.py | cut -d= -f2"
+  OUTPUT_VARIABLE VERSION
 )
+execute_process (
+  COMMAND /bin/sh -c "git rev-parse --abbrev-ref HEAD"
+  OUTPUT_VARIABLE GIT_BRANCH
+)
+execute_process (
+  COMMAND /bin/sh -c "git rev-parse --short HEAD"
+  OUTPUT_VARIABLE GIT_VERSION
+)
+
+add_custom_target (python)
+add_custom_command (TARGET python
+  COMMAND ${CMAKE_COMMAND} -E remove_directory dist
+  COMMAND ${CMAKE_COMMAND} -E remove_directory graphlearn.egg-info
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${GL_PYTHON_LIB_DIR}"
+  COMMAND /bin/sh -c "cp -f ${GL_SETUP_DIR}/gl.__init__.py ${GL_PYTHON_DIR}/__init__.py"
+  COMMAND /bin/sh -c "echo '__version__ = ${VERSION}' > ${GL_PYTHON_DIR}/__init__.py"
+  COMMAND /bin/sh -c "echo '__git_version__ = '${GIT_BRANCH}-${GIT_VERSION}'' > ${GL_PYTHON_DIR}/__init__.py"
+  COMMAND OPEN_KNN=${KNN_FLAG} python ${GL_SETUP_DIR}/setup.py bdist_wheel
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${GL_BUILT_BIN_DIR}/ge_data/data"
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${GL_BUILT_BIN_DIR}/ge_data/ckpt"
+  WORKING_DIRECTORY ${GL_ROOT}
+  VERBATIM)

@@ -40,7 +40,7 @@ set (DGS_SRC_DIR ${DGS_ROOT}/src)
 set (DGS_PYTHON_DIR ${DGS_ROOT}/python)
 set (DGS_FBS_DIR ${DGS_ROOT}/fbs)
 set (DGS_PROTO_DIR ${DGS_ROOT}/proto)
-set (DGS_THIRD_PARTY_DIR ${DGS_ROOT}/../third_party)
+set (THIRD_PARTY_DIR ${DGS_ROOT}/../third_party)
 
 ## project target paths
 set (DGS_BUILT_DIR ${DGS_ROOT}/built)
@@ -52,7 +52,7 @@ set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${DGS_BUILT_LIB_DIR})
 set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${DGS_BUILT_LIB_DIR})
 
 ## hiactor package
-set (Hiactor_INSTALL_DIR ${DGS_THIRD_PARTY_DIR}/hiactor/build)
+set (Hiactor_INSTALL_DIR ${THIRD_PARTY_DIR}/hiactor/build)
 list (APPEND CMAKE_PREFIX_PATH ${Hiactor_INSTALL_DIR})
 find_package (Hiactor CONFIG REQUIRED)
 
@@ -65,12 +65,12 @@ hiactor_codegen (hiactor_codegen DGS_HIACTOR_AUTOGEN_FILES
   USER_INCLUDE ${DGS_SRC_DIR})
 
 ## cppkafka package
-set (CppKafka_INSTALL_DIR ${DGS_THIRD_PARTY_DIR}/cppkafka/build)
+set (CppKafka_INSTALL_DIR ${THIRD_PARTY_DIR}/cppkafka/build)
 list (APPEND CMAKE_PREFIX_PATH ${CppKafka_INSTALL_DIR})
 find_package (CppKafka CONFIG REQUIRED)
 
 ## flatbuffers package
-set (Flatbuffers_INSTALL_DIR ${DGS_THIRD_PARTY_DIR}/flatbuffers/build)
+set (Flatbuffers_INSTALL_DIR ${THIRD_PARTY_DIR}/flatbuffers/build)
 list (APPEND CMAKE_PREFIX_PATH ${Flatbuffers_INSTALL_DIR})
 find_package (Flatbuffers CONFIG REQUIRED)
 
@@ -112,12 +112,12 @@ endfunction ()
 generate_fbs_headers (fbs_codegen DGS_FBS_AUTOGEN_HEADERS)
 
 ## glog package
-set (glog_INSTALL_DIR ${DGS_THIRD_PARTY_DIR}/glog/build)
+set (glog_INSTALL_DIR ${THIRD_PARTY_DIR}/glog/build)
 list (APPEND CMAKE_PREFIX_PATH ${glog_INSTALL_DIR})
 find_package (glog CONFIG REQUIRED)
 
 ## grpc package
-set (gRPC_INSTALL_DIR ${DGS_THIRD_PARTY_DIR}/grpc/build)
+set (gRPC_INSTALL_DIR ${THIRD_PARTY_DIR}/grpc/build)
 list (APPEND CMAKE_PREFIX_PATH ${gRPC_INSTALL_DIR})
 find_package (protobuf CONFIG REQUIRED)
 find_package (gRPC CONFIG REQUIRED)
@@ -158,7 +158,7 @@ endfunction ()
 generate_grpc_files (grpc_codegen DGS_GRPC_AUTOGEN_FILES)
 
 ## rocksdb package
-set (RocksDB_INSTALL_DIR ${DGS_THIRD_PARTY_DIR}/rocksdb/build)
+set (RocksDB_INSTALL_DIR ${THIRD_PARTY_DIR}/rocksdb/build)
 list (APPEND CMAKE_PREFIX_PATH ${RocksDB_INSTALL_DIR})
 find_package (RocksDB CONFIG REQUIRED)
 
@@ -205,9 +205,19 @@ else ()
   set (DGS_PROFILING_FLAG -DCLOSE_PROFILING)
 endif ()
 
-set (DGS_CXX_FLAGS ${DGS_MODE_FLAGS} ${DGS_PROFILING_FLAG} -std=${CXX_STD}
-  -fPIC -fvisibility-inlines-hidden -pthread -mavx -msse4.2 -msse4.1
-  -Wno-attributes -Wno-deprecated-declarations -Werror=return-type)
+set (DGS_CXX_FLAGS
+  ${DGS_MODE_FLAGS}
+  ${DGS_PROFILING_FLAG}
+  -std=${CXX_STD}
+  -fPIC
+  -fvisibility-inlines-hidden
+  -pthread
+  -mavx
+  -msse4.2
+  -msse4.1
+  -Wno-attributes
+  -Wno-deprecated-declarations
+  -Werror=return-type)
 
 if (ENABLE_GCOV)
   set (DGS_CXX_FLAGS ${DGS_CXX_FLAGS} -fprofile-arcs -ftest-coverage)
@@ -260,7 +270,7 @@ endif ()
 ## tests
 if (TESTING)
   # googletest package
-  set (GTest_INSTALL_DIR ${DGS_THIRD_PARTY_DIR}/googletest/build)
+  set (GTest_INSTALL_DIR ${THIRD_PARTY_DIR}/googletest/build)
   list (APPEND CMAKE_PREFIX_PATH ${GTest_INSTALL_DIR})
   find_package (GTest CONFIG REQUIRED)
 
@@ -291,7 +301,7 @@ if (TESTING)
   endfunction ()
 
   file (GLOB_RECURSE DGS_TEST_FILES ${DGS_SRC_DIR}/*_unittest.cpp)
-  add_DGS_tests (${DGS_TEST_FILES})
+  add_dgs_tests (${DGS_TEST_FILES})
 
   if (ENABLE_GCOV)
     add_custom_target (code_coverage)

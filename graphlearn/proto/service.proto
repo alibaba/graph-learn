@@ -1,7 +1,7 @@
 syntax = "proto3";
 
-import "graphlearn/proto/dag.proto";
-import "graphlearn/proto/request.proto";
+import "dag.proto";
+import "request.proto";
 
 package graphlearn;
 

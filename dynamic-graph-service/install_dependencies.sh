@@ -1,4 +1,7 @@
 #!/bin/bash
+#
+# A script to install dependencies and third parties for dynamic graph service.
+
 set -e
 
 dgs_root_dir=$(dirname "$(realpath "$0")")
@@ -109,7 +112,7 @@ fi
 
 # grpc
 echo "-- installing grpc ..."
-if [ ! -d "${third_party_dir}/grpc/build" ]; then
+if [ ! -f "${third_party_dir}/grpc/build/include/grpc++/grpc++.h" ]; then
   pushd "${third_party_dir}/grpc"
   /bin/bash build.sh
   popd
