@@ -83,6 +83,7 @@ CXXSTD := c++11
 CXXFLAGS := $(MODEFLAGS) -std=$(CXXSTD) -fPIC \
             -fvisibility-inlines-hidden       \
             -pthread -mavx -msse4.2 -msse4.1  \
+            -Wno-format-security              \
             -D$(KNN)_KNN                      \
             -D$(PROFILING)_PROFILING          \
             -I$(THIRD_PARTY_DIR)              \

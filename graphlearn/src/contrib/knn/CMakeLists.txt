@@ -64,7 +64,9 @@ set (KNN_CXX_FLAGS
   -pthread
   -mavx
   -msse4.2
-  -msse4.1)
+  -msse4.1
+  # fixme: check format security
+  -Wno-format-security)
 
 ## knn source files
 file (GLOB_RECURSE KNN_SRC_FILES

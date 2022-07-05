@@ -184,7 +184,9 @@ set (GL_CXX_FLAGS
   -pthread
   -mavx
   -msse4.2
-  -msse4.1)
+  -msse4.1
+  # fixme: check format security
+  -Wno-format-security)
 
 ## add library
 add_library (graphlearn_shared SHARED

@@ -47,6 +47,7 @@ CXX := g++
 CXXSTD := c++11
 CXXFLAGS := $(MODEFLAGS) -std=$(CXXSTD) -fPIC    \
             -pthread -mavx -msse4.2 -msse4.1     \
+            -Wno-format-security                 \
             -D$(GPU)_GPU                         \
             -I$(ROOT)/src -I$(FAISS_INCLUDE)     \
             -I$(GLOG_INCLUDE) -I$(GRPC_INCLUDE)
