@@ -17,7 +17,7 @@ limitations under the License.
 #define GRAPHLEARN_COMMON_STRING_NUMERIC_H_
 
 #include <string>
-#include "graphlearn/common/string/lite_string.h"
+#include "common/string/lite_string.h"
 
 namespace graphlearn {
 namespace strings {

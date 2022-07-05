@@ -17,10 +17,10 @@ limitations under the License.
 #define GRAPHLEARN_COMMON_IO_LINE_ITERATOR_H_
 
 #include <string>
-#include "graphlearn/common/base/macros.h"
-#include "graphlearn/common/base/uncopyable.h"
-#include "graphlearn/include/status.h"
-#include "graphlearn/platform/env.h"
+#include "common/base/macros.h"
+#include "common/base/uncopyable.h"
+#include "include/status.h"
+#include "platform/env.h"
 
 namespace graphlearn {
 namespace io {

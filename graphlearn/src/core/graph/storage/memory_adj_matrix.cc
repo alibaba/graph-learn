@@ -15,7 +15,7 @@ limitations under the License.
 
 #include <algorithm>
 #include <functional>
-#include "graphlearn/core/graph/storage/adj_matrix.h"
+#include "core/graph/storage/adj_matrix.h"
 
 namespace graphlearn {
 namespace io {

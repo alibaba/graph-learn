@@ -13,10 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/common/io/line_iterator.h"
+#include "common/io/line_iterator.h"
 
 #include <algorithm>
-#include "graphlearn/common/base/errors.h"
+#include "common/base/errors.h"
 
 namespace graphlearn {
 namespace io {

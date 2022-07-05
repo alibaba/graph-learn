@@ -16,8 +16,8 @@ limitations under the License.
 #ifndef GRAPHLEARN_CORE_GRAPH_STORAGE_CREATOR_H_
 #define GRAPHLEARN_CORE_GRAPH_STORAGE_CREATOR_H_
 
-#include "graphlearn/core/graph/storage/graph_storage.h"
-#include "graphlearn/core/graph/storage/node_storage.h"
+#include "core/graph/storage/graph_storage.h"
+#include "core/graph/storage/node_storage.h"
 
 namespace graphlearn {
 

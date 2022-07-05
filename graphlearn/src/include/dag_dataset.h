@@ -18,9 +18,9 @@ limitations under the License.
 
 #include <mutex>  // NOLINT [build/c++11]
 #include <semaphore.h>
-#include "graphlearn/include/client.h"
-#include "graphlearn/include/dag_request.h"
-#include "graphlearn/common/threading/runner/threadpool.h"
+#include "include/client.h"
+#include "include/dag_request.h"
+#include "common/threading/runner/threadpool.h"
 
 namespace graphlearn {
 

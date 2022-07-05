@@ -13,12 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/service/client_impl.h"
+#include "service/client_impl.h"
 
-#include "graphlearn/include/config.h"
-#include "graphlearn/service/call.h"
-#include "graphlearn/service/local/event_queue.h"
-#include "graphlearn/service/local/in_memory_channel.h"
+#include "include/config.h"
+#include "service/call.h"
+#include "service/local/event_queue.h"
+#include "service/local/in_memory_channel.h"
 
 namespace graphlearn {
 

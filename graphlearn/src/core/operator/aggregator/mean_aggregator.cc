@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/operator/aggregator/aggregator.h"
-#include "graphlearn/include/config.h"
+#include "core/operator/aggregator/aggregator.h"
+#include "include/config.h"
 
 namespace graphlearn {
 namespace op {

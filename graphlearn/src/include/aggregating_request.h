@@ -17,7 +17,7 @@ limitations under the License.
 #define GRAPHLEARN_INCLUDE_AGGREGATING_REQUEST_H_
 
 #include <string>
-#include "graphlearn/include/op_request.h"
+#include "include/op_request.h"
 
 namespace graphlearn {
 

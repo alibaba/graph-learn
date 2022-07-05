@@ -15,7 +15,7 @@ limitations under the License.
 
 #include <thread>  // NOLINT
 #include <vector>
-#include "graphlearn/service/local/event_queue.h"
+#include "service/local/event_queue.h"
 #include "gtest/gtest.h"
 
 using namespace graphlearn;  // NOLINT

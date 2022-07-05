@@ -18,9 +18,9 @@ limitations under the License.
 
 #include <cstdint>
 #include <vector>
-#include "graphlearn/core/partition/partitioner.h"
-#include "graphlearn/include/config.h"
-#include "graphlearn/include/op_request.h"
+#include "core/partition/partitioner.h"
+#include "include/config.h"
+#include "include/op_request.h"
 
 namespace graphlearn {
 

@@ -13,10 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/include/server.h"
+#include "include/server.h"
 
-#include "graphlearn/include/config.h"
-#include "graphlearn/service/server_impl.h"
+#include "include/config.h"
+#include "service/server_impl.h"
 
 namespace graphlearn {
 

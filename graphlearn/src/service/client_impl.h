@@ -17,11 +17,11 @@ limitations under the License.
 #define GRAPHLEARN_SERVICE_CLIENT_IMPL_H_
 
 #include <string>
-#include "graphlearn/include/constants.h"
-#include "graphlearn/include/dag_request.h"
-#include "graphlearn/include/op_request.h"
-#include "graphlearn/include/status.h"
-#include "graphlearn/proto/request.pb.h"
+#include "include/constants.h"
+#include "include/dag_request.h"
+#include "include/op_request.h"
+#include "include/status.h"
+#include "generated/proto/request.pb.h"
 
 namespace graphlearn {
 

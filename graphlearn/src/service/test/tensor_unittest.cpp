@@ -15,8 +15,8 @@ limitations under the License.
 
 #include <string>
 #include "google/protobuf/repeated_field.h"
-#include "graphlearn/include/tensor.h"
-#include "graphlearn/platform/protobuf.h"
+#include "include/tensor.h"
+#include "platform/protobuf.h"
 #include "gtest/gtest.h"
 
 using namespace graphlearn;  // NOLINT [build/namespaces]

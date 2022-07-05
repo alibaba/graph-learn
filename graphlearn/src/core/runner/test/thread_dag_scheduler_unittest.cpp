@@ -15,15 +15,15 @@ limitations under the License.
 
 #include <google/protobuf/text_format.h>
 #include "gtest/gtest.h"
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/core/io/element_value.h"
-#include "graphlearn/core/operator/op_factory.h"
-#include "graphlearn/include/config.h"
-#include "graphlearn/platform/env.h"
-#include "graphlearn/platform/protobuf.h"
-#include "graphlearn/proto/dag.pb.h"
-#include "graphlearn/core/dag/tape.h"
-#include "graphlearn/core/runner/dag_scheduler.h"
+#include "common/base/log.h"
+#include "core/dag/tape.h"
+#include "core/io/element_value.h"
+#include "core/operator/op_factory.h"
+#include "core/runner/dag_scheduler.h"
+#include "generated/proto/dag.pb.h"
+#include "include/config.h"
+#include "platform/env.h"
+#include "platform/protobuf.h"
 
 using namespace graphlearn;  // NOLINT [build/namespaces]
 

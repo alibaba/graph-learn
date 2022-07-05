@@ -19,7 +19,7 @@ limitations under the License.
 #include <mutex>  // NOLINT [build/c++11]
 #include <string>
 #include <unordered_map>
-#include "graphlearn/core/operator/operator.h"
+#include "core/operator/operator.h"
 
 namespace graphlearn {
 

@@ -15,8 +15,8 @@ limitations under the License.
 
 #include <cmath>
 #include <random>
-#include "graphlearn/core/operator/sampler/sampler.h"
-#include "graphlearn/include/config.h"
+#include "core/operator/sampler/sampler.h"
+#include "include/config.h"
 
 namespace graphlearn {
 namespace op {

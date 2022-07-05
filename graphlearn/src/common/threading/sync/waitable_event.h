@@ -17,7 +17,7 @@ limitations under the License.
 #define GRAPHLEARN_COMMON_THREADING_SYNC_WAITABLE_EVENT_H_
 
 #include <cinttypes>
-#include "graphlearn/common/base/uncopyable.h"
+#include "common/base/uncopyable.h"
 
 namespace graphlearn {
 

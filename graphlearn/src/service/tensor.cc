@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/include/tensor.h"
-#include "graphlearn/service/tensor_impl.h"
+#include "include/tensor.h"
+#include "service/tensor_impl.h"
 
 namespace graphlearn {
 

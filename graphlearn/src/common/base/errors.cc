@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/common/base/errors.h"
+#include "common/base/errors.h"
 
 namespace graphlearn {
 namespace error {

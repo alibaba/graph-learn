@@ -17,9 +17,9 @@ limitations under the License.
 #include <cstdint>
 #include <string>
 #include <unordered_map>
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/service/dist/load_balancer.h"
+#include "common/base/errors.h"
+#include "common/base/log.h"
+#include "service/dist/load_balancer.h"
 
 namespace graphlearn {
 

@@ -28,6 +28,7 @@ debian_packages=(
   python3
   python3-pip
   # project common dependencies
+  libopenblas-dev
   libgflags-dev
   libssl-dev
   libc-ares-dev

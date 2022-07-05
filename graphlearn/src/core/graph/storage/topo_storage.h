@@ -19,8 +19,8 @@ limitations under the License.
 #include <cstdint>
 #include <string>
 #include <vector>
-#include "graphlearn/core/graph/storage/edge_storage.h"
-#include "graphlearn/core/graph/storage/types.h"
+#include "core/graph/storage/edge_storage.h"
+#include "core/graph/storage/types.h"
 
 namespace graphlearn {
 namespace io {

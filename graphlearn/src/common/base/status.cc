@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/include/status.h"
+#include "include/status.h"
 
 #include <cstdio>
 #include <cstring>

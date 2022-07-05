@@ -17,7 +17,7 @@ limitations under the License.
 #define GRAPHLEARN_CORE_DAG_OPTIMIZER_H_
 
 #include <string>
-#include "graphlearn/core/dag/dag.h"
+#include "core/dag/dag.h"
 
 namespace graphlearn {
 

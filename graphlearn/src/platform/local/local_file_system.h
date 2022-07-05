@@ -19,7 +19,7 @@ limitations under the License.
 #include <memory>
 #include <string>
 #include <vector>
-#include "graphlearn/platform/env.h"
+#include "platform/env.h"
 
 namespace graphlearn {
 

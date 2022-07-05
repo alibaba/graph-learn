@@ -14,10 +14,10 @@ limitations under the License.
 ==============================================================================*/
 
 #include <fstream>
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/core/io/edge_loader.h"
-#include "graphlearn/platform/env.h"
+#include "common/base/errors.h"
+#include "common/base/log.h"
+#include "core/io/edge_loader.h"
+#include "platform/env.h"
 #include "gtest/gtest.h"
 
 using namespace graphlearn;  // NOLINT [build/namespaces]

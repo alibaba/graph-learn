@@ -15,10 +15,10 @@ limitations under the License.
 
 #include <unordered_map>
 
-#include "graphlearn/core/operator/subgraph/subgraph_sampler.h"
+#include "core/operator/subgraph/subgraph_sampler.h"
 
-#include "graphlearn/include/client.h"
-#include "graphlearn/include/config.h"
+#include "include/client.h"
+#include "include/config.h"
 
 namespace graphlearn {
 namespace op {

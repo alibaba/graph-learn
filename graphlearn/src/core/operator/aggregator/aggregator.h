@@ -19,11 +19,11 @@ limitations under the License.
 #include <memory>
 #include <string>
 #include <vector>
-#include "graphlearn/core/operator/operator.h"
-#include "graphlearn/core/operator/op_registry.h"
-#include "graphlearn/include/aggregating_request.h"
-#include "graphlearn/include/status.h"
-#include "graphlearn/include/client.h"
+#include "core/operator/operator.h"
+#include "core/operator/op_registry.h"
+#include "include/aggregating_request.h"
+#include "include/status.h"
+#include "include/client.h"
 
 namespace graphlearn {
 namespace op {

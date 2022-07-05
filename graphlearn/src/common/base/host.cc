@@ -13,20 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/common/base/host.h"
+#include "common/base/host.h"
 
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <net/if.h>
-#include <netinet/in.h>
 #include <netdb.h>
-#include <stdio.h>
 #include <string.h>
-#include <strings.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <vector>
-#include "graphlearn/common/base/log.h"
+#include "common/base/log.h"
 
 namespace graphlearn {
 

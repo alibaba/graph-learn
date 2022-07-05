@@ -17,12 +17,6 @@ cmake_minimum_required (VERSION 3.5)
 project (GraphLearn VERSION 1.0 LANGUAGES CXX)
 
 ## options
-option (GL_CXX_DIALECT
-  "c++11"
-  CACHE
-  STRING
-  "Compile graphlearn according to the named C++ standard.")
-
 option (TESTING
   "Enable testing"
   OFF)
@@ -43,6 +37,12 @@ option (GPU
   "Enable gpu"
   OFF)
 
+set (GL_CXX_DIALECT
+  "c++11"
+  CACHE
+  STRING
+  "Compile graphlearn according to the named C++ standard.")
+
 ## project source paths
 set (GL_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 set (GL_SRC_DIR ${GL_ROOT}/src)
@@ -60,6 +60,9 @@ set (GL_BUILT_BIN_DIR ${GL_BUILT_DIR}/bin)
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${GL_BUILT_BIN_DIR})
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${GL_BUILT_LIB_DIR})
 set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${GL_BUILT_LIB_DIR})
+
+## Threads dependency
+find_package (Threads REQUIRED)
 
 ## glog package
 set (glog_INSTALL_DIR ${THIRD_PARTY_DIR}/glog/build)
@@ -111,12 +114,12 @@ endfunction ()
 
 generate_grpc_files (grpc_codegen GL_GRPC_AUTOGEN_FILES)
 
-if (TESTING)
+#if (TESTING)
   # googletest package
   set (GTest_INSTALL_DIR ${THIRD_PARTY_DIR}/googletest/build)
   list (APPEND CMAKE_PREFIX_PATH ${GTest_INSTALL_DIR})
   find_package (GTest CONFIG REQUIRED)
-endif ()
+#endif ()
 
 ## project files
 # common
@@ -144,7 +147,7 @@ file (GLOB_RECURSE GL_SERVICE_FILES
   ${GL_SERVICE_DIR}/*.cc
   ${GL_SERVICE_DIR}/*.h)
 # contrib knn
-set (GL_CONTRIB_DIR ${GL_SRC_DIR}/service)
+set (GL_CONTRIB_DIR ${GL_SRC_DIR}/contrib)
 if (KNN)
   add_subdirectory (${GL_CONTRIB_DIR}/knn)
 endif ()
@@ -199,7 +202,9 @@ target_compile_options (graphlearn_shared
   PRIVATE ${GL_CXX_FLAGS})
 
 target_include_directories (graphlearn_shared
-  PUBLIC ${GL_SRC_DIR})
+  PUBLIC
+    ${GL_SRC_DIR}
+    ${THIRD_PARTY_DIR})
 
 target_link_libraries (graphlearn_shared
   PUBLIC
@@ -212,7 +217,7 @@ if (KNN)
 endif ()
 
 ## tests
-if (TESTING)
+#if (TESTING)
   add_custom_target (gl_tests)
   function (add_gl_tests)
     if (NOT ARGN)
@@ -240,7 +245,7 @@ if (TESTING)
     ${GL_PLATFORM_DIR}/*.cpp
     ${GL_SERVICE_DIR}/*.cpp)
   add_gl_tests (${GL_TEST_FILES})
-endif()
+#endif()
 
 # python
 execute_process (

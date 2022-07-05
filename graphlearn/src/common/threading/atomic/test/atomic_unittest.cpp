@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/common/threading/atomic/atomic.h"
+#include "common/threading/atomic/atomic.h"
 
 #include "gtest/gtest.h"
 

@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/operator/graph/node_generator.h"
-#include "graphlearn/core/operator/subgraph/subgraph_sampler.h"
+#include "core/operator/graph/node_generator.h"
+#include "core/operator/subgraph/subgraph_sampler.h"
 
 namespace graphlearn {
 namespace op {

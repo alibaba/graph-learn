@@ -13,19 +13,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/common/rpc/notification.h"
+#include "common/rpc/notification.h"
 
 #include <atomic>
 #include <cstdint>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/common/base/time_stamp.h"
-#include "graphlearn/common/threading/sync/lock.h"
-#include "graphlearn/common/threading/sync/waitable_event.h"
-#include "graphlearn/include/config.h"
+#include "common/base/errors.h"
+#include "common/base/log.h"
+#include "common/base/time_stamp.h"
+#include "common/threading/sync/lock.h"
+#include "common/threading/sync/waitable_event.h"
+#include "include/config.h"
 
 namespace graphlearn {
 

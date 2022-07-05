@@ -14,9 +14,9 @@ limitations under the License.
 ==============================================================================*/
 
 #include <mutex>   // NOLINT [build/c++11]
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/core/graph/storage/node_storage.h"
-#include "graphlearn/include/config.h"
+#include "common/base/log.h"
+#include "core/graph/storage/node_storage.h"
+#include "include/config.h"
 
 namespace graphlearn {
 namespace io {

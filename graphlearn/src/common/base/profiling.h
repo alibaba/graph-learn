@@ -19,7 +19,7 @@ limitations under the License.
 #include <iostream>
 #include <string>
 #include <unordered_map>
-#include "graphlearn/common/base/time_stamp.h"
+#include "common/base/time_stamp.h"
 
 #if defined(OPEN_PROFILING)
 #define PROFILING(key)                                      \

@@ -19,13 +19,13 @@ limitations under the License.
 #include <cstdint>
 #include <memory>
 #include <vector>
-#include "graphlearn/core/partition/base_partitioner.h"
-#include "graphlearn/core/partition/hash_partitioner.h"
-#include "graphlearn/core/partition/no_partitioner.h"
-#include "graphlearn/core/partition/stitcher.h"
-#include "graphlearn/include/config.h"
-#include "graphlearn/include/constants.h"
-#include "graphlearn/platform/env.h"
+#include "core/partition/base_partitioner.h"
+#include "core/partition/hash_partitioner.h"
+#include "core/partition/no_partitioner.h"
+#include "core/partition/stitcher.h"
+#include "include/config.h"
+#include "include/constants.h"
+#include "platform/env.h"
 
 namespace graphlearn {
 

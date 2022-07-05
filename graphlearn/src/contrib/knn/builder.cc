@@ -13,11 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/contrib/knn/builder.h"
+#include "contrib/knn/builder.h"
 
 #include <vector>
-#include "graphlearn/contrib/knn/index_factory.h"
-#include "graphlearn/contrib/knn/index_manager.h"
+#include "contrib/knn/index_factory.h"
+#include "contrib/knn/index_manager.h"
 
 namespace graphlearn {
 

@@ -15,10 +15,10 @@ limitations under the License.
 
 #include <memory>
 #include <unordered_set>
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/core/operator/sampler/alias_method.h"
-#include "graphlearn/core/operator/sampler/sampler.h"
-#include "graphlearn/include/config.h"
+#include "common/base/log.h"
+#include "core/operator/sampler/alias_method.h"
+#include "core/operator/sampler/sampler.h"
+#include "include/config.h"
 
 namespace graphlearn {
 namespace op {

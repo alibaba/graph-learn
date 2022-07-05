@@ -13,16 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/graph/noder.h"
+#include "core/graph/noder.h"
 
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/log.h"
+#include "common/base/errors.h"
+#include "common/base/log.h"
 #ifdef OPEN_KNN
-#include "graphlearn/contrib/knn/builder.h"
+#include "contrib/knn/builder.h"
 #endif
-#include "graphlearn/core/graph/storage/node_storage.h"
-#include "graphlearn/core/graph/storage_creator.h"
-#include "graphlearn/include/config.h"
+#include "core/graph/storage/node_storage.h"
+#include "core/graph/storage_creator.h"
+#include "include/config.h"
 
 namespace graphlearn {
 

@@ -20,8 +20,8 @@ limitations under the License.
 #include <iostream>
 #include <mutex>  //NOLINT [build/c++11]
 #include <string>
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/common/threading/sync/lock.h"
+#include "common/base/log.h"
+#include "common/threading/sync/lock.h"
 
 #define PROGRESSING(key)                   \
   static ::graphlearn::profiling::Progress key##_progress(#key)

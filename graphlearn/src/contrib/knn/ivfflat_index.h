@@ -17,7 +17,7 @@ limitations under the License.
 #define GRAPHLEARN_CONTRIB_KNN_IVFFLAT_INDEX_H_
 
 #include <vector>
-#include "graphlearn/contrib/knn/index.h"
+#include "contrib/knn/index.h"
 
 namespace faiss {
   struct IndexFlat;

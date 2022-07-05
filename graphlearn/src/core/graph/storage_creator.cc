@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/graph/storage_creator.h"
-#include "graphlearn/core/graph/storage/storage_mode.h"
+#include "core/graph/storage_creator.h"
+#include "core/graph/storage/storage_mode.h"
 
 namespace graphlearn {
 

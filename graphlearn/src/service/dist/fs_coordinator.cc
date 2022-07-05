@@ -18,13 +18,13 @@ limitations under the License.
 #include <memory>
 #include <thread>  // NOLINT [build/c++11]
 #include <vector>
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/common/base/macros.h"
-#include "graphlearn/common/string/string_tool.h"
-#include "graphlearn/include/config.h"
-#include "graphlearn/platform/env.h"
-#include "graphlearn/service/dist/coordinator.h"
+#include "common/base/errors.h"
+#include "common/base/log.h"
+#include "common/base/macros.h"
+#include "common/string/string_tool.h"
+#include "include/config.h"
+#include "platform/env.h"
+#include "service/dist/coordinator.h"
 
 namespace graphlearn {
 

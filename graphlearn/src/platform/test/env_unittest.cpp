@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/platform/env.h"
+#include "common/base/log.h"
+#include "platform/env.h"
 #include "gtest/gtest.h"
 
 using namespace graphlearn;  //NOLINT [build/namespaces]

@@ -13,16 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/service/dist/naming_engine.h"
+#include "service/dist/naming_engine.h"
 
-#include <unistd.h>
-#include <memory>
 #include <sstream>
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/common/base/macros.h"
-#include "graphlearn/common/threading/sync/lock.h"
-#include "graphlearn/include/config.h"
-#include "graphlearn/include/constants.h"
+#include "common/base/log.h"
+#include "common/threading/sync/lock.h"
+#include "include/config.h"
+#include "include/constants.h"
 
 namespace graphlearn {
 

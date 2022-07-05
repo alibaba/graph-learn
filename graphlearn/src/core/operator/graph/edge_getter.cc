@@ -17,14 +17,14 @@ limitations under the License.
 #include <memory>
 #include <random>
 #include <unordered_map>
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/threading/sync/lock.h"
-#include "graphlearn/core/graph/graph_store.h"
-#include "graphlearn/core/graph/storage/graph_storage.h"
-#include "graphlearn/core/operator/operator.h"
-#include "graphlearn/core/operator/op_registry.h"
-#include "graphlearn/include/config.h"
-#include "graphlearn/include/graph_request.h"
+#include "common/base/errors.h"
+#include "common/threading/sync/lock.h"
+#include "core/graph/graph_store.h"
+#include "core/graph/storage/graph_storage.h"
+#include "core/operator/operator.h"
+#include "core/operator/op_registry.h"
+#include "include/config.h"
+#include "include/graph_request.h"
 
 namespace graphlearn {
 namespace op {

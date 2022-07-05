@@ -18,8 +18,8 @@ limitations under the License.
 
 #include <mutex>  //NOLINT [build/c++11]
 #include <vector>
-#include "graphlearn/contrib/knn/index.h"
-#include "graphlearn/contrib/knn/ivfpq_index.h"
+#include "contrib/knn/index.h"
+#include "contrib/knn/ivfpq_index.h"
 
 namespace faiss {
 namespace gpu {

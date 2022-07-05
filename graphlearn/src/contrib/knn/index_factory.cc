@@ -13,15 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/contrib/knn/index_factory.h"
+#include "contrib/knn/index_factory.h"
 
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/contrib/knn/flat_index.h"
-#include "graphlearn/contrib/knn/gpu_flat_index.h"
-#include "graphlearn/contrib/knn/gpu_ivfflat_index.h"
-#include "graphlearn/contrib/knn/gpu_ivfpq_index.h"
-#include "graphlearn/contrib/knn/ivfflat_index.h"
-#include "graphlearn/contrib/knn/ivfpq_index.h"
+#include "common/base/log.h"
+#include "contrib/knn/flat_index.h"
+#include "contrib/knn/gpu_flat_index.h"
+#include "contrib/knn/gpu_ivfflat_index.h"
+#include "contrib/knn/gpu_ivfpq_index.h"
+#include "contrib/knn/ivfflat_index.h"
+#include "contrib/knn/ivfpq_index.h"
 
 namespace graphlearn {
 namespace op {

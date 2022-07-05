@@ -14,8 +14,8 @@ limitations under the License.
 ==============================================================================*/
 
 #include <iostream>
-#include "graphlearn/include/client.h"
-#include "graphlearn/include/config.h"
+#include "include/client.h"
+#include "include/config.h"
 
 using namespace graphlearn;
 

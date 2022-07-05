@@ -18,8 +18,8 @@ limitations under the License.
 
 #include <memory>
 #include <vector>
-#include "graphlearn/core/graph/storage/types.h"
-#include "graphlearn/include/sampling_request.h"
+#include "core/graph/storage/types.h"
+#include "include/sampling_request.h"
 
 namespace graphlearn {
 namespace op {

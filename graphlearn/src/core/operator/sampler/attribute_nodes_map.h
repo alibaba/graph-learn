@@ -23,10 +23,10 @@ limitations under the License.
 #include <unordered_set>
 #include <vector>
 
-#include "graphlearn/common/threading/sync/lock.h"
-#include "graphlearn/core/operator/sampler/alias_method.h"
-#include "graphlearn/include/config.h"
-#include "graphlearn/include/sampling_request.h"
+#include "common/threading/sync/lock.h"
+#include "core/operator/sampler/alias_method.h"
+#include "include/config.h"
+#include "include/sampling_request.h"
 
 
 namespace graphlearn {

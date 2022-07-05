@@ -17,8 +17,8 @@ limitations under the License.
 #define GRAPHLEARN_CORE_RUNNER_DAG_SCHEDULER_H_
 
 #include <string>
-#include "graphlearn/core/dag/optimizer.h"
-#include "graphlearn/platform/env.h"
+#include "core/dag/optimizer.h"
+#include "platform/env.h"
 
 namespace graphlearn {
 

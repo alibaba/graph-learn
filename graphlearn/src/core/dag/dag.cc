@@ -13,11 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/dag/dag.h"
+#include "core/dag/dag.h"
 
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/threading/sync/lock.h"
-#include "graphlearn/core/dag/optimizer.h"
+#include "common/base/errors.h"
+#include "common/threading/sync/lock.h"
+#include "core/dag/optimizer.h"
 
 namespace graphlearn {
 

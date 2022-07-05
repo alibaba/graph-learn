@@ -15,8 +15,8 @@ limitations under the License.
 
 #define GTEST_HAS_TR1_TUPLE 0
 #include <iostream>
-#include "graphlearn/include/status.h"
-#include "graphlearn/common/base/errors.h"
+#include "include/status.h"
+#include "common/base/errors.h"
 #include "gtest/gtest.h"
 
 using namespace graphlearn;  //NOLINT

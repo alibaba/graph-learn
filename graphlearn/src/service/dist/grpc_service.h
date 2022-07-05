@@ -16,8 +16,8 @@ limitations under the License.
 #ifndef GRAPHLEARN_SERVICE_DIST_GRPC_SERVICE_H_
 #define GRAPHLEARN_SERVICE_DIST_GRPC_SERVICE_H_
 
-#include "graphlearn/proto/service.grpc.pb.h"
-#include "graphlearn/proto/service.pb.h"
+#include "generated/proto/service.grpc.pb.h"
+#include "generated/proto/service.pb.h"
 #include "grpcpp/grpcpp.h"
 
 namespace graphlearn {

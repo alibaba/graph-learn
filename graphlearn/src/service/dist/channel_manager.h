@@ -20,8 +20,8 @@ limitations under the License.
 #include <mutex>  // NOLINT [build/c++11]
 #include <string>
 #include <vector>
-#include "graphlearn/include/status.h"
-#include "graphlearn/service/dist/grpc_channel.h"
+#include "include/status.h"
+#include "service/dist/grpc_channel.h"
 
 namespace graphlearn {
 

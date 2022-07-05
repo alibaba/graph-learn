@@ -16,7 +16,7 @@ set (KNN_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 set (CUDA_PATH /usr/local/cuda-10.0)
 
 execute_process (
-  COMMAND /bin/sh -c "expr `g++ -dumpversion | cut -f1 -d.` \>= 5"
+  COMMAND /bin/sh -c "expr `g++ -dumpversion | cut -f1 -d.` \\>= 5"
   OUTPUT_VARIABLE GXX_VERSION_GTE_5
 )
 
@@ -96,7 +96,7 @@ target_link_libraries (knn_shared
     faiss_static)
 
 target_link_options (knn_shared
-  PUBLIC -lblas -lgomp -lm -lquadmath -lgfortran)
+  PUBLIC -lopenblas -lgomp -lm -lquadmath -lgfortran)
 
 if (GPU)
   target_include_directories (knn_shared

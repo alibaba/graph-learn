@@ -17,9 +17,9 @@ limitations under the License.
 #define GRAPHLEARN_CONTRIB_KNN_KNN_OP_H_
 
 #include <string>
-#include "graphlearn/core/operator/operator.h"
-#include "graphlearn/core/operator/op_registry.h"
-#include "graphlearn/include/status.h"
+#include "core/operator/operator.h"
+#include "core/operator/op_registry.h"
+#include "include/status.h"
 
 namespace graphlearn {
 namespace op {

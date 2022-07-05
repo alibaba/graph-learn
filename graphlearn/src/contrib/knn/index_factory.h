@@ -16,8 +16,8 @@ limitations under the License.
 #ifndef GRAPHLEARN_CONTRIB_KNN_INDEX_FACTORY_H_
 #define GRAPHLEARN_CONTRIB_KNN_INDEX_FACTORY_H_
 
-#include "graphlearn/contrib/knn/index.h"
-#include "graphlearn/include/index_option.h"
+#include "contrib/knn/index.h"
+#include "include/index_option.h"
 
 namespace graphlearn {
 namespace op {

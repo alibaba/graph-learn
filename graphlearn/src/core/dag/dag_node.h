@@ -19,9 +19,9 @@ limitations under the License.
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "graphlearn/core/dag/dag_edge.h"
-#include "graphlearn/include/tensor.h"
-#include "graphlearn/proto/dag.pb.h"
+#include "core/dag/dag_edge.h"
+#include "include/tensor.h"
+#include "generated/proto/dag.pb.h"
 
 namespace graphlearn {
 

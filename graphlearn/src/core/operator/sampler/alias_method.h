@@ -20,8 +20,8 @@ limitations under the License.
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "graphlearn/common/threading/sync/lock.h"
-#include "graphlearn/core/graph/storage/types.h"
+#include "common/threading/sync/lock.h"
+#include "core/graph/storage/types.h"
 
 namespace graphlearn {
 namespace op {

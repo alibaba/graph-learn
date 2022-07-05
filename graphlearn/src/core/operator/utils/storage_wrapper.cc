@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/operator/utils/storage_wrapper.h"
+#include "core/operator/utils/storage_wrapper.h"
 
 namespace graphlearn {
 namespace op {

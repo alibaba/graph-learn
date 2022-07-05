@@ -52,7 +52,7 @@ CXXFLAGS := $(MODEFLAGS) -std=$(CXXSTD) -fPIC    \
             -I$(GLOG_INCLUDE) -I$(GRPC_INCLUDE)
 
 LINKFLAGS := -L$(ROOT) -L$(ROOT)/built/lib -L$(FAISS_LIB)  \
-             -lfaiss_static -lblas -lgomp -lm -lquadmath -lgfortran
+             -lfaiss_static -lopenblas -lgomp -lm -lquadmath -lgfortran
 
 CUDA_PATH := /usr/local/cuda-10.0
 ifeq "$(GPU)" "OPEN"

@@ -17,8 +17,8 @@ limitations under the License.
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
-#include "graphlearn/contrib/knn/index.h"
-#include "graphlearn/contrib/knn/index_factory.h"
+#include "contrib/knn/index.h"
+#include "contrib/knn/index_factory.h"
 #include "gtest/gtest.h"
 
 namespace graphlearn {

@@ -18,7 +18,7 @@ limitations under the License.
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
-#include "graphlearn/contrib/knn/heap.h"
+#include "contrib/knn/heap.h"
 #include "gtest/gtest.h"
 
 namespace graphlearn {

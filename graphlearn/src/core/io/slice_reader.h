@@ -22,11 +22,11 @@ limitations under the License.
 #include <type_traits>
 #include <vector>
 
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/macros.h"
-#include "graphlearn/common/string/string_tool.h"
-#include "graphlearn/core/io/data_slicer.h"
-#include "graphlearn/platform/env.h"
+#include "common/base/errors.h"
+#include "common/base/macros.h"
+#include "common/string/string_tool.h"
+#include "core/io/data_slicer.h"
+#include "platform/env.h"
 
 namespace graphlearn {
 namespace io {

@@ -21,10 +21,10 @@ limitations under the License.
 #include <unordered_set>
 #include <vector>
 
-#include "graphlearn/include/sampling_request.h"
-#include "graphlearn/common/threading/sync/lock.h"
-#include "graphlearn/core/operator/sampler/attribute_nodes_map.h"
-#include "graphlearn/core/operator/utils/get_node_attributes_wrapper.h"
+#include "include/sampling_request.h"
+#include "common/threading/sync/lock.h"
+#include "core/operator/sampler/attribute_nodes_map.h"
+#include "core/operator/utils/get_node_attributes_wrapper.h"
 
 namespace graphlearn {
 namespace op {

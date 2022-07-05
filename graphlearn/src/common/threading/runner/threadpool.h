@@ -17,9 +17,9 @@ limitations under the License.
 #define GRAPHLEARN_COMMON_THREADING_RUNNER_THREADPOOL_H_
 
 #include <string>
-#include "graphlearn/common/base/closure.h"
-#include "graphlearn/common/base/uncopyable.h"
-#include "graphlearn/common/threading/runner/threadpool_base.h"
+#include "common/base/closure.h"
+#include "common/base/uncopyable.h"
+#include "common/threading/runner/threadpool_base.h"
 
 namespace graphlearn {
 

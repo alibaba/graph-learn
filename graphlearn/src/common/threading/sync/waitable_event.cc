@@ -13,11 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/common/threading/sync/waitable_event.h"
+#include "common/threading/sync/waitable_event.h"
 
-#include "graphlearn/common/threading/atomic/atomic.h"
-#include "graphlearn/common/threading/sync/cond.h"
-#include "graphlearn/common/threading/sync/lock.h"
+#include "common/threading/atomic/atomic.h"
+#include "common/threading/sync/cond.h"
+#include "common/threading/sync/lock.h"
 
 namespace graphlearn {
 

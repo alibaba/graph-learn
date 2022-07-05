@@ -13,23 +13,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/graph/graph_store.h"
+#include "core/graph/graph_store.h"
 
 #include <memory>
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/common/base/macros.h"
-#include "graphlearn/common/base/progress.h"
-#include "graphlearn/common/threading/sync/cond.h"
-#include "graphlearn/core/io/element_value.h"
-#include "graphlearn/core/io/edge_loader.h"
-#include "graphlearn/core/io/node_loader.h"
-#include "graphlearn/core/operator/op_factory.h"
-#include "graphlearn/core/runner/op_runner.h"
-#include "graphlearn/include/client.h"
-#include "graphlearn/include/config.h"
-#include "graphlearn/include/graph_request.h"
-#include "graphlearn/platform/env.h"
+#include "common/base/errors.h"
+#include "common/base/log.h"
+#include "common/base/macros.h"
+#include "common/base/progress.h"
+#include "common/threading/sync/cond.h"
+#include "core/io/element_value.h"
+#include "core/io/edge_loader.h"
+#include "core/io/node_loader.h"
+#include "core/operator/op_factory.h"
+#include "core/runner/op_runner.h"
+#include "include/client.h"
+#include "include/config.h"
+#include "include/graph_request.h"
+#include "platform/env.h"
 
 namespace graphlearn {
 

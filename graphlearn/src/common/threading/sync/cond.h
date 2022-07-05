@@ -19,8 +19,8 @@ limitations under the License.
 #include <pthread.h>
 #include <unistd.h>
 #include <atomic>
-#include "graphlearn/common/base/uncopyable.h"
-#include "graphlearn/common/threading/sync/lock.h"
+#include "common/base/uncopyable.h"
+#include "common/threading/sync/lock.h"
 
 namespace graphlearn {
 

@@ -20,8 +20,8 @@ limitations under the License.
 #include <string>
 #include <utility>
 #include <vector>
-#include "graphlearn/common/io/value.h"
-#include "graphlearn/common/string/lite_string.h"
+#include "common/io/value.h"
+#include "common/string/lite_string.h"
 
 namespace graphlearn {
 namespace io {

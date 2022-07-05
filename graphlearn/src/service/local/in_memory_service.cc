@@ -13,17 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/service/local/in_memory_service.h"
+#include "service/local/in_memory_service.h"
 
-#include <memory>
-#include <utility>
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/platform/env.h"
-#include "graphlearn/proto/request.pb.h"
-#include "graphlearn/service/call.h"
-#include "graphlearn/service/dist/coordinator.h"
-#include "graphlearn/service/executor.h"
-#include "graphlearn/service/local/event_queue.h"
+#include "common/base/log.h"
+#include "platform/env.h"
+#include "service/call.h"
+#include "service/dist/coordinator.h"
+#include "service/executor.h"
+#include "service/local/event_queue.h"
 
 namespace graphlearn {
 

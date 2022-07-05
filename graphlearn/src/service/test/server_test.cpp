@@ -16,11 +16,10 @@ limitations under the License.
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include <string>
-#include "graphlearn/common/string/string_tool.h"
-#include "graphlearn/core/io/element_value.h"
-#include "graphlearn/include/server.h"
-#include "graphlearn/include/config.h"
+#include "common/string/string_tool.h"
+#include "core/io/element_value.h"
+#include "include/server.h"
+#include "include/config.h"
 
 using namespace graphlearn;
 

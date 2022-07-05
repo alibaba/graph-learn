@@ -18,8 +18,8 @@ limitations under the License.
 
 #include <cstdint>
 #include <vector>
-#include "graphlearn/core/graph/storage/auto_indexing.h"
-#include "graphlearn/core/graph/storage/types.h"
+#include "core/graph/storage/auto_indexing.h"
+#include "core/graph/storage/types.h"
 
 namespace graphlearn {
 namespace io {

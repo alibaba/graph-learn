@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/common/threading/lockfree/lockfree_queue.h"
+#include "common/threading/lockfree/lockfree_queue.h"
 
 #include "gtest/gtest.h"
 

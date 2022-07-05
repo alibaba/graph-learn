@@ -13,10 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/common/threading/sync/cond.h"
+#include "common/threading/sync/cond.h"
 
 #include <sys/time.h>
-#include <unistd.h>
 #include <cerrno>
 #include <cstdlib>
 #include <thread>  // NOLINT [build/c++11]

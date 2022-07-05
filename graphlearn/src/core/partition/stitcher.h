@@ -18,7 +18,7 @@ limitations under the License.
 
 #include <cstdint>
 #include <vector>
-#include "graphlearn/include/op_request.h"
+#include "include/op_request.h"
 
 namespace graphlearn {
 

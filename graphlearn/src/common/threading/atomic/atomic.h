@@ -16,7 +16,7 @@ limitations under the License.
 #ifndef GRAPHLEARN_COMMON_THREADING_ATOMIC_ATOMIC_H_
 #define GRAPHLEARN_COMMON_THREADING_ATOMIC_ATOMIC_H_
 
-#include "graphlearn/common/threading/atomic/atomic_detail.h"
+#include "common/threading/atomic/atomic_detail.h"
 
 namespace graphlearn {
 

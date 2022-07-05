@@ -17,8 +17,8 @@ limitations under the License.
 #define GRAPHLEARN_INCLUDE_SUBGRAPH_REQUEST_H_
 
 #include <string>
-#include "graphlearn/include/constants.h"
-#include "graphlearn/include/op_request.h"
+#include "include/constants.h"
+#include "include/op_request.h"
 
 namespace graphlearn {
 

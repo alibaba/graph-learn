@@ -19,12 +19,12 @@ limitations under the License.
 #include <map>
 #include <vector>
 #include <string>
-#include "graphlearn/core/graph/graph.h"
-#include "graphlearn/core/graph/heter_dispatcher.h"
-#include "graphlearn/core/graph/noder.h"
-#include "graphlearn/include/data_source.h"
-#include "graphlearn/include/graph_statistics.h"
-#include "graphlearn/include/status.h"
+#include "core/graph/graph.h"
+#include "core/graph/heter_dispatcher.h"
+#include "core/graph/noder.h"
+#include "include/data_source.h"
+#include "include/graph_statistics.h"
+#include "include/status.h"
 
 namespace graphlearn {
 

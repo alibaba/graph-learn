@@ -19,7 +19,7 @@ limitations under the License.
 #include <cstdint>
 #include <vector>
 #include <tr1/unordered_map>  // NOLINT [build/c++tr1]
-#include "graphlearn/core/io/element_value.h"
+#include "core/io/element_value.h"
 
 namespace graphlearn {
 namespace io {

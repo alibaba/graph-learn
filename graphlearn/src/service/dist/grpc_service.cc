@@ -13,16 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/service/dist/grpc_service.h"
+#include "service/dist/grpc_service.h"
 
-#include <memory>
-#include <utility>
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/include/op_request.h"
-#include "graphlearn/platform/env.h"
-#include "graphlearn/service/dist/coordinator.h"
-#include "graphlearn/service/executor.h"
+#include "common/base/errors.h"
+#include "common/base/log.h"
+#include "include/op_request.h"
+#include "platform/env.h"
+#include "service/dist/coordinator.h"
+#include "service/executor.h"
 
 namespace graphlearn {
 

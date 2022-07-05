@@ -18,15 +18,15 @@ limitations under the License.
 
 #include <memory>
 #include <string>
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/common/rpc/notification.h"
-#include "graphlearn/common/threading/runner/threadpool.h"
-#include "graphlearn/core/operator/operator.h"
-#include "graphlearn/include/op_request.h"
-#include "graphlearn/include/shardable.h"
-#include "graphlearn/include/status.h"
-#include "graphlearn/platform/env.h"
+#include "common/base/errors.h"
+#include "common/base/log.h"
+#include "common/rpc/notification.h"
+#include "common/threading/runner/threadpool.h"
+#include "core/operator/operator.h"
+#include "include/op_request.h"
+#include "include/shardable.h"
+#include "include/status.h"
+#include "platform/env.h"
 
 namespace graphlearn {
 

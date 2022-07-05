@@ -17,7 +17,7 @@ limitations under the License.
 #define GRAPHLEARN_CORE_PARTITION_BASE_PARTITIONER_H_
 
 #include <cstdint>
-#include "graphlearn/include/request.h"
+#include "include/request.h"
 
 namespace graphlearn {
 

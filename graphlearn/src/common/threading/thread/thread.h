@@ -17,9 +17,9 @@ limitations under the License.
 #define GRAPHLEARN_COMMON_THREADING_THREAD_THREAD_H_
 
 #include <pthread.h>
-#include "graphlearn/common/base/closure.h"
-#include "graphlearn/common/threading/sync/waitable_event.h"
-#include "graphlearn/platform/protobuf.h"
+#include "common/base/closure.h"
+#include "common/threading/sync/waitable_event.h"
+#include "platform/protobuf.h"
 
 namespace graphlearn {
 

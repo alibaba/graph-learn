@@ -17,8 +17,8 @@ limitations under the License.
 #define GRAPHLEARN_CONTRIB_KNN_BUILDER_H_
 
 #include <string>
-#include "graphlearn/core/graph/storage/node_storage.h"
-#include "graphlearn/include/index_option.h"
+#include "core/graph/storage/node_storage.h"
+#include "include/index_option.h"
 
 namespace graphlearn {
 

@@ -13,11 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/operator/sampler/padder/padder.h"
+#include "core/operator/sampler/padder/padder.h"
 
-#include "graphlearn/core/operator/sampler/padder/circular_padder.h"
-#include "graphlearn/core/operator/sampler/padder/replicate_padder.h"
-#include "graphlearn/include/config.h"
+#include "core/operator/sampler/padder/circular_padder.h"
+#include "core/operator/sampler/padder/replicate_padder.h"
+#include "include/config.h"
 
 namespace graphlearn {
 namespace op {

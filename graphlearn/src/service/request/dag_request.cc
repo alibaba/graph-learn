@@ -13,11 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/include/dag_request.h"
+#include "include/dag_request.h"
 
-#include "graphlearn/core/dag/tape.h"
-#include "graphlearn/include/config.h"
-#include "graphlearn/proto/request.pb.h"
+#include "core/dag/tape.h"
+#include "include/config.h"
+#include "generated/proto/request.pb.h"
 
 namespace graphlearn {
 

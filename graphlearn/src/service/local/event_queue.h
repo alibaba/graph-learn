@@ -19,8 +19,8 @@ limitations under the License.
 #include <unistd.h>
 #include <atomic>
 #include <mutex>  // NOLINT [build/c++11]
-#include "graphlearn/include/config.h"
-#include "graphlearn/common/threading/lockfree/lockfree_queue.h"
+#include "include/config.h"
+#include "common/threading/lockfree/lockfree_queue.h"
 
 namespace graphlearn {
 

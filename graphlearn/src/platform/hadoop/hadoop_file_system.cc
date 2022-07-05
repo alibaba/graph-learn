@@ -13,24 +13,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/platform/hadoop/hadoop_file_system.h"
+#include "platform/hadoop/hadoop_file_system.h"
 
 #include <dlfcn.h>
-#include <errno.h>
 #include <mutex>
 #include <stdlib.h>
 
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/common/io/line_iterator.h"
-#include "graphlearn/common/io/path_util.h"
-#include "graphlearn/common/io/value.h"
-#include "graphlearn/common/string/lite_string.h"
-#include "graphlearn/common/string/numeric.h"
-#include "graphlearn/common/string/string_tool.h"
-#include "graphlearn/common/threading/sync/lock.h"
-#include "third_party/hadoop/hdfs.h"
-#include "graphlearn/include/config.h"
+#include "common/base/errors.h"
+#include "common/io/line_iterator.h"
+#include "common/io/path_util.h"
+#include "common/io/value.h"
+#include "common/string/lite_string.h"
+#include "common/string/numeric.h"
+#include "common/string/string_tool.h"
+#include "common/threading/sync/lock.h"
+#include "hadoop/hdfs.h"
+#include "include/config.h"
 
 
 namespace graphlearn {

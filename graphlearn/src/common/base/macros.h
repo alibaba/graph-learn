@@ -17,7 +17,7 @@ limitations under the License.
 #define GRAPHLEARN_COMMON_BASE_MACROS_H_
 
 #include <cstdlib>
-#include "graphlearn/common/base/log.h"
+#include "common/base/log.h"
 
 #define ARRAYSIZE(a)                        \
   ((sizeof(a) / sizeof(*(a))) /             \

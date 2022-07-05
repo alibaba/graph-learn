@@ -19,11 +19,11 @@ limitations under the License.
 #include <set>
 #include <string>
 
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/macros.h"
-#include "graphlearn/core/operator/operator.h"
-#include "graphlearn/core/operator/op_registry.h"
-#include "graphlearn/include/subgraph_request.h"
+#include "common/base/errors.h"
+#include "common/base/macros.h"
+#include "core/operator/operator.h"
+#include "core/operator/op_registry.h"
+#include "include/subgraph_request.h"
 
 namespace graphlearn {
 namespace op {

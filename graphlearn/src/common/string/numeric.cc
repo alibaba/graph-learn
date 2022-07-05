@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/common/string/numeric.h"
+#include "common/string/numeric.h"
 
 #include <algorithm>
 #include <cctype>
@@ -25,7 +25,7 @@ limitations under the License.
 #include <limits>
 #include <locale>
 #include <unordered_map>
-#include "graphlearn/common/base/macros.h"
+#include "common/base/macros.h"
 
 namespace graphlearn {
 namespace strings {

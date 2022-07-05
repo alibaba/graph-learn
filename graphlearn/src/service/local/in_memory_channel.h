@@ -16,7 +16,7 @@ limitations under the License.
 #ifndef GRAPHLEARN_SERVICE_LOCAL_IN_MEMORY_CHANNEL_H_
 #define GRAPHLEARN_SERVICE_LOCAL_IN_MEMORY_CHANNEL_H_
 
-#include "graphlearn/service/call.h"
+#include "service/call.h"
 
 namespace graphlearn {
 

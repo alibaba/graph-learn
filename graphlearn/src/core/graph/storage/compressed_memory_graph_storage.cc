@@ -17,11 +17,10 @@ limitations under the License.
 #include <functional>
 #include <mutex>  // NOLINT [build/c++11]
 
-#include "graphlearn/common/threading/sync/lock.h"
-#include "graphlearn/core/graph/storage/edge_storage.h"
-#include "graphlearn/core/graph/storage/graph_storage.h"
-#include "graphlearn/core/graph/storage/topo_storage.h"
-#include "graphlearn/include/config.h"
+#include "common/threading/sync/lock.h"
+#include "core/graph/storage/edge_storage.h"
+#include "core/graph/storage/graph_storage.h"
+#include "core/graph/storage/topo_storage.h"
 
 namespace graphlearn {
 namespace io {

@@ -13,14 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/io/parser.h"
+#include "core/io/parser.h"
 
 #include <utility>
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/hash.h"
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/common/string/numeric.h"
-#include "graphlearn/common/string/string_tool.h"
+#include "common/base/errors.h"
+#include "common/base/hash.h"
+#include "common/base/log.h"
+#include "common/string/numeric.h"
+#include "common/string/string_tool.h"
 
 namespace graphlearn {
 namespace io {

@@ -13,9 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/contrib/knn/index_manager.h"
+#include "contrib/knn/index_manager.h"
 
-#include "graphlearn/common/threading/sync/lock.h"
+#include "common/threading/sync/lock.h"
 
 namespace graphlearn {
 namespace op {

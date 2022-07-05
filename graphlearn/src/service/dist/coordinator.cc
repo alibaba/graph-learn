@@ -13,16 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/service/dist/coordinator.h"
+#include "service/dist/coordinator.h"
 
-#include <unistd.h>
-#include <memory>
 #include <vector>
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/common/string/string_tool.h"
-#include "graphlearn/include/config.h"
-#include "graphlearn/platform/env.h"
+#include "common/base/log.h"
+#include "include/config.h"
+#include "platform/env.h"
 
 namespace graphlearn {
 

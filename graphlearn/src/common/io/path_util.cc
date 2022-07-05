@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/common/io/path_util.h"
+#include "common/io/path_util.h"
 
 namespace graphlearn {
 namespace io {

@@ -16,10 +16,10 @@ limitations under the License.
 #ifndef GRAPHLEARN_CORE_OPERATOR_UTILS_STORAGE_WRAPPER_H_
 #define GRAPHLEARN_CORE_OPERATOR_UTILS_STORAGE_WRAPPER_H_
 
-#include "graphlearn/common/threading/sync/lock.h"
-#include "graphlearn/core/graph/graph_store.h"
-#include "graphlearn/core/graph/storage/node_storage.h"
-#include "graphlearn/core/graph/storage/types.h"
+#include "common/threading/sync/lock.h"
+#include "core/graph/graph_store.h"
+#include "core/graph/storage/node_storage.h"
+#include "core/graph/storage/types.h"
 
 namespace graphlearn {
 namespace op {

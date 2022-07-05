@@ -13,20 +13,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/service/server_impl.h"
+#include "service/server_impl.h"
 
-#include <unistd.h>
 #include <cstdlib>
-#include <memory>
-#include <vector>
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/core/graph/graph_store.h"
-#include "graphlearn/include/config.h"
-#include "graphlearn/platform/env.h"
-#include "graphlearn/service/dist/coordinator.h"
-#include "graphlearn/service/dist/service.h"
-#include "graphlearn/service/executor.h"
-#include "graphlearn/service/local/in_memory_service.h"
+#include "common/base/log.h"
+#include "core/graph/graph_store.h"
+#include "include/config.h"
+#include "platform/env.h"
+#include "service/dist/coordinator.h"
+#include "service/dist/service.h"
+#include "service/executor.h"
+#include "service/local/in_memory_service.h"
 
 namespace graphlearn {
 

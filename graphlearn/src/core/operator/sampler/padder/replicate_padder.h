@@ -18,10 +18,10 @@ limitations under the License.
 
 #include <algorithm>
 #include <vector>
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/core/operator/sampler/padder/padder.h"
-#include "graphlearn/include/config.h"
+#include "common/base/errors.h"
+#include "common/base/log.h"
+#include "core/operator/sampler/padder/padder.h"
+#include "include/config.h"
 
 namespace graphlearn {
 namespace op {

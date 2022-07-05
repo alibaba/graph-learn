@@ -17,7 +17,7 @@ limitations under the License.
 #define GRAPHLEARN_INCLUDE_REQUEST_H_
 
 #include <string>
-#include "graphlearn/include/shardable.h"
+#include "include/shardable.h"
 
 namespace graphlearn {
 

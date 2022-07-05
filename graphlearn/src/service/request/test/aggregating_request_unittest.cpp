@@ -13,10 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/core/io/element_value.h"
-#include "graphlearn/include/aggregating_request.h"
-#include "graphlearn/include/graph_request.h"
+#include "common/base/log.h"
+#include "core/io/element_value.h"
+#include "include/aggregating_request.h"
 #include "gtest/gtest.h"
 
 using namespace graphlearn;  // NOLINT [build/namespaces]

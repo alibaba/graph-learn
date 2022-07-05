@@ -13,13 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/common/threading/runner/dynamic_worker_threadpool.h"
+#include "common/threading/runner/dynamic_worker_threadpool.h"
 
 #include <cassert>
 #include <set>
 #include "gtest/gtest.h"
-#include "graphlearn/common/threading/sync/lock.h"
-#include "graphlearn/common/threading/this_thread.h"
+#include "common/threading/sync/lock.h"
+#include "common/threading/this_thread.h"
 
 using namespace graphlearn;  // NOLINT [build/namespaces]
 

@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/contrib/knn/ivfflat_index.h"
-#include "graphlearn/contrib/knn/config.h"
+#include "contrib/knn/ivfflat_index.h"
+#include "contrib/knn/config.h"
 
 #include "faiss/IndexFlat.h"
 #include "faiss/IndexIVFFlat.h"

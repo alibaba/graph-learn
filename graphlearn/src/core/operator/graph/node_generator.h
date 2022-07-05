@@ -21,9 +21,9 @@ limitations under the License.
 #include <random>
 #include <unordered_map>
 
-#include "graphlearn/common/threading/sync/lock.h"
-#include "graphlearn/core/operator/utils/storage_wrapper.h"
-#include "graphlearn/include/config.h"
+#include "common/threading/sync/lock.h"
+#include "core/operator/utils/storage_wrapper.h"
+#include "include/config.h"
 
 namespace graphlearn {
 namespace op {

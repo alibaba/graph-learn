@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/common/string/string_tool.h"
+#include "common/string/string_tool.h"
 
 #include <cctype>
 #include <vector>

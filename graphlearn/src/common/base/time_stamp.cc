@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/common/base/time_stamp.h"
+#include "common/base/time_stamp.h"
 
 #include <sys/time.h>
 

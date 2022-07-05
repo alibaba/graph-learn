@@ -20,9 +20,9 @@ limitations under the License.
 #include <sstream>
 #include <string>
 #include <vector>
-#include "graphlearn/include/config.h"
-#include "graphlearn/include/constants.h"
-#include "graphlearn/include/index_option.h"
+#include "include/config.h"
+#include "include/constants.h"
+#include "include/index_option.h"
 
 namespace graphlearn {
 namespace io {

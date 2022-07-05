@@ -17,9 +17,9 @@ limitations under the License.
 #define GRAPHLEARN_SERVICE_EXECUTOR_H_
 
 #include <memory>
-#include "graphlearn/include/dag_request.h"
-#include "graphlearn/include/op_request.h"
-#include "graphlearn/include/status.h"
+#include "include/dag_request.h"
+#include "include/op_request.h"
+#include "include/status.h"
 
 namespace graphlearn {
 

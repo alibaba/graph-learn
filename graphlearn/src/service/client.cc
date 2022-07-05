@@ -13,14 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/include/client.h"
+#include "include/client.h"
 
-#include <mutex>  // NOLINT [build/c++11]
-#include <vector>
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/common/threading/sync/lock.h"
-#include "graphlearn/include/config.h"
-#include "graphlearn/service/client_impl.h"
+#include "common/base/log.h"
+#include "common/threading/sync/lock.h"
+#include "include/config.h"
+#include "service/client_impl.h"
 
 namespace graphlearn {
 

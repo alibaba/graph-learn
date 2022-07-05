@@ -20,9 +20,9 @@ limitations under the License.
 #include <set>
 #include <string>
 #include <unordered_map>
-#include "graphlearn/common/threading/sync/lock.h"
-#include "graphlearn/include/constants.h"
-#include "graphlearn/include/status.h"
+#include "common/threading/sync/lock.h"
+#include "include/constants.h"
+#include "include/status.h"
 
 namespace graphlearn {
 

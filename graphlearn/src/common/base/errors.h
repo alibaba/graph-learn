@@ -18,7 +18,7 @@ limitations under the License.
 
 #include <string>
 #include <vector>
-#include "graphlearn/include/status.h"
+#include "include/status.h"
 
 namespace graphlearn {
 namespace error {

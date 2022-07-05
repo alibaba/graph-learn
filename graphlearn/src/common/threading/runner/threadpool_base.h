@@ -16,9 +16,9 @@ limitations under the License.
 #ifndef GRAPHLEARN_COMMON_THREADING_RUNNER_THREADPOOL_BASE_H_
 #define GRAPHLEARN_COMMON_THREADING_RUNNER_THREADPOOL_BASE_H_
 
-#include "graphlearn/common/base/closure.h"
-#include "graphlearn/common/base/uncopyable.h"
-#include "graphlearn/platform/protobuf.h"
+#include "common/base/closure.h"
+#include "common/base/uncopyable.h"
+#include "platform/protobuf.h"
 
 namespace graphlearn {
 

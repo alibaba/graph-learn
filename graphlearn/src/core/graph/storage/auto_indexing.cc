@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/graph/storage/auto_indexing.h"
+#include "core/graph/storage/auto_indexing.h"
 
 namespace graphlearn {
 namespace io {

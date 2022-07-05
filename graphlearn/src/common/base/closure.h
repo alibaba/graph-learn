@@ -17,7 +17,7 @@ limitations under the License.
 #define GRAPHLEARN_COMMON_BASE_CLOSURE_H_
 
 #include "google/protobuf/stubs/callback.h"
-#include "graphlearn/platform/protobuf.h"
+#include "platform/protobuf.h"
 
 namespace graphlearn {
 

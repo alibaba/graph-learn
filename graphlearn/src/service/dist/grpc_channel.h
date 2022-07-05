@@ -20,9 +20,9 @@ limitations under the License.
 #include <memory>
 #include <mutex>  // NOLINT [build/c++11]
 #include <string>
-#include "graphlearn/include/status.h"
-#include "graphlearn/proto/service.grpc.pb.h"
-#include "graphlearn/proto/service.pb.h"
+#include "include/status.h"
+#include "generated/proto/service.grpc.pb.h"
+#include "generated/proto/service.pb.h"
 #include "grpcpp/grpcpp.h"
 
 namespace graphlearn {

@@ -16,14 +16,13 @@ limitations under the License.
 #include <unistd.h>
 #include <memory>
 #include <vector>
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/common/base/macros.h"
-#include "graphlearn/include/client.h"
-#include "graphlearn/include/config.h"
-#include "graphlearn/platform/env.h"
-#include "graphlearn/proto/request.pb.h"
-#include "graphlearn/service/dist/coordinator.h"
+#include "common/base/errors.h"
+#include "common/base/log.h"
+#include "common/base/macros.h"
+#include "include/client.h"
+#include "platform/env.h"
+#include "generated/proto/request.pb.h"
+#include "service/dist/coordinator.h"
 
 namespace graphlearn {
 

@@ -20,9 +20,9 @@ limitations under the License.
 #include <unordered_map>
 #include <vector>
 
-#include "graphlearn/include/constants.h"
-#include "graphlearn/include/graph_statistics.h"
-#include "graphlearn/include/op_request.h"
+#include "include/constants.h"
+#include "include/graph_statistics.h"
+#include "include/op_request.h"
 
 namespace graphlearn {
 

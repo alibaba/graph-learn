@@ -13,13 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/common/threading/thread/thread.h"
+#include "common/threading/thread/thread.h"
 
 #include <cassert>
 #include <cstdlib>
-#include <string>
-#include "graphlearn/common/base/uncopyable.h"
-#include "graphlearn/common/threading/sync/waitable_event.h"
+#include "common/base/uncopyable.h"
+#include "common/threading/sync/waitable_event.h"
 
 namespace graphlearn {
 

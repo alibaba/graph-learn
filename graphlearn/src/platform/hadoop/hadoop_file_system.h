@@ -19,9 +19,9 @@ limitations under the License.
 #include <string>
 #include <vector>
 
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/platform/env.h"
-#include "graphlearn/platform/file_stats.h"
+#include "common/base/errors.h"
+#include "platform/env.h"
+#include "platform/file_stats.h"
 
 extern "C" {
   struct hdfs_internal;

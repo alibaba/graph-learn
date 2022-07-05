@@ -23,7 +23,7 @@ limitations under the License.
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include "graphlearn/include/op_request.h"
+#include "include/op_request.h"
 
 namespace graphlearn {
 

@@ -13,12 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/io/element_value.h"
+#include "core/io/element_value.h"
 
 #include <mutex>  //NOLINT [build/c++11]
 #include <unordered_map>
-#include "graphlearn/include/config.h"
-#include "graphlearn/common/threading/sync/lock.h"
+#include "include/config.h"
+#include "common/threading/sync/lock.h"
 
 namespace graphlearn {
 namespace io {

@@ -20,8 +20,8 @@ limitations under the License.
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "graphlearn/core/dag/dag_node.h"
-#include "graphlearn/proto/dag.pb.h"
+#include "core/dag/dag_node.h"
+#include "generated/proto/dag.pb.h"
 
 namespace graphlearn {
 

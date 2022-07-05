@@ -20,12 +20,12 @@ limitations under the License.
 #include <unordered_set>
 #include <vector>
 
-#include "graphlearn/common/base/macros.h"
-#include "graphlearn/core/operator/sampler/alias_method.h"
-#include "graphlearn/core/operator/sampler/condition_table.h"
-#include "graphlearn/core/operator/sampler/sampler.h"
-#include "graphlearn/core/operator/utils/storage_wrapper.h"
-#include "graphlearn/core/operator/utils/get_node_attributes_wrapper.h"
+#include "common/base/macros.h"
+#include "core/operator/sampler/alias_method.h"
+#include "core/operator/sampler/condition_table.h"
+#include "core/operator/sampler/sampler.h"
+#include "core/operator/utils/storage_wrapper.h"
+#include "core/operator/utils/get_node_attributes_wrapper.h"
 
 namespace graphlearn {
 namespace op {

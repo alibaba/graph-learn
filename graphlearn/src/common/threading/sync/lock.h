@@ -18,9 +18,9 @@ limitations under the License.
 
 #include <pthread.h>
 #include <mutex>  // NOLINT [build/c++11]
-#include "graphlearn/common/base/uncopyable.h"
-#include "graphlearn/common/threading/atomic/atomic.h"
-#include "graphlearn/common/threading/this_thread.h"
+#include "common/base/uncopyable.h"
+#include "common/threading/atomic/atomic.h"
+#include "common/threading/this_thread.h"
 
 namespace graphlearn {
 

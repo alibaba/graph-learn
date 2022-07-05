@@ -21,9 +21,9 @@ limitations under the License.
 #include <mutex>  // NOLINT [build/c++11]
 #include <string>
 #include <unordered_map>
-#include "graphlearn/include/request.h"
-#include "graphlearn/include/status.h"
-#include "graphlearn/include/tensor.h"
+#include "include/request.h"
+#include "include/status.h"
+#include "include/tensor.h"
 
 namespace graphlearn {
 

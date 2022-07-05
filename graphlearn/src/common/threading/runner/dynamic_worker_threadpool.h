@@ -17,13 +17,13 @@ limitations under the License.
 #define GRAPHLEARN_COMMON_THREADING_RUNNER_DYNAMIC_WORKER_THREADPOOL_H_
 
 #include <string>
-#include "graphlearn/common/threading/atomic/atomic.h"
-#include "graphlearn/common/threading/lockfree/lockfree_queue.h"
-#include "graphlearn/common/threading/lockfree/lockfree_stack.h"
-#include "graphlearn/common/threading/runner/threadpool_base.h"
-#include "graphlearn/common/threading/sync/lock.h"
-#include "graphlearn/common/threading/sync/waitable_event.h"
-#include "graphlearn/platform/protobuf.h"
+#include "common/threading/atomic/atomic.h"
+#include "common/threading/lockfree/lockfree_queue.h"
+#include "common/threading/lockfree/lockfree_stack.h"
+#include "common/threading/runner/threadpool_base.h"
+#include "common/threading/sync/lock.h"
+#include "common/threading/sync/waitable_event.h"
+#include "platform/protobuf.h"
 
 namespace graphlearn {
 

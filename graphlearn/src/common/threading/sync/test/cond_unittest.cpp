@@ -13,12 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/common/threading/sync/cond.h"
+#include "common/threading/sync/cond.h"
 
 #include "gtest/gtest.h"
-#include "graphlearn/common/threading/atomic/atomic.h"
-#include "graphlearn/common/threading/this_thread.h"
-#include "graphlearn/common/threading/thread/thread.h"
+#include "common/threading/atomic/atomic.h"
+#include "common/threading/this_thread.h"
+#include "common/threading/thread/thread.h"
 
 using namespace graphlearn;  // NOLINT [build/namespaces]
 

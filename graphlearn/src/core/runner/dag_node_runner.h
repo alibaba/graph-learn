@@ -19,9 +19,9 @@ limitations under the License.
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include "graphlearn/core/dag/dag_node.h"
-#include "graphlearn/core/operator/op_factory.h"
-#include "graphlearn/platform/env.h"
+#include "core/dag/dag_node.h"
+#include "core/operator/op_factory.h"
+#include "platform/env.h"
 
 namespace graphlearn {
 

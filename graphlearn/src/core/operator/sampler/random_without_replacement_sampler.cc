@@ -17,9 +17,9 @@ limitations under the License.
 #include <random>
 #include <numeric>
 #include <algorithm>
-#include "graphlearn/core/operator/sampler/padder/padder.h"
-#include "graphlearn/core/operator/sampler/sampler.h"
-#include "graphlearn/include/config.h"
+#include "core/operator/sampler/padder/padder.h"
+#include "core/operator/sampler/sampler.h"
+#include "include/config.h"
 
 namespace graphlearn {
 namespace op {

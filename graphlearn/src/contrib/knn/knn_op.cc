@@ -13,15 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/contrib/knn/knn_op.h"
+#include "contrib/knn/knn_op.h"
 
 #include <memory>
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/contrib/knn/index.h"
-#include "graphlearn/contrib/knn/index_manager.h"
-#include "graphlearn/contrib/knn/knn_request.h"
-#include "graphlearn/include/client.h"
+#include "common/base/errors.h"
+#include "common/base/log.h"
+#include "contrib/knn/index.h"
+#include "contrib/knn/index_manager.h"
+#include "contrib/knn/knn_request.h"
+#include "include/client.h"
 
 namespace graphlearn {
 namespace op {

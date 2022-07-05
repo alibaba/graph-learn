@@ -13,9 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/service/tensor_impl.h"
+#include "service/tensor_impl.h"
 
-#include "graphlearn/common/base/log.h"
+#include "common/base/log.h"
 
 namespace graphlearn {
 

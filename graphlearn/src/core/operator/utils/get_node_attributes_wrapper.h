@@ -18,8 +18,8 @@ limitations under the License.
 
 #include <string>
 
-#include "graphlearn/include/client.h"
-#include "graphlearn/include/graph_request.h"
+#include "include/client.h"
+#include "include/graph_request.h"
 
 namespace graphlearn {
 namespace op {

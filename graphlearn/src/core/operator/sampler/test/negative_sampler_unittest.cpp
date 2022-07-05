@@ -15,10 +15,10 @@ limitations under the License.
 
 #include <cstdlib>
 #include <unordered_set>
-#include "graphlearn/core/graph/graph_store.h"
-#include "graphlearn/core/operator/sampler/sampler.h"
-#include "graphlearn/core/operator/op_factory.h"
-#include "graphlearn/platform/env.h"
+#include "core/graph/graph_store.h"
+#include "core/operator/sampler/sampler.h"
+#include "core/operator/op_factory.h"
+#include "platform/env.h"
 #include "gtest/gtest.h"
 
 using namespace graphlearn;  // NOLINT [build/namespaces]

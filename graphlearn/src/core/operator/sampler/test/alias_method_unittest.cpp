@@ -14,7 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include <unordered_set>
-#include "graphlearn/core/operator/sampler/alias_method.h"
+#include "core/operator/sampler/alias_method.h"
 #include "gtest/gtest.h"
 
 using namespace graphlearn;  // NOLINT [build/namespaces]

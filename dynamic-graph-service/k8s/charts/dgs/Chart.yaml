@@ -3,4 +3,4 @@ appVersion: "0.1.0"
 description: Chart to create a dynamic graph service cluster
 name: dgs
 type: application
-version: 0.1.0
+version: 1.0.0

@@ -20,8 +20,8 @@ limitations under the License.
 #include <memory>
 #include <string>
 #include <vector>
-#include "graphlearn/include/constants.h"
-#include "graphlearn/proto/tensor.pb.h"
+#include "include/constants.h"
+#include "generated/proto/tensor.pb.h"
 
 namespace graphlearn {
 

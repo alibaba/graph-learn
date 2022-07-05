@@ -13,9 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/include/subgraph_request.h"
+#include "include/subgraph_request.h"
 
-#include "graphlearn/include/constants.h"
+#include "include/constants.h"
 
 namespace graphlearn {
 

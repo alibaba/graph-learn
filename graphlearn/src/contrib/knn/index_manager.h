@@ -21,7 +21,7 @@ limitations under the License.
 #include <string>
 #include <unordered_map>
 
-#include "graphlearn/contrib/knn/index.h"
+#include "contrib/knn/index.h"
 
 namespace graphlearn {
 namespace op {

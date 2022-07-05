@@ -13,11 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/graph/storage/adj_matrix.h"
-#include "graphlearn/core/graph/storage/storage_mode.h"
-#include "graphlearn/core/graph/storage/topo_statics.h"
-#include "graphlearn/core/graph/storage/topo_storage.h"
-#include "graphlearn/include/config.h"
+#include "core/graph/storage/adj_matrix.h"
+#include "core/graph/storage/storage_mode.h"
+#include "core/graph/storage/topo_statics.h"
+#include "core/graph/storage/topo_storage.h"
 
 namespace graphlearn {
 namespace io {

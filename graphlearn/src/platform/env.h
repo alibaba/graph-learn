@@ -18,8 +18,8 @@ limitations under the License.
 
 #include <memory>
 #include <string>
-#include "graphlearn/common/threading/runner/threadpool.h"
-#include "graphlearn/platform/file_system.h"
+#include "common/threading/runner/threadpool.h"
+#include "platform/file_system.h"
 
 namespace graphlearn {
 

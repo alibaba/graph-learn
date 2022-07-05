@@ -13,13 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/runner/dag_node_runner.h"
+#include "core/runner/dag_node_runner.h"
 
 #include <string>
 #include <utility>
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/core/runner/op_runner.h"
-#include "graphlearn/include/op_request.h"
+#include "common/base/errors.h"
+#include "core/runner/op_runner.h"
+#include "include/op_request.h"
 
 namespace graphlearn {
 

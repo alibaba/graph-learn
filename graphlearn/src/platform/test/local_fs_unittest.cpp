@@ -15,10 +15,10 @@ limitations under the License.
 
 #include <fstream>
 #include <vector>
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/include/constants.h"
-#include "graphlearn/platform/env.h"
+#include "common/base/errors.h"
+#include "common/base/log.h"
+#include "include/constants.h"
+#include "platform/env.h"
 #include "gtest/gtest.h"
 
 using namespace graphlearn;  //NOLINT [build/namespaces]

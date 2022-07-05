@@ -13,10 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/contrib/knn/flat_index.h"
+#include "contrib/knn/flat_index.h"
 
 #include <memory>
-#include "graphlearn/contrib/knn/config.h"
+#include "contrib/knn/config.h"
 
 #include "faiss/IndexFlat.h"
 

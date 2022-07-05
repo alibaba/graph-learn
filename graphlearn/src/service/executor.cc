@@ -13,18 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/service/executor.h"
+#include "service/executor.h"
 
-#include <memory>
-#include <string>
-#include <utility>
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/core/graph/graph_store.h"
-#include "graphlearn/core/operator/op_factory.h"
-#include "graphlearn/core/runner/dag_scheduler.h"
-#include "graphlearn/core/runner/op_runner.h"
-#include "graphlearn/platform/env.h"
+#include "common/base/errors.h"
+#include "common/base/log.h"
+#include "core/graph/graph_store.h"
+#include "core/operator/op_factory.h"
+#include "core/runner/dag_scheduler.h"
+#include "core/runner/op_runner.h"
+#include "platform/env.h"
 
 namespace graphlearn {
 

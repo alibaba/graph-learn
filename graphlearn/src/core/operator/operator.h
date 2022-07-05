@@ -17,9 +17,9 @@ limitations under the License.
 #define GRAPHLEARN_CORE_OPERATOR_OPERATOR_H_
 
 #include <string>
-#include "graphlearn/include/op_request.h"
-#include "graphlearn/include/status.h"
-#include "graphlearn/core/graph/graph_store.h"
+#include "include/op_request.h"
+#include "include/status.h"
+#include "core/graph/graph_store.h"
 
 namespace graphlearn {
 namespace op {

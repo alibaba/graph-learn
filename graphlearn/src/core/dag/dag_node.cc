@@ -13,8 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/dag/dag_node.h"
-#include "graphlearn/include/constants.h"
+#include "core/dag/dag_node.h"
+
+#include "include/constants.h"
 
 namespace graphlearn {
 

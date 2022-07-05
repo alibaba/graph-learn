@@ -15,15 +15,15 @@ limitations under the License.
 
 #include <unordered_set>
 
-#include "graphlearn/core/graph/graph_store.h"
-#include "graphlearn/core/operator/sampler/sampler.h"
-#include "graphlearn/core/operator/op_factory.h"
-#include "graphlearn/include/sampling_request.h"
-#include "graphlearn/include/graph_request.h"
-#include "graphlearn/include/index_option.h"
-#include "graphlearn/platform/env.h"
+#include "core/graph/graph_store.h"
+#include "core/operator/sampler/sampler.h"
+#include "core/operator/op_factory.h"
+#include "include/sampling_request.h"
+#include "include/graph_request.h"
+#include "include/index_option.h"
+#include "platform/env.h"
 #include "gtest/gtest.h"
-#include "graphlearn/include/config.h"
+#include "include/config.h"
 
 using namespace graphlearn;  // NOLINT [build/namespaces]
 using namespace graphlearn::op;  // NOLINT [build/namespaces]

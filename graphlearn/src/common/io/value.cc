@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/common/io/value.h"
+#include "common/io/value.h"
 
 namespace graphlearn {
 namespace io {

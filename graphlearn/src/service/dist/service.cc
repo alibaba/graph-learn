@@ -13,22 +13,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/service/dist/service.h"
+#include "service/dist/service.h"
 
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string>
-#include "graphlearn/common/base/host.h"
-#include "graphlearn/common/base/macros.h"
-#include "graphlearn/include/config.h"
-#include "graphlearn/platform/env.h"
-#include "graphlearn/service/dist/channel_manager.h"
-#include "graphlearn/service/dist/coordinator.h"
-#include "graphlearn/service/dist/grpc_service.h"
-#include "graphlearn/service/dist/naming_engine.h"
-#include "graphlearn/service/executor.h"
+#include "common/base/host.h"
+#include "common/base/macros.h"
+#include "include/config.h"
+#include "platform/env.h"
+#include "service/dist/channel_manager.h"
+#include "service/dist/coordinator.h"
+#include "service/dist/grpc_service.h"
+#include "service/dist/naming_engine.h"
+#include "service/executor.h"
 
 namespace graphlearn {
 

@@ -18,7 +18,7 @@ limitations under the License.
 
 #include <cstdint>
 #include <vector>
-#include "graphlearn/include/status.h"
+#include "include/status.h"
 
 namespace graphlearn {
 

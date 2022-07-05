@@ -13,9 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/service/local/in_memory_channel.h"
+#include "service/local/in_memory_channel.h"
 
-#include "graphlearn/service/local/event_queue.h"
+#include "service/local/event_queue.h"
 
 namespace graphlearn {
 

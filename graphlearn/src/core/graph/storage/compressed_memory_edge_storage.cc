@@ -14,9 +14,9 @@ limitations under the License.
 ==============================================================================*/
 
 #include <vector>
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/core/graph/storage/edge_storage.h"
-#include "graphlearn/include/config.h"
+#include "common/base/log.h"
+#include "core/graph/storage/edge_storage.h"
+#include "include/config.h"
 
 namespace graphlearn {
 namespace io {

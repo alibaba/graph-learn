@@ -13,12 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/graph/graph.h"
+#include "core/graph/graph.h"
 
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/core/graph/storage/graph_storage.h"
-#include "graphlearn/core/graph/storage_creator.h"
-#include "graphlearn/include/config.h"
+#include "common/base/errors.h"
+#include "core/graph/storage/graph_storage.h"
+#include "core/graph/storage_creator.h"
+#include "include/config.h"
 
 namespace graphlearn {
 

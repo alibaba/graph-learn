@@ -20,7 +20,7 @@ limitations under the License.
 #include <sstream>
 #include <string>
 #include <vector>
-#include "graphlearn/include/constants.h"
+#include "include/constants.h"
 
 namespace graphlearn {
 namespace io {

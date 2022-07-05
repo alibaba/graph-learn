@@ -18,8 +18,8 @@ limitations under the License.
 
 #include <memory>
 #include <string>
-#include "graphlearn/core/dag/tape.h"
-#include "graphlearn/proto/dag.pb.h"
+#include "core/dag/tape.h"
+#include "generated/proto/dag.pb.h"
 
 namespace graphlearn {
 

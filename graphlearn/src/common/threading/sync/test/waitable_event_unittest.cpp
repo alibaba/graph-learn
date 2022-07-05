@@ -13,11 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/common/threading/sync/waitable_event.h"
+#include "common/threading/sync/waitable_event.h"
 
 #include "gtest/gtest.h"
-#include "graphlearn/common/base/closure.h"
-#include "graphlearn/common/threading/thread/thread.h"
+#include "common/base/closure.h"
+#include "common/threading/thread/thread.h"
 
 using namespace graphlearn;  // NOLINT [build/namespaces]
 

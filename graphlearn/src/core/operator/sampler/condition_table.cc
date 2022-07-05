@@ -13,9 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/operator/sampler/condition_table.h"
+#include "core/operator/sampler/condition_table.h"
 
-#include "graphlearn/common/base/macros.h"
+#include "common/base/macros.h"
 
 namespace graphlearn {
 namespace op {

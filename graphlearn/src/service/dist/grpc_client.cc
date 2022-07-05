@@ -15,12 +15,12 @@ limitations under the License.
 
 #include <unistd.h>
 #include <memory>
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/include/config.h"
-#include "graphlearn/service/client_impl.h"
-#include "graphlearn/service/dist/channel_manager.h"
-#include "graphlearn/service/dist/grpc_channel.h"
+#include "common/base/log.h"
+#include "common/base/errors.h"
+#include "include/config.h"
+#include "service/client_impl.h"
+#include "service/dist/channel_manager.h"
+#include "service/dist/grpc_channel.h"
 
 namespace graphlearn {
 

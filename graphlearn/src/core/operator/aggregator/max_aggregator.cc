@@ -14,7 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include <float.h>
-#include "graphlearn/core/operator/aggregator/aggregator.h"
+#include "core/operator/aggregator/aggregator.h"
 
 namespace graphlearn {
 namespace op {

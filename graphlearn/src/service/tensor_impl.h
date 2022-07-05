@@ -22,9 +22,9 @@ limitations under the License.
 #include <string>
 #include <vector>
 #include "google/protobuf/repeated_field.h"
-#include "graphlearn/include/constants.h"
-#include "graphlearn/platform/protobuf.h"
-#include "graphlearn/proto/service.pb.h"
+#include "include/constants.h"
+#include "platform/protobuf.h"
+#include "generated/proto/service.pb.h"
 
 namespace graphlearn {
 

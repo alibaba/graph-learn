@@ -13,12 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/include/aggregating_request.h"
+#include "include/aggregating_request.h"
 
-#include "graphlearn/include/constants.h"
-#include "graphlearn/core/operator/operator.h"
-#include "graphlearn/core/operator/op_factory.h"
-#include "graphlearn/core/operator/aggregator/aggregator.h"
+#include "include/constants.h"
+#include "core/operator/operator.h"
+#include "core/operator/op_factory.h"
+#include "core/operator/aggregator/aggregator.h"
 
 namespace graphlearn {
 

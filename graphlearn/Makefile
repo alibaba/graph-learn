@@ -85,7 +85,8 @@ CXXFLAGS := $(MODEFLAGS) -std=$(CXXSTD) -fPIC \
             -pthread -mavx -msse4.2 -msse4.1  \
             -D$(KNN)_KNN                      \
             -D$(PROFILING)_PROFILING          \
-            -I. -I$(ROOT)/src                 \
+            -I$(THIRD_PARTY_DIR)              \
+            -I$(ROOT)/src                     \
             -I$(GLOG_INCLUDE)                 \
             -I$(GRPC_INCLUDE)                 \
 

@@ -13,10 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/operator/op_registry.h"
+#include "core/operator/op_registry.h"
 
 #include <unordered_map>
-#include "graphlearn/common/base/log.h"
+#include "common/base/log.h"
 
 namespace graphlearn {
 namespace op {

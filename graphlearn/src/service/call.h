@@ -19,8 +19,8 @@ limitations under the License.
 #include <chrono>  // NOLINT [build/c++11]
 #include <future>  // NOLINT [build/c++11]
 #include <utility>
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/include/request.h"
+#include "common/base/errors.h"
+#include "include/request.h"
 
 namespace graphlearn {
 

@@ -13,9 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/core/graph/storage/graph_storage.h"
-#include "graphlearn/include/config.h"
+#include "common/base/log.h"
+#include "core/graph/storage/graph_storage.h"
+#include "include/config.h"
 #include "gtest/gtest.h"
 
 using namespace graphlearn;  // NOLINT [build/namespaces]

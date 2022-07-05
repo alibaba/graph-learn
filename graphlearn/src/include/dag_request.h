@@ -18,10 +18,10 @@ limitations under the License.
 
 #include <string>
 #include <unordered_map>
-#include "graphlearn/include/config.h"
-#include "graphlearn/include/op_request.h"
-#include "graphlearn/include/tensor.h"
-#include "graphlearn/proto/dag.pb.h"
+#include "include/config.h"
+#include "include/op_request.h"
+#include "include/tensor.h"
+#include "generated/proto/dag.pb.h"
 
 namespace graphlearn {
 

@@ -13,11 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/dag/dag_edge.h"
+#include "core/dag/dag_edge.h"
 
-#include <unordered_map>
-#include "graphlearn/common/threading/sync/lock.h"
-#include "graphlearn/core/dag/dag_node.h"
+#include "common/threading/sync/lock.h"
+#include "core/dag/dag_node.h"
 
 namespace graphlearn {
 

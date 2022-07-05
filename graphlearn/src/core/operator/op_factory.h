@@ -18,8 +18,8 @@ limitations under the License.
 
 #include <mutex>  // NOLINT [build/c++11]
 #include <string>
-#include "graphlearn/core/operator/operator.h"
-#include "graphlearn/core/operator/op_registry.h"
+#include "core/operator/operator.h"
+#include "core/operator/op_registry.h"
 
 namespace graphlearn {
 

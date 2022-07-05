@@ -19,7 +19,7 @@ limitations under the License.
 #include <cstdint>
 #include <memory>
 #include <string>
-#include "graphlearn/include/status.h"
+#include "include/status.h"
 #include "grpcpp/grpcpp.h"
 
 namespace graphlearn {

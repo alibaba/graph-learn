@@ -13,9 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/common/threading/runner/threadpool.h"
+#include "common/threading/runner/threadpool.h"
 
-#include "graphlearn/common/threading/runner/dynamic_worker_threadpool.h"
+#include "common/threading/runner/dynamic_worker_threadpool.h"
 
 namespace graphlearn {
 

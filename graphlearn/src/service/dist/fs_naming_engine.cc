@@ -15,14 +15,14 @@ limitations under the License.
 
 #include <unistd.h>
 #include <memory>
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/common/base/macros.h"
-#include "graphlearn/common/string/numeric.h"
-#include "graphlearn/common/string/string_tool.h"
-#include "graphlearn/common/threading/sync/lock.h"
-#include "graphlearn/platform/env.h"
-#include "graphlearn/service/dist/naming_engine.h"
+#include "common/base/errors.h"
+#include "common/base/log.h"
+#include "common/base/macros.h"
+#include "common/string/numeric.h"
+#include "common/string/string_tool.h"
+#include "common/threading/sync/lock.h"
+#include "platform/env.h"
+#include "service/dist/naming_engine.h"
 
 namespace graphlearn {
 

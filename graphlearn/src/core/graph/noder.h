@@ -18,10 +18,10 @@ limitations under the License.
 
 #include <vector>
 #include <string>
-#include "graphlearn/core/graph/storage/node_storage.h"
-#include "graphlearn/include/graph_request.h"
-#include "graphlearn/include/index_option.h"
-#include "graphlearn/include/status.h"
+#include "core/graph/storage/node_storage.h"
+#include "include/graph_request.h"
+#include "include/index_option.h"
+#include "include/status.h"
 
 namespace graphlearn {
 

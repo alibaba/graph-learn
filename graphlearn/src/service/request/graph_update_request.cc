@@ -13,11 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/include/graph_request.h"
+#include "include/graph_request.h"
 
-#include "graphlearn/core/io/element_value.h"
-#include "graphlearn/include/constants.h"
-#include "graphlearn/proto/service.pb.h"
+#include "core/io/element_value.h"
+#include "include/constants.h"
+#include "generated/proto/service.pb.h"
 
 namespace graphlearn {
 

@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/graph/storage/topo_statics.h"
+#include "core/graph/storage/topo_statics.h"
 
 namespace graphlearn {
 namespace io {

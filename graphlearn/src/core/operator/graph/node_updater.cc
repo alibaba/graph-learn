@@ -13,11 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/graph/graph_store.h"
-#include "graphlearn/core/io/element_value.h"
-#include "graphlearn/core/operator/operator.h"
-#include "graphlearn/core/operator/op_registry.h"
-#include "graphlearn/include/graph_request.h"
+#include "core/graph/graph_store.h"
+#include "core/io/element_value.h"
+#include "core/operator/operator.h"
+#include "core/operator/op_registry.h"
+#include "include/graph_request.h"
 
 namespace graphlearn {
 namespace op {

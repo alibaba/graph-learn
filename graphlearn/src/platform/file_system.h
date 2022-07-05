@@ -20,10 +20,10 @@ limitations under the License.
 #include <memory>
 #include <string>
 #include <vector>
-#include "graphlearn/common/base/uncopyable.h"
-#include "graphlearn/common/io/value.h"
-#include "graphlearn/common/string/lite_string.h"
-#include "graphlearn/include/status.h"
+#include "common/base/uncopyable.h"
+#include "common/io/value.h"
+#include "common/string/lite_string.h"
+#include "include/status.h"
 
 namespace graphlearn {
 

@@ -18,8 +18,8 @@ limitations under the License.
 
 #include <algorithm>
 #include <vector>
-#include "graphlearn/common/threading/atomic/atomic.h"
-#include "graphlearn/common/threading/lockfree/lockfree_detail.h"
+#include "common/threading/atomic/atomic.h"
+#include "common/threading/lockfree/lockfree_detail.h"
 
 namespace graphlearn {
 

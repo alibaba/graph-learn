@@ -13,16 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/platform/env.h"
+#include "platform/env.h"
 
 #include <mutex>  //NOLINT [build/c++11]
 #include <unordered_map>
-#include <utility>
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/common/io/path_util.h"
-#include "graphlearn/common/threading/sync/lock.h"
-#include "graphlearn/include/config.h"
+#include "common/base/errors.h"
+#include "common/base/log.h"
+#include "common/io/path_util.h"
+#include "common/threading/sync/lock.h"
+#include "include/config.h"
 
 namespace graphlearn {
 

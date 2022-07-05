@@ -14,10 +14,10 @@ limitations under the License.
 ==============================================================================*/
 
 #include <vector>
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/core/operator/sampler/padder/padder.h"
-#include "graphlearn/core/operator/sampler/sampler.h"
+#include "common/base/errors.h"
+#include "common/base/log.h"
+#include "core/operator/sampler/padder/padder.h"
+#include "core/operator/sampler/sampler.h"
 
 namespace graphlearn {
 namespace op {

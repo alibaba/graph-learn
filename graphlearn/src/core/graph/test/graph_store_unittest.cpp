@@ -14,15 +14,15 @@ limitations under the License.
 ==============================================================================*/
 
 #include <fstream>
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/core/graph/graph_store.h"
-#include "graphlearn/core/graph/storage/graph_storage.h"
-#include "graphlearn/core/graph/storage/node_storage.h"
-#include "graphlearn/core/io/element_value.h"
-#include "graphlearn/core/operator/op_factory.h"
-#include "graphlearn/include/config.h"
-#include "graphlearn/platform/env.h"
+#include "common/base/errors.h"
+#include "common/base/log.h"
+#include "core/graph/graph_store.h"
+#include "core/graph/storage/graph_storage.h"
+#include "core/graph/storage/node_storage.h"
+#include "core/io/element_value.h"
+#include "core/operator/op_factory.h"
+#include "include/config.h"
+#include "platform/env.h"
 #include "gtest/gtest.h"
 
 using namespace graphlearn;  // NOLINT [build/namespaces]

@@ -16,13 +16,13 @@ limitations under the License.
 #ifndef GRAPHLEARN_INCLUDE_CLIENT_H_
 #define GRAPHLEARN_INCLUDE_CLIENT_H_
 
-#include "graphlearn/include/aggregating_request.h"
-#include "graphlearn/include/constants.h"
-#include "graphlearn/include/dag_request.h"
-#include "graphlearn/include/graph_request.h"
-#include "graphlearn/include/sampling_request.h"
-#include "graphlearn/include/status.h"
-#include "graphlearn/include/subgraph_request.h"
+#include "include/aggregating_request.h"
+#include "include/constants.h"
+#include "include/dag_request.h"
+#include "include/graph_request.h"
+#include "include/sampling_request.h"
+#include "include/status.h"
+#include "include/subgraph_request.h"
 
 namespace graphlearn {
 

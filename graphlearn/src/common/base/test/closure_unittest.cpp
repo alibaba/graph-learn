@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/common/base/closure.h"
+#include "common/base/closure.h"
 
 #include <string>
 #include "gtest/gtest.h"

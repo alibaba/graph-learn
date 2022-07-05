@@ -13,16 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/service/dist/channel_manager.h"
+#include "service/dist/channel_manager.h"
 
-#include <unistd.h>
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/common/string/string_tool.h"
-#include "graphlearn/common/threading/sync/lock.h"
-#include "graphlearn/include/config.h"
-#include "graphlearn/platform/env.h"
-#include "graphlearn/service/dist/load_balancer.h"
-#include "graphlearn/service/dist/naming_engine.h"
+#include "common/base/log.h"
+#include "common/string/string_tool.h"
+#include "common/threading/sync/lock.h"
+#include "include/config.h"
+#include "platform/env.h"
+#include "service/dist/load_balancer.h"
+#include "service/dist/naming_engine.h"
 
 namespace graphlearn {
 

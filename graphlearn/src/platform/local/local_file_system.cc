@@ -13,20 +13,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/platform/local/local_file_system.h"
+#include "platform/local/local_file_system.h"
 
 #include <dirent.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fstream>
 
-#include "graphlearn/common/base/errors.h"
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/common/io/line_iterator.h"
-#include "graphlearn/common/io/path_util.h"
-#include "graphlearn/common/io/value.h"
-#include "graphlearn/common/string/numeric.h"
-#include "graphlearn/common/string/string_tool.h"
+#include "common/base/errors.h"
+#include "common/base/log.h"
+#include "common/io/line_iterator.h"
+#include "common/io/path_util.h"
+#include "common/io/value.h"
+#include "common/string/numeric.h"
+#include "common/string/string_tool.h"
 
 namespace graphlearn {
 

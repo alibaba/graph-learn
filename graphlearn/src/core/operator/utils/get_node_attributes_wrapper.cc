@@ -13,13 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "graphlearn/core/operator/utils/get_node_attributes_wrapper.h"
+#include "core/operator/utils/get_node_attributes_wrapper.h"
 
-#include "graphlearn/include/config.h"
-#include "graphlearn/common/base/log.h"
-#include "graphlearn/core/operator/op_factory.h"
-#include "graphlearn/core/runner/op_runner.h"
-#include "graphlearn/platform/env.h"
+#include "include/config.h"
+#include "common/base/log.h"
+#include "core/operator/op_factory.h"
+#include "core/runner/op_runner.h"
+#include "platform/env.h"
 
 namespace graphlearn {
 namespace op {

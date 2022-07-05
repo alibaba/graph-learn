@@ -19,9 +19,9 @@ limitations under the License.
 #include <memory>
 #include <string>
 #include <vector>
-#include "graphlearn/core/io/element_value.h"
-#include "graphlearn/include/data_source.h"
-#include "graphlearn/include/status.h"
+#include "core/io/element_value.h"
+#include "include/data_source.h"
+#include "include/status.h"
 
 namespace graphlearn {
 

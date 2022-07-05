@@ -20,7 +20,7 @@ limitations under the License.
 #include <functional>
 #include <string>
 #include <vector>
-#include "graphlearn/common/string/lite_string.h"
+#include "common/string/lite_string.h"
 
 namespace graphlearn {
 namespace strings {
