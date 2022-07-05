@@ -236,6 +236,10 @@ if (TESTING)
           graphlearn_shared
           GTest::gtest
           GTest::gtest_main)
+      if (KNN)
+        target_link_libraries (${TEST_NAME}
+          PUBLIC knn_shared)
+      endif ()
       add_dependencies (gl_tests ${TEST_NAME})
     endforeach ()
   endfunction ()
@@ -246,7 +250,7 @@ if (TESTING)
     ${GL_INCLUDE_DIR}/*.cpp
     ${GL_PLATFORM_DIR}/*.cpp
     ${GL_SERVICE_DIR}/*.cpp)
-  add_gl_tests (${GL_TEST_FILES})
+#  add_gl_tests (${GL_TEST_FILES})
 
   if (KNN)
     file (GLOB_RECURSE KNN_TEST_FILES

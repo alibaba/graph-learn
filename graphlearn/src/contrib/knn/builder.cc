@@ -15,7 +15,6 @@ limitations under the License.
 
 #include "contrib/knn/builder.h"
 
-#include <vector>
 #include "contrib/knn/index_factory.h"
 #include "contrib/knn/index_manager.h"
 
