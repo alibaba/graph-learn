@@ -356,5 +356,6 @@ add_custom_command (TARGET python
   COMMAND OPEN_KNN=${KNN_FLAG} python3 ${GL_SETUP_DIR}/setup.py bdist_wheel
   COMMAND ${CMAKE_COMMAND} -E make_directory "${GL_BUILT_BIN_DIR}/ge_data/data"
   COMMAND ${CMAKE_COMMAND} -E make_directory "${GL_BUILT_BIN_DIR}/ge_data/ckpt"
+  COMMAND rm -f ${GL_PYTHON_DIR}/__init__.py
   WORKING_DIRECTORY ${GL_ROOT}
   VERBATIM)
