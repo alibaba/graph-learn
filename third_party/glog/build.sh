@@ -6,10 +6,10 @@ install_prefix=${script_dir}/build
 cores=$(cat < /proc/cpuinfo | grep -c "processor")
 
 cd "${code_src}" && \
-mkdir -p cmake/build && cd cmake/build && \
+mkdir -p build && cd build && \
 cmake -DCMAKE_CXX_FLAGS="-fPIC" \
   -DCMAKE_INSTALL_PREFIX="${install_prefix}" \
   -DBUILD_SHARED_LIBS=OFF \
   -DBUILD_TESTING=OFF \
-  ../.. && \
+  .. && \
 make -j"${cores}" && make install
