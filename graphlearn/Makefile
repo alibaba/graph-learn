@@ -76,6 +76,7 @@ else
 endif
 
 KNN := OPEN
+GPU := CLOSE
 PROFILING := CLOSE
 
 CXX := g++
@@ -85,24 +86,38 @@ CXXFLAGS := $(MODEFLAGS) -std=$(CXXSTD) -fPIC \
             -pthread -mavx -msse4.2 -msse4.1  \
             -Wno-format-security              \
             -D$(KNN)_KNN                      \
+            -D$(GPU)_GPU                      \
             -D$(PROFILING)_PROFILING          \
             -I$(THIRD_PARTY_DIR)              \
             -I$(ROOT)/src                     \
             -I$(GLOG_INCLUDE)                 \
             -I$(GRPC_INCLUDE)                 \
 
-LINKFLAGS := -L$(ROOT) -L$(BUILT_LIB_DIR)  \
-             -L$(GLOG_LIB) -L$(GRPC_LIB)   \
-             -lglog -lprotobuf -lgrpc++ -lgrpc -lssl -lz
+LINKFLAGS := -L$(BUILT_LIB_DIR)   \
+             -L$(GLOG_LIB) -lglog \
+             -L$(GRPC_LIB) -lprotobuf -lgrpc++ -lgrpc \
+             -lssl -lz
+
+FAISS_DIR := $(ROOT)/src/contrib/knn/faiss
+FAISS_INCLUDE := $(FAISS_DIR)/include
+FAISS_LIB := $(FAISS_DIR)/lib
 ifeq "$(KNN)" "OPEN"
-	LINKFLAGS += -lknn_shared
+	CXXFLAGS += -I$(FAISS_INCLUDE)
+	LINKFLAGS += -L$(FAISS_LIB) -lfaiss_static -lopenblas -lgomp -lm -lquadmath -lgfortran
 endif
+
+CUDA_PATH := /usr/local/cuda-10.0
+ifeq "$(GPU)" "OPEN"
+	CXXFLAGS += -I$(CUDA_PATH)/include
+	LINKFLAGS += -L$(CUDA_PATH)/lib64 -lcudart -lcublas
+endif
+
 # c++ shared library
 so: grpc glog gtest proto common platform service core contrib
 	@mkdir -p $(BUILT_LIB_DIR)
 	@mkdir -p $(BUILT_BIN_DIR)
 	$(CXX) $(CXXFLAGS) -shared  \
-		$(PROTO_OBJ) $(COMMON_OBJ) $(PLATFORM_OBJ) $(SERVICE_OBJ) $(CORE_OBJ) \
+		$(PROTO_OBJ) $(COMMON_OBJ) $(PLATFORM_OBJ) $(SERVICE_OBJ) $(CORE_OBJ) $(KNN_OBJ) \
 		$(LINKFLAGS) -o $(BUILT_LIB_DIR)/libgraphlearn_shared.so
 
 
@@ -305,17 +320,35 @@ core:$(CORE_OBJ)
 
 ####################################### contrib begin ########################################
 CONTRIB_DIR := $(ROOT)/src/contrib
-contrib:glog grpc gtest
-	@echo "start building KNN ..."
-	@if [ "$(KNN)" = "OPEN" ]; then $(MAKE) DEBUG=$(DEBUG) -C $(CONTRIB_DIR)/knn; fi
-	@echo "build KNN done."
+
+faiss:
+	@mkdir -p ${FAISS_DIR}
+	@echo "download faiss library ..."
+	@if [ ! -d "${FAISS_DIR}/include" ]; then cd "${FAISS_DIR}"; wget "${FAISS_RESOURCE}"; tar -zxf "$(FAISS_PKG)"; fi
+	@echo "faiss done"
+
+KNN_DIR := $(CONTRIB_DIR)/knn
+KNN_BUILT_DIR := $(BUILT_DIR)/src/contrib/knn
+
+ifeq "$(KNN)" "OPEN"
+	KNN_H := $(wildcard *.h)
+	KNN_CC := $(wildcard *.cc)
+	KNN_OBJ := $(addprefix $(KNN_BUILT_DIR)/,$(patsubst %.cc,%.o,$(KNN_CC)))
+
+	$(KNN_BUILT_DIR)/%.o:$(KNN_DIR)/%.cc $(KNN_H) faiss
+		@mkdir -p $(KNN_BUILT_DIR)
+		$(CXX) $(CXXFLAGS) -c $< -o $@
+else
+	KNN_OBJ :=
+endif
+
+knn:$(KNN_OBJ)
+
+contrib:knn
 ####################################### contrib done ########################################
 
 TEST_FLAG := -I$(GTEST_INCLUDE) -L$(GTEST_LIB) -L$(BUILT_LIB_DIR) -L$(GRPC_LIB) -L/lib64 \
              -lgtest -lgtest_main -lstdc++ -lssl -lz
-ifeq "$(KNN)" "OPEN"
-	TEST_FLAG += -lknn_shared
-endif
 TEST_FLAG += -lgraphlearn_shared
 
 test:so gtest
@@ -355,7 +388,13 @@ test:so gtest
 	$(CXX) $(CXXFLAGS) $(SERVICE_DIR)/dist/test/channel_manager_unittest.cpp -o $(BUILT_BIN_DIR)/channel_manager_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) $(SERVICE_DIR)/dist/test/service_unittest.cpp -o $(BUILT_BIN_DIR)/service_unittest $(TEST_FLAG)
 	$(CXX) $(CXXFLAGS) $(SERVICE_DIR)/dist/test/service_with_hosts_unittest.cpp -o $(BUILT_BIN_DIR)/service_with_hosts_unittest $(TEST_FLAG)
-	@if [ "$(KNN)" = "OPEN" ]; then $(MAKE) DEBUG=$(DEBUG) ut -C $(CONTRIB_DIR)/knn; fi
+	ifeq "$(KNN)" "OPEN"
+		$(CXX) $(CXXFLAGS) $(KNN_DIR)/test/heap_unittest.cpp -o $(BUILT_BIN_DIR)/heap_unittest $(TEST_FLAG)
+		$(CXX) $(CXXFLAGS) $(KNN_DIR)/test/index_factory_manager_unittest.cpp -o $(BUILT_BIN_DIR)/index_factory_manager_unittest $(TEST_FLAG)
+		$(CXX) $(CXXFLAGS) $(KNN_DIR)/test/flat_index_unittest.cpp -o $(BUILT_BIN_DIR)/flat_index_unittest $(TEST_FLAG)
+		$(CXX) $(CXXFLAGS) $(KNN_DIR)/test/ivfflat_index_unittest.cpp -o $(BUILT_BIN_DIR)/ivfflat_index_unittest $(TEST_FLAG)
+		$(CXX) $(CXXFLAGS) $(KNN_DIR)/test/ivfpq_index_unittest.cpp -o $(BUILT_BIN_DIR)/ivfpq_index_unittest $(TEST_FLAG)
+	endif
 
 VERSION := $(shell grep "_VERSION = " ${SETUP_DIR}/setup.py | cut -d= -f2)
 GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
