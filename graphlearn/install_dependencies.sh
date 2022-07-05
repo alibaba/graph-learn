@@ -43,7 +43,8 @@ else
   exit 1
 fi
 
-pip3 install numpy
+python3 -m pip install --upgrade pip setuptools wheel
+pip install numpy
 
 ## installing submodules
 
