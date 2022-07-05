@@ -32,11 +32,11 @@ public:
 protected:
   void SetUp() override {
     SetGlobalFlagTracker("./tracker");
-    system("mkdir -p ./tracker");
+    EXPECT_EQ(::system("mkdir -p ./tracker"), 0);
   }
 
   void TearDown() override {
-    system("rm -rf ./tracker");
+    EXPECT_EQ(::system("rm -rf ./tracker"), 0);
   }
 };
 

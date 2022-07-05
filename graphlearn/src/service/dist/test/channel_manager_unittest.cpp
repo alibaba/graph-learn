@@ -37,11 +37,11 @@ protected:
     SetGlobalFlagServerCount(2);
     SetGlobalFlagClientCount(4);
     SetGlobalFlagRetryTimes(1);
-    system("mkdir -p ./tracker");
+    EXPECT_EQ(::system("mkdir -p ./tracker"), 0);
   }
 
   void TearDown() override {
-    system("rm -rf ./tracker");
+    EXPECT_EQ(::system("rm -rf ./tracker"), 0);
   }
 };
 

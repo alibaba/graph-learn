@@ -464,10 +464,14 @@ int main(int argc, char** argv) {
     client_count = argv[2][0] - '0';
     server_count = argv[3][0] - '0';
     SetGlobalFlagTrackerMode(kFileSystem);
-    ::system("mkdir -p ./tracker");
+    if (::system("mkdir -p ./tracker") != 0) {
+      std::cerr << "cannot create tracker directory!" << ::std::endl;
+    }
     SetGlobalFlagTracker("./tracker");
   } else if (argc == 1) {
-    ::system("mkdir -p ./tracker");
+    if (::system("mkdir -p ./tracker") != 0) {
+      std::cerr << "cannot create tracker directory!" << ::std::endl;
+    }
     SetGlobalFlagTracker("./tracker");
   } else {
     std::cout << "./client_test [client_id] [client_count] [server_count] [hosts]" << std::endl;

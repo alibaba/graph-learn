@@ -31,13 +31,13 @@ public:
 
   virtual Status RunOp(const OpRequest* req, OpResponse* res) = 0;
   virtual Status Stop() = 0;
-  virtual Status Report(const StateRequestPb* req) {}
+  virtual Status Report(const StateRequestPb* req) = 0;
   virtual Status RunDag(const DagRequest* req) = 0;
   virtual Status GetDagValues(const GetDagValuesRequest* req,
                               GetDagValuesResponse* res) = 0;
 
 protected:
-  ClientImpl() {}
+  ClientImpl() = default;
 };
 
 ClientImpl* NewInMemoryClientImpl();

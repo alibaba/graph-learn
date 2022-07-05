@@ -230,11 +230,15 @@ int main(int argc, char** argv) {
   } else if (argc > 2) {
     server_id = argv[1][0] - '0';
     server_count = argv[2][0] - '0';
-    ::system("mkdir -p ./tracker");
+    if (::system("mkdir -p ./tracker") != 0) {
+      std::cerr << "cannot create tracker directory!" << ::std::endl;
+    }
     SetGlobalFlagTracker("./tracker");
     SetGlobalFlagTrackerMode(kFileSystem);
   } else if (argc == 1) {
-    ::system("mkdir -p ./tracker");
+    if (::system("mkdir -p ./tracker") != 0) {
+      std::cerr << "cannot create tracker directory!" << ::std::endl;
+    }
     SetGlobalFlagTracker("./tracker");
     SetGlobalFlagTrackerMode(kFileSystem);
   } else {

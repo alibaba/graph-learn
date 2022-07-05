@@ -34,9 +34,9 @@ public:
 
 protected:
   void SetUp() override {
-    system("mkdir -p weighted_nfiles/");
-    system("mkdir -p labeled_nfiles/");
-    system("mkdir -p attributed_nfiles/");
+    EXPECT_EQ(::system("mkdir -p weighted_nfiles/"), 0);
+    EXPECT_EQ(::system("mkdir -p labeled_nfiles/"), 0);
+    EXPECT_EQ(::system("mkdir -p attributed_nfiles/"), 0);
   }
 
   void TearDown() override {

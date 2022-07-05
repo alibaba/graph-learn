@@ -34,9 +34,9 @@ public:
 
 protected:
   void SetUp() override {
-    system("mkdir -p weighted_efiles/");
-    system("mkdir -p labeled_efiles/");
-    system("mkdir -p attributed_efiles/");
+    EXPECT_EQ(::system("mkdir -p weighted_efiles/"), 0);
+    EXPECT_EQ(::system("mkdir -p labeled_efiles/"), 0);
+    EXPECT_EQ(::system("mkdir -p attributed_efiles/"), 0);
   }
 
   void TearDown() override {
