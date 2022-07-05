@@ -327,7 +327,7 @@ endif()
 
 # python
 execute_process (
-  COMMAND /bin/sh -c "grep '_VERSION = ' ${GL_SETUP_DIR}/setup.py | cut -d \\' -f2"
+  COMMAND /bin/sh -c "grep '_VERSION = ' ${GL_SETUP_DIR}/setup.py | cut -d= -f2"
   OUTPUT_VARIABLE VERSION
 )
 execute_process (
@@ -345,10 +345,10 @@ add_dependencies (python
 add_custom_command (TARGET python
   COMMAND ${CMAKE_COMMAND} -E remove_directory dist
   COMMAND ${CMAKE_COMMAND} -E remove_directory graphlearn.egg-info
-  COMMAND /bin/sh -c "cp -f ${GL_SETUP_DIR}/gl.__init__.py ${GL_PYTHON_DIR}/__init__.py"
-  COMMAND /bin/sh -c "echo '__version__ = \\'${VERSION}\\' > ${GL_PYTHON_DIR}/__init__.py"
-  COMMAND /bin/sh -c "echo '__git_version__ = \\'${GIT_BRANCH}-${GIT_VERSION}\\'' > ${GL_PYTHON_DIR}/__init__.py"
-  COMMAND /bin/sh -c "OPEN_KNN=${KNN_FLAG} python3 ${GL_SETUP_DIR}/setup.py bdist_wheel"
+  COMMAND cp -f ${GL_SETUP_DIR}/gl.__init__.py ${GL_PYTHON_DIR}/__init__.py
+  COMMAND echo "__version__ = ${VERSION}" > ${GL_PYTHON_DIR}/__init__.py
+  COMMAND echo "__git_version__ = '${GIT_BRANCH}-${GIT_VERSION}'" > ${GL_PYTHON_DIR}/__init__.py
+  COMMAND OPEN_KNN=${KNN_FLAG} python3 ${GL_SETUP_DIR}/setup.py bdist_wheel
   COMMAND ${CMAKE_COMMAND} -E make_directory "${GL_BUILT_BIN_DIR}/ge_data/data"
   COMMAND ${CMAKE_COMMAND} -E make_directory "${GL_BUILT_BIN_DIR}/ge_data/ckpt"
   WORKING_DIRECTORY ${GL_ROOT}
