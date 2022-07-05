@@ -96,6 +96,9 @@ CXXFLAGS := $(MODEFLAGS) -std=$(CXXSTD) -fPIC \
 LINKFLAGS := -L$(BUILT_LIB_DIR)   \
              -L$(GLOG_LIB) -lglog \
              -L$(GRPC_LIB) -lprotobuf -lgrpc++ -lgrpc \
+             -lgflags -lcares -lgpr -lre2 -lupb -laddress_sorting \
+             -labsl_base -labsl_cord -labsl_int128 \
+             -labsl_status -lasbl_strings -labsl_str_format_internal -labsl_time \
              -lssl -lz
 
 FAISS_DIR := $(ROOT)/src/contrib/knn/faiss
@@ -329,18 +332,17 @@ faiss:
 
 KNN_DIR := $(CONTRIB_DIR)/knn
 KNN_BUILT_DIR := $(BUILT_DIR)/src/contrib/knn
-
 KNN_H := $(wildcard src/contrib/knn/*.h)
 KNN_CC := $(wildcard src/contrib/knn/*.cc)
-KNN_OBJ := $(addprefix $(KNN_BUILT_DIR)/,$(patsubst %.cc,%.o,$(KNN_CC)))
+ifeq "$(KNN)" "OPEN"
+	KNN_OBJ := $(addprefix $(BUILT_DIR)/,$(patsubst %.cc,%.o,$(KNN_CC)))
+else
+	KNN_OBJ :=
+endif
 
 $(KNN_BUILT_DIR)/%.o:$(KNN_DIR)/%.cc $(KNN_H) faiss
 	@mkdir -p $(KNN_BUILT_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-ifneq "$(KNN)" "OPEN"
-KNN_OBJ :=
-endif
 
 knn:$(KNN_OBJ)
 
