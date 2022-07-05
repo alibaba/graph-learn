@@ -113,7 +113,7 @@ ifeq "$(GPU)" "OPEN"
 endif
 
 # c++ shared library
-so: grpc glog gtest proto common platform service core contrib
+so: grpc glog gtest proto_gen common platform service core contrib
 	@mkdir -p $(BUILT_LIB_DIR)
 	@mkdir -p $(BUILT_BIN_DIR)
 	$(CXX) $(CXXFLAGS) -shared  \
@@ -128,7 +128,7 @@ PROTO_BUILT_DIR := $(BUILT_DIR)/proto
 PROTO_FILES := $(wildcard proto/*.proto)
 PROTO_OBJ := $(addprefix $(BUILT_DIR)/,$(patsubst %.proto,%.pb.o,$(PROTO_FILES))) $(PROTO_BUILT_DIR)/service.grpc.pb.o
 
-proto: $(PROTO_OBJ)
+proto_gen: $(PROTO_FILES)
 	@echo $(PROTO_FILES)
 	@mkdir -p $(PROTO_GEN_DIR)
 	@mkdir -p $(PROTO_BUILT_DIR)
