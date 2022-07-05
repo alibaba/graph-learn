@@ -125,10 +125,11 @@ so: grpc glog gtest proto common platform service core contrib
 PROTO_SRC_DIR := $(ROOT)/proto
 PROTO_GEN_DIR := $(ROOT)/src/generated/proto
 PROTO_BUILT_DIR := $(BUILT_DIR)/proto
-PROTO_OBJ := $(addprefix $(PROTO_BUILT_DIR)/,tensor.pb.o, dag.pb.o, request.pb.o, service.pb.o, service.grpc.pb.o)
+PROTO_FILES := $(wildcard proto/*.proto)
+PROTO_OBJ := $(addprefix $(BUILT_DIR)/,$(patsubst %.proto,%.pb.o,$(PROTO_FILES))) $(PROTO_BUILT_DIR)/service.grpc.pb.o
 
 proto: $(PROTO_OBJ)
-	@echo $(PROTO_OBJ)
+	@echo $(PROTO_FILES)
 	@mkdir -p $(PROTO_GEN_DIR)
 	@mkdir -p $(PROTO_BUILT_DIR)
 	@echo 'generating pb file'
