@@ -54,8 +54,8 @@ extra_compile_args.append('-fvisibility=hidden')
 # extra_link_args.append('-Wl,-rpath=$ORIGIN/python/lib/')
 
 libraries.append('graphlearn_shared')
-if OPEN_KNN == 'OPEN':
-  libraries.append('knn_shared')
+# if OPEN_KNN == 'OPEN':
+#   libraries.append('knn_shared')
 
 sources = [ROOT_PATH + '/python/c/py_export.cc',
            ROOT_PATH + '/python/c/py_client.cc']

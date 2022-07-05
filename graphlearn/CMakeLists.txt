@@ -146,10 +146,48 @@ set (GL_SERVICE_DIR ${GL_SRC_DIR}/service)
 file (GLOB_RECURSE GL_SERVICE_FILES
   ${GL_SERVICE_DIR}/*.cc
   ${GL_SERVICE_DIR}/*.h)
+
 # contrib knn
-set (GL_CONTRIB_DIR ${GL_SRC_DIR}/contrib)
+set (GL_KNN_DIR ${GL_SRC_DIR}/contrib/knn)
+set (FAISS_BUILT_DIR ${GL_KNN_DIR}/faiss)
+set (FAISS_INCLUDE_DIR ${FAISS_BUILT_DIR}/include)
+set (FAISS_LIB_DIR ${FAISS_BUILT_DIR}/lib)
 if (KNN)
-  add_subdirectory (${GL_CONTRIB_DIR}/knn)
+  execute_process (
+    COMMAND /bin/sh -c "expr `g++ -dumpversion | cut -f1 -d.` \\>= 5"
+    OUTPUT_VARIABLE GXX_VERSION_GTE_5
+  )
+
+  # prepare faiss
+  file (MAKE_DIRECTORY ${FAISS_BUILT_DIR})
+  set (FAISS_DEPENDENT_FILES
+    ${FAISS_INCLUDE_DIR}/faiss/IndexFlat.h
+    ${FAISS_INCLUDE_DIR}/faiss/IndexIVFFlat.h)
+
+  if (${GXX_VERSION_GTE_5} MATCHES "1")
+    set (FAISS_PKG faiss.tar.gz)
+  else ()
+    set (FAISS_PKG faiss_gcc4.8.5.tar.gz)
+  endif ()
+  set (FAISS_RESOURCE https://graphlearn.oss-cn-hangzhou.aliyuncs.com/data/github/${FAISS_PKG})
+
+  add_custom_command (
+    OUTPUT ${FAISS_DEPENDENT_FILES}
+    COMMENT "downloading faiss package: ${FAISS_PKG} ..."
+    COMMAND /bin/sh -c "wget -O ${FAISS_PKG} ${FAISS_RESOURCE}"
+    COMMAND /bin/sh -c "tar -zxf ${FAISS_PKG}"
+    WORKING_DIRECTORY ${FAISS_BUILT_DIR}
+    VERBATIM)
+
+  add_custom_target (faiss_download
+    DEPENDS ${FAISS_DEPENDENT_FILES})
+
+  # knn source files
+  file (GLOB_RECURSE GL_KNN_FILES
+    ${GL_KNN_DIR}/*.cc
+    ${GL_KNN_DIR}/*.h)
+else ()
+  list (GL_KNN_FILES)
 endif ()
 
 ## cxx flags
@@ -167,6 +205,13 @@ else ()
   set (KNN_FLAG CLOSE_KNN)
 endif ()
 
+## gpu flag
+if (GPU)
+  set (GPU_FLAG OPEN_GPU)
+else ()
+  set (GPU_FLAG CLOSE_GPU)
+endif ()
+
 ## profiling flag
 if (PROFILING)
   set (PROFILING_FLAG OPEN_PROFILING)
@@ -178,6 +223,7 @@ set (GL_CXX_FLAGS
   ${GL_MODE_FLAGS}
   -std=${GL_CXX_DIALECT}
   -D${KNN_FLAG}
+  -D${GPU_FLAG}
   -D${PROFILING_FLAG}
   -fPIC
   -fvisibility-inlines-hidden
@@ -195,6 +241,7 @@ add_library (graphlearn_shared SHARED
   ${GL_INCLUDE_FILES}
   ${GL_PLATFORM_FILES}
   ${GL_SERVICE_FILES}
+  ${GL_KNN_FILES}
   ${GL_GRPC_AUTOGEN_FILES})
 
 add_dependencies (graphlearn_shared
@@ -214,8 +261,33 @@ target_link_libraries (graphlearn_shared
     gRPC::grpc++)
 
 if (KNN)
+  add_dependencies (graphlearn_shared
+    faiss_download)
+
+  target_include_directories (graphlearn_shared
+    PUBLIC ${FAISS_INCLUDE_DIR})
+
+  target_link_directories (graphlearn_shared
+    PUBLIC ${FAISS_LIB_DIR})
+
   target_link_libraries (graphlearn_shared
-    PUBLIC knn_shared)
+    PUBLIC faiss_static openblas gomp)
+
+  target_link_options (graphlearn_shared
+    PUBLIC -lm -lquadmath -lgfortran)
+endif ()
+
+if (GPU)
+  set (CUDA_PATH /usr/local/cuda-10.0)
+
+  target_include_directories (graphlearn_shared
+    PUBLIC ${CUDA_PATH}/include)
+
+  target_link_directories (graphlearn_shared
+    PUBLIC ${CUDA_PATH}/lib64)
+
+  target_link_libraries (graphlearn_shared
+    PUBLIC cudart cublas)
 endif ()
 
 ## tests
@@ -236,10 +308,6 @@ if (TESTING)
           graphlearn_shared
           GTest::gtest
           GTest::gtest_main)
-      if (KNN)
-        target_link_libraries (${TEST_NAME}
-          PUBLIC knn_shared)
-      endif ()
       add_dependencies (gl_tests ${TEST_NAME})
     endforeach ()
   endfunction ()
@@ -254,7 +322,7 @@ if (TESTING)
 
   if (KNN)
     file (GLOB_RECURSE KNN_TEST_FILES
-      ${GL_CONTRIB_DIR}/knn/*.cpp)
+      ${GL_KNN_DIR}/*.cpp)
     add_gl_tests (${KNN_TEST_FILES})
   endif ()
 endif()
