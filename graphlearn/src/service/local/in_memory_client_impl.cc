@@ -62,6 +62,10 @@ public:
     return Status::OK();
   }
 
+  Status Report(const StateRequestPb* req) override {
+    return Status::OK();
+  }
+
 private:
   InMemoryChannel* channel_;
 };
