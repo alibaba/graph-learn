@@ -125,10 +125,9 @@ so: grpc glog gtest proto common platform service core contrib
 PROTO_SRC_DIR := $(ROOT)/proto
 PROTO_GEN_DIR := $(ROOT)/src/generated/proto
 PROTO_BUILT_DIR := $(BUILT_DIR)/proto
-PROTO_OBJ := $(addprefix $(BUILT_DIR)/,tensor.pb.o, dag.pb.o, request.pb.o, service.pb.o, service.grpc.pb.o)
+PROTO_OBJ := $(addprefix $(PROTO_BUILT_DIR)/,tensor.pb.o, dag.pb.o, request.pb.o, service.pb.o, service.grpc.pb.o)
 
-proto: $(PROTO_FILES)
-	@echo $(PROTO_FILES)
+proto: $(PROTO_OBJ)
 	@echo $(PROTO_OBJ)
 	@mkdir -p $(PROTO_GEN_DIR)
 	@mkdir -p $(PROTO_BUILT_DIR)
@@ -138,11 +137,11 @@ proto: $(PROTO_FILES)
 	@$(PROTOC) -I $(PROTO_SRC_DIR) --cpp_out=$(PROTO_GEN_DIR) $(PROTO_SRC_DIR)/request.proto
 	@$(PROTOC) -I $(PROTO_SRC_DIR) --cpp_out=$(PROTO_GEN_DIR) $(PROTO_SRC_DIR)/service.proto
 	@$(PROTOC) -I $(PROTO_SRC_DIR) --grpc_out=$(PROTO_GEN_DIR) --plugin=protoc-gen-grpc=$(PROTOC_GRPC_PLUGIN) $(PROTO_SRC_DIR)/service.proto
-	@$(CXX) $(CXXFLAGS) -c $(PROTO_GEN_DIR)/tensor.pb.cc -o $(PROTO_BUILT_DIR)/tensor.pb.o
-	@$(CXX) $(CXXFLAGS) -c $(PROTO_GEN_DIR)/dag.pb.cc -o $(PROTO_BUILT_DIR)/dag.pb.o
-	@$(CXX) $(CXXFLAGS) -c $(PROTO_GEN_DIR)/request.pb.cc -o $(PROTO_BUILT_DIR)/request.pb.o
-	@$(CXX) $(CXXFLAGS) -c $(PROTO_GEN_DIR)/service.pb.cc -o $(PROTO_BUILT_DIR)/service.pb.o
-	@$(CXX) $(CXXFLAGS) -c $(PROTO_GEN_DIR)/service.grpc.pb.cc -o $(PROTO_BUILT_DIR)/service.grpc.pb.o
+	$(CXX) $(CXXFLAGS) -c $(PROTO_GEN_DIR)/tensor.pb.cc -o $(PROTO_BUILT_DIR)/tensor.pb.o
+	$(CXX) $(CXXFLAGS) -c $(PROTO_GEN_DIR)/dag.pb.cc -o $(PROTO_BUILT_DIR)/dag.pb.o
+	$(CXX) $(CXXFLAGS) -c $(PROTO_GEN_DIR)/request.pb.cc -o $(PROTO_BUILT_DIR)/request.pb.o
+	$(CXX) $(CXXFLAGS) -c $(PROTO_GEN_DIR)/service.pb.cc -o $(PROTO_BUILT_DIR)/service.pb.o
+	$(CXX) $(CXXFLAGS) -c $(PROTO_GEN_DIR)/service.grpc.pb.cc -o $(PROTO_BUILT_DIR)/service.grpc.pb.o
 	@echo 'generating pb file done'
 ####################################### proto done ########################################
 
