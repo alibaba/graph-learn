@@ -330,14 +330,19 @@ execute_process (
   COMMAND /bin/sh -c "grep '_VERSION = ' ${GL_SETUP_DIR}/setup.py | cut -d= -f2"
   OUTPUT_VARIABLE VERSION
 )
+string (STRIP ${VERSION} VERSION)
+
 execute_process (
   COMMAND /bin/sh -c "git rev-parse --abbrev-ref HEAD"
   OUTPUT_VARIABLE GIT_BRANCH
 )
+string (STRIP ${GIT_BRANCH} GIT_BRANCH)
+
 execute_process (
   COMMAND /bin/sh -c "git rev-parse --short HEAD"
   OUTPUT_VARIABLE GIT_VERSION
 )
+string (STRIP ${GIT_VERSION} GIT_VERSION)
 
 add_custom_target (python)
 add_dependencies (python
