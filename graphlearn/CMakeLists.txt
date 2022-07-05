@@ -114,12 +114,12 @@ endfunction ()
 
 generate_grpc_files (grpc_codegen GL_GRPC_AUTOGEN_FILES)
 
-#if (TESTING)
+if (TESTING)
   # googletest package
   set (GTest_INSTALL_DIR ${THIRD_PARTY_DIR}/googletest/build)
   list (APPEND CMAKE_PREFIX_PATH ${GTest_INSTALL_DIR})
   find_package (GTest CONFIG REQUIRED)
-#endif ()
+endif ()
 
 ## project files
 # common
@@ -219,7 +219,7 @@ if (KNN)
 endif ()
 
 ## tests
-#if (TESTING)
+if (TESTING)
   add_custom_target (gl_tests)
   function (add_gl_tests)
     if (NOT ARGN)
@@ -247,7 +247,13 @@ endif ()
     ${GL_PLATFORM_DIR}/*.cpp
     ${GL_SERVICE_DIR}/*.cpp)
   add_gl_tests (${GL_TEST_FILES})
-#endif()
+
+  if (KNN)
+    file (GLOB_RECURSE KNN_TEST_FILES
+      ${GL_CONTRIB_DIR}/knn/*.cpp)
+    add_gl_tests (${KNN_TEST_FILES})
+  endif ()
+endif()
 
 # python
 execute_process (

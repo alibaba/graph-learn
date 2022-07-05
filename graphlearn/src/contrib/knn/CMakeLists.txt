@@ -110,29 +110,3 @@ if (GPU)
   target_link_libraries (knn_shared
     PUBLIC cudart cublas)
 endif ()
-
-## knn tests
-if (TESTING)
-  add_custom_target (knn_tests)
-  function (add_knn_tests)
-    if (NOT ARGN)
-      message (SEND_ERROR "Error: add_knn_tests() called without any test files")
-      return ()
-    endif ()
-    foreach (TEST_FILE ${ARGN})
-      get_filename_component (TEST_NAME ${TEST_FILE} NAME_WE)
-      add_executable (${TEST_NAME} ${TEST_FILE})
-      add_dependencies (${TEST_NAME} knn_shared)
-      target_compile_options (${TEST_NAME} PRIVATE ${KNN_CXX_FLAGS})
-      target_link_libraries (${TEST_NAME}
-        PUBLIC
-          knn_shared
-          GTest::gtest
-          GTest::gtest_main)
-      add_dependencies (knn_tests ${TEST_NAME})
-    endforeach ()
-  endfunction ()
-
-  file (GLOB_RECURSE KNN_TEST_FILES ${KNN_ROOT}/*.cpp)
-  add_knn_tests (${KNN_TEST_FILES})
-endif ()
