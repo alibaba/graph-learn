@@ -16,13 +16,13 @@ limitations under the License.
 #include <cstdint>
 #include <typeinfo>
 
-#include "graphlearn/include/client.h"
-#include "graphlearn/include/config.h"
-#include "graphlearn/include/data_source.h"
-#include "graphlearn/include/index_option.h"
-#include "graphlearn/include/server.h"
-#include "graphlearn/include/status.h"
-#include "graphlearn/python/c/py_bind.h"
+#include "include/client.h"
+#include "include/config.h"
+#include "include/data_source.h"
+#include "include/index_option.h"
+#include "include/server.h"
+#include "include/status.h"
+#include "python/c/py_bind.h"
 
 using namespace graphlearn;
 

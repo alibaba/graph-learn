@@ -39,9 +39,10 @@ extra_compile_args=[]
 extra_link_args=[]
 
 include_dirs.append(ROOT_PATH)
+include_dirs.append(ROOT_PATH + '/src')
 include_dirs.append(ROOT_PATH + '/src/include')
 include_dirs.append(ROOT_PATH + '/../third_party/pybind11/pybind11/include')
-include_dirs.append(ROOT_PATH + '/../third_party/glog/build')
+include_dirs.append(ROOT_PATH + '/../third_party/glog/build/include')
 include_dirs.append(ROOT_PATH + '/../third_party/grpc/build/include')
 include_dirs.append(numpy.get_include())
 

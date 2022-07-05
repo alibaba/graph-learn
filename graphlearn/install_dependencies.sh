@@ -43,6 +43,8 @@ else
   exit 1
 fi
 
+pip3 install numpy
+
 ## installing submodules
 
 # glog

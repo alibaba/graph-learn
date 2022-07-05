@@ -22,14 +22,14 @@ limitations under the License.
 #include <unordered_map>
 #include <vector>
 
-#include "graphlearn/include/aggregating_request.h"
-#include "graphlearn/include/graph_request.h"
-#include "graphlearn/include/sampling_request.h"
-#include "graphlearn/include/subgraph_request.h"
-#include "graphlearn/include/sampling_request.h"
-#include "graphlearn/proto/dag.pb.h"
-#include "graphlearn/proto/request.pb.h"
-#include "graphlearn/python/c/py_bind.h"
+#include "include/aggregating_request.h"
+#include "include/graph_request.h"
+#include "include/sampling_request.h"
+#include "include/subgraph_request.h"
+#include "include/sampling_request.h"
+#include "generated/proto/dag.pb.h"
+#include "generated/proto/request.pb.h"
+#include "python/c/py_bind.h"
 
 using namespace graphlearn;  // NOLINT
 

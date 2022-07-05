@@ -193,31 +193,31 @@ endif ()
 
 ## knn flag
 if (KNN)
-  set (KNN_FLAG OPEN_KNN)
+  set (KNN_FLAG OPEN)
 else ()
-  set (KNN_FLAG CLOSE_KNN)
+  set (KNN_FLAG CLOSE)
 endif ()
 
 ## gpu flag
 if (GPU)
-  set (GPU_FLAG OPEN_GPU)
+  set (GPU_FLAG OPEN)
 else ()
-  set (GPU_FLAG CLOSE_GPU)
+  set (GPU_FLAG CLOSE)
 endif ()
 
 ## profiling flag
 if (PROFILING)
-  set (PROFILING_FLAG OPEN_PROFILING)
+  set (PROFILING_FLAG OPEN)
 else()
-  set (PROFILING_FLAG CLOSE_PROFILING)
+  set (PROFILING_FLAG CLOSE)
 endif()
 
 set (GL_CXX_FLAGS
   ${GL_MODE_FLAGS}
   -std=${GL_CXX_DIALECT}
-  -D${KNN_FLAG}
-  -D${GPU_FLAG}
-  -D${PROFILING_FLAG}
+  -D${KNN_FLAG}_KNN
+  -D${GPU_FLAG}_GPU
+  -D${PROFILING_FLAG}_PROFILING
   -fPIC
   -fvisibility-inlines-hidden
   -pthread
