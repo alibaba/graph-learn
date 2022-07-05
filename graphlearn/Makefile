@@ -331,15 +331,15 @@ KNN_DIR := $(CONTRIB_DIR)/knn
 KNN_BUILT_DIR := $(BUILT_DIR)/src/contrib/knn
 
 ifeq "$(KNN)" "OPEN"
-	KNN_H := $(wildcard *.h)
-	KNN_CC := $(wildcard *.cc)
-	KNN_OBJ := $(addprefix $(KNN_BUILT_DIR)/,$(patsubst %.cc,%.o,$(KNN_CC)))
+KNN_H := $(wildcard *.h)
+KNN_CC := $(wildcard *.cc)
+KNN_OBJ := $(addprefix $(KNN_BUILT_DIR)/,$(patsubst %.cc,%.o,$(KNN_CC)))
 
-	$(KNN_BUILT_DIR)/%.o:$(KNN_DIR)/%.cc $(KNN_H) faiss
-		@mkdir -p $(KNN_BUILT_DIR)
-		$(CXX) $(CXXFLAGS) -c $< -o $@
+$(KNN_BUILT_DIR)/%.o:$(KNN_DIR)/%.cc $(KNN_H) faiss
+	@mkdir -p $(KNN_BUILT_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 else
-	KNN_OBJ :=
+KNN_OBJ :=
 endif
 
 knn:$(KNN_OBJ)
