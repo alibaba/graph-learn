@@ -19,7 +19,7 @@ project (GraphLearn VERSION 1.0 LANGUAGES CXX)
 ## options
 option (TESTING
   "Enable testing"
-  OFF)
+  ON)
 
 option (DEBUG
   "Enable debug mode"
@@ -114,13 +114,6 @@ endfunction ()
 
 generate_grpc_files (grpc_codegen GL_GRPC_AUTOGEN_FILES)
 
-if (TESTING)
-  # googletest package
-  set (GTest_INSTALL_DIR ${THIRD_PARTY_DIR}/googletest/build)
-  list (APPEND CMAKE_PREFIX_PATH ${GTest_INSTALL_DIR})
-  find_package (GTest CONFIG REQUIRED)
-endif ()
-
 ## project files
 # common
 set (GL_COMMON_DIR ${GL_SRC_DIR}/common)
@@ -187,7 +180,7 @@ if (KNN)
     ${GL_KNN_DIR}/*.cc
     ${GL_KNN_DIR}/*.h)
 else ()
-  list (GL_KNN_FILES)
+  set (GL_KNN_FILES)
 endif ()
 
 ## cxx flags
@@ -292,6 +285,11 @@ endif ()
 
 ## tests
 if (TESTING)
+  # googletest package
+  set (GTest_INSTALL_DIR ${THIRD_PARTY_DIR}/googletest/build)
+  list (APPEND CMAKE_PREFIX_PATH ${GTest_INSTALL_DIR})
+  find_package (GTest CONFIG REQUIRED)
+
   add_custom_target (gl_tests)
   function (add_gl_tests)
     if (NOT ARGN)
@@ -318,7 +316,7 @@ if (TESTING)
     ${GL_INCLUDE_DIR}/*.cpp
     ${GL_PLATFORM_DIR}/*.cpp
     ${GL_SERVICE_DIR}/*.cpp)
-#  add_gl_tests (${GL_TEST_FILES})
+  add_gl_tests (${GL_TEST_FILES})
 
   if (KNN)
     file (GLOB_RECURSE KNN_TEST_FILES
