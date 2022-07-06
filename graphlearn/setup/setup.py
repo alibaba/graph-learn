@@ -53,7 +53,7 @@ if OPEN_KNN == 'OPEN':
 extra_compile_args.append('-D__USE_XOPEN2K8')
 extra_compile_args.append('-std=c++11')
 extra_compile_args.append('-fvisibility=hidden')
-# extra_link_args.append('-Wl,-rpath=$ORIGIN/python/lib/')
+extra_link_args.append('-Wl,-rpath=$ORIGIN/python/lib/')
 
 libraries.append('graphlearn_shared')
 # if OPEN_KNN == 'OPEN':
