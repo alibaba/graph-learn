@@ -18,7 +18,8 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy
-import os, sys
+import os
+import sys
 from setuptools import setup, Extension, find_packages
 import shlex
 from subprocess import check_output
@@ -32,11 +33,11 @@ OPEN_KNN = os.getenv('OPEN_KNN')
 
 
 extensions = []
-include_dirs=[]
-library_dirs=[]
-libraries=[]
-extra_compile_args=[]
-extra_link_args=[]
+include_dirs = []
+library_dirs = []
+libraries = []
+extra_compile_args = []
+extra_link_args = []
 
 include_dirs.append(ROOT_PATH)
 include_dirs.append(ROOT_PATH + '/src')
@@ -91,7 +92,7 @@ setup(
     ext_package='graphlearn',
     ext_modules=extensions,
     packages=find_packages(),
-    package_dir={'graphlearn' : '../graphlearn'},
+    package_dir={'graphlearn': '.'},
     package_data={'': ['python/lib/lib*.so*']},
     license='Apache License 2.0',
     )

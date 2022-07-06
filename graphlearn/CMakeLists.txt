@@ -46,7 +46,7 @@ set (GL_CXX_DIALECT
 ## project source paths
 set (GL_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 set (GL_SRC_DIR ${GL_ROOT}/src)
-set (GL_PYTHON_DIR ${GL_ROOT}/python)
+set (GL_PYTHON_DIR ${GL_ROOT})
 set (GL_SETUP_DIR ${GL_ROOT}/setup)
 set (GL_PROTO_DIR ${GL_ROOT}/proto)
 set (THIRD_PARTY_DIR ${GL_ROOT}/../third_party)
@@ -344,7 +344,7 @@ execute_process (
 )
 string (STRIP ${GIT_VERSION} GIT_VERSION)
 
-set (GL_PYTHON_LIB_DIR ${GL_PYTHON_DIR}/lib)
+set (GL_PYTHON_LIB_DIR ${GL_PYTHON_DIR}/python/lib)
 add_custom_target (python)
 add_dependencies (python
   graphlearn_shared)
