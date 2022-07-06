@@ -32,8 +32,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04, ubuntu-20.04]
-        python-version: [2.7, 3.7]
         include:
           - { os: ubuntu-18.04, python-version: 2.7, python-abis: "cp27-cp27mu" }
           - { os: ubuntu-18.04, python-version: 3.7, python-abis: "cp37-cp37m" }
