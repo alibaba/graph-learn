@@ -14,6 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include <fstream>
+#include <thread>
 #include "common/base/errors.h"
 #include "common/base/log.h"
 #include "core/io/node_loader.h"
@@ -26,6 +27,8 @@ using namespace graphlearn::io;  // NOLINT [build/namespaces]
 class NodeLoaderTest : public ::testing::Test {
 public:
   NodeLoaderTest() {
+    // sleep for a while to avoid logging file name conflict error
+    std::this_thread::sleep_for(std::chrono::seconds(1));
     InitGoogleLogging();
   }
   ~NodeLoaderTest() {
