@@ -12,4 +12,5 @@ cmake -DCMAKE_CXX_FLAGS="-fPIC" \
   -DBUILD_SHARED_LIBS=OFF \
   -DBUILD_TESTING=OFF \
   .. && \
-make -j"${cores}" && make install
+make -j"${cores}" && make install && \
+cd "${code_src}" && rm -rf build

@@ -344,12 +344,15 @@ execute_process (
 )
 string (STRIP ${GIT_VERSION} GIT_VERSION)
 
+set (GL_PYTHON_LIB_DIR ${GL_PYTHON_DIR}/lib)
 add_custom_target (python)
 add_dependencies (python
   graphlearn_shared)
 add_custom_command (TARGET python
   COMMAND ${CMAKE_COMMAND} -E remove_directory dist
   COMMAND ${CMAKE_COMMAND} -E remove_directory graphlearn.egg-info
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${GL_PYTHON_LIB_DIR}
+  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:graphlearn_shared> ${GL_PYTHON_LIB_DIR}
   COMMAND cp -f ${GL_SETUP_DIR}/gl.__init__.py ${GL_PYTHON_DIR}/__init__.py
   COMMAND echo "__version__ = ${VERSION}" >> ${GL_PYTHON_DIR}/__init__.py
   COMMAND echo "__git_version__ = '${GIT_BRANCH}-${GIT_VERSION}'" >> ${GL_PYTHON_DIR}/__init__.py
