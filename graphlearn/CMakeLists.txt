@@ -43,6 +43,12 @@ set (GL_CXX_DIALECT
   STRING
   "Compile graphlearn according to the named C++ standard.")
 
+set (GL_PYTHON_BIN
+  "python3"
+  CACHE
+  STRING
+  "Python binary to use.")
+
 ## project source paths
 set (GL_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 set (GL_SRC_DIR ${GL_ROOT}/src)
@@ -356,7 +362,7 @@ add_custom_command (TARGET python
   COMMAND cp -f ${GL_SETUP_DIR}/gl.__init__.py ${GL_PYTHON_DIR}/__init__.py
   COMMAND echo "__version__ = ${VERSION}" >> ${GL_PYTHON_DIR}/__init__.py
   COMMAND echo "__git_version__ = '${GIT_BRANCH}-${GIT_VERSION}'" >> ${GL_PYTHON_DIR}/__init__.py
-  COMMAND OPEN_KNN=${KNN_FLAG} python3 ${GL_SETUP_DIR}/setup.py bdist_wheel
+  COMMAND OPEN_KNN=${KNN_FLAG} ${GL_PYTHON_BIN} ${GL_SETUP_DIR}/setup.py bdist_wheel
   COMMAND ${CMAKE_COMMAND} -E make_directory "${GL_BUILT_BIN_DIR}/ge_data/data"
   COMMAND ${CMAKE_COMMAND} -E make_directory "${GL_BUILT_BIN_DIR}/ge_data/ckpt"
   COMMAND rm -f ${GL_PYTHON_DIR}/__init__.py

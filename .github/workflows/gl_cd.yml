@@ -11,13 +11,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-18.04]
+        os: [ubuntu-20.04]
         python-version: [3.6, 3.7, 3.8, 3.9]
         include:
-          - { os: ubuntu-18.04, python-version: 3.6, python-abis: "cp36-cp36m" }
-          - { os: ubuntu-18.04, python-version: 3.7, python-abis: "cp37-cp37m" }
-          - { os: ubuntu-18.04, python-version: 3.8, python-abis: "cp38-cp38" }
-          - { os: ubuntu-18.04, python-version: 3.9, python-abis: "cp39-cp39" }
+          - { os: ubuntu-20.04, python-version: 3.6, python-abis: "cp36-cp36m" }
+          - { os: ubuntu-20.04, python-version: 3.7, python-abis: "cp37-cp37m" }
+          - { os: ubuntu-20.04, python-version: 3.8, python-abis: "cp38-cp38" }
+          - { os: ubuntu-20.04, python-version: 3.9, python-abis: "cp39-cp39" }
 
     steps:
       - name: Checkout code
@@ -30,4 +30,4 @@ jobs:
           PYABI: ${{ matrix.python-abis }}
           PYPI_PWD: ${{ secrets.PYPI_PWD }}
         run: |
-          source ./.github/workflows/upload_packages.sh
+          source ./.github/workflows/scripts/upload_gl_packages.sh

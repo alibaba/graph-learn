@@ -1,0 +1,88 @@
+name: GraphLearn CI
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/gl_ci.yml'
+      - 'third_party/glog/**'
+      - 'third_party/googletest/**'
+      - 'third_party/grpc/**'
+      - 'third_party/hadoop/**'
+      - 'third_party/pybind11/**'
+      - 'graphlearn/**'
+      - '!graphlearn/docs/**'
+      - '!graphlearn/examples/**'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/gl_ci.yml'
+      - 'third_party/glog/**'
+      - 'third_party/googletest/**'
+      - 'third_party/grpc/**'
+      - 'third_party/hadoop/**'
+      - 'third_party/pybind11/**'
+      - 'graphlearn/**'
+      - '!graphlearn/docs/**'
+      - '!graphlearn/examples/**'
+
+
+jobs:
+  build-gl:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04, ubuntu-20.04]
+        python-version: [2.7, 3.7]
+        include:
+          - { os: ubuntu-18.04, python-version: 2.7, python-abis: "cp27-cp27mu" }
+          - { os: ubuntu-18.04, python-version: 3.7, python-abis: "cp37-cp37m" }
+          - { os: ubuntu-20.04, python-version: 3.7, python-abis: "cp37-cp37m" }
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Lint with flake8
+      working-directory: ${{github.workspace}}/graphlearn
+      run: |
+        pip install flake8
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 python --count --select=E9,F63,F7,F82 --ignore=E111 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 python --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Install Dependencies
+      working-directory: ${{github.workspace}}/graphlearn
+      run: |
+        sudo apt-get -y update
+        sudo ./install_dependencies.sh
+
+        python -m pip install --upgrade pip setuptools wheel
+        pip install numpy
+
+    - name: Build
+      working-directory: ${{github.workspace}}/graphlearn
+      run: |
+        mkdir build
+        cd build
+        cmake -DDEBUG=ON -DGL_PYTHON_BIN=python ..
+        export BUILD_CONCURRENCY=$(cat < /proc/cpuinfo | grep -c "processor")
+        make -j${BUILD_CONCURRENCY}
+        make python -j4
+
+    - name: Cpp test
+      working-directory: ${{github.workspace}}/graphlearn
+      run: |
+        source env.sh
+        ./test_cpp_ut.sh
+
+    - name: Python package&test.
+      working-directory: ${{github.workspace}}/graphlearn
+      run: |
+        pip install dist/*.whl
+        ./test_python_ut.sh

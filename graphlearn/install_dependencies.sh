@@ -18,16 +18,6 @@ else
 fi
 
 debian_packages=(
-  # basic
-  gcc
-  g++
-  make
-  cmake
-  pkg-config
-  # python
-  python3
-  python3-pip
-  # project common dependencies
   libopenblas-dev
   libgflags-dev
   libssl-dev
@@ -42,9 +32,6 @@ else
   echo "Your system ($ID) is not supported by this script. Please install dependencies manually or build in ubuntu env."
   exit 1
 fi
-
-python3 -m pip install --upgrade pip setuptools wheel
-pip install numpy
 
 ## installing submodules
 
