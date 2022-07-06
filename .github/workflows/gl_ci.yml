@@ -58,6 +58,7 @@ jobs:
       working-directory: ${{github.workspace}}/graphlearn
       run: |
         sudo apt-get -y update
+        cmake --version
         sudo ./install_dependencies.sh
         python -m pip install --upgrade pip setuptools wheel
         pip install numpy
