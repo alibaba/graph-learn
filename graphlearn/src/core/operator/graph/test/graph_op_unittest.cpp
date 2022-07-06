@@ -14,6 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include <fstream>
+#include <thread>
 #include <unordered_set>
 #include "common/base/errors.h"
 #include "common/base/log.h"
@@ -31,6 +32,8 @@ using namespace graphlearn::op;  // NOLINT [build/namespaces]
 class GraphOpTest : public ::testing::Test {
 public:
   GraphOpTest() {
+    // sleep for a while to avoid logging file name conflict error
+    std::this_thread::sleep_for(std::chrono::milliseconds (100));
     InitGoogleLogging();
   }
   ~GraphOpTest() {

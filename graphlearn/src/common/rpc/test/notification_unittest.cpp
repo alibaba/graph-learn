@@ -16,6 +16,7 @@ limitations under the License.
 #include "common/rpc/notification.h"
 
 #include <iostream>
+#include <thread>
 #include "gtest/gtest.h"
 #include "common/base/errors.h"
 #include "common/base/log.h"
@@ -26,6 +27,8 @@ using namespace ::testing;  //NOLINT
 class RpcNotificationTest : public ::testing::Test {
 protected:
   void SetUp() override {
+    // sleep for a while to avoid logging file name conflict error
+    std::this_thread::sleep_for(std::chrono::milliseconds (100));
     InitGoogleLogging();
     notification_ = new RpcNotification;
   }
