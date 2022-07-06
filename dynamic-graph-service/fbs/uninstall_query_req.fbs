@@ -1,7 +1,0 @@
-namespace dgs;
-
-table UnInstallQueryRequestRep {
-  query_id:uint32;
-}
-
-root_type UnInstallQueryRequestRep;

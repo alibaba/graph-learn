@@ -1,8 +1,0 @@
-namespace dgs;
-
-table RunQueryRequestRep {
-  query_id:uint32;
-  vid:int64;
-}
-
-root_type RunQueryRequestRep;
