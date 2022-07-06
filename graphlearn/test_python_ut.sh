@@ -8,7 +8,7 @@ usage() {
   echo "Usage: $0 [-p <python | python3>" 1>&2; exit 1;
 }
 
-PYTHON=python
+PYTHON=python3
 while getopts ":p:" o; do
     case "${o}" in
         p)

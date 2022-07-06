@@ -91,7 +91,7 @@ setup(
     },
     ext_package='graphlearn',
     ext_modules=extensions,
-    packages=find_packages(),
+    packages=find_packages(where='..'),
     package_dir={'graphlearn': '.'},
     package_data={'': ['python/lib/lib*.so*']},
     license='Apache License 2.0',
