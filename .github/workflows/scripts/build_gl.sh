@@ -11,7 +11,6 @@ PYBIN=/opt/python/${PYABI}/bin
 
 pushd "${gl_root_dir}"
 
-git submodule update --init
 "${gl_root_dir}"/install_dependencies.sh
 
 rm -rf built

@@ -27,6 +27,8 @@ debian_packages=(
   # python
   python3
   python3-pip
+  # jdk
+  openjdk-8-jdk
   # project common dependencies
   libyaml-cpp-dev
   librdkafka-dev
@@ -74,6 +76,7 @@ fi
 echo "-- installing hiactor ..."
 if [ ! -f "${third_party_dir}/hiactor/build/include/hiactor/core/actor-template.hh" ]; then
   pushd "${third_party_dir}/hiactor"
+  git submodule update --init hiactor
   /bin/bash build.sh
   popd
 fi
@@ -82,6 +85,7 @@ fi
 echo "-- installing cppkafka ..."
 if [ ! -f "${third_party_dir}/cppkafka/build/include/cppkafka/cppkafka.h" ]; then
   pushd "${third_party_dir}/cppkafka"
+  git submodule update --init cppkafka
   /bin/bash build.sh
   popd
 fi
@@ -90,6 +94,7 @@ fi
 echo "-- installing flatbuffers ..."
 if [ ! -f "${third_party_dir}/flatbuffers/build/include/flatbuffers/flatbuffers.h" ]; then
   pushd "${third_party_dir}/flatbuffers"
+  git submodule update --init flatbuffers
   /bin/bash build.sh
   popd
 fi
@@ -98,6 +103,7 @@ fi
 echo "-- installing glog ..."
 if [ ! -f "${third_party_dir}/glog/build/include/glog/logging.h" ]; then
   pushd "${third_party_dir}/glog"
+  git submodule update --init glog
   /bin/bash build.sh
   popd
 fi
@@ -106,6 +112,7 @@ fi
 echo "-- installing googletest ..."
 if [ ! -f "${third_party_dir}/googletest/build/include/gtest/gtest.h" ]; then
   pushd "${third_party_dir}/googletest"
+  git submodule update --init googletest
   /bin/bash build.sh
   popd
 fi
@@ -114,6 +121,7 @@ fi
 echo "-- installing grpc ..."
 if [ ! -f "${third_party_dir}/grpc/build/include/grpc++/grpc++.h" ]; then
   pushd "${third_party_dir}/grpc"
+  git submodule update --init grpc
   /bin/bash build.sh
   popd
 fi
@@ -122,6 +130,7 @@ fi
 echo "-- installing rocksdb ..."
 if [ ! -f "${third_party_dir}/rocksdb/build/include/rocksdb/db.h" ]; then
   pushd "${third_party_dir}/rocksdb"
+  git submodule update --init rocksdb
   /bin/bash build.sh
   popd
 fi

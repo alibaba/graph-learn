@@ -40,7 +40,7 @@ jobs:
           - { os: ubuntu-20.04, python-version: 3.7, python-abis: "cp37-cp37m" }
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Set up Python
       uses: actions/setup-python@v1
@@ -61,7 +61,6 @@ jobs:
       run: |
         sudo apt-get -y update
         sudo ./install_dependencies.sh
-
         python -m pip install --upgrade pip setuptools wheel
         pip install numpy
 
