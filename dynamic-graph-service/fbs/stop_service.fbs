@@ -1,0 +1,7 @@
+namespace dgs;
+
+table StopServiceRequestRep {
+  force: bool;
+}
+
+root_type StopServiceRequestRep;

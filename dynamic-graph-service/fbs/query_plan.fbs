@@ -1,0 +1,9 @@
+include "plan_node.fbs";
+
+namespace dgs;
+
+table QueryPlanRep {
+  plan_nodes:[dgs.PlanNodeRep];
+}
+
+root_type QueryPlanRep;

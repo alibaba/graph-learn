@@ -1,0 +1,72 @@
+name: DynamicGraphService CI
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/dgs_ci.yml'
+      - 'third_party/cppkafka/**'
+      - 'third_party/glog/**'
+      - 'third_party/googletest/**'
+      - 'third_party/grpc/**'
+      - 'third_party/hiactor/**'
+      - 'third_party/rocksdb/**'
+      - 'dynamic-graph-service/**'
+      - '!dynamic-graph-service/dataloader/**'
+      - '!dynamic-graph-service/gsl_client/**'
+      - '!dynamic-graph-service/k8s/**'
+      - '!dynamic-graph-service/**.md'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/dgs_ci.yml'
+      - 'third_party/cppkafka/**'
+      - 'third_party/glog/**'
+      - 'third_party/googletest/**'
+      - 'third_party/grpc/**'
+      - 'third_party/hiactor/**'
+      - 'third_party/rocksdb/**'
+      - 'dynamic-graph-service/**'
+      - '!dynamic-graph-service/dataloader/**'
+      - '!dynamic-graph-service/gsl_client/**'
+      - '!dynamic-graph-service/k8s/**'
+      - '!dynamic-graph-service/**.md'
+
+jobs:
+  build-dgs:
+    runs-on: ubuntu-20.04
+    if: ${{ github.repository == 'alibaba/graph-learn' }}
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Download third-party built package
+      working-directory: ${{github.workspace}}/third_party
+      run: |
+        wget -q https://graphlearn.oss-cn-hangzhou.aliyuncs.com/package/dgs_third_party_built.tgz
+        tar zxvf dgs_third_party_built.tgz
+
+    - name: Install Dependencies
+      working-directory: ${{github.workspace}}/dynamic-graph-service
+      run: |
+        sudo apt-get -y update
+        sudo ./install_dependencies.sh
+
+    - name: Build
+      working-directory: ${{github.workspace}}/dynamic-graph-service
+      run: |
+        mkdir build
+        cd build
+        cmake -DENABLE_GCOV=ON -DDEBUG=ON -DBENCHMARKING=ON ..
+        export BUILD_CONCURRENCY=$(cat < /proc/cpuinfo | grep -c "processor")
+        make -j${BUILD_CONCURRENCY}
+
+    - name: Run unittest
+      working-directory: ${{github.workspace}}/dynamic-graph-service
+      run: |
+        ./run_unittest.sh
+
+    - name: Upload Coverage
+      uses: codecov/codecov-action@v2
+      working-directory: ${{github.workspace}}/dynamic-graph-service
+      run: |
+        echo "TODO"

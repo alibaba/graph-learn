@@ -1,0 +1,47 @@
+namespace dgs;
+
+enum AttributeValueTypeRep : uint8 {
+  UNSPECIFIED = 0,
+  BOOL = 1,
+  CHAR = 2,
+  INT16 = 3,
+  INT32 = 4,
+  INT64 = 5,
+  FLOAT32 = 6,
+  FLOAT64 = 7,
+  STRING = 8,
+  BYTES = 9,
+}
+
+table AttributeDefRep {
+  type:int16;
+  name:string;
+  value_type:AttributeValueTypeRep;
+}
+
+table VertexDefRep {
+  vtype:int16;
+  name:string;
+  attr_types:[int16];
+}
+
+table EdgeDefRep {
+  etype:int16;
+  name:string;
+  attr_types:[int16];
+}
+
+table EdgeRelationDefRep {
+  etype:int16;
+  src_vtype:int16;
+  dst_vtype:int16;
+}
+
+table SchemaRep {
+  attr_defs:[AttributeDefRep];
+  vertex_defs:[VertexDefRep];
+  edge_defs:[EdgeDefRep];
+  edge_relation_defs:[EdgeRelationDefRep];
+}
+
+root_type SchemaRep;

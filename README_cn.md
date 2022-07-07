@@ -30,7 +30,7 @@ GraphSAGE示例
 cd examples/tf/ego_sage/
 python train_unsupervised.py
 ```
-[分布式训练示例](graphlearn/docs/zh_CN/algo/tf/k8s)
+[分布式训练示例](graphlearn/docs/zh_CN/algo/tf/k8s.md)
 
 ## 论文
 

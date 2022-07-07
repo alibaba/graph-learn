@@ -1,0 +1,127 @@
+{
+  "types": [
+    {
+      "id": 1,
+      "label": "user",
+      "type": "VERTEX",
+      "isDimensionType": false,
+      "propertyDefList": [
+        {
+          "id": 1,
+          "name": "id",
+          "data_type": "LONG",
+          "hasDefaultValue": false,
+          "defaultValue": null,
+          "comment": "id"
+        },
+        {
+          "id": 2,
+          "name": "timestamp",
+          "data_type": "LONG",
+          "hasDefaultValue": false,
+          "defaultValue": null,
+          "comment": "timestamp"
+        },
+        {
+          "id": 3,
+          "name": "weight",
+          "data_type": "FLOAT",
+          "hasDefaultValue": false,
+          "defaultValue": null,
+          "comment": "weight"
+        },
+        {
+          "id": 4,
+          "name": "label",
+          "data_type": "INT",
+          "hasDefaultValue": false,
+          "defaultValue": null,
+          "comment": "label"
+        },
+        {
+          "id": 5,
+          "name": "attr",
+          "data_type": "STRING",
+          "hasDefaultValue": false,
+          "defaultValue": null,
+          "comment": "attr"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "PRIMARY_KEY",
+          "indexType": "PRIMARY_KEY",
+          "propertyNames": [
+            "id"
+          ]
+        }
+      ],
+      "comment": "",
+      "version": 1
+    },
+    {
+      "id": 2,
+      "label": "knows",
+      "type": "EDGE",
+      "isDimensionType": false,
+      "propertyDefList": [
+        {
+          "id": 1,
+          "name": "id",
+          "data_type": "LONG",
+          "hasDefaultValue": false,
+          "defaultValue": null,
+          "comment": "id"
+        },
+        {
+          "id": 2,
+          "name": "timestamp",
+          "data_type": "LONG",
+          "hasDefaultValue": false,
+          "defaultValue": null,
+          "comment": "timestamp"
+        },
+        {
+          "id": 3,
+          "name": "weight",
+          "data_type": "FLOAT",
+          "hasDefaultValue": false,
+          "defaultValue": null,
+          "comment": "weight"
+        },
+        {
+          "id": 4,
+          "name": "label",
+          "data_type": "INT",
+          "hasDefaultValue": false,
+          "defaultValue": null,
+          "comment": "label"
+        },
+        {
+          "id": 5,
+          "name": "attr",
+          "data_type": "STRING",
+          "hasDefaultValue": false,
+          "defaultValue": null,
+          "comment": "attr"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "UNIQUE_WITH_EDGE",
+          "indexType": "UNIQUE_WITH_EDGE",
+          "propertyNames": []
+        }
+      ],
+      "comment": "",
+      "version": 1,
+      "relationShips": [
+        {
+          "srcVertexLabel": "user",
+          "dstVertexLabel": "user",
+          "edgeLabel": "knows"
+        }
+      ]
+    }
+  ]
+}

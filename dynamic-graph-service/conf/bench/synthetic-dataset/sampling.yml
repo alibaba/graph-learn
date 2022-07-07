@@ -1,0 +1,45 @@
+worker-type: "Sampling"
+
+fbs-file-dir: "../../fbs"
+schema-file: "../../conf/schema.template.json"
+
+rdb-env:
+  high-prio-bg-threads-num: 8
+  low-prio-bg-threads-num: 8
+
+sample-store:
+  in-memory-mode: False
+  db-path: "./pv"
+  backup-path: "./pv"
+  memtable-rep: "hashskiplist"
+  hash-bucket-count: 1048576
+  skip-list-lookahead: 0
+  block-cache-capacity: 4294967296
+  ttl-hours: 1000
+
+subscription-table:
+  table-path: "./pv"
+  backup-path: "./pv"
+  memtable-rep: "hashskiplist"
+  hash-bucket-count: 1048576
+  skip-list-lookahead: 0
+  block-cache-capacity: 4294967296
+  ttl-hours: 1000
+
+record-polling:
+  thread-num: 12
+  retry-interval-ms: 10
+  process-concurrency: 100
+
+sample-publishing:
+  producer-pool-size: 12
+  max-produce-retry-times: 1
+  callback-poll-interval-ms: 50
+
+logging:
+  data-log-period: 1000
+  rule-log-period: 2000
+
+coordinator-client:
+  server-ipaddr: "0.0.0.0:50051"
+  wait-time-in-sec: 60

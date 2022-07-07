@@ -1,0 +1,13 @@
+include "record.fbs";
+
+namespace dgs;
+
+table EntryRep {
+  opid: uint8;
+  vid: int64;
+  value: RecordBatchRep;
+}
+
+table QueryResponseRep {
+  results: [EntryRep];
+}

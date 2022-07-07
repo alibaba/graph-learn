@@ -33,7 +33,7 @@ cd examples/tf/ego_sage/
 python train_unsupervised.py
 ```
 
-[Distributed training example](graphlearn/docs/en/algo/tf/k8s)
+[Distributed training example](graphlearn/docs/en/algo/tf/k8s.md)
 
 
 

@@ -1,0 +1,47 @@
+worker-type: "Sampling"
+
+fbs-file-dir: "../../fbs"
+schema-file: "../../conf/bench/u2i2i/schema.json"
+
+rdb-env:
+  high-prio-bg-threads-num: 24
+  low-prio-bg-threads-num: 24
+
+sample-store:
+  in-memory-mode: False
+  db-path: "./pv"
+  backup-path: "./pv"
+  memtable-rep: "hashskiplist"
+  hash-bucket-count: 1048576
+  skip-list-lookahead: 0
+  # 32GB
+  block-cache-capacity: 32212254720
+  ttl-hours: 1200
+
+subscription-table:
+  table-path: "./pv"
+  backup-path: "./pv"
+  memtable-rep: "hashskiplist"
+  hash-bucket-count: 1048576
+  skip-list-lookahead: 0
+  # 10GB
+  block-cache-capacity: 10737418240
+  ttl-hours: 1200
+
+record-polling:
+  thread-num: 12
+  retry-interval-ms: 10
+  process-concurrency: 100
+
+sample-publishing:
+  producer-pool-size: 12
+  max-produce-retry-times: 1
+  callback-poll-interval-ms: 50
+
+logging:
+  data-log-period: 10000
+  rule-log-period: 100000
+
+coordinator-client:
+  server-ipaddr: "100.82.16.17:50051"
+  wait-time-in-sec: 60
