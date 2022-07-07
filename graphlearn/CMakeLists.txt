@@ -173,7 +173,7 @@ if (KNN)
   add_custom_command (
     OUTPUT ${FAISS_DEPENDENT_FILES}
     COMMENT "downloading faiss package: ${FAISS_PKG} ..."
-    COMMAND /bin/sh -c "wget -O ${FAISS_PKG} ${FAISS_RESOURCE}"
+    COMMAND /bin/sh -c "wget -q -O ${FAISS_PKG} ${FAISS_RESOURCE}"
     COMMAND /bin/sh -c "tar -zxf ${FAISS_PKG}"
     WORKING_DIRECTORY ${FAISS_BUILT_DIR}
     VERBATIM)
