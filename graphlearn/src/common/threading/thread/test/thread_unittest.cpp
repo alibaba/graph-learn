@@ -38,7 +38,7 @@ struct Foo {
 TEST(ThreadTest, LaunchWithFunction) {
     Closure<void>* func = NewClosure(&ThreadFunc);
     ThreadHandle handle = CreateThread(func);
-    ::usleep(10000);
+    ::usleep(100000);
     EXPECT_NE(0u, handle);
     EXPECT_EQ(1, sCount);
 }
@@ -47,7 +47,7 @@ TEST(ThreadTest, LaunchWithMethod) {
     Foo foo;
     Closure<void>* func = NewClosure(&foo, &Foo::Bar);
     ThreadHandle handle = CreateThread(func);
-    ::usleep(10000);
+    ::usleep(100000);
     EXPECT_NE(0u, handle);
     EXPECT_EQ(1, foo.count_);
 }
