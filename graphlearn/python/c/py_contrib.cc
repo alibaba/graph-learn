@@ -16,8 +16,8 @@ limitations under the License.
 #include <cstdint>
 #include <typeinfo>
 
-#include "graphlearn/contrib/knn/knn_request.h"
-#include "graphlearn/python/c/py_bind.h"
+#include "contrib/knn/knn_request.h"
+#include "python/c/py_bind.h"
 
 using namespace graphlearn;
 

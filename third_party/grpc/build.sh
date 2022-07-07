@@ -1,13 +1,20 @@
-mkdir -p build
-install_dir=`pwd`/build
+#!/bin/bash
 
-# switch grpc to the version
-cd grpc
-git checkout v1.26.x
-git submodule update --init
+script_dir=$(dirname "$(realpath "$0")")
+code_src=${script_dir}/grpc
+install_prefix=${script_dir}/build
+cores=$(cat < /proc/cpuinfo | grep -c "processor")
 
-make static -j10
-
-make install-headers prefix=${install_dir}
-make install-static prefix=${install_dir}
-make install-plugins prefix=${install_dir}
+cd "${code_src}" && git submodule update --init third_party/protobuf third_party/abseil-cpp third_party/re2 && \
+mkdir -p cmake/build && cd cmake/build && \
+cmake -DCMAKE_CXX_FLAGS="-fPIC" \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DgRPC_INSTALL=ON \
+  -DCMAKE_INSTALL_PREFIX="${install_prefix}" \
+  -DgRPC_BUILD_TESTS=OFF \
+  -DgRPC_CARES_PROVIDER=package \
+  -DgRPC_SSL_PROVIDER=package \
+  -DgRPC_ZLIB_PROVIDER=package \
+  ../.. && \
+make -j"${cores}" && make install &&
+cp -r "${code_src}"/third_party/abseil-cpp/absl "${install_prefix}"/include

@@ -1,9 +1,10 @@
-# switch to the version
-cd googletest
-git checkout v1.8.x
-cd ..
+#!/bin/bash
 
-mkdir -p build
-cd build
-cmake ../googletest
-make
+script_dir=$(dirname "$(realpath "$0")")
+code_src=${script_dir}/googletest
+install_prefix=${script_dir}/build
+cores=$(cat < /proc/cpuinfo | grep -c "processor")
+
+cd "${code_src}" && mkdir -p build && cd build && \
+cmake -DCMAKE_CXX_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX="${install_prefix}" .. && \
+make -j"${cores}" && make install

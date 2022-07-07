@@ -20,9 +20,9 @@ Graph-Learn提供了图采样操作的Python和C++接口，并且提供了一个
 pip install graph-learn
 ```
 
-2. [从源码编译](docs/zh_CN/install.md)
+2. [从源码编译](graphlearn/docs/zh_CN/install.md)
 
-3. [使用Docker](docs/zh_CN/install.md)
+3. [使用Docker](graphlearn/docs/zh_CN/install.md)
 
 ## 开始使用
 GraphSAGE示例
@@ -30,7 +30,7 @@ GraphSAGE示例
 cd examples/tf/ego_sage/
 python train_unsupervised.py
 ```
-[分布式训练示例](docs/zh_CN/algo/tf/k8s)
+[分布式训练示例](graphlearn/docs/zh_CN/algo/tf/k8s)
 
 ## 论文
 
