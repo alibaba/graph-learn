@@ -61,6 +61,7 @@ function stop_kafka_cluster() {
 function run_ut() {
   pushd "${built_bin_dir}"
   # start naive coordinator first
+  ps -ef | grep "naive_coordinator" | grep -v grep | awk '{print $2}' | xargs kill -9
   ./naive_coordinator 1 &
   # run tests
   for i in *_unittest
