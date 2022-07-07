@@ -355,9 +355,9 @@ if (APPS)
 endif ()
 
 ## benchmarking
-#if (BENCHMARKING)
+if (BENCHMARKING)
   add_subdirectory (benchmark)
-#endif ()
+endif ()
 
 ## packaging binary, dynamic libs and files
 set (DGS_PACKAGE_DIR dgs_package)

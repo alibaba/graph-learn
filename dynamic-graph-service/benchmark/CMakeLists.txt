@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set (GL_BUILT_BENCHMARK_DIR ${GL_ROOT}/built/benchmark)
+set (DGS_BUILT_BENCHMARK_DIR ${DGS_ROOT}/built/benchmark)
 
 add_subdirectory (kafka)
 add_subdirectory (sample_builder)

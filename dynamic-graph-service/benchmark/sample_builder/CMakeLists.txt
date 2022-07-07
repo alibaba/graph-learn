@@ -21,6 +21,8 @@ target_link_libraries (sample_builder_test
     -Wl,--no-whole-archive)
 add_dependencies (sample_builder_test dgs)
 set_target_properties (sample_builder_test
-  PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${GL_BUILT_BENCHMARK_DIR}/sample_builder)
+  PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${DGS_BUILT_BENCHMARK_DIR}/sample_builder)
 
 add_executable (map_test map_test.cc)
+set_target_properties (map_test
+  PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${DGS_BUILT_BENCHMARK_DIR}/sample_builder)

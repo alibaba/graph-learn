@@ -26,4 +26,4 @@ target_link_libraries (kafka-driver
 
 set_target_properties (kafka-driver
   PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${GL_BUILT_BENCHMARK_DIR}/kafka)
+    RUNTIME_OUTPUT_DIRECTORY ${DGS_BUILT_BENCHMARK_DIR}/kafka)
