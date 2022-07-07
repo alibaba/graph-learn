@@ -96,7 +96,7 @@ function (generate_fbs_headers target_name fbs_gen_headers)
     add_custom_command (
       OUTPUT "${DGS_FBS_GEN_DIR}/${FIL_WE}_generated.h"
       DEPENDS flatbuffers::flatc ${FIL}
-      COMMENT "Generating for flatbuffers file: ${FIL_WE}.fbs ..."
+      COMMENT "-- Generating for flatbuffers file: ${FIL_WE}.fbs ..."
       COMMAND flatbuffers::flatc -o ${DGS_FBS_GEN_DIR} --gen-mutable --cpp ${FIL}
       WORKING_DIRECTORY
       VERBATIM)
@@ -141,7 +141,7 @@ function (generate_grpc_files target_name grpc_gen_files)
     add_custom_command (
       OUTPUT ${GEN_FILES}
       DEPENDS protobuf::protoc ${DGS_GRPC_CPP_PLUGIN} ${FIL}
-      COMMENT "Generating for proto file: ${FIL_WE}.proto ..."
+      COMMENT "-- Generating for proto file: ${FIL_WE}.proto ..."
       COMMAND protobuf::protoc -I ${DGS_PROTO_DIR} --cpp_out=${DGS_PROTO_GEN_DIR} ${FIL}
       COMMAND protobuf::protoc -I ${DGS_PROTO_DIR} --grpc_out=${DGS_PROTO_GEN_DIR}
         --plugin=protoc-gen-grpc=${DGS_GRPC_CPP_PLUGIN} ${FIL}
@@ -304,25 +304,26 @@ if (TESTING)
   add_dgs_tests (${DGS_TEST_FILES})
 
   if (ENABLE_GCOV)
-    add_custom_target (code_coverage)
-    execute_process(
-      COMMAND rm -rf ${DGS_BUILD_DIR}/coverage/
-      COMMAND mkdir -p ${DGS_BUILD_DIR}/coverage/
-    )
-
+    file (MAKE_DIRECTORY ${DGS_BUILD_DIR}/coverage/targets)
+    set (DGS_COV_TARGET_FILES)
     foreach (ORIGIN_CC ${DGS_TEST_FILES})
       string (REGEX REPLACE "${DGS_ROOT}" "${DGS_BUILD_DIR}/CMakeFiles" OBJ_DIR ${ORIGIN_CC})
       string (REGEX REPLACE "(.*CMakeFiles)(.*)/test/(.*).cpp" "\\1/\\3.dir\\2/test" OBJ_DIR ${OBJ_DIR})
       get_filename_component (TEST_FILE ${ORIGIN_CC} NAME_WE)
-      set (THIS_GCOV_TARGET ${TEST_FILE}_gcov)
-      add_custom_target (${THIS_GCOV_TARGET})
-      add_custom_command (TARGET ${THIS_GCOV_TARGET}
-        COMMAND cp ${OBJ_DIR}/*.gcno ${DGS_BUILD_DIR}/coverage/
-        COMMAND cp ${OBJ_DIR}/*.gcda ${DGS_BUILD_DIR}/coverage/
-        WORKING_DIRECTORY ${DGS_BUILD_DIR}
-      )
-      add_dependencies (code_coverage ${THIS_GCOV_TARGET})
+      list (APPEND DGS_COV_TARGET_FILES
+        ${DGS_BUILD_DIR}/coverage/targets/${TEST_FILE}.gcno
+        ${DGS_BUILD_DIR}/coverage/targets/${TEST_FILE}.gcda)
+      add_custom_command (
+        OUTPUT
+          ${DGS_BUILD_DIR}/coverage/targets/${TEST_FILE}.gcno
+          ${DGS_BUILD_DIR}/coverage/targets/${TEST_FILE}.gcda
+        COMMENT "-- Collecting code coverage targets of ${TEST_FILE}"
+        COMMAND cp -f ${OBJ_DIR}/${TEST_FILE}.gcno ${DGS_BUILD_DIR}/coverage/targets/
+        COMMAND cp -f ${OBJ_DIR}/${TEST_FILE}.gcda ${DGS_BUILD_DIR}/coverage/targets/
+        WORKING_DIRECTORY ${DGS_BUILD_DIR})
     endforeach ()
+    add_custom_target (code_coverage
+      DEPENDS ${DGS_COV_TARGET_FILES})
   endif ()
 endif ()
 

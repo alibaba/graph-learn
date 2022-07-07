@@ -67,6 +67,6 @@ jobs:
 
     - name: Upload Coverage
       uses: codecov/codecov-action@v2
-      working-directory: ${{github.workspace}}/dynamic-graph-service
-      run: |
-        echo "TODO"
+      with:
+        directory: ./dynamic-graph-service/build/coverage/reports/
+        fail_ci_if_error: true
