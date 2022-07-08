@@ -16,6 +16,7 @@ limitations under the License.
 #include "gtest/gtest.h"
 
 #include "common/log.h"
+#include "common/options.h"
 #include "core/io/record_builder.h"
 #include "core/storage/sample_store.h"
 
@@ -75,7 +76,7 @@ public:
     std::vector<storage::KVPair> ret;
     EXPECT_TRUE(store->GetEdgesByPrefix(pkey, &ret));
 
-    auto& opts = Options::GetInstance.GetSampleStoreOptions();
+    auto& opts = Options::GetInstance().GetSampleStoreOptions();
     env_->Sleep(opts.ttl_in_hours * 60 * 60 + 1);
 
     io::Record record_expired;
