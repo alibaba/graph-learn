@@ -21,11 +21,11 @@ serving:
 kafka:
   dl2spl:
     servers:
-      - "100.82.16.15:9092"
+      - "localhost:9092"
     topic: "record-batches"
     partitions: 2
   spl2srv:
     servers:
-      - "100.82.16.15:9092"
+      - "localhost:9092"
     topic: "sample-batches"
     partitions: 4

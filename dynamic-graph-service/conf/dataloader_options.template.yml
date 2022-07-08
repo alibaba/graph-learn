@@ -1,7 +1,7 @@
 fbs-file-dir: "../../../fbs"
 schema-file: "../../../conf/testing_schema.json"
 
-coord-ipaddr: "100.82.16.14:50051"
+coord-ipaddr: "localhost:50051"
 coord-connect-timeout-sec: 60
 coord-heartbeat-interval-sec: 60
 
@@ -10,7 +10,7 @@ output-batch-size: 16
 graphscope:
   log-polling:
     kafka-brokers:
-      - "100.82.16.15:9092"
+      - "localhost:9092"
     kafka-topic: "graph_store"
     kafka-partition-num: 2
     meta-dir: "./polling_offsets"

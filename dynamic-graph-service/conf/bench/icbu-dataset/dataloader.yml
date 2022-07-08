@@ -1,7 +1,0 @@
-fbs-file-dir: "../../../fbs"
-schema-file: "../../../conf/bench/icbu-dataset/schema.json"
-
-coord-ipaddr: "100.82.16.13:50051"
-coord-connect-timeout-sec: 60
-
-output-batch-size: 2000

@@ -26,5 +26,5 @@ event-handler:
   http-port: 10000
 
 coordinator-client:
-  server-ipaddr: "100.82.16.13:50051"
+  server-ipaddr: "localhost:50051"
   wait-time-in-sec: 60
