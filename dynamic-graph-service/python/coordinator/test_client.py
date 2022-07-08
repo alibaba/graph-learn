@@ -131,7 +131,7 @@ def main():
   install_query_req = None
   with open (json_file, 'r') as f:
     install_query_req = json.loads(f.read())
-  # TODO: fixme
+  # TODO(@Seventeen17): fixme
   os.system("curl -X POST -H \"Content-Type: text/plain\" -d \'"
             + json.dumps(install_query_req) + "\' http://127.0.0.1:8080/administration/init/")
   time.sleep(2)

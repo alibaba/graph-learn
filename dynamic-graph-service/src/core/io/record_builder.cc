@@ -115,7 +115,7 @@ void RecordBatchBuilder::AddRecord(const RecordView& view) {
       break;
     }
     default: {
-      // TODO(@houbai.zzc): log with warning info
+      // TODO(@goldenleaves): log with warning info
     }
   }
 }

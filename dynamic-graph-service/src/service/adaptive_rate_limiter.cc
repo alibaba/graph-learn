@@ -69,14 +69,14 @@ void AdaptiveRateLimiter::RunUntilTerminate() {
               << ", #total latencies: " << latencies_.size();
     if (num_lte_p99_lats_ < 0.99 * latencies_.size()) {
       // decrease kafka polling concurrency.
-      // FIXME(@xmqin): we need to fine-tune a optimial scale value.
+      // FIXME(@goldenleaves): we need to fine-tune a optimial scale value.
       kafka_polling_concur_ = std::max(uint32_t(kafka_polling_concur_ / 3), 1u);
       kafka_poller_manager_->SetConcurrency(kafka_polling_concur_);
       num_stable_p99_ = 0;
     } else {
       // increase kafka polling concurrency in a conservative way
       if (++num_stable_p99_ % k_window_size_ == 0) {
-        // FIXME(@xmqin): we need to fine-tune a optimial scale value.
+        // FIXME(@goldenleaves): we need to fine-tune a optimial scale value.
         kafka_polling_concur_ = std::min(uint32_t(kafka_polling_concur_ * 1.3),
             poll_kakfa_max_concur_);
         kafka_poller_manager_->SetConcurrency(kafka_polling_concur_);

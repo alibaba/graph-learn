@@ -6,7 +6,7 @@ import java.util.Map;
 
 import org.aliyun.dgs.AttributeValueTypeRep;
 
-// TODO(wenting.swt): this is a temporary implementation
+// TODO(@Seventeen17): this is a temporary implementation
 public class Decoder {
   private Map<Short, ArrayList<Integer>> featTypes = new HashMap<>();
   private Map<Short, ArrayList<Integer>> featDims = new HashMap<>();

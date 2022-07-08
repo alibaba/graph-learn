@@ -51,7 +51,7 @@ class ZipfTimestampGenerator(TimestampGenerator):
     super(ZipfTimestampGenerator, self).__init__(low, high, kwargs)
 
   def next(self):
-    # TODO
+    # TODO(@Seventeen17)
     pass
 
 class PowerTimestampGenerator(TimestampGenerator):
@@ -59,7 +59,7 @@ class PowerTimestampGenerator(TimestampGenerator):
     super(PowerTimestampGenerator, self).__init__(low, high, kwargs)
 
   def next(self):
-    # TODO
+    # TODO(@Seventeen17)
     pass
 
 """

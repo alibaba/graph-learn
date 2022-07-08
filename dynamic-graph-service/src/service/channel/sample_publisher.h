@@ -110,7 +110,7 @@ public:
                                  uint32_t serving_worker_num);
 
 private:
-  // FIXME(@xmqin): use flat vector instead.
+  // FIXME(@goldenleaves): use flat vector instead.
   using WorkerWisePartitions = std::vector<std::vector<const storage::KVPair*>>;
 
 private:

@@ -72,7 +72,7 @@ SubscriptionTable::SubscriptionTable(
 }
 
 void SubscriptionTable::Configure(RdbEnv* rdb_env) {
-  // TODO(@xmqin): using HDFS enabled Env instead.
+  // TODO(@goldenleaves): using HDFS enabled Env instead.
   backup_env_ = rocksdb::Env::Default();
 
   auto& gl_opts = Options::GetInstance().GetSubscriptionTableOptions();
@@ -85,12 +85,12 @@ void SubscriptionTable::Configure(RdbEnv* rdb_env) {
   rdb_options_.max_background_jobs = 4;
   rdb_options_.compression = rocksdb::kLZ4Compression;
 
-  // TODO(@xmqin): configure bloom filter.
+  // TODO(@goldenleaves): configure bloom filter.
   rocksdb::BlockBasedTableOptions table_options;
   table_options.index_type = rocksdb::BlockBasedTableOptions::kHashSearch;
   table_options.cache_index_and_filter_blocks = true;
   table_options.pin_l0_filter_and_index_blocks_in_cache = true;
-  // TODO(@xmqin): set num_shards_bit
+  // TODO(@goldenleaves): set num_shards_bit
   table_options.block_cache = rocksdb::NewLRUCache(
       gl_opts.block_cache_capacity);
   rdb_options_.table_factory.reset(
@@ -322,7 +322,7 @@ bool SubscriptionTable::PartitionedTable::Open(PartitionId partition_id,
                                                const rocksdb::Options& options,
                                                rocksdb::Env* backup_env,
                                                uint32_t ttl_in_seconds) {
-  // TODO(@xmqin): check whether db_path&backup_path is end with '/'
+  // TODO(@goldenleaves): check whether db_path&backup_path is end with '/'
   auto db_name = db_path + "/subs_table_part_" + std::to_string(partition_id);
   auto be_name = backup_path + "/subs_table_bak_part_"
                               + std::to_string(partition_id);
@@ -344,7 +344,6 @@ bool SubscriptionTable::PartitionedTable::Restore(const SubsPartitionBackupInfo&
                                                   rocksdb::Env* backup_env,
                                                   uint32_t ttl_in_seconds) {
   auto partition_id = bk_info.pid;
-  // TODO(@LiSu) add "/" after the path?
   auto db_name = db_path + "/subs_table_part_" + std::to_string(partition_id);
   auto be_name = backup_path + "/subs_table_bak_part_"
                               + std::to_string(partition_id);
@@ -371,7 +370,7 @@ bool SubscriptionTable::PartitionedTable::Close() {
   LOG_RETURN_IF_STATUS_NOT_OK(s);
 
   is_open = false;
-  // TODO(@xmqin): cleanup backup engine.
+  // TODO(@goldenleaves): cleanup backup engine.
   return true;
 }
 

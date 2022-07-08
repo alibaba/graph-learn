@@ -65,12 +65,12 @@ public class Traversal {
   }
 
   public Traversal inV() throws UserException {
-    // TODO
+    // TODO(@Seventeen17)
     return this;
   }
 
   public Traversal outV() throws UserException {
-    // TODO
+    // TODO(@Seventeen17)
     return this;
   }
 
@@ -82,7 +82,7 @@ public class Traversal {
 
   // strategy for sampler.
   public Traversal by(String strategy) throws UserException {
-    // TODO: Map string strategy to int.
+    // TODO(@Seventeen17): Map string strategy to int.
     this.plan_node.addParam("strategy", 0);
     return this;
   }

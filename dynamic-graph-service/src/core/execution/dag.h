@@ -23,7 +23,7 @@ limitations under the License.
 namespace dgs {
 namespace execution {
 
-// TODO(wenting.swt): move Dag out of namespace execution
+// TODO(@Seventeen17): move Dag out of namespace execution
 class Dag {
 public:
   explicit Dag(const QueryPlanRep* query_plan_rep);
@@ -40,7 +40,7 @@ public:
 
   const DagNode* root() const { return root_; }
 
-  // TODO(wenting.swt): define a DagNodeIter to make DagNode* immutable.
+  // TODO(@Seventeen17): define a DagNodeIter to make DagNode* immutable.
   const std::vector<DagNode*>& nodes() const { return nodes_; }
 
   // After run the dag a round, reset the state of op in each DagNode.

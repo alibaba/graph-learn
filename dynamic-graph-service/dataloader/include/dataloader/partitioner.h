@@ -56,7 +56,7 @@ private:
 inline
 void Partitioner::Set(const std::string& data_partition_policy, std::vector<PartitionId>&& kafka_router) {
   auto& opts = Options::GetInstance();
-  /// TODO(@houbai.zzc): support other partition policies.
+  /// TODO(@goldenleaves): support other partition policies.
   if (data_partition_policy == "hash") {
     data_func_ = [n = opts.data_partitions] (VertexId vid) {
       return (vid % n + n) % n;

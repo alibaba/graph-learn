@@ -25,7 +25,7 @@ namespace execution {
 
 class OpResult;
 
-// TODO(wenting.swt) define EdgeSet Iterator
+// TODO(@Seventeen17): define EdgeSet Iterator
 using EdgeSet = std::vector<const DagEdge*>;
 
 class DagNode {

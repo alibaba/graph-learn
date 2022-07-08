@@ -260,7 +260,7 @@ void SampleBuilder::Load(std::ifstream& file) {
   file.read(reinterpret_cast<char*>(&num_tables), sizeof(uint64_t));
   table_insts_ = std::vector<PartitionedTable>(num_tables);
 
-  // FIXME(@xmqin): add partition id for PartitionedTable.
+  // FIXME(@goldenleaves): add partition id for PartitionedTable.
   for (int i = 0; i < num_tables; ++i) {
     table_insts_[i].is_open = true;
     auto& vertex_table = table_insts_[i].vtable;

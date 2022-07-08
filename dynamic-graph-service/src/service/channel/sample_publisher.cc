@@ -165,7 +165,7 @@ void SamplePublisher::UpdateSinkKafkaPartitions(
   worker_records_.reserve(serving_worker_num);
   worker_sink_kafka_partitions_.reserve(serving_worker_num);
   for (int i = 0; i < serving_worker_num; ++i) {
-    // FIXME(@xmqin): using per worker specification.
+    // FIXME(@goldenleaves): using per worker specification.
     worker_sink_kafka_partitions_.push_back(updates);
     worker_record_id_set_.emplace_back(std::unordered_set<uint32_t>());
 
@@ -209,14 +209,14 @@ seastar::future<> SamplePublisher::Publish(
         continue;
       }
       // Get the sink kafka partition id
-      // TODO(@xmqin): double-check
+      // TODO(@goldenleaves): double-check
       auto dst_kafka_pid = sink_kafka_partitions[pid];
       builder.partition(static_cast<int>(dst_kafka_pid));
       // Set payload with SampleUpdateBatch storing KVPairs.
       io::SampleUpdateBatch update_batch(pid, part_records[pid]);
-      // TODO(@xmqin): reserve capacity.
+      // TODO(@goldenleaves): reserve capacity.
       part_records[pid].clear();
-      // FIXME(@xmqin): try to reduce memcpy
+      // FIXME(@goldenleaves): try to reduce memcpy
       builder.payload({update_batch.Data(), update_batch.Size()});
       if (update_batch.Size() > 1024 * 1024) {
         LOG(WARNING) << "data batch size is " << batch.size()
@@ -245,7 +245,7 @@ seastar::future<> SamplePublisher::Publish(
     }
     for (auto& r : ret) {
       if (r.failed()) {
-        // TODO(xiaoming): Return detailed failing results
+        // TODO(@goldenleaves): Return detailed failing results
         return seastar::make_exception_future<>(
             kafka_produce_exception());
       }

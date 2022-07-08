@@ -249,11 +249,11 @@ void Service::ReportStatsInfo() {
               LOG(INFO) << "Finished backups are synchronized to coordinator";
             } else {
               LOG(WARNING) << "Reported backups are invalid, delete them ...";
-              // TODO(@houbai.zzc): delete the invalid backups
+              // TODO(@goldenleaves): delete the invalid backups
             }
           } else {
             LOG(WARNING) << "Failed to report backups to coordinator";
-            // TODO(@houbai.zzc): try reporting again
+            // TODO(@goldenleaves): try reporting again
           }
         });
       }
@@ -476,7 +476,6 @@ std::unique_ptr<Coordinator::Stub> CreateCoordinatorStub() {
     LOG(INFO) << "Channel to coordinator is connected";
     return Coordinator::NewStub(channel);
   } else {
-    // FIXME(@xmqin): this is a lame channel.
     LOG(FATAL) << "Channel to coordinator can't be established";
   }
   return {nullptr};

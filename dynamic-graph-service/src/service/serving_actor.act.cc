@@ -30,11 +30,11 @@ seastar::future<actor::Void> ServingActor::ExecuteAdminOperation(
     AdminRequest&& req) {
   switch (req.operation) {
     case AdminOperation::PAUSE: {
-      // TODO(xiaoming):
+      // TODO(@goldenleaves)
       break;
     }
     case AdminOperation::RESUME: {
-      // TODO(xiaoming):
+      // TODO(@goldenleaves)
       break;
     }
     case AdminOperation::INIT: {
@@ -57,7 +57,6 @@ void ServingActor::InitializeImpl(const AdminRequest& req) {
 seastar::future<QueryResponse> ServingActor::RunQuery(
     RunQueryRequest&& req) {  // NOLINT
   dag_->Reset();
-  // FIXME(@xmqin):
   return seastar::do_with(execution::QueryExecutor(dag_.get()),
       [this, vid = req.vid()] (auto& executor) {
     return executor.Execute(vid, sample_store_);

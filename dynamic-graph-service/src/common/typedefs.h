@@ -37,7 +37,7 @@ using GraphValueType = uint32_t;  // EdgeType or VertexType
 using GlobalBackupId = uint32_t;
 using PartitionBackupId = uint32_t;
 
-// FIXME(@xmqin): Currently, enum value of RecordType should be
+// FIXME(@goldenleaves): Currently, enum value of RecordType should be
 // always exactly same with the enum value of RecordUnionRep
 // which is defined in record_generated.h(fbs generated file).
 // However, there is no gurantee to it. Modification in one of
@@ -69,7 +69,7 @@ using Timestamp = uint64_t;
 using FrontierType = uint64_t;
 
 using QueryId = uint32_t;
-// FIXME(@xmqin) replace me later.
+// FIXME(@goldenleaves): replace me later.
 using QueryDef = std::string;
 using QueryPriority = uint32_t;
 using FieldIndex = uint32_t;

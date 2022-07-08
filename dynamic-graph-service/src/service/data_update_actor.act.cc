@@ -57,10 +57,10 @@ seastar::future<actor::Void>
 DataUpdateActor::ExecuteAdminOperation(AdminRequest&& req) {
   switch (req.operation) {
     case AdminOperation::PAUSE: {
-      // TODO(xiaoming):
+      // TODO(@goldenleaves)
     }
     case AdminOperation::RESUME: {
-      // TODO(xiaoming):
+      // TODO(@goldenleaves)
     }
     case AdminOperation::INIT: {
       LOG(INFO) << "Initialize on global shard " << actor::GlobalShardId();

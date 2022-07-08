@@ -33,7 +33,7 @@ struct Tensor {
     : ids(std::move(input)) {
   }
 
-  // TODO(wenting.swt): optimize with memcpy
+  // TODO(@Seventeen17): optimize with memcpy
   explicit Tensor(std::vector<VertexId>&& input)
     : ids(input.size()) {
     for (auto vid : input) {

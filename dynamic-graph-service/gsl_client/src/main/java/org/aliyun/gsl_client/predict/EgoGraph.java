@@ -17,7 +17,7 @@ public class EgoGraph {
   // Split ByteBuffer
 
   public EgoGraph(Plan plan) {
-    // TODO: parse from plan.
+    // TODO(@Seventeen17): parse from plan.
     vtypes = new ArrayList<Short>(Arrays.asList((short)0, (short)1, (short)1));
     vops = new ArrayList<Integer>(Arrays.asList(2, 4, 4));
     hops = new ArrayList<Integer>(Arrays.asList(1, 10, 5));

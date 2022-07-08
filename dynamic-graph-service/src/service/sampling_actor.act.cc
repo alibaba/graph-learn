@@ -50,11 +50,11 @@ seastar::future<actor::Void>
 SamplingActor::ExecuteAdminOperation(AdminRequest&& req) {
   switch (req.operation) {
     case AdminOperation::PAUSE: {
-      // TODO(xiaoming.qxm):
+      // TODO(@goldenleaves)
       break;
     }
     case AdminOperation::RESUME: {
-      // TODO(xiaoming.qxm):
+      // TODO(@goldenleaves)
       break;
     }
     case AdminOperation::INIT: {
@@ -242,7 +242,7 @@ void SamplingActor::CollectDownstreamSubsRules(
   for (auto &info : sub_infos) {
     auto &key = sampled_batch[info.record_id].key;
     auto &record = sampled_batch[info.record_id].value;
-    // FIXME(@xmqin): double-check here.
+    // FIXME(@goldenleaves): double-check here.
     if (record.GetView().Type() == RecordType::EDGE
           && downstream_op_ids_.count(key.pkey.op_id)) {
       auto &ds_op_ids = downstream_op_ids_[key.pkey.op_id];

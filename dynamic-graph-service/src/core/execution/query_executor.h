@@ -29,7 +29,7 @@ namespace execution {
 class QueryExecutor {
 public:
   // Init one instance of QueryExecutor for each req_id.
-  // TODO(wenting.swt): limit the count of concurrency executors.
+  // TODO(@Seventeen17): limit the count of concurrency executors.
   // The QueryExecutor maintain the state between one turn of query run.
   explicit QueryExecutor(const Dag* dag);
   QueryExecutor(QueryExecutor&& other) noexcept;

@@ -134,7 +134,7 @@ private:
   std::mutex                    subs_table_mtx_;
   Partitioner                   tbl_partitioner_;
   // downstream(serving link) partitioner
-  // FIXME(@xmqin): worker granularity.
+  // FIXME(@goldenleaves): worker granularity.
   Partitioner                    dsw_partitioner_;
   std::unordered_set<OperatorId> managed_ops_;
 };

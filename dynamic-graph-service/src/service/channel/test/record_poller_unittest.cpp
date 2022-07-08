@@ -124,7 +124,7 @@ TEST_F(RecordPollerTester, RecordPollerFunctionality) {
   fut.wait();
 
   RecordPollingManager manager;
-  //FIXME(@LiSu) add configure for the mapping of kafka_partitions to poller
+  //FIXME(@goldenleaves): add configure for the mapping of kafka_partitions to poller
   std::vector<uint32_t> kafka_partitions = {0, 1, 2, 3};
   Partitioner partitioner = PartitionerFactory::Create("hash", 4);
   manager.Init(std::move(partitioner), p_router->GetRoutingInfo(), kafka_partitions, {});
