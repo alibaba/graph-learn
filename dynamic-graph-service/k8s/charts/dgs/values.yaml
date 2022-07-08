@@ -10,9 +10,9 @@ image:
   # @param image.dgs.pullPolicy Dynamic Graph Service image pull policy
   # @param image.dgs.pullSecrets Specify docker-registry secret names as an array
   dgs:
-    registry: "registry.cn-shanghai.aliyuncs.com"
-    repository: "pai-gnn/dgs-ubuntu"
-    tag: "0.1.1"
+    registry: "graphlearn"
+    repository: "dgs-core"
+    tag: "1.0.0"
     # Specify a imagePullPolicy
     # Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
     # ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images
@@ -33,9 +33,9 @@ image:
   # @param image.dl.pullPolicy Dataloader image pull policy
   # @param image.dl.pullSecrets Specify docker-registry secret names as an array
   dl:
-    registry: "registry.cn-shanghai.aliyuncs.com"
-    repository: "pai-gnn/graphscope"
-    tag: "1.0"
+    registry: "graphlearn"
+    repository: "dgs-dl"
+    tag: "1.0.0"
     # Specify a imagePullPolicy
     # Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
     # ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images

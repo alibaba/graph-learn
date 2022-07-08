@@ -75,7 +75,8 @@ public:
     std::vector<storage::KVPair> ret;
     EXPECT_TRUE(store->GetEdgesByPrefix(pkey, &ret));
 
-    env_->Sleep(3601);
+    auto& opts = Options::GetInstance.GetSampleStoreOptions();
+    env_->Sleep(opts.ttl_in_hours * 60 * 60 + 1);
 
     io::Record record_expired;
     EXPECT_TRUE(store->GetEdge(ekey2, &record_expired));
