@@ -63,7 +63,7 @@ jobs:
     - name: Run unittest
       working-directory: ${{github.workspace}}/dynamic-graph-service
       run: |
-        ./run_unittest.sh
+        ./run_unittests.sh
 
     - name: Upload Coverage
       uses: codecov/codecov-action@v2
