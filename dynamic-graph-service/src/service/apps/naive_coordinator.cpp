@@ -64,7 +64,7 @@ public:
   grpc::Status GetInitInfo(grpc::ServerContext* context,
                            const dgs::GetInitInfoRequestPb* request,
                            dgs::GetInitInfoResponsePb* response) override {
-    static const uint32_t num_local_shards = 4;
+    static const uint32_t num_local_shards = 2;
 
     std::ifstream f("../../conf/install_query_req_ut.json");
     std::string query_plan;

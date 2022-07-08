@@ -239,7 +239,7 @@ TEST(QueryExecutor, RunQuery) {
   char prog_name[] = "query_executor_unittest";
   char docker_opt[] = "--thread-affinity=0";
   char cores[16];
-  snprintf(cores, sizeof(cores), "-c%d", 4);
+  snprintf(cores, sizeof(cores), "-c%d", 2);
 
   int ac = 3;
   char* av[] = {prog_name, cores, docker_opt};

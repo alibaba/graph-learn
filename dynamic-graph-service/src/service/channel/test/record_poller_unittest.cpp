@@ -25,7 +25,7 @@ limitations under the License.
 using namespace dgs;
 using namespace seastar;
 
-static const int k_num_local_shards = 4;
+static const int k_num_local_shards = 2;
 
 class RecordPollerTester : public ::testing::Test {
 public:
@@ -49,7 +49,7 @@ protected:
       "    - localhost:9092\n"
       "  kafka-topic: record-poller-ut-2\n"
       "  kafka-partition-num: 4\n"
-      "  producer-pool-size: 2\n";
+      "  producer-pool-size: 1\n";
     EXPECT_TRUE(Options::GetInstance().Load(options));
     EXPECT_TRUE(Schema::GetInstance().Init());
 

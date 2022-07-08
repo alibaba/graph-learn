@@ -26,8 +26,8 @@ limitations under the License.
 namespace dgs {
 
 struct RdbEnvOptions {
-  uint32_t low_prio_bg_threads_num = 16;
-  uint32_t high_prio_bg_threads_num = 16;
+  uint32_t low_prio_bg_threads_num = 1;
+  uint32_t high_prio_bg_threads_num = 1;
 
   bool SetOptions(const YAML::Node& map);
 };
@@ -48,11 +48,11 @@ struct SampleStoreOptions {
 
   uint32_t skip_list_lookahead = 0;
 
-  // default: 1GB
-  uint64_t block_cache_capacity = 1UL << 30;
+  // default: 64MB
+  uint64_t block_cache_capacity = 1UL << 26;
 
   /// Specify ttl hours for expiring edge data.
-  uint32_t ttl_in_hours = 1;
+  uint32_t ttl_in_hours = 1200;
 
   bool SetOptions(const YAML::Node& map);
 };
@@ -70,11 +70,11 @@ struct SubscriptionTableOptions {
 
   uint32_t skip_list_lookahead = 0;
 
-  // default: 1GB
-  uint64_t block_cache_capacity = 1UL << 30;
+  // default: 64MB
+  uint64_t block_cache_capacity = 1UL << 26;
 
   /// Specify ttl hours for expiring subscription rules.
-  uint32_t ttl_in_hours = 1;
+  uint32_t ttl_in_hours = 1200;
 
   bool SetOptions(const YAML::Node& map);
 };

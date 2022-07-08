@@ -37,8 +37,7 @@ protected:
         "  output-kafka-servers:\n"
         "    - localhost:9092\n"
         "  kafka-topic: sampling-actor-ut\n"
-        "  kafka-partition-num: 4\n"
-        "  producer-pool-size: 3\n";
+        "  kafka-partition-num: 4\n";
     EXPECT_TRUE(Options::GetInstance().Load(options));
     EXPECT_TRUE(Schema::GetInstance().Init());
 
@@ -98,7 +97,7 @@ protected:
 
 protected:
   TestHelper  helper_;
-  ActorSystem actor_system_{WorkerType::Sampling, 0, 1, 4};
+  ActorSystem actor_system_{WorkerType::Sampling, 0, 1, 2};
 };
 
 TEST_F(SamplingActorModuleTest, RunAll) {

@@ -4,8 +4,8 @@ fbs-file-dir: "../../fbs"
 schema-file: "../../conf/schema.template.json"
 
 rdb-env:
-  high-prio-bg-threads-num: 2
-  low-prio-bg-threads-num: 2
+  high-prio-bg-threads-num: 1
+  low-prio-bg-threads-num: 1
 
 sample-store:
   in-memory-mode: False
@@ -27,12 +27,12 @@ subscription-table:
   ttl-hours: 1200
 
 record-polling:
-  thread-num: 4
+  thread-num: 1
   retry-interval-ms: 1000
   process-concurrency: 10
 
 sample-publishing:
-  producer-pool-size: 4
+  producer-pool-size: 1
   max-produce-retry-times: 3
   callback-poll-interval-ms: 100
 

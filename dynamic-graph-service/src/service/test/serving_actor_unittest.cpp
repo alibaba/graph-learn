@@ -49,7 +49,7 @@ protected:
 
 protected:
   TestHelper  helper_;
-  ActorSystem actor_system_{WorkerType::Serving, 0, 1, 4};
+  ActorSystem actor_system_{WorkerType::Serving, 0, 1, 2};
 };
 
 TEST_F(ServingActorModuleTest, RunQuery) {

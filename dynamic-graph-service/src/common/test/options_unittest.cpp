@@ -81,7 +81,7 @@ void TestOptionsLoadFile() {
   EXPECT_EQ(opts.GetSampleStoreOptions().memtable_rep, "hashskiplist");
   EXPECT_TRUE(opts.GetSampleStoreOptions().in_memory_mode);
   EXPECT_EQ(opts.GetSampleStoreOptions().block_cache_capacity, 67108864);
-  EXPECT_EQ(opts.GetRecordPollingOptions().thread_num, 4);
+  EXPECT_EQ(opts.GetRecordPollingOptions().thread_num, 1);
 }
 
 TEST(Options, Functionality) {
