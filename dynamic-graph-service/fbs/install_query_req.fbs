@@ -1,0 +1,11 @@
+include "query_plan.fbs";
+
+namespace dgs;
+
+table InstallQueryRequestRep {
+  priority:uint8;
+  query_plan:QueryPlanRep;
+  query_id:uint32;
+}
+
+root_type InstallQueryRequestRep;

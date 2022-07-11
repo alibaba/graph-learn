@@ -10,3 +10,15 @@
 [submodule "third_party/grpc/grpc"]
 	path = third_party/grpc/grpc
 	url = https://github.com/grpc/grpc.git
+[submodule "third_party/flatbuffers/flatbuffers"]
+	path = third_party/flatbuffers/flatbuffers
+	url = https://github.com/google/flatbuffers.git
+[submodule "third_party/rocksdb/rocksdb"]
+	path = third_party/rocksdb/rocksdb
+	url = https://github.com/facebook/rocksdb.git
+[submodule "third_party/hiactor/hiactor"]
+	path = third_party/hiactor/hiactor
+	url = https://github.com/alibaba/hiactor.git
+[submodule "third_party/cppkafka/cppkafka"]
+	path = third_party/cppkafka/cppkafka
+	url = https://github.com/mfontanini/cppkafka.git

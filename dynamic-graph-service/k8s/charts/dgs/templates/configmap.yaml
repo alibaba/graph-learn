@@ -1,0 +1,177 @@
+{{- $coordHost := include "dgs.coordinator.rpc.svc.host" . }}
+{{- $coordRpcPort := .Values.coordinator.rpcService.port }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "dgs.configmap.name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dgs.labels" . | nindent 4 }}
+    {{- if .Values.commonLabels }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+    app.kubernetes.io/component: configmap
+  {{- if .Values.commonAnnotations }}
+  annotations:
+    {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
+data:
+  # Set graph schema json file
+  schema.json: |-
+    {{- .Values.graphSchema | nindent 4 }}
+
+  # Set coordinator option file
+  coordinator.cnf: |-
+    schema-file: "{{ .Values.configPath }}/schema.json"
+
+    meta-dir: "{{ .Values.coordinator.persistence.mountPath }}/coordinator_meta"
+
+    data-loading:
+      worker-num: {{ int .Values.dataloader.replicaCount }}
+
+    sampling:
+      worker-num: {{ int .Values.sampling.replicaCount }}
+      actor-local-shard-num: {{ int .Values.sampling.actorLocalShardNum }}
+      store-partitions: {{ int .Values.sampling.sampleStore.totalPartitions }}
+      store-partition-strategy: {{ .Values.sampling.sampleStore.partitionStrategy | quote }}
+      downstream-partition-strategy: {{ .Values.sampling.downstreamPartitionStrategy | quote }}
+
+    serving:
+      worker-num: {{ int .Values.serving.podCount }}
+      actor-local-shard-num: {{ int .Values.serving.actorLocalShardNum }}
+      store-partitions: {{ int .Values.serving.sampleStore.totalPartitions }}
+      store-partition-strategy: {{ .Values.serving.sampleStore.partitionStrategy | quote }}
+
+    kafka:
+      dl2spl:
+        servers:
+          {{- range .Values.kafka.dl2spl.brokers }}
+          - {{ . | quote }}
+          {{- end }}
+        topic: {{ .Values.kafka.dl2spl.topic | quote }}
+        partitions: {{ int .Values.kafka.dl2spl.partitions }}
+      spl2srv:
+        servers:
+          {{- range .Values.kafka.spl2srv.brokers }}
+          - {{ . | quote }}
+          {{- end }}
+        topic: {{ .Values.kafka.spl2srv.topic | quote }}
+        partitions: {{ int .Values.kafka.spl2srv.partitions }}
+
+  # Set dataloader option file
+  dataloader.cnf: |-
+    fbs-file-dir: "{{ .Values.dataloader.workdir }}/package/fbs"
+    schema-file: "{{ .Values.configPath }}/schema.json"
+
+    coord-ipaddr: "{{ $coordHost }}:{{ $coordRpcPort }}"
+    coord-connect-timeout-sec: {{ int .Values.coordinator.connectTimeoutSeconds }}
+    coord-heartbeat-interval-sec: {{ int .Values.coordinator.heartbeatIntervalSeconds }}
+
+    output-batch-size: {{ int .Values.dataloader.outputBatchSize }}
+
+    {{- if (eq "graphscope" (lower .Values.dataloader.sourceType)) }}
+    graphscope:
+      log-polling:
+        kafka-brokers:
+          {{- range .Values.dataloader.graphscope.logPolling.kafkaBrokers }}
+          - {{ . | quote }}
+          {{- end }}
+        kafka-topic: {{ .Values.dataloader.graphscope.logPolling.kafkaTopic | quote }}
+        kafka-partition-num: {{ int .Values.dataloader.graphscope.logPolling.kafkaPartitions }}
+        meta-dir: "{{ .Values.dataloader.persistence.mountPath }}/polling_offsets"
+        offset-persist-ms: {{ int .Values.dataloader.graphscope.logPolling.offsetPersistIntervalMs }}
+        retry-ms: {{ int .Values.dataloader.graphscope.logPolling.retryIntervalMs }}
+        flush-ms: {{ int .Values.dataloader.graphscope.logPolling.flushIntervalMs }}
+      bulk-loading:
+        thread-num: {{ int .Values.dataloader.graphscope.bulkLoading.threadNum }}
+        meta-dir: "{{ .Values.dataloader.persistence.mountPath }}/bulk_load_flags"
+        checkpoint-restore-dir: "{{ .Values.dataloader.workdir }}/restored"
+    {{- end }}
+
+  # Set sampling worker option file
+  sampling.cnf: |-
+    worker-type: "Sampling"
+
+    fbs-file-dir: "{{ .Values.sampling.workdir }}/package/fbs"
+    schema-file: "{{ .Values.configPath }}/schema.json"
+
+    rdb-env:
+      high-prio-bg-threads-num: {{ int .Values.sampling.rocksdbEnv.highPriorityThreads }}
+      low-prio-bg-threads-num: {{ int .Values.sampling.rocksdbEnv.lowPriorityThreads }}
+
+    sample-store:
+      in-memory-mode: false
+      db-path: "{{ .Values.sampling.workdir }}/sample_store"
+      backup-path: "{{ .Values.sampling.persistence.mountPath }}/sample_store"
+      memtable-rep: {{ .Values.sampling.sampleStore.memtableRep | quote }}
+      hash-bucket-count: {{ int .Values.sampling.sampleStore.hashBucketCount }}
+      skip-list-lookahead: {{ int .Values.sampling.sampleStore.skipListLookahead }}
+      block-cache-capacity: {{ int .Values.sampling.sampleStore.blockCacheCapacity }}
+      ttl-hours: {{ int .Values.sampling.sampleStore.ttlHours }}
+
+    subscription-table:
+      table-path: "{{ .Values.sampling.workdir }}/subs_table"
+      backup-path: "{{ .Values.sampling.persistence.mountPath }}/subs_table"
+      memtable-rep: {{ .Values.sampling.subscriptionTable.memtableRep | quote }}
+      hash-bucket-count: {{ int .Values.sampling.subscriptionTable.hashBucketCount }}
+      skip-list-lookahead: {{ int .Values.sampling.subscriptionTable.skipListLookahead }}
+      block-cache-capacity: {{ int .Values.sampling.subscriptionTable.blockCacheCapacity }}
+      ttl-hours: {{ int .Values.sampling.subscriptionTable.ttlHours }}
+
+    record-polling:
+      thread-num: {{ int .Values.sampling.recordPolling.threadNum }}
+      retry-interval-ms: {{ int .Values.sampling.recordPolling.retryIntervalMs }}
+      process-concurrency: {{ int .Values.sampling.recordPolling.processConcurrency }}
+
+    sample-publishing:
+      producer-pool-size: {{ int .Values.sampling.samplePublishing.producerPoolSize }}
+      max-produce-retry-times: {{ int .Values.sampling.samplePublishing.maxProduceRetryTimes }}
+      callback-poll-interval-ms: {{ int .Values.sampling.samplePublishing.callbackPollIntervalMs }}
+
+    logging:
+      data-log-period: {{ int .Values.sampling.logging.dataLogPeriod }}
+      rule-log-period: {{ int .Values.sampling.logging.ruleLogPeriod }}
+
+    coordinator-client:
+      server-ipaddr: "{{ $coordHost }}:{{ $coordRpcPort }}"
+      wait-time-in-sec: {{ int .Values.coordinator.connectTimeoutSeconds }}
+      heartbeat-interval-in-sec: {{ int .Values.coordinator.heartbeatIntervalSeconds }}
+
+  # Set sampling worker option file
+  serving.cnf: |-
+    worker-type: "Serving"
+
+    fbs-file-dir: "{{ .Values.serving.workdir }}/package/fbs"
+    schema-file: "{{ .Values.configPath }}/schema.json"
+
+    rdb-env:
+      high-prio-bg-threads-num: {{ int .Values.serving.rocksdbEnv.highPriorityThreads }}
+      low-prio-bg-threads-num: {{ int .Values.serving.rocksdbEnv.lowPriorityThreads }}
+
+    sample-store:
+      in-memory-mode: {{ .Values.serving.sampleStore.inMemoryMode }}
+      db-path: "{{ .Values.serving.workdir }}/sample_store"
+      backup-path: "{{ .Values.serving.persistence.mountPath }}/sample_store"
+      memtable-rep: {{ .Values.serving.sampleStore.memtableRep | quote }}
+      hash-bucket-count: {{ int .Values.serving.sampleStore.hashBucketCount }}
+      skip-list-lookahead: {{ int .Values.serving.sampleStore.skipListLookahead }}
+      block-cache-capacity: {{ int .Values.serving.sampleStore.blockCacheCapacity }}
+      ttl-hours: {{ int .Values.serving.sampleStore.ttlHours }}
+
+    record-polling:
+      thread-num: {{ int .Values.serving.recordPolling.threadNum }}
+      retry-interval-ms: {{ int .Values.serving.recordPolling.retryIntervalMs }}
+      process-concurrency: {{ int .Values.serving.recordPolling.processConcurrency }}
+
+    logging:
+      data-log-period: {{ int .Values.serving.logging.dataLogPeriod }}
+      request-log-period: {{ int .Values.serving.logging.requestLogPeriod }}
+
+    event-handler:
+      http-port: 10000
+
+    coordinator-client:
+      server-ipaddr: "{{ $coordHost }}:{{ $coordRpcPort }}"
+      wait-time-in-sec: {{ int .Values.coordinator.connectTimeoutSeconds }}
+      heartbeat-interval-in-sec: {{ int .Values.coordinator.heartbeatIntervalSeconds }}

@@ -1,4 +1,4 @@
-![GL](docs/images/graph-learn.png)
+![GL](graphlearn/docs/images/graph-learn.png)
 [![pypi](https://img.shields.io/pypi/v/graph-learn.svg)](https://pypi.org/project/graph-learn/)
 [![docs](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://graph-learn.readthedocs.io/zh_CN/latest/)
 [![graph-learn CI](https://github.com/alibaba/graph-learn/workflows/graph-learn%20CI/badge.svg)](https://github.com/alibaba/graph-learn/actions)
@@ -30,7 +30,7 @@ GraphSAGE示例
 cd examples/tf/ego_sage/
 python train_unsupervised.py
 ```
-[分布式训练示例](graphlearn/docs/zh_CN/algo/tf/k8s)
+[分布式训练示例](graphlearn/docs/zh_CN/algo/tf/k8s.md)
 
 ## 论文
 

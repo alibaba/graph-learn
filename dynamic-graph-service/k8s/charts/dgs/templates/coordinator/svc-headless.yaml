@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "dgs.coordinator.name" . }}-headless
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dgs.labels" . | nindent 4 }}
+    {{- if .Values.commonLabels }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+    app.kubernetes.io/component: coordinator-headless
+  annotations:
+    {{- if .Values.commonAnnotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.coordinator.rpcService.annotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.coordinator.rpcService.annotations "context" $) | nindent 4 }}
+    {{- end }}
+spec:
+  type: ClusterIP
+  sessionAffinity: {{ .Values.coordinator.rpcService.sessionAffinity }}
+  {{- if .Values.coordinator.rpcService.clusterIP }}
+  clusterIP: {{ .Values.coordinator.rpcService.clusterIP }}
+  {{- end }}
+  publishNotReadyAddresses: true
+  ports:
+    - name: rpc-port
+      port: {{ .Values.coordinator.rpcService.port }}
+      targetPort: rpc-port
+  selector:
+    {{- include "dgs.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: coordinator
