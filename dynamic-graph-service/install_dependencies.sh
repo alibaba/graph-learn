@@ -51,6 +51,8 @@ debian_packages=(
   libbz2-dev
   liblz4-dev
   libzstd-dev
+  # code coverage
+  lcov
 )
 
 # installing dgs system dependencies
