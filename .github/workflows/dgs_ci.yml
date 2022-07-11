@@ -11,11 +11,11 @@ on:
       - 'third_party/grpc/**'
       - 'third_party/hiactor/**'
       - 'third_party/rocksdb/**'
-      - 'dynamic-graph-service/**'
-      - '!dynamic-graph-service/dataloader/**'
-      - '!dynamic-graph-service/gsl_client/**'
-      - '!dynamic-graph-service/k8s/**'
-      - '!dynamic-graph-service/**.md'
+      - 'dynamic_graph_service/**'
+      - '!dynamic_graph_service/dataloader/**'
+      - '!dynamic_graph_service/gsl_client/**'
+      - '!dynamic_graph_service/k8s/**'
+      - '!dynamic_graph_service/**.md'
   pull_request:
     branches: [ master ]
     paths:
@@ -26,11 +26,11 @@ on:
       - 'third_party/grpc/**'
       - 'third_party/hiactor/**'
       - 'third_party/rocksdb/**'
-      - 'dynamic-graph-service/**'
-      - '!dynamic-graph-service/dataloader/**'
-      - '!dynamic-graph-service/gsl_client/**'
-      - '!dynamic-graph-service/k8s/**'
-      - '!dynamic-graph-service/**.md'
+      - 'dynamic_graph_service/**'
+      - '!dynamic_graph_service/dataloader/**'
+      - '!dynamic_graph_service/gsl_client/**'
+      - '!dynamic_graph_service/k8s/**'
+      - '!dynamic_graph_service/**.md'
 
 jobs:
   build-dgs:
@@ -46,13 +46,13 @@ jobs:
         tar zxvf dgs_third_party_built.tgz
 
     - name: Install Dependencies
-      working-directory: ${{github.workspace}}/dynamic-graph-service
+      working-directory: ${{github.workspace}}/dynamic_graph_service
       run: |
         sudo apt-get -y update
         sudo ./install_dependencies.sh
 
     - name: Build
-      working-directory: ${{github.workspace}}/dynamic-graph-service
+      working-directory: ${{github.workspace}}/dynamic_graph_service
       run: |
         mkdir build
         cd build
@@ -61,18 +61,18 @@ jobs:
         make -j${BUILD_CONCURRENCY}
 
     - name: Run unittest
-      working-directory: ${{github.workspace}}/dynamic-graph-service
+      working-directory: ${{github.workspace}}/dynamic_graph_service
       run: |
         ./run_unittests.sh
 
     - name: Check code coverage
       uses: VeryGoodOpenSource/very_good_coverage@v1
       with:
-        path: "./dynamic-graph-service/build/coverage/coverage.info"
+        path: "./dynamic_graph_service/build/coverage/coverage.info"
         min_coverage: 90
 
     - name: Upload code coverage reports
       uses: actions/upload-artifact@v3
       with:
         name: code-coverage-reports
-        path: "./dynamic-graph-service/build/coverage/reports/"
+        path: "./dynamic_graph_service/build/coverage/reports/"
