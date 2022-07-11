@@ -62,13 +62,6 @@ void KafkaProducerPool::Init() {
       });
     });
     auto producer = std::make_shared<cppkafka::Producer>(std::move(conf));
-    if (i == 0) {
-      auto config_map = producer->get_configuration().get_all();
-      for (auto iter : config_map) {
-        LOG(INFO) << "[kafka produer configuration] "
-                  << iter.first << ", " << iter.second;
-      }
-    }
     producers_.emplace_back(std::move(producer));
   }
   cb_poller_ = std::thread(&KafkaProducerPool::PollCallback, this,

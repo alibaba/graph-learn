@@ -115,50 +115,50 @@ TEST_F(SamplingActorModuleTest, RunAll) {
     // apply graph updates.
     // number of vertices: 4
     // record batch on shard 0: vertex: 0, edges: 0 -> 1, 0 -> 2; 0 -> 3;
+    //                          vertex: 2, edges: 2 -> 3;
     // record batch on shard 1: vertex: 1, edges: 1 -> 2; 1 -> 3;
-    // record batch on shard 2: vertex: 2, edges: 2 -> 3;
-    // record batch on shard 3: vertex: 3, edges: ;
+    //                          vertex: 3, edges: ;
     //
     // stage 1: sampled batch size for each shard -> Stored in SampleStore.
     // sampled batch on shard 0: 5, 1 for vertex, 4 for edges(2 for each sampler);
+    //                           3, 1 for vertex, 2 for edges(1 for each sampler);
     // sampled batch on shard 1: 5, 1 for vertex, 4 for edges(2 for each sampler);
-    // sampled batch on shard 2: 3, 1 for vertex, 2 for edges(1 for each sampler);
-    // sampled batch on shard 3: 1, 1 for vertex;
+    //                           1, 1 for vertex;
     //
     // stage 2: current subscription information for each shard -> Send to Kafka by SamplePublisher.
     // subs_info size on shard 0: 3, indices in sampled batch = [0, 1, 3], dst_worker_id = 0;
+    //                            2, indices in sampled batch = [0, 1], dst_worker_id = 2;
     // subs_info size on shard 1: 3, indices in sampled batch = [0, 1, 3], dst_worker_id = 1;
-    // subs_info size on shard 2: 2, indices in sampled batch = [0, 1], dst_worker_id = 2;
-    // subs_info size on shard 3: 1, indices in sampled batch = [0], dst_worker_id = 3;
+    //                            1, indices in sampled batch = [0], dst_worker_id = 3;
     //
     // stage 3: downstream subscription rules using query dependency info
     // rule buffer on shard 0: #rules=3, {vid = [1, 2], op_id=(1<<32)+2&op_id=3}, subscribed worker id: 0;
+    //                         #rules=1, {vid = [3], op_id=(1<<32)+2&&op_id=3}, subscribed worker id: 2;
     // rule buffer on shard 1: #rules=2, {vid = [2, 3], op_id=(1<<32)+2&&op_id=3}, subscribed worker id: 1;
-    // rule buffer on shard 2: #rules=1, {vid = [3], op_id=(1<<32)+2&&op_id=3}, subscribed worker id: 2;
-    // rule buffer on shard 3: #rules=0;
+    //                         #rules=0;
     // in detail,
-    // --- the rule buffer on shard 0 is seperated into 4 piece:
+    // --- the rule buffer on shard 0 is seperated into 6 piece:
     // piece 1: rule = {vid = 1, op_id = (1<<32)+2, subs_worker_id = 0; }, dst global shard id: 1
     // piece 2: rule = {vid = 1, op_id = 3, subs_worker_id = 0; }, dst global shard id: 1
-    // piece 3: rule = {vid = 2, op_id = (1<<32)+2, subs_worker_id = 0; }, dst global shard id: 2
-    // piece 4: rule = {vid = 2, op_id = 3, subs_worker_id = 0; }, dst global shard id: 2
+    // piece 3: rule = {vid = 2, op_id = (1<<32)+2, subs_worker_id = 0; }, dst global shard id: 0
+    // piece 4: rule = {vid = 2, op_id = 3, subs_worker_id = 0; }, dst global shard id: 0
+    // piece 5: rule = {vid = 3, op_id = (1<<32)+2, subs_worker_id = 2; }, dst global shard id: 1
+    // piece 6: rule = {vid = 3, op_id = 3, subs_worker_id = 2; }, dst global shard id: 1
     // --- the rule buffer on shard 1 is seperated into 4 piece:
-    // piece 1: rule = {vid = 2, op_id = (1<<32)+2, subs_worker_id = 1; }, dst global shard id: 2
-    // piece 2: rule = {vid = 2, op_id = 3, subs_worker_id = 1; }, dst global shard id: 2
-    // piece 3: rule = {vid = 3, op_id = (1<<32)+2, subs_worker_id = 1; }, dst global shard id: 3
-    // piece 4: rule = {vid = 3, op_id = 3, subs_worker_id = 1; }, dst global shard id: 3
-    // --- the rule buffer on shard 2 is seperated into 2 piece:
-    // piece 3: rule = {vid = 3, op_id = (1<<32)+2, subs_worker_id = 2; }, dst global shard id: 3
-    // piece 4: rule = {vid = 3, op_id = 3, subs_worker_id = 2; }, dst global shard id: 3
-    // - the rule buffer on shard 3 has no rule.
+    // piece 1: rule = {vid = 2, op_id = (1<<32)+2, subs_worker_id = 1; }, dst global shard id: 0
+    // piece 2: rule = {vid = 2, op_id = 3, subs_worker_id = 1; }, dst global shard id: 0
+    // piece 3: rule = {vid = 3, op_id = (1<<32)+2, subs_worker_id = 1; }, dst global shard id: 1
+    // piece 4: rule = {vid = 3, op_id = 3, subs_worker_id = 1; }, dst global shard id: 1
 
     // for the remaining stages, we will discuss rule behaviors triggered by rule buffer on shard 0 only.
     //
     // stage 4: update subscription rules and publish new subscribed records.
     // rule received(piece 1, op_id = (1<<32)+2(VSampler)) on shard id 1: new collected sample batch size: 1;
     // rule received(piece 2, op_id = 3(ESampler)) on shard id 1: new collected sample batch size: 2(ref to stage 1);
-    // rule received(piece 3, op_id = (1<<32)+2(VSampler)) on shard id 2: new collected sample batch size: 1;
-    // rule received(piece 4, op_id = 3(ESampler)) on shard id 2: new collected sample batch size: 1(ref to stage 1);
+    // rule received(piece 3, op_id = (1<<32)+2(VSampler)) on shard id 0: new collected sample batch size: 1;
+    // rule received(piece 4, op_id = 3(ESampler)) on shard id 0: new collected sample batch size: 1(ref to stage 1);
+    // rule received(piece 5, op_id = (1<<32)+2(VSampler)) on shard id 1: new collected sample batch size: 1;
+    // rule received(piece 6, op_id = 3(ESampler)) on shard id 1: new collected sample batch size: 1(ref to stage 1);
     //
     // end of all stages.
 
@@ -166,8 +166,8 @@ TEST_F(SamplingActorModuleTest, RunAll) {
     return seastar::parallel_for_each(
         boost::irange(0u, num_v), [num_v, num_p, this] (uint32_t i) {
       VertexId vid = i;
-      auto pid = vid % num_p;
-      auto shard_id = vid % actor::GlobalShardId();
+      auto pid = i % num_p;
+      auto shard_id = pid % actor::GlobalShardCount();
       return helper_.GetSamplingActorRef(shard_id).ApplyGraphUpdates(
           SamplingTestHelper::MakeRecordBatch(pid, vid, num_v)).discard_result();
     }).then([] {

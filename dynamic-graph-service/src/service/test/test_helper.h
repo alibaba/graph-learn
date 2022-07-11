@@ -109,7 +109,8 @@ void BasicTestHelper::PrintQueryResponse(const QueryResponse& res) {
 inline
 std::vector<PartitionId>
 BasicTestHelper::MakePidVector(uint32_t num_partitions) {
-  std::vector<PartitionId> pids{num_partitions};
+  std::vector<PartitionId> pids;
+  pids.resize(num_partitions);
   for (uint32_t i = 0; i < num_partitions; i++) {
     pids[i] = i;
   }
