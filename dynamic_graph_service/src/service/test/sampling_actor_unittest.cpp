@@ -71,6 +71,7 @@ protected:
     consumer.set_timeout(std::chrono::milliseconds(2000));
 
     int32_t num_incoming_updates = 0;
+    std::cout << "**** Kafka Partition " << kafka_partition << " ****" << std::endl;
     while (--expected_msg_num >= 0) {
       auto msg = consumer.poll();
       EXPECT_TRUE(!msg == false);
@@ -85,6 +86,12 @@ protected:
       io::SampleUpdateBatch su_batch{std::move(buf)};
 
       auto updates = su_batch.GetSampleUpdates();
+      std::cout << "-- Sample Batch -- " << std::endl;
+      for (auto& update: updates) {
+        std::cout << "op id: " << update.key.pkey.op_id
+                  << ", vid: " << update.key.pkey.vid
+                  << std::endl;
+      }
       num_incoming_updates += static_cast<int32_t>(updates.size());
     }
     EXPECT_TRUE(num_incoming_updates == expected_update_num);
