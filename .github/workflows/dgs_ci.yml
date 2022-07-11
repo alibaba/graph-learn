@@ -65,8 +65,14 @@ jobs:
       run: |
         ./run_unittests.sh
 
-    - name: Upload Coverage
-      uses: codecov/codecov-action@v2
+    - name: Check code coverage
+      uses: VeryGoodOpenSource/very_good_coverage@v1
       with:
-        directory: ./dynamic-graph-service/build/coverage/reports/
-        fail_ci_if_error: true
+        path: "./dynamic-graph-service/build/coverage/coverage.info"
+        min_coverage: 90
+
+    - name: Upload code coverage reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: code-coverage-reports
+        path: "./dynamic-graph-service/build/coverage/reports/"
