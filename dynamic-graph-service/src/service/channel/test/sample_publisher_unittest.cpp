@@ -108,6 +108,7 @@ public:
 
 TEST(SamplePublisher, SamplePublishFunctionality) {
   InitGoogleLogging();
+  FLAGS_alsologtostderr = true;
 
   SamplePublisherTester tester;
   tester.Run();

@@ -13,45 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "flatbuffers/idl.h"
-#include "flatbuffers/util.h"
-#include "gtest/gtest.h"
+#include "service/test/test_helper.h"
 #include "hiactor/core/actor-app.hh"
-
-#include "common/log.h"
-#include "core/io/record_builder.h"
-#include "core/io/sample_update_batch.h"
-#include "service/actor_ref_builder.h"
-#include "service/request/query_request.h"
-#include "service/serving_group.actg.h"
 
 using namespace dgs;
 using namespace seastar;
-
-InstallQueryRequest MakeInstallQueryRequest() {
-  std::string schemafile;
-  std::string jsonfile;
-  const char* default_schema = "../../fbs/install_query_req.fbs";
-  const char* default_json = "../../conf/install_query_req_ut.json";
-  bool ok;
-  ok = flatbuffers::LoadFile(default_schema, false, &schemafile);
-  if (!ok) { LOG(FATAL) << "Load install_query_request schema file failed.\n"; }
-  ok = flatbuffers::LoadFile(default_json, false, &jsonfile);
-  if (!ok) { LOG(FATAL) << "Load install_query_request json file failed.\n"; }
-
-  flatbuffers::Parser parser;
-  const char* include_paths[] = { "../../fbs/" };
-  ok = parser.Parse(schemafile.c_str(), include_paths);
-  if (!ok) { LOG(FATAL) << "Parse install_query_request schema file failed.\n"; }
-  ok = parser.Parse(jsonfile.c_str());
-  if (!ok) { LOG(FATAL) << "Parse install_query_request json file failed.\n"; }
-
-  auto* ptr = reinterpret_cast<char*>(parser.builder_.GetBufferPointer());
-  auto *rep = GetInstallQueryRequestRep(ptr);
-  auto size = parser.builder_.GetSize();
-  auto buf = actor::BytesBuffer(ptr, size);
-  return InstallQueryRequest(std::move(buf), true);
-}
 
 class DataUpdateActorTester {
 public:
@@ -76,12 +42,12 @@ public:
       auto actor_ref = MakeDataUpdateActorInstRef(builder);
 
       io::RecordBuilder record_builder;
-      storage::Key key(0, 0, 0, 0);
+      storage::Key key(test_vtype_, 0, 0, 0);
       int64_t timestamp = 1000;
       auto attr = reinterpret_cast<int8_t*>(&timestamp);
       record_builder.AddAttribute(0, AttributeValueType::INT64,
         attr, sizeof(int64_t));
-      record_builder.BuildAsVertexRecord(0, 0);
+      record_builder.BuildAsVertexRecord(test_vtype_, 0);
       const uint8_t* buf = record_builder.BufPointer();
       auto size = record_builder.BufSize();
       actor::BytesBuffer tp(reinterpret_cast<const char*>(buf), size);
@@ -92,14 +58,14 @@ public:
       io::SampleUpdateBatch batch(0, pairs);
       EXPECT_TRUE(batch.GetUpdatesNum() == 1);
 
-      auto req = MakeInstallQueryRequest();
+      auto req = ServingTestHelper::MakeInstallQueryRequest();
       auto payload = std::make_shared<ServingInitPayload>(
           req.CloneBuffer(), store_.get());
 
       return actor_ref.ExecuteAdminOperation(AdminRequest(AdminOperation::INIT, payload)).then(
         [actor_ref, batch=std::move(batch), this] (auto) mutable {
           return actor_ref.Update(std::move(batch)).then([this] (actor::Void ret) {
-            storage::Key key(0, 0, 0, 0);
+            storage::Key key(test_vtype_, 0, 0, 0);
             io::Record record;
             EXPECT_TRUE(store_->GetVertex(key, &record));
             EXPECT_TRUE(record.GetView().AsVertexRecord()

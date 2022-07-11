@@ -19,60 +19,35 @@ using namespace dgs;
 
 class ServingActorModuleTest : public ::testing::Test {
 public:
-  ServingActorModuleTest() : helper_() {}
+  ServingActorModuleTest() : helper_(4, 4, 2) {}
   ~ServingActorModuleTest() override = default;
 
 protected:
   void SetUp() override {
+    InitGoogleLogging();
+    FLAGS_alsologtostderr = true;
+    Schema::GetInstance().Init();
     helper_.Initialize();
   }
 
   void TearDown() override {
-    helper_.Finalize();
-  }
-
-  void MakeSampleStore() {
-    helper_.MakeSampleStore();
-  }
-
-  InstallQueryRequest MakeInstallQueryRequest() {
-    return helper_.MakeInstallQueryRequest();
-  }
-
-  RunQueryRequest MakeRunQueryRequest(VertexId vid) {
-    return helper_.MakeRunQueryRequest(vid);
-  }
-
-  void PrintQueryResponse(const QueryResponse& res) {
-    helper_.PrintQueryResponse(res);
+    UninitGoogleLogging();
   }
 
 protected:
-  TestHelper  helper_;
-  ActorSystem actor_system_{WorkerType::Serving, 0, 1, 2};
+  ServingTestHelper helper_;
 };
 
 TEST_F(ServingActorModuleTest, RunQuery) {
-  MakeSampleStore();
+  helper_.InstallQuery();
+  helper_.MakeSampleStore();
 
-  // install query and run.
   auto fut = seastar::alien::submit_to(
       *seastar::alien::internal::default_instance, 0, [this] {
-    // create actor reference to shard 0.
-    auto builder = hiactor::scope_builder(0, MakeServingGroupScope());
-    auto ref = MakeServingActorInstRef(builder);
-
-    auto req = MakeInstallQueryRequest();
-    auto payload = std::make_shared<ServingInitPayload>(
-        req.CloneBuffer(), helper_.GetSampleStore());
-
-    return seastar::do_with(std::move(ref), [this, payload] (ServingActor_ref& ref) {
-      return ref.ExecuteAdminOperation(AdminRequest(AdminOperation::INIT, payload)).then([ref, this] (auto) mutable {
-        return ref.RunQuery(this->MakeRunQueryRequest(2));
-      });
-    });
+    return helper_.GetServingActorRef(0).RunQuery(
+        ServingTestHelper::MakeRunQueryRequest(2));
   });
   fut.wait();
 
-  PrintQueryResponse(fut.get());
+  ServingTestHelper::PrintQueryResponse(fut.get());
 }

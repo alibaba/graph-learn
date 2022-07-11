@@ -19,6 +19,7 @@ limitations under the License.
 #include "common/options.h"
 #include "core/storage/sample_builder.h"
 #include "core/storage/sample_store.h"
+#include "core/storage/subscription_table.h"
 #include "service/actor_system.h"
 #include "service/actor_ref_builder.h"
 #include "service/adaptive_rate_limiter.h"

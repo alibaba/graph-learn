@@ -9,11 +9,11 @@ build_dir=${script_dir}/build
 built_bin_dir=${script_dir}/built/bin
 
 ########################################################
-# Deploy local kafka cluster
+# Prepare kafka package
 # Arguments:
 #   None
 ########################################################
-function deploy_kafka_cluster() {
+function prepare_kafka_package() {
   mkdir -p "${build_dir}"/kafka_cluster
   pushd "${build_dir}"/kafka_cluster
   if [ ! -f "kafka_2.13-3.0.0.tgz" ]; then
@@ -23,13 +23,19 @@ function deploy_kafka_cluster() {
     tar -xvzf kafka_2.13-3.0.0.tgz
   fi
   popd
+}
 
+########################################################
+# Deploy local kafka cluster for unittests
+# Arguments:
+#   None
+########################################################
+function deploy_ut_kafka_cluster() {
   pushd "${build_dir}"/kafka_cluster/kafka_2.13-3.0.0
   ./bin/zookeeper-server-start.sh config/zookeeper.properties &
   sleep 5s
   ./bin/kafka-server-start.sh config/server.properties &
   sleep 5s
-
   for topic in record-poller-ut-1 record-poller-ut-2 sampling-actor-ut sample-publisher-ut service-record-polling-ut service-sample-publishing-ut
   do
     ./bin/kafka-topics.sh --create --topic $topic --bootstrap-server localhost:9092 --partitions 4 --replication-factor 1
@@ -42,11 +48,11 @@ function deploy_kafka_cluster() {
 # Arguments:
 #   None
 ########################################################
-function stop_kafka_cluster() {
+function clear_ut_kafka_cluster() {
   pushd "${build_dir}"/kafka_cluster/kafka_2.13-3.0.0
-  ./bin/kafka-server-stop.sh config/server.properties
+  ./bin/kafka-server-stop.sh config/server.properties || true
   sleep 2s
-  ./bin/zookeeper-server-stop.sh config/zookeeper.properties
+  ./bin/zookeeper-server-stop.sh config/zookeeper.properties || true
   sleep 2s
   rm -rf /tmp/kafka-logs
   rm -rf /tmp/zookeeper
@@ -87,7 +93,9 @@ function make_code_cov_reports() {
   popd
 }
 
-deploy_kafka_cluster
+prepare_kafka_package
+clear_ut_kafka_cluster
+deploy_ut_kafka_cluster
 run_ut
-stop_kafka_cluster
+clear_ut_kafka_cluster
 make_code_cov_reports

@@ -1,7 +1,7 @@
 worker-type: "Serving"
 
 fbs-file-dir: "../../fbs"
-schema-file: "../../conf/testing_schema.json"
+schema-file: "../../conf/schema.e2e.json"
 
 rdb-env:
   high-prio-bg-threads-num: 2

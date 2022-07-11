@@ -17,34 +17,33 @@ limitations under the License.
 #include "service/event_handler.h"
 
 using namespace dgs;
-using namespace seastar;
-using namespace httpd;
-
 using namespace std::chrono_literals;
 
 class EventHandlerTest : public ::testing::Test {
 public:
-  EventHandlerTest() = default;
+  EventHandlerTest() : helper_(4, 4, 2) {}
   ~EventHandlerTest() override = default;
 
 protected:
   void SetUp() override {
+    InitGoogleLogging();
+    FLAGS_alsologtostderr = true;
+    Schema::GetInstance().Init();
     helper_.Initialize();
-
-    helper_.InstallQuery(WorkerType::Serving);
-    helper_.MakeSampleStore();
   }
 
   void TearDown() override {
-    helper_.Finalize();
+    UninitGoogleLogging();
   }
 
 protected:
-  ServiceTestHelper helper_;
-  ActorSystem actor_system_{WorkerType::Serving, 0, 1, 2};
+  ServingTestHelper helper_;
 };
 
 TEST_F(EventHandlerTest, EventhandlerFunctionality) {
+  helper_.InstallQuery();
+  helper_.MakeSampleStore();
+
   const WorkerId worker_id = 0;
 
   RecordPollingManager poller_manager;
@@ -56,7 +55,7 @@ TEST_F(EventHandlerTest, EventhandlerFunctionality) {
       [event_handler] { return event_handler->Start(); });
   fut.wait();
 
-  helper_.SendRunQuery(2);
+  ServingTestHelper::SendRunQuery(2);
 
   auto fut2 = seastar::alien::submit_to(
       *seastar::alien::internal::default_instance, 0, [event_handler] {

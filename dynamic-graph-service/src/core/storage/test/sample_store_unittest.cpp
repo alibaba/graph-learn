@@ -71,9 +71,6 @@ public:
 };
 
 TEST(SampleStore, StorageFunctionality) {
-  // clear all existing storage first.
-  ::system("rm -rf estore_* vstore_* subs_table* record_polling_offsets");
-
   InitGoogleLogging();
 
   SampleStoreTester tester;

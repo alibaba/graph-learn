@@ -35,165 +35,27 @@ namespace dgs {
 using namespace seastar;
 using namespace httpd;
 
-class TestHelper {
+static const VertexType test_vtype_ = 0;
+static const EdgeType   test_etype_ = 4;
+
+class BasicTestHelper {
 public:
-  TestHelper() {
-    ::system("rm -rf ./tmp_store && mkdir -p ./tmp_store");
-    ::system("rm -rf ./tmp_subs_table && mkdir -p ./tmp_subs_table");
+  BasicTestHelper() = default;
+  virtual ~BasicTestHelper() = default;
 
-    std::vector<PartitionId> pids{0, 1, 2, 3};
-    store_ = std::make_unique<storage::SampleStore>(
-        pids, PartitionerFactory::Create("hash", 4),
-        "./tmp_store/", "./tmp_store/",
-        storage::RdbEnv::Default());
-
-    sample_builder_ = std::make_unique<storage::SampleBuilder>(
-      pids, PartitionerFactory::Create("hash", 4));
-
-    subs_table_ = std::make_unique<storage::SubscriptionTable>(
-      pids, PartitionerFactory::Create("hash", 4),
-        "./tmp_subs_table/", "./tmp_subs_table/",
-        storage::RdbEnv::Default());
-
-    subs_table_->SetDSWorkerPartitioner(4, "hash");
-
-    partition_router_.reset(MakePartitionRouter());
-  }
-
-  virtual ~TestHelper() = default;
-
-  storage::SampleStore* GetSampleStore() {
-    return store_.get();
-  }
-
-  storage::SampleBuilder* GetSampleBuilder() {
-    return sample_builder_.get();
-  }
-
-  storage::SubscriptionTable* GetSubsTable() {
-    return subs_table_.get();
-  }
-
-  std::unique_ptr<PartitionRouter>& GetPartitionRouter() {
-    return partition_router_;
-  }
-
-  void Initialize();
-  void Finalize();
-
-  // Make User Requests: InstallQuery, RunQuery
-  InstallQueryRequest MakeInstallQueryRequest();
-  RunQueryRequest MakeRunQueryRequest(VertexId vid);
-
-  // Make RecordBatch contains one vertex and it's multiple neighbor edges.
-  io::RecordBatch MakeRecordBatch(PartitionId pid, VertexId vid, size_t batch_size);
-
-  // Make a fake samplestore.
-  void MakeSampleStore();
-
-  // Making partition routing info
-  PartitionRouter* MakePartitionRouter();
-
-  void PrintQueryResponse(const QueryResponse& res);
+  static InstallQueryRequest MakeInstallQueryRequest();
+  static void PrintQueryResponse(const QueryResponse& res);
 
 protected:
-  VertexType vtype_ = 0;
-  EdgeType   etype_ = 1;
-  std::unique_ptr<PartitionRouter>            partition_router_;
-  std::unique_ptr<storage::SampleStore>       store_;
-  std::unique_ptr<storage::SampleBuilder>     sample_builder_;
-  std::unique_ptr<storage::SubscriptionTable> subs_table_;
-};
-
-size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
-  ((std::string*)userp)->append((char*)contents, size * nmemb);
-  return size * nmemb;
-}
-
-class ServiceTestHelper : public TestHelper {
-public:
-  ServiceTestHelper() = default;
-
-  ~ServiceTestHelper() override = default;
-
-  void InstallQuery(WorkerType worker_type);
-
-  void SendRunQuery(VertexId vid);
-
-public:
-  std::vector<SamplingActor_ref>     sampling_refs_;
-  std::vector<ServingActor_ref>      serving_refs_;
-  std::vector<DataUpdateActor_ref>   data_update_refs_;
+  static std::vector<PartitionId> MakePidVector(uint32_t num_partitions);
 };
 
 inline
-void ServiceTestHelper::InstallQuery(WorkerType worker_type) {
-  sampling_refs_.reserve(actor::LocalShardCount());
-  serving_refs_.reserve(actor::LocalShardCount());
-  data_update_refs_.reserve(actor::LocalShardCount());
-
-  hiactor::scope_builder spl_builder(0);
-  for (unsigned i = 0; i < actor::LocalShardCount(); i++) {
-    auto g_sid = actor::GlobalShardIdAnchor() + i;
-    spl_builder.set_shard(g_sid);
-    sampling_refs_.emplace_back(MakeSamplingActorInstRef(spl_builder));
-  }
-
-  hiactor::scope_builder srv_builder(0, MakeServingGroupScope());
-  for (unsigned i = 0; i < actor::LocalShardCount(); i++) {
-    auto g_sid = actor::GlobalShardIdAnchor() + i;
-    srv_builder.set_shard(g_sid);
-    serving_refs_.emplace_back(MakeServingActorInstRef(srv_builder));
-    data_update_refs_.emplace_back(MakeDataUpdateActorInstRef(srv_builder));
-  }
-
-  auto fut = seastar::alien::submit_to(
-      *seastar::alien::internal::default_instance, 0, [this, worker_type] {
-    auto req = MakeInstallQueryRequest();
-    if (worker_type == WorkerType::Sampling) {
-      std::vector<PartitionId> pub_kafka_pids = {0, 1, 2, 3};
-      auto payload = std::make_shared<SamplingInitPayload>(
-          req.CloneBuffer(), store_.get(), sample_builder_.get(), subs_table_.get(),
-          "hash", 4, "hash", 4, 4, partition_router_->GetRoutingInfo(), pub_kafka_pids);
-      return seastar::parallel_for_each(boost::irange(0u, actor::LocalShardCount()), [this, payload] (uint32_t i) {
-        return sampling_refs_[i].ExecuteAdminOperation(
-          AdminRequest(AdminOperation::INIT, payload)).discard_result();
-      });
-    } else {
-      auto payload = std::make_shared<ServingInitPayload>(
-          req.CloneBuffer(), store_.get());
-      return seastar::parallel_for_each(boost::irange(0u, actor::LocalShardCount()), [this, payload] (uint32_t i) {
-        return serving_refs_[i].ExecuteAdminOperation(AdminRequest(AdminOperation::INIT, payload)).then([this, payload, i] (auto) {
-          return data_update_refs_[i].ExecuteAdminOperation(AdminRequest(AdminOperation::INIT, payload)).discard_result();
-        });
-      });
-    }
-  });
-
-  fut.wait();
-}
-
-inline
-void TestHelper::Initialize() {
-  // clear all existing storage first.
-  ::system("rm -rf estore_* vstore_* subs_table* record_polling_offsets");
-  InitGoogleLogging();
-  FLAGS_alsologtostderr = true;
-
-  Schema::GetInstance().Init();
-}
-
-inline
-void TestHelper::Finalize() {
-  UninitGoogleLogging();
-}
-
-inline
-InstallQueryRequest TestHelper::MakeInstallQueryRequest() {
+InstallQueryRequest BasicTestHelper::MakeInstallQueryRequest() {
   std::string schemafile;
   std::string jsonfile;
   const char* default_schema = "../../fbs/install_query_req.fbs";
-  const char* default_json = "../../conf/install_query_req_ut.json";
+  const char* default_json = "../../conf/install_query.ut.json";
   bool ok;
   ok = flatbuffers::LoadFile(default_schema, false, &schemafile);
   if (!ok) { LOG(FATAL) << "Load install_query_request schema file failed.\n"; }
@@ -208,111 +70,18 @@ InstallQueryRequest TestHelper::MakeInstallQueryRequest() {
   if (!ok) { LOG(FATAL) << "Parse install_query_request json file failed.\n"; }
 
   auto* ptr = reinterpret_cast<char*>(parser.builder_.GetBufferPointer());
-  auto *rep = GetInstallQueryRequestRep(ptr);
+//  auto *rep = GetInstallQueryRequestRep(ptr);
   auto size = parser.builder_.GetSize();
   auto buf = actor::BytesBuffer(ptr, size);
   return InstallQueryRequest(std::move(buf), true);
 }
 
 inline
-RunQueryRequest TestHelper::MakeRunQueryRequest(VertexId vid) {
-  return {0, vid};
-}
-
-inline
-io::RecordBatch TestHelper::MakeRecordBatch(PartitionId pid,
-                                            VertexId vid,
-                                            size_t batch_size) {
-  AttributeType timestamp_type =
-    Schema::GetInstance().GetAttrDefByName("timestamp").Type();
-
-  io::RecordBatchBuilder batch_builder;
-  io::RecordBuilder builder;
-  int64_t timestamp = 1000;
-  int32_t flipped = -10;
-
-  batch_builder.SetStorePartitionId(pid);
-  builder.AddAttribute(timestamp_type, AttributeValueType::INT64,
-      reinterpret_cast<int8_t*>(&timestamp), sizeof(int64_t));
-  builder.BuildAsVertexRecord(vtype_, vid);
-  batch_builder.AddRecord(builder);
-  builder.Clear();
-
-  for (VertexId dst_vid = vid + 1; dst_vid < batch_size; ++dst_vid) {
-    timestamp += flipped * dst_vid;
-    // add edge `vid -> dst_v`.
-    builder.AddAttribute(timestamp_type, AttributeValueType::INT64,
-      reinterpret_cast<int8_t*>(&timestamp), sizeof(int64_t));
-    builder.BuildAsEdgeRecord(etype_, vtype_, vtype_, vid, dst_vid);
-    batch_builder.AddRecord(builder);
-    builder.Clear();
-    flipped = -flipped;
-  }
-
-  batch_builder.Finish();
-
-  auto *ptr = const_cast<char*>(reinterpret_cast<
-      const char*>(batch_builder.BufPointer()));
-  auto size = batch_builder.BufSize();
-  auto buf = actor::BytesBuffer(ptr, size,
-      seastar::make_object_deleter(std::move(batch_builder)));
-
-  return io::RecordBatch(std::move(buf));
-}
-
-inline
-void TestHelper::MakeSampleStore() {
-  VertexId vid = 2;
-  uint64_t fanout = 2;
-
-  std::vector<OperatorId> vops = {2};
-  std::vector<OperatorId> eops = {1, 3};
-  io::RecordBuilder builder;
-
-  AttributeType timestamp_type =
-    Schema::GetInstance().GetAttrDefByName("timestamp").Type();
-  int64_t timestamp = 1000;
-
-  for (auto vop: vops) {
-    for (uint64_t idx = 0; idx < fanout; ++idx) {
-      storage::Key vkey{vtype_, vid, vop, idx};
-      builder.AddAttribute(timestamp_type, AttributeValueType::INT64,
-        reinterpret_cast<int8_t*>(&timestamp), sizeof(int64_t));
-      builder.BuildAsVertexRecord(vtype_, vid);
-      store_->PutVertex(vkey, {builder.BufPointer(), builder.BufSize()});
-      builder.Clear();
-      timestamp += 1;
-    }
-  }
-
-  for (auto eop: eops) {
-    for (uint64_t idx = 0; idx < fanout; ++idx) {
-      storage::Key ekey{vtype_, vid, eop, idx};
-      builder.AddAttribute(timestamp_type, AttributeValueType::INT64,
-        reinterpret_cast<int8_t*>(&timestamp), sizeof(int64_t));
-      builder.BuildAsEdgeRecord(etype_, vtype_, vtype_, vid, vid);
-      store_->PutEdge(ekey, {builder.BufPointer(), builder.BufSize()});
-      builder.Clear();
-      timestamp += 1;
-    }
-  }
-}
-
-inline
-PartitionRouter* TestHelper::MakePartitionRouter() {
-  auto* router = new PartitionRouter();
-  for (uint32_t i = 0; i < 4; i++) {
-    auto update = RoutingUpdate(i, i);
-    router->UpdatePartitionRoutingInfo(update);
-  }
-  return router;
-}
-
-void TestHelper::PrintQueryResponse(const QueryResponse& res) {
+void BasicTestHelper::PrintQueryResponse(const QueryResponse& res) {
   auto* results = res.GetRep()->results();
   for (auto* result : *results) {
     AttributeType timestamp_type =
-    Schema::GetInstance().GetAttrDefByName("timestamp").Type();
+        Schema::GetInstance().GetAttrDefByName("timestamp").Type();
 
     io::RecordBatchView view{result->value()};
     assert(view.Valid());
@@ -338,12 +107,319 @@ void TestHelper::PrintQueryResponse(const QueryResponse& res) {
 }
 
 inline
-void ServiceTestHelper::SendRunQuery(VertexId vid) {
+std::vector<PartitionId>
+BasicTestHelper::MakePidVector(uint32_t num_partitions) {
+  std::vector<PartitionId> pids{num_partitions};
+  for (uint32_t i = 0; i < num_partitions; i++) {
+    pids[i] = i;
+  }
+  return pids;
+}
+
+class SamplingTestHelper : public BasicTestHelper {
+public:
+  SamplingTestHelper(uint32_t num_pub_kafka_partitions,
+                     uint32_t num_store_partitions,
+                     uint32_t num_local_shards,
+                     uint32_t num_ds_worker,
+                     uint32_t num_ds_store_partitions)
+    : num_pub_kafka_partitions_(num_pub_kafka_partitions),
+      num_store_partitions_(num_store_partitions),
+      num_local_shards_(num_local_shards),
+      num_ds_worker_(num_ds_worker),
+      num_ds_store_partitions_(num_ds_store_partitions) {}
+  ~SamplingTestHelper() override = default;
+
+  void Initialize();
+
+  void InstallQuery();
+
+  // make test record batch
+  static io::RecordBatch MakeRecordBatch(PartitionId pid,
+                                         VertexId vid,
+                                         size_t batch_size);
+
+  SamplingActor_ref& GetSamplingActorRef(size_t idx) {
+    return sampling_act_refs_.at(idx);
+  }
+
+  PartitionRouter* GetPartitionRouter() {
+    return partition_router_.get();
+  }
+
+private:
+  const uint32_t num_pub_kafka_partitions_;
+  const uint32_t num_store_partitions_;
+  const uint32_t num_local_shards_;
+  const uint32_t num_ds_worker_;
+  const uint32_t num_ds_store_partitions_;
+  std::unique_ptr<PartitionRouter>            partition_router_;
+  std::unique_ptr<storage::SampleStore>       store_;
+  std::unique_ptr<storage::SampleBuilder>     sample_builder_;
+  std::unique_ptr<storage::SubscriptionTable> subs_table_;
+  std::unique_ptr<ActorSystem>       actor_sys_;
+  std::vector<SamplingActor_ref>     sampling_act_refs_;
+};
+
+inline
+void SamplingTestHelper::Initialize() {
+  ::system("rm -rf ./tmp_store && mkdir -p ./tmp_store");
+  ::system("rm -rf ./tmp_subs_table && mkdir -p ./tmp_subs_table");
+
+  partition_router_ = std::make_unique<PartitionRouter>();
+  for (uint32_t i = 0; i < num_store_partitions_; i++) {
+    auto update = RoutingUpdate(i, i % num_local_shards_);
+    partition_router_->UpdatePartitionRoutingInfo(update);
+  }
+
+  auto pids = MakePidVector(num_store_partitions_);
+  sample_builder_ = std::make_unique<storage::SampleBuilder>(
+      pids, PartitionerFactory::Create("hash", num_store_partitions_));
+  store_ = std::make_unique<storage::SampleStore>(
+      pids,
+      PartitionerFactory::Create("hash", num_store_partitions_),
+      "./tmp_store/",
+      "./tmp_store/",
+      storage::RdbEnv::Default());
+  subs_table_ = std::make_unique<storage::SubscriptionTable>(
+      pids,
+      PartitionerFactory::Create("hash", num_store_partitions_),
+      "./tmp_subs_table/",
+      "./tmp_subs_table/",
+      storage::RdbEnv::Default());
+  subs_table_->SetDSWorkerPartitioner(num_ds_worker_, "hash");
+
+  actor_sys_ = std::make_unique<ActorSystem>(
+      WorkerType::Sampling, 0, 1, num_local_shards_);
+  sampling_act_refs_.reserve(num_local_shards_);
+  hiactor::scope_builder spl_builder;
+  for (unsigned i = 0; i < num_local_shards_; i++) {
+    auto g_sid = actor::GlobalShardIdAnchor() + i;
+    spl_builder.set_shard(g_sid);
+    sampling_act_refs_.emplace_back(MakeSamplingActorInstRef(spl_builder));
+  }
+}
+
+inline
+void SamplingTestHelper::InstallQuery() {
+  auto fut = seastar::alien::submit_to(
+      *seastar::alien::internal::default_instance, 0,
+      [this] {
+        auto req = MakeInstallQueryRequest();
+        auto pub_kafka_pids = MakePidVector(num_pub_kafka_partitions_);
+        auto payload = std::make_shared<SamplingInitPayload>(
+            req.CloneBuffer(),
+            store_.get(),
+            sample_builder_.get(),
+            subs_table_.get(),
+            "hash",
+            num_store_partitions_,
+            "hash",
+            num_ds_store_partitions_,
+            num_ds_worker_,
+            partition_router_->GetRoutingInfo(),
+            pub_kafka_pids);
+        return seastar::parallel_for_each(boost::irange(0u, num_local_shards_),
+            [this, payload] (uint32_t i) {
+          return sampling_act_refs_[i].ExecuteAdminOperation(
+              AdminRequest(AdminOperation::INIT, payload)).discard_result();
+        });
+      });
+  fut.wait();
+}
+
+inline
+io::RecordBatch SamplingTestHelper::MakeRecordBatch(PartitionId pid,
+                                                    VertexId vid,
+                                                    size_t batch_size) {
+  AttributeType timestamp_type =
+      Schema::GetInstance().GetAttrDefByName("timestamp").Type();
+
+  io::RecordBatchBuilder batch_builder;
+  io::RecordBuilder builder;
+  int64_t timestamp = 1000;
+  int32_t flipped = -10;
+
+  batch_builder.SetStorePartitionId(pid);
+  builder.AddAttribute(
+      timestamp_type, AttributeValueType::INT64,
+      reinterpret_cast<int8_t*>(&timestamp), sizeof(int64_t));
+  builder.BuildAsVertexRecord(test_vtype_, vid);
+  batch_builder.AddRecord(builder);
+  builder.Clear();
+
+  for (VertexId dst_vid = vid + 1; dst_vid < batch_size; ++dst_vid) {
+    timestamp += flipped * dst_vid;
+    // add edge `vid -> dst_v`.
+    builder.AddAttribute(
+        timestamp_type, AttributeValueType::INT64,
+        reinterpret_cast<int8_t*>(&timestamp), sizeof(int64_t));
+    builder.BuildAsEdgeRecord(
+        test_etype_, test_vtype_, test_vtype_, vid, dst_vid);
+    batch_builder.AddRecord(builder);
+    builder.Clear();
+    flipped = -flipped;
+  }
+
+  batch_builder.Finish();
+
+  auto *ptr = const_cast<char*>(reinterpret_cast<
+      const char*>(batch_builder.BufPointer()));
+  auto size = batch_builder.BufSize();
+  auto buf = actor::BytesBuffer(
+      ptr, size, seastar::make_object_deleter(std::move(batch_builder)));
+
+  return io::RecordBatch(std::move(buf));
+}
+
+class ServingTestHelper : public BasicTestHelper {
+public:
+  ServingTestHelper(uint32_t num_pub_kafka_partitions,
+                     uint32_t num_store_partitions,
+                     uint32_t num_local_shards)
+  : num_pub_kafka_partitions_(num_pub_kafka_partitions),
+    num_store_partitions_(num_store_partitions),
+    num_local_shards_(num_local_shards) {}
+  ~ServingTestHelper() override = default;
+
+  void Initialize();
+
+  void InstallQuery();
+
+  // Make a fake sample store.
+  void MakeSampleStore();
+
+  static void SendRunQuery(VertexId vid);
+
+  ServingActor_ref& GetServingActorRef(size_t idx) {
+    return serving_act_refs_.at(idx);
+  }
+
+  DataUpdateActor_ref& GetDataUpdateActorRef(size_t idx) {
+    return data_update_act_refs_.at(idx);
+  }
+
+  static RunQueryRequest MakeRunQueryRequest(VertexId vid) {
+    return {0, vid};
+  }
+
+private:
+  const uint32_t num_pub_kafka_partitions_;
+  const uint32_t num_store_partitions_;
+  const uint32_t num_local_shards_;
+  std::unique_ptr<PartitionRouter>       partition_router_;
+  std::unique_ptr<storage::SampleStore>  store_;
+  std::unique_ptr<ActorSystem>      actor_sys_;
+  std::vector<ServingActor_ref>     serving_act_refs_;
+  std::vector<DataUpdateActor_ref>  data_update_act_refs_;
+};
+
+inline
+void ServingTestHelper::Initialize() {
+  ::system("rm -rf ./tmp_store && mkdir -p ./tmp_store");
+
+  partition_router_ = std::make_unique<PartitionRouter>();
+  for (uint32_t i = 0; i < num_store_partitions_; i++) {
+    auto update = RoutingUpdate(i, i % num_local_shards_);
+    partition_router_->UpdatePartitionRoutingInfo(update);
+  }
+
+  auto pids = MakePidVector(num_store_partitions_);
+  store_ = std::make_unique<storage::SampleStore>(
+      pids,
+      PartitionerFactory::Create("hash", num_store_partitions_),
+      "./tmp_store/",
+      "./tmp_store/",
+      storage::RdbEnv::Default());
+
+  actor_sys_ = std::make_unique<ActorSystem>(
+      WorkerType::Serving, 0, 1, num_local_shards_);
+  serving_act_refs_.reserve(num_local_shards_);
+  data_update_act_refs_.reserve(num_local_shards_);
+  hiactor::scope_builder srv_builder(0, MakeServingGroupScope());
+  for (unsigned i = 0; i < num_local_shards_; i++) {
+    auto g_sid = actor::GlobalShardIdAnchor() + i;
+    srv_builder.set_shard(g_sid);
+    serving_act_refs_.emplace_back(MakeServingActorInstRef(srv_builder));
+    data_update_act_refs_.emplace_back(MakeDataUpdateActorInstRef(srv_builder));
+  }
+}
+
+inline
+void ServingTestHelper::InstallQuery() {
+  auto fut = seastar::alien::submit_to(
+      *seastar::alien::internal::default_instance, 0,
+      [this] {
+        auto req = MakeInstallQueryRequest();
+        auto payload = std::make_shared<ServingInitPayload>(
+            req.CloneBuffer(), store_.get());
+        return seastar::parallel_for_each(boost::irange(0u, num_local_shards_),
+            [this, payload] (uint32_t i) {
+          return serving_act_refs_[i].ExecuteAdminOperation(
+            AdminRequest(AdminOperation::INIT, payload)
+          ).then([this, payload, i] (auto) {
+            return data_update_act_refs_[i].ExecuteAdminOperation(
+                AdminRequest(AdminOperation::INIT, payload)).discard_result();
+          });
+        });
+      });
+  fut.wait();
+}
+
+inline
+void ServingTestHelper::MakeSampleStore() {
+  VertexId vid = 2;
+  uint64_t fanout = 2;
+
+  std::vector<OperatorId> vops = {2};
+  std::vector<OperatorId> eops = {1, 3};
+  io::RecordBuilder builder;
+
+  AttributeType timestamp_type =
+      Schema::GetInstance().GetAttrDefByName("timestamp").Type();
+  int64_t timestamp = 1000;
+
+  for (auto vop: vops) {
+    for (uint64_t idx = 0; idx < fanout; ++idx) {
+      storage::Key vkey{test_vtype_, vid, vop, idx};
+      builder.AddAttribute(
+          timestamp_type, AttributeValueType::INT64,
+          reinterpret_cast<int8_t*>(&timestamp), sizeof(int64_t));
+      builder.BuildAsVertexRecord(test_vtype_, vid);
+      store_->PutVertex(vkey, {builder.BufPointer(), builder.BufSize()});
+      builder.Clear();
+      timestamp += 1;
+    }
+  }
+
+  for (auto eop: eops) {
+    for (uint64_t idx = 0; idx < fanout; ++idx) {
+      storage::Key ekey{test_vtype_, vid, eop, idx};
+      builder.AddAttribute(
+          timestamp_type, AttributeValueType::INT64,
+          reinterpret_cast<int8_t*>(&timestamp), sizeof(int64_t));
+      builder.BuildAsEdgeRecord(
+          test_etype_, test_vtype_, test_vtype_, vid, vid);
+      store_->PutEdge(ekey, {builder.BufPointer(), builder.BufSize()});
+      builder.Clear();
+      timestamp += 1;
+    }
+  }
+}
+
+inline
+size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
+  ((std::string*)userp)->append((char*)contents, size * nmemb);
+  return size * nmemb;
+}
+
+inline
+void ServingTestHelper::SendRunQuery(VertexId vid) {
   CURL *curl;
   CURLcode res;
   std::string readBuffer;
   curl = curl_easy_init();
-  if(curl) {
+  if (curl) {
     curl_easy_setopt(curl, CURLOPT_URL, "localhost:10000/serving/w0?qid=0&vid=2");
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);

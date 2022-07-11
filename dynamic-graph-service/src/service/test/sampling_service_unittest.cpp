@@ -13,7 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "service/test/test_helper.h"
+#include "service/service.h"
+#include "gtest/gtest.h"
 
 using namespace dgs;
 
@@ -24,16 +25,14 @@ public:
 
 protected:
   void SetUp() override {
-    // clear all existing storage first.
-    ::system("rm -rf estore_* vstore_* subs_table* record_polling_offsets");
+    ::system("rm -rf ./tmp_store && mkdir -p ./tmp_store");
+    ::system("rm -rf ./tmp_subs_table && mkdir -p ./tmp_subs_table");
   }
   void TearDown() override {}
-
-protected:
-  ServiceTestHelper helper_;
 };
 
 TEST_F(SamplingServiceTest, RunAll) {
-  Service service("../../conf/sampling_service_ut_options.yml", 0);
+  Service service("../../conf/sampling.ut.yml", 0);
+  FLAGS_alsologtostderr = true;
   service.Run();
 }

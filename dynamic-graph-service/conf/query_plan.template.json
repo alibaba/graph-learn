@@ -4,15 +4,28 @@
       "id": 0,
       "kind": "SOURCE",
       "type": "VERTEX",
-      "links": [{ "node": 1, "src_output": 0, "dst_input": 0},
-                { "node": 2, "src_output": 0, "dst_input": 0}]
+      "links": [
+        { "node": 1, "src_output": 0, "dst_input": 0},
+        { "node": 2, "src_output": 0, "dst_input": 0}
+      ],
+      "params": [
+        {"key": "vtype", "value": 0},
+        {"key": "versions", "value": 1}
+      ],
+      "filter": {
+        "weighted": false,
+        "labeled": false,
+        "attributed": false
+      }
     },
     {
       "id": 1,
       "kind": "EDGE_SAMPLER",
       "type": "EDGE",
-      "links": [{ "node": 2, "src_output": 1, "dst_input": 0},
-                { "node": 3, "src_output": 1, "dst_input": 0}],
+      "links": [
+        { "node": 2, "src_output": 1, "dst_input": 0},
+        { "node": 3, "src_output": 1, "dst_input": 0}
+      ],
       "params": [
         {"key": "vtype", "value": 0},
         {"key": "etype", "value": 4},
@@ -30,8 +43,10 @@
       "kind": "VERTEX_SAMPLER",
       "type": "VERTEX",
       "links": [],
-      "params": [{"key": "vtype", "value": 0},
-        {"key": "versions", "value": 2}],
+      "params": [
+        {"key": "vtype", "value": 0},
+        {"key": "versions", "value": 2}
+      ],
       "filter": {
         "weighted": false,
         "labeled": false,
@@ -42,7 +57,9 @@
       "id": 3,
       "kind": "EDGE_SAMPLER",
       "type": "EDGE",
-      "links": [{ "node": 2, "src_output": 1, "dst_input": 0}],
+      "links": [
+        { "node": 2, "src_output": 1, "dst_input": 0}
+      ],
       "params": [
         {"key": "vtype", "value": 0},
         {"key": "etype", "value": 4},

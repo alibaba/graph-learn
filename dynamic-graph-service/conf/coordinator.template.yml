@@ -1,4 +1,4 @@
-schema-file: "../../conf/testing_schema.json"
+schema-file: "../../conf/schema.e2e.json"
 
 meta-dir: "./coordinator_meta"
 

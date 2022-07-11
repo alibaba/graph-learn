@@ -127,7 +127,7 @@ def main():
   for t in threads:
     t.start()
   cur_path = sys.path[0]
-  json_file = os.path.join(cur_path, "../../../conf/install_query_req_e2e.json")
+  json_file = os.path.join(cur_path, "../../../conf/install_query.e2e.json")
   install_query_req = None
   with open (json_file, 'r') as f:
     install_query_req = json.loads(f.read())
