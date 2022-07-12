@@ -39,6 +39,11 @@ struct KVPair {
   Key        key;
   io::Record value;
 
+  KVPair(const KVPair&) = delete;
+  KVPair& operator=(const KVPair&) = delete;
+  KVPair(KVPair&& other) noexcept;
+  KVPair& operator=(KVPair&& other) noexcept;
+
   KVPair(const Key& k, io::Record&& v)
     : key(k), value(std::move(v)) {}
 };

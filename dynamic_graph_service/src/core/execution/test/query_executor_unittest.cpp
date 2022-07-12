@@ -213,7 +213,7 @@ public:
 
   seastar::future<> RunQuery(execution::Dag* dag) {
     return seastar::do_with(execution::QueryExecutor(dag), [this] (auto& executor) {
-      return executor.Execute(2, store_).then([] (QueryResponse&& res) {
+      return executor.Execute(2, store_.get()).then([] (QueryResponse&& res) {
         auto* results = res.GetRep()->results();
         for (auto* result : *results) {
           io::RecordBatchView view{result->value()};

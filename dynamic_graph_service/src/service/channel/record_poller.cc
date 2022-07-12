@@ -68,9 +68,9 @@ SampleBatchIngestor::SampleBatchIngestor(PartitionRouter* router,
                                          uint32_t poller_id)
     : partition_router_(router),
       partitioner_(partitioner),
+      partition_num_(partitioner->GetPartitionsNum()),
       poller_id_(poller_id),
       gsid_anchor_(actor::GlobalShardIdAnchor()) {
-  partition_records_.resize(partitioner_->GetPartitionsNum());
   hiactor::scope_builder builder(0, MakeServingGroupScope());
   actor_refs_.reserve(actor::LocalShardCount());
   for (unsigned l_sid = 0; l_sid < actor::LocalShardCount(); ++l_sid) {
@@ -81,17 +81,18 @@ SampleBatchIngestor::SampleBatchIngestor(PartitionRouter* router,
 }
 
 std::future<size_t> SampleBatchIngestor::operator()(actor::BytesBuffer&& buf) {
+  std::vector<storage::KVPair> partition_records[partition_num_];
   auto updates = io::SampleUpdateBatch::Deserialize(std::move(buf));
   for (auto& update : updates) {
     auto pid = partitioner_->GetPartitionId(update.key.pkey.vid);
-    partition_records_[pid].emplace_back(std::move(update));
+    partition_records[pid].emplace_back(std::move(update));
   }
   std::vector<io::SampleUpdateBatch> sample_batches;
   size_t num_records = 0;
-  for (PartitionId pid = 0; pid < partition_records_.size(); ++pid) {
-    if (!partition_records_[pid].empty()) {
-      num_records += partition_records_[pid].size();
-      sample_batches.emplace_back(pid, std::move(partition_records_[pid]));
+  for (PartitionId pid = 0; pid < partition_num_; ++pid) {
+    if (!partition_records[pid].empty()) {
+      num_records += partition_records[pid].size();
+      sample_batches.emplace_back(pid, std::move(partition_records[pid]));
     }
   }
   return seastar::alien::submit_to(
