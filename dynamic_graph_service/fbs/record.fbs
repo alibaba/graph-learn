@@ -9,15 +9,15 @@ table AttributeRecordRep {
 }
 
 table VertexRecordRep {
-  vtype:int16;
+  vtype:int32;
   vid:int64;
   attributes:[AttributeRecordRep];
 }
 
 table EdgeRecordRep {
   etype:int16;
-  src_vtype:int16;
-  dst_vtype:int16;
+  src_vtype:int32;
+  dst_vtype:int32;
   src_id:int64;
   dst_id:int64;
   attributes:[AttributeRecordRep];

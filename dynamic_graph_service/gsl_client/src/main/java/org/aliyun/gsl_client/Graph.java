@@ -11,7 +11,7 @@ import org.aliyun.gsl_client.status.Status;
 
 public interface Graph {
   /**
-   * Connect to Remote Graph Service with serverAddr.
+   * Connect to Remote Dynamic Graph Service with serverAddr.
    * @param server_addr
    * @return Graph
    */
@@ -20,7 +20,7 @@ public interface Graph {
   }
 
   /**
-   * Connect to Remote Graph Service with user configured HttpConfig.
+   * Connect to Remote Dynamic Graph Service with user-defined HttpConfig.
    * This is an advance usage for performance.
    * @param config
    * @return Graph
@@ -54,7 +54,7 @@ public interface Graph {
   CompletableFuture<Status> installAsync(Query query);
 
   /**
-   * Install Query with is generated from traversal on Graph and ends
+   * Install Query which is generated from traversal on Graph and ends
    * up with `values()`.
    * @param query
    * @return Status, wait for query installation in another thread and then return Status OK.
@@ -62,5 +62,20 @@ public interface Graph {
    */
   Status install(Query query);
 
+  /**
+   * Run Query with input form DataSource().next(), and get the result asynchronously.
+   * @param query
+   * @return CompletableFuture<Value>, return Value util getting result
+   * sucessfully, otherwise throw UserException.
+   * @throws UserException
+   */
+  CompletableFuture<Value> runAsync(Query query) throws UserException;
+
+  /**
+   * Run Query with input form DataSource().next(), then get the result synchronously.
+   * @param query
+   * @return Value
+   * @throws UserException
+   */
   Value run(Query query) throws UserException;
 }

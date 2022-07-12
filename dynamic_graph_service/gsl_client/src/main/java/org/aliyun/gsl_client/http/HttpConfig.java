@@ -1,5 +1,8 @@
 package org.aliyun.gsl_client.http;
 
+/**
+ * Http Configurations for connection to Dynamic Graph Service.
+ */
 public class HttpConfig {
   private String serverAddr;
   private int readTimeout;

@@ -31,9 +31,9 @@ table PropertyFilter {
 namespace dgs;
 
 table PlanNodeRep {
-  id:uint8;
+  id:uint32;
   kind:dgs.PlanNode.Kind;
-  type:dgs.PlanNode.ObjectType; // FIXME(@goldenleaves): do we need it now?
+  type:dgs.PlanNode.ObjectType; // FIXME(@xmqin): do we need it now?
   links:[dgs.PlanNode.ChildLink];
   params:[dgs.PlanNode.Param];
   filter:dgs.PlanNode.PropertyFilter;

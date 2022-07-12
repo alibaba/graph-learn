@@ -3,7 +3,7 @@ package org.aliyun.gsl_client.predict;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
-import org.aliyun.dgs.AttributeValueTypeRep;
+import org.aliyun.graphlearn.AttributeValueTypeRep;
 import org.aliyun.gsl_client.Decoder;
 import org.tensorflow.framework.DataType;
 import org.tensorflow.framework.TensorProto;
@@ -16,7 +16,7 @@ public class EgoTensor {
 
   public EgoTensor(EgoGraph egoGraph, Decoder decoder) {
     for (int i = 0; i < egoGraph.numHops(); ++i) {
-      short vtype = egoGraph.getVtype(i);
+      int vtype = egoGraph.getVtype(i);
       ArrayList<Integer> dims = decoder.getFeatDims(vtype);
       ArrayList<Integer> featTypes = decoder.getFeatTypes(vtype);
       ArrayList<Long> hopVids = egoGraph.getVids(i);
@@ -52,14 +52,14 @@ public class EgoTensor {
 
         if (dType == DataType.DT_STRING) {
           for (int x = 0; x < batchSize; ++x) {
-            ByteBuffer feat = egoGraph.getVfeats(i, hopVids.get(x)).get(featIdx);
+            ByteBuffer feat = egoGraph.getVfeat(i, hopVids.get(x), featIdx);
             tensorBuilder.addStringVal(ByteString.copyFrom(feat));
           }
         } else {
           int capacity = (int)(batchSize * featDim.getSize() * size);
           ByteBuffer bb = ByteBuffer.allocate(capacity);
           for (int x = 0; x < batchSize; ++x) {
-            ByteBuffer feat = egoGraph.getVfeats(i, hopVids.get(x)).get(featIdx);
+            ByteBuffer feat = egoGraph.getVfeat(i, hopVids.get(x), featIdx);
             bb.put(feat);
           }
           bb.rewind();

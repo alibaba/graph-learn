@@ -6,7 +6,8 @@ public enum ErrorCode {
   OK             (0, true),
   HTTP_ERROR     (1, false),
   PAESE_ERROR    (2, false),
-  INTERNAL_ERROR (3, false);
+  INTERNAL_ERROR (3, false),
+  UNDEFINED_ERROR (4, false);
 
   private final int value;
   private final boolean ok;

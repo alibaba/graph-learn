@@ -84,7 +84,7 @@ public class HttpClient {
     return content;
   }
 
-  public CompletableFuture<byte[]> run(String queryId, int input) {
+  public CompletableFuture<byte[]> run(String queryId, Long input) {
     StringBuilder url = new StringBuilder(64);
     url.append(uri);
     url.append("/infer?");

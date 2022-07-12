@@ -1,17 +1,17 @@
 package org.aliyun.gsl_client;
 
-import org.aliyun.dgs.AttributeRecordRep;
-import org.aliyun.dgs.AttributeValueTypeRep;
-import org.aliyun.dgs.EdgeRecordRep;
-import org.aliyun.dgs.VertexRecordRep;
+import org.aliyun.graphlearn.AttributeRecordRep;
+import org.aliyun.graphlearn.AttributeValueTypeRep;
+import org.aliyun.graphlearn.EdgeRecordRep;
+import org.aliyun.graphlearn.VertexRecordRep;
 
 import com.google.flatbuffers.FlatBufferBuilder;
 
-import org.aliyun.dgs.EntryRep;
-import org.aliyun.dgs.QueryResponseRep;
-import org.aliyun.dgs.RecordBatchRep;
-import org.aliyun.dgs.RecordRep;
-import org.aliyun.dgs.RecordUnionRep;
+import org.aliyun.graphlearn.EntryRep;
+import org.aliyun.graphlearn.QueryResponseRep;
+import org.aliyun.graphlearn.RecordBatchRep;
+import org.aliyun.graphlearn.RecordRep;
+import org.aliyun.graphlearn.RecordUnionRep;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -19,19 +19,25 @@ import java.nio.LongBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+/**
+ * This is a helper class for created `Value` manually instead of quering from
+ * graph service.
+ */
 public class ValueBuilder {
   private FlatBufferBuilder builder = new FlatBufferBuilder(0);
   private ByteBuffer buf;
   private int[] results;
   private int cursor;
-  private int size;
+  private Query query;
+  private long input;
   private Decoder decoder;
 
-  public ValueBuilder(int size, Decoder decoder) {
+  public ValueBuilder(Query query, int size, Decoder decoder, long input) {
+    this.query = query;
     results = new int[size];
     cursor = 0;
-    this.size = size;
     this.decoder = decoder;
+    this.input = input;
   }
 
   public Value finish() {
@@ -43,7 +49,7 @@ public class ValueBuilder {
     builder.finish(orc);
 
     buf = builder.dataBuffer();
-    return new Value(buf);
+    return new Value(query, input, buf);
   }
 
   private int addFloatAttributes(int dim, short idx) {
@@ -162,7 +168,7 @@ public class ValueBuilder {
     int[] offs = new int[batchSize];
     for (int i = 0; i < batchSize; ++i) {
       offs[i] = addEdge(etype, srcVtype, dstVtype,
-                         vid, vid * batchSize + i);
+                        vid, vid * batchSize + i);
     }
     int val = RecordBatchRep.createRecordsVector(builder, offs);
 

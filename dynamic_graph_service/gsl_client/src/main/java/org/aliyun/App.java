@@ -17,25 +17,29 @@ import org.aliyun.gsl_client.Decoder;
 
 
 class MockDataSource extends DataSource {
-  Vector<Integer> vids = new Vector<>();
+  Vector<Long> vids = new Vector<>();
   int cursor = 0;
   int capacity = 0;
 
   MockDataSource(int capacity) {
     this.capacity = capacity;
     for (int i = 0; i < capacity; ++i) {
-      vids.add(i);
+      vids.add(Long.valueOf(i));
     }
   }
 
-  public Integer next() {
-    Integer vid = vids.get(cursor);
+  public Long next() {
+    Long vid = vids.get(cursor);
     cursor += 1;
     return vid;
   }
 
   public boolean hasNext() {
     return cursor < capacity;
+  }
+
+  public boolean seekTimestamp(Long timestamp) {
+    return true;
   }
 }
 public class App
@@ -49,27 +53,26 @@ public class App
     Instant start = Instant.now();
     try {
         Query query = g.V("user").feed(source).properties(1).alias("seed")
-            .outV("u2i").sample(15).by("topk").properties(1).alias("hop1")
-            .outV("i2i").sample(10).by("topk").properties(1).alias("hop2")
+            .outV("u2i").sample(15).by("topk_by_timestamp").properties(1).alias("hop1")
+            .outV("i2i").sample(10).by("topk_by_timestamp").properties(1).alias("hop2")
             .values();
         System.out.println("Waiting for Query Installation Ready...");
         Status s = g.install(query);
         if (s.ok()) {
           // describe the attributes with alias in query.
-          Decoder decoder = new Decoder();
-          decoder.addFeatDesc((short)0,
+          Decoder decoder = new Decoder(g);
+          decoder.addFeatDesc("user",
                               new ArrayList<String>(Arrays.asList("string", "float")),
                               new ArrayList<Integer>(Arrays.asList(1, 100)));
-          decoder.addFeatDesc((short)1,
+          decoder.addFeatDesc("item",
                               new ArrayList<String>(Arrays.asList("string", "float")),
                               new ArrayList<Integer>(Arrays.asList(1, 100)));
 
           System.out.println("Install Query succeed, query id: " + query.getId());
-          TFPredictClient client = new TFPredictClient(query, decoder, "localhost", 9000);
+          TFPredictClient client = new TFPredictClient(decoder, "localhost", 9000);
           for (int i = 0; i < iters; ++i) {
             Value content = g.run(query);
-            // content.read();
-            EgoGraph egoGraph = content.getEgoGraph(query.getPlan(), decoder);
+            EgoGraph egoGraph = content.getEgoGraph("seed");
             client.predict("model", 1, egoGraph);
           }
         } else {

@@ -2,31 +2,33 @@ package org.aliyun.gsl_client.predict;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 
-import org.aliyun.gsl_client.parser.Plan;
+import org.aliyun.graphlearn.VertexRecordRep;
+
 
 public class EgoGraph {
-  private ArrayList<Short> vtypes;  // src_vtype, hop1_vtype, hop2_vtype...
+  private ArrayList<Integer> vtypes;  // src_vtype, hop1_vtype, hop2_vtype...
   private ArrayList<Integer> vops;  // src_opid, hop1_opid, hop2_opid;
   private ArrayList<Integer> eops;  // input_opid, hop1_opid, hop2_opid;
   private ArrayList<Integer> hops;  // hop size;
   private ArrayList<ArrayList<Long>> vids;  // src_vid, hop0_vids, hop1_vids
-  private HashMap<Integer, HashMap<Long, ArrayList<ByteBuffer>>> vfeats;  // opid->{vid->features}
-  // Split ByteBuffer
+  private HashMap<Integer, HashMap<Long, VertexRecordRep>> vfeats;  // opid->{vid->features}
 
-  public EgoGraph(Plan plan) {
-    // TODO(@Seventeen17): parse from plan.
-    vtypes = new ArrayList<Short>(Arrays.asList((short)0, (short)1, (short)1));
-    vops = new ArrayList<Integer>(Arrays.asList(2, 4, 4));
-    hops = new ArrayList<Integer>(Arrays.asList(1, 10, 5));
-    eops = new ArrayList<Integer>(Arrays.asList(0, 1, 3));
+
+  public EgoGraph(ArrayList<Integer> vtypes,
+                  ArrayList<Integer> vops,
+                  ArrayList<Integer> hops,
+                  ArrayList<Integer> eops) {
+    this.vtypes = vtypes;
+    this.vops = vops;
+    this.hops = hops;
+    this.eops = eops;
     vids = new ArrayList<ArrayList<Long>>();
     for (int i = 0; i < hops.size(); ++i) {
       vids.add(new ArrayList<Long>(hops.get(i)));
     }
-    vfeats = new HashMap<>(2);
+    vfeats = new HashMap<>(vtypes.size());
   }
 
   public void addVids(int opid, long vid) {
@@ -34,12 +36,12 @@ public class EgoGraph {
     vids.get(hopId).add(vid);
   }
 
-  public void addFeatures(Integer opid, long vid, ArrayList<ByteBuffer> attrs) {
+  public void addFeatures(Integer opid, long vid, VertexRecordRep attrs) {
     if (vfeats.containsKey(opid)) {
-      HashMap<Long, ArrayList<ByteBuffer>> feats = vfeats.get(opid);
+      HashMap<Long, VertexRecordRep> feats = vfeats.get(opid);
       feats.put(vid, attrs);
     } else {
-      HashMap<Long, ArrayList<ByteBuffer>> feats = new HashMap<Long, ArrayList<ByteBuffer>>();
+      HashMap<Long, VertexRecordRep> feats = new HashMap<Long, VertexRecordRep>();
       feats.put(vid, attrs);
       vfeats.put(opid, feats);
     }
@@ -49,11 +51,11 @@ public class EgoGraph {
     return hops.size();
   }
 
-  public short getVtype(int idx) {
+  public int getVtype(int idx) {
     return vtypes.get(idx);
   }
 
-  public short getVtypeFromOpId(int opid) {
+  public int getVtypeFromOpId(int opid) {
     int idx = vops.indexOf(opid);
     return vtypes.get(idx);
   }
@@ -62,10 +64,11 @@ public class EgoGraph {
     return vids.get(idx);
   }
 
-  public ArrayList<ByteBuffer> getVfeats(int idx, Long vid) {
+  public ByteBuffer getVfeat(int idx, long vid, int featIdx) {
     int opId = vops.get(idx);
-    HashMap<Long, ArrayList<ByteBuffer>> feats = vfeats.get(opId);
-    ArrayList<ByteBuffer> feat = feats.get(vid);
-    return feat;
+    HashMap<Long, VertexRecordRep> feats = vfeats.get(opId);
+    VertexRecordRep feat = feats.get(vid);
+    ByteBuffer bb = feat.attributes(featIdx).valueBytesAsByteBuffer();
+    return bb;
   }
 }
