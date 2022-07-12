@@ -92,35 +92,36 @@ KafkaProducerPool* KafkaProducerPool::GetInstance() {
 /// kafka topic using the producer in the \KafkaProducerPool
 class SamplePublisher {
 public:
-  SamplePublisher() = default;
-  SamplePublisher(const std::string& kafka_topic,
-                  uint32_t kafka_partition_num);
-
+  SamplePublisher();
   ~SamplePublisher() = default;
 
-  SamplePublisher(SamplePublisher&& other) noexcept;
-  SamplePublisher& operator=(SamplePublisher&& other) noexcept;
+  seastar::future<> Publish(std::vector<storage::KVPair>&& batch,
+                            std::vector<storage::SubsInfo>&& infos);
 
-  seastar::future<> Publish(const std::vector<storage::KVPair>& batch,
-                            const std::vector<storage::SubsInfo>& infos);
-
-  void UpdateSinkKafkaPartitions(const std::vector<uint32_t>& updates,
-                                 const std::string& serving_store_part_strategy,
-                                 uint32_t serving_store_part_num,
-                                 uint32_t serving_worker_num);
+  void UpdateDSPublishInfo(
+      uint32_t serving_worker_num,
+      const std::vector<uint32_t>& kafka_to_serving_worker_vec);
 
 private:
-  // FIXME(@goldenleaves): use flat vector instead.
-  using WorkerWisePartitions = std::vector<std::vector<const storage::KVPair*>>;
+  using WorkerSampleUpdates = std::vector<storage::KVPair>;
+  struct WorkerKafkaRouter {
+    std::vector<uint32_t> kafka_pids;
+    uint32_t idx = 0;
 
-private:
-  std::string            kafka_topic_;
-  uint32_t               kafka_partition_num_ = 0;
-  uint32_t               retry_times_ = 0;
-  Partitioner            partitioner_;
-  std::vector<std::vector<uint32_t>>         worker_sink_kafka_partitions_;
-  std::vector<WorkerWisePartitions>          worker_records_;
-  std::vector<std::unordered_set<uint32_t>>  worker_record_id_set_;
+    WorkerKafkaRouter() = default;
+
+    uint32_t GetKafkaPid() {
+      auto kafka_pid = kafka_pids.at(idx);
+      idx = (idx + 1) % kafka_pids.size();
+      return kafka_pid;
+    }
+  };
+
+  std::string  kafka_topic_;
+  uint32_t     kafka_partition_num_ = 0;
+  uint32_t     retry_times_ = 0;
+  std::vector<WorkerSampleUpdates>           worker_records_;
+  std::vector<WorkerKafkaRouter>             worker_kafka_routers_;
   std::shared_ptr<actor::VoidPromiseManager> pr_manager_;
   std::shared_ptr<cppkafka::Producer>        kafka_producer_;
 };

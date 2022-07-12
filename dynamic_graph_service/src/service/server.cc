@@ -69,12 +69,12 @@ void Server::Init(const InitInfo& info) {
   polling_opts.kafka_topic = us_info->sub_kafka_topic;
   polling_opts.kafka_partition_num = us_info->sub_kafka_partition_num;
 
-  auto& ds_info = info.downstream_info;
-  if (ds_info) {
+  auto& ds_kafka_info = info.downstream_kafka_info;
+  if (ds_kafka_info) {
     auto& publishing_opts = opts.sample_pub_options_;
-    publishing_opts.output_kafka_servers = ds_info->pub_kafka_servers;
-    publishing_opts.kafka_topic = ds_info->pub_kafka_topic;
-    publishing_opts.kafka_partition_num = ds_info->pub_kafka_partition_num;
+    publishing_opts.output_kafka_servers = ds_kafka_info->pub_kafka_servers;
+    publishing_opts.kafka_topic = ds_kafka_info->pub_kafka_topic;
+    publishing_opts.kafka_partition_num = ds_kafka_info->pub_kafka_partition_num;
   }
 
   auto& store_partition_info = info.store_partition_info;
@@ -167,10 +167,10 @@ void SamplingServer::Init(const InitInfo& init_info) {
     checkpoint_info.subs_table_backup_infos, std::move(partitioner),
     opt.table_path, opt.backup_path, rdb_env_);
 
-  auto& ds_info = init_info.downstream_info;
+  auto& ds_partition_info = init_info.downstream_partition_info;
   subs_table_->SetDSWorkerPartitioner(
-      ds_info->worker_partition_num,
-      ds_info->worker_partition_strategy);
+      ds_partition_info->worker_partition_num,
+      ds_partition_info->worker_partition_strategy);
 
   auto buf = MakeInstallQueryBuf(init_info.query_plan);
   auto payload = std::make_shared<SamplingInitPayload>(
@@ -178,11 +178,9 @@ void SamplingServer::Init(const InitInfo& init_info) {
       sample_builder_.get(), subs_table_.get(),
       init_info.store_partition_info.partition_strategy,
       init_info.store_partition_info.partition_num,
-      init_info.downstream_info->store_partition_strategy,
-      init_info.downstream_info->store_partition_num,
-      init_info.downstream_info->worker_partition_num,
       init_info.store_partition_info.routing_info,
-      init_info.downstream_info->pub_kafka_pids);
+      init_info.downstream_partition_info->worker_partition_num,
+      init_info.downstream_partition_info->kafka_to_worker_pid_vec);
 
   auto fut = seastar::alien::submit_to(
       *seastar::alien::internal::default_instance, 0,
@@ -296,23 +294,22 @@ Server::UpstreamInfo::UpstreamInfo(
     sub_kafka_pids(std::move(sub_kafka_pids)) {
 }
 
-Server::DownstreamInfo::DownstreamInfo(
-    const std::string& store_partition_strategy,
-    uint32_t store_partition_num,
-    const std::string& worker_partition_strategy,
-    uint32_t worker_partition_num,
+Server::DownstreamKafkaInfo::DownstreamKafkaInfo(
     std::vector<std::string>&& pub_kafka_servers,
     const std::string& pub_kafka_topic,
-    uint32_t pub_kafka_partition_num,
-    std::vector<PartitionId>&& pub_kafka_pids)
-  : store_partition_strategy(store_partition_strategy),
-    store_partition_num(store_partition_num),
-    worker_partition_strategy(worker_partition_strategy),
-    worker_partition_num(worker_partition_num),
-    pub_kafka_servers(std::move(pub_kafka_servers)),
+    uint32_t pub_kafka_partition_num)
+  : pub_kafka_servers(std::move(pub_kafka_servers)),
     pub_kafka_topic(pub_kafka_topic),
-    pub_kafka_partition_num(pub_kafka_partition_num),
-    pub_kafka_pids(std::move(pub_kafka_pids)) {
+    pub_kafka_partition_num(pub_kafka_partition_num) {
+}
+
+Server::DownstreamWorkerPartitionInfo::DownstreamWorkerPartitionInfo(
+    const std::string& worker_partition_strategy,
+    uint32_t worker_partition_num,
+    std::vector<uint32_t>&& kafka_to_worker_pid_vec)
+  : worker_partition_strategy(worker_partition_strategy),
+    worker_partition_num(worker_partition_num),
+    kafka_to_worker_pid_vec(std::move(kafka_to_worker_pid_vec)) {
 }
 
 Server::StorePartitionInfo::StorePartitionInfo(
@@ -344,7 +341,8 @@ Server::InitInfo::InitInfo(
     Server::StorePartitionInfo&& store_partition_info,
     Server::CheckpointInfo&& checkpoint_info,
     std::unique_ptr<UpstreamInfo>&& upstream_info,
-    std::unique_ptr<DownstreamInfo>&& downstream_info)
+    std::unique_ptr<DownstreamKafkaInfo>&& ds_kafka_info,
+    std::unique_ptr<DownstreamWorkerPartitionInfo>&& ds_partition_info)
   : worker_type(worker_type),
     worker_id(worker_id),
     num_workers(num_workers),
@@ -353,7 +351,8 @@ Server::InitInfo::InitInfo(
     store_partition_info(std::move(store_partition_info)),
     checkpoint_info(std::move(checkpoint_info)),
     upstream_info(std::move(upstream_info)),
-    downstream_info(std::move(downstream_info)) {
+    downstream_kafka_info(std::move(ds_kafka_info)),
+    downstream_partition_info(std::move(ds_partition_info)) {
 }
 
 actor::BytesBuffer MakeInstallQueryBuf(const std::string& query_plan) {

@@ -52,10 +52,9 @@ public:
       auto size = record_builder.BufSize();
       actor::BytesBuffer tp(reinterpret_cast<const char*>(buf), size);
       io::Record record(std::move(tp));
-      std::vector<const storage::KVPair*> pairs;
-      storage::KVPair pair(key, std::move(record));
-      pairs.emplace_back(&pair);
-      io::SampleUpdateBatch batch(0, pairs);
+      std::vector<storage::KVPair> pairs;
+      pairs.emplace_back(key, std::move(record));
+      io::SampleUpdateBatch batch(0, std::move(pairs));
       EXPECT_TRUE(batch.GetUpdatesNum() == 1);
 
       auto req = ServingTestHelper::MakeInstallQueryRequest();

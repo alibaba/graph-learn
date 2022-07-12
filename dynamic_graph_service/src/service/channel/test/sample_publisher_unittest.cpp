@@ -18,7 +18,9 @@ limitations under the License.
 #include "hiactor/core/actor-app.hh"
 
 #include "common/log.h"
+#include "common/options.h"
 #include "core/io/record_builder.h"
+#include "core/io/sample_update_batch.h"
 #include "service/channel/sample_publisher.h"
 
 using namespace dgs;
@@ -30,16 +32,25 @@ public:
   ~SamplePublisherTester() = default;
 
   void Run() {
+    std::string options =
+        "worker-type: Sampling\n"
+        "sample-publishing:\n"
+        "  output-kafka-servers:\n"
+        "    - localhost:9092\n"
+        "  kafka-topic: sample-publisher-ut\n"
+        "  kafka-partition-num: 4\n"
+        "  producer-pool-size: 1\n";
+    EXPECT_TRUE(Options::GetInstance().Load(options));
+
     KafkaProducerPool::GetInstance()->Init();
 
     char  arg0[] = "SamplePublisherTester";
     char  arg1[] = "--open-thread-resource-pool=true";
     char  arg2[] = "-c2";
     char* argv[] = {&arg0[0], &arg1[0], &arg2[0]};
-    std::string topic = "sample-publisher-ut";
     hiactor::actor_app sys;
-    sys.run(3, argv, [&topic] {
-      auto* publisher = new SamplePublisher(topic, 4);
+    sys.run(3, argv, [] {
+      auto* publisher = new SamplePublisher();
       io::RecordBuilder record_builder;
       int64_t timestamp = 1000;
       auto attr = reinterpret_cast<int8_t*>(&timestamp);
@@ -53,7 +64,7 @@ public:
 
       storage::Key key(0, 0, 0, 0);
       storage::KVPair pair(key, std::move(record));
-      storage::SubsInfo info(0, 0);
+      storage::SubsInfo info(0, 2);
 
       std::vector<storage::KVPair> batch;
       std::vector<storage::SubsInfo> infos;
@@ -61,18 +72,20 @@ public:
       batch.emplace_back(std::move(pair));
       infos.emplace_back(std::move(info));
 
-      std::vector<uint32_t> sink_kafka_partitions = {0, 1, 2, 3};
-      publisher->UpdateSinkKafkaPartitions(sink_kafka_partitions, "hash", 4, 1);
+      std::vector<uint32_t> kafka_to_serving_worker_vec = {0, 1, 2, 3};
+      publisher->UpdateDSPublishInfo(4, kafka_to_serving_worker_vec);
 
-      return publisher->Publish(batch, infos).then_wrapped([&topic] (auto&& f) {
-        EXPECT_TRUE(!f.failed());
+      return publisher->Publish(std::move(batch), std::move(infos)
+      ).then_wrapped([] (auto&& f) {
+        EXPECT_FALSE(f.failed());
+        auto& pub_opts = Options::GetInstance().GetSamplePublishingOptions();
         cppkafka::Consumer consumer(cppkafka::Configuration{
-          {"metadata.broker.list", "localhost:9092"},
+          {"metadata.broker.list", pub_opts.FormatKafkaServers()},
           {"group.id", "graph_update_record_pollers"},
           {"enable.auto.commit", false}});
-        uint32_t partition = 0;
+        uint32_t partition = 2;
         consumer.assign({cppkafka::TopicPartition{
-          topic, static_cast<int32_t>(partition), 0}});
+          pub_opts.kafka_topic, static_cast<int32_t>(partition), 0}});
         consumer.set_timeout(std::chrono::milliseconds(1000));
 
         auto msg = consumer.poll();
@@ -85,18 +98,14 @@ public:
           const_cast<char*>(reinterpret_cast<const char*>(data)),
           data_size, seastar::make_object_deleter(std::move(msg)));
 
-        uint32_t expected_record_num = 1;
-        uint32_t record_num;
-        auto offset = buf.get() + sizeof(PartitionId);
-        std::memcpy(&record_num, offset, sizeof(uint32_t));
-        EXPECT_EQ(record_num, expected_record_num);
-        offset += sizeof(uint32_t);
+        auto updates = io::SampleUpdateBatch::Deserialize(std::move(buf));
+        EXPECT_EQ(updates.size(), 1);
 
+        auto& update0 = updates.at(0);
         storage::Key key(1, 1, 1, 1);
+        std::memcpy(&key, &update0.key, sizeof(storage::Key));
         storage::Key key_expected(0, 0, 0, 0);
-        std::memcpy(&key, offset, sizeof(storage::Key));
         EXPECT_TRUE(std::memcmp(&key, &key_expected, sizeof(storage::Key)) == 0);
-        offset += sizeof(storage::Key);
       }).then([publisher] {
         hiactor::actor_engine().exit();
         delete publisher;

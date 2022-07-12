@@ -19,7 +19,7 @@ using namespace dgs;
 
 class ServingActorModuleTest : public ::testing::Test {
 public:
-  ServingActorModuleTest() : helper_(4, 4, 2) {}
+  ServingActorModuleTest() : helper_(4, 2) {}
   ~ServingActorModuleTest() override = default;
 
 protected:

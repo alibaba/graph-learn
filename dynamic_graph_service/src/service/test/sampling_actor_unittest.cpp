@@ -24,7 +24,7 @@ using namespace dgs;
 
 class SamplingActorModuleTest : public ::testing::Test {
 public:
-  SamplingActorModuleTest() : helper_(4, 4, 2, 4, 4) {}
+  SamplingActorModuleTest() : helper_(4, 2, 4, 4) {}
   ~SamplingActorModuleTest() override = default;
 
 protected:
@@ -45,7 +45,7 @@ protected:
 
     helper_.Initialize();
 
-    // Init Kafaka producer
+    // Init Kafka producer
     KafkaProducerPool::GetInstance()->Init();
   }
 
@@ -83,9 +83,7 @@ protected:
         const_cast<char*>(reinterpret_cast<const char*>(data)),
         data_size, seastar::make_object_deleter(std::move(msg)));
 
-      io::SampleUpdateBatch su_batch{std::move(buf)};
-
-      auto updates = su_batch.GetSampleUpdates();
+      auto updates = io::SampleUpdateBatch::Deserialize(std::move(buf));
       std::cout << "-- Sample Batch -- " << std::endl;
       for (auto& update: updates) {
         std::cout << "op id: " << update.key.pkey.op_id
@@ -109,67 +107,22 @@ TEST_F(SamplingActorModuleTest, RunAll) {
   // install query.
   // query plan is as follows:
   // all vertex types(vtype = 0) are same, so we ignore vtype below.
-  // nodes: Source: 0, Sampler: 1, Traverser: 2, Sampler: 3
-  // edges: 0 -> 1; 0 -> 2; 1 -> 3;
-  // Sampler 1 type: TOPK_BY_TIMESTAMP, K = 2;
-  // Sampler 2 type: TOPK_BY_TIMESTAMP, K = 2;
+  // nodes: Source: 0, ESampler: 1, VSampler: 2, ESampler: 3
+  // edges: 0 -> 1; 0 -> 2; 1 -> 2; 1 -> 3;
+  // ESampler 1 type: TOPK_BY_TIMESTAMP, K = 2;
+  // ESampler 2 type: TOPK_BY_TIMESTAMP, K = 2;
   helper_.InstallQuery();
 
   auto fut = seastar::alien::submit_to(
       *seastar::alien::internal::default_instance, 0, [this] {
-    uint32_t num_v = 4;
-    uint32_t num_p = 4;
     // apply graph updates.
     // number of vertices: 4
-    // record batch on shard 0: vertex: 0, edges: 0 -> 1, 0 -> 2; 0 -> 3;
-    //                          vertex: 2, edges: 2 -> 3;
-    // record batch on shard 1: vertex: 1, edges: 1 -> 2; 1 -> 3;
-    //                          vertex: 3, edges: ;
-    //
-    // stage 1: sampled batch size for each shard -> Stored in SampleStore.
-    // sampled batch on shard 0: 5, 1 for vertex, 4 for edges(2 for each sampler);
-    //                           3, 1 for vertex, 2 for edges(1 for each sampler);
-    // sampled batch on shard 1: 5, 1 for vertex, 4 for edges(2 for each sampler);
-    //                           1, 1 for vertex;
-    //
-    // stage 2: current subscription information for each shard -> Send to Kafka by SamplePublisher.
-    // subs_info size on shard 0: 3, indices in sampled batch = [0, 1, 3], dst_worker_id = 0;
-    //                            2, indices in sampled batch = [0, 1], dst_worker_id = 2;
-    // subs_info size on shard 1: 3, indices in sampled batch = [0, 1, 3], dst_worker_id = 1;
-    //                            1, indices in sampled batch = [0], dst_worker_id = 3;
-    //
-    // stage 3: downstream subscription rules using query dependency info
-    // rule buffer on shard 0: #rules=3, {vid = [1, 2], op_id=(1<<32)+2&op_id=3}, subscribed worker id: 0;
-    //                         #rules=1, {vid = [3], op_id=(1<<32)+2&&op_id=3}, subscribed worker id: 2;
-    // rule buffer on shard 1: #rules=2, {vid = [2, 3], op_id=(1<<32)+2&&op_id=3}, subscribed worker id: 1;
-    //                         #rules=0;
-    // in detail,
-    // --- the rule buffer on shard 0 is seperated into 6 piece:
-    // piece 1: rule = {vid = 1, op_id = (1<<32)+2, subs_worker_id = 0; }, dst global shard id: 1
-    // piece 2: rule = {vid = 1, op_id = 3, subs_worker_id = 0; }, dst global shard id: 1
-    // piece 3: rule = {vid = 2, op_id = (1<<32)+2, subs_worker_id = 0; }, dst global shard id: 0
-    // piece 4: rule = {vid = 2, op_id = 3, subs_worker_id = 0; }, dst global shard id: 0
-    // piece 5: rule = {vid = 3, op_id = (1<<32)+2, subs_worker_id = 2; }, dst global shard id: 1
-    // piece 6: rule = {vid = 3, op_id = 3, subs_worker_id = 2; }, dst global shard id: 1
-    // --- the rule buffer on shard 1 is seperated into 4 piece:
-    // piece 1: rule = {vid = 2, op_id = (1<<32)+2, subs_worker_id = 1; }, dst global shard id: 0
-    // piece 2: rule = {vid = 2, op_id = 3, subs_worker_id = 1; }, dst global shard id: 0
-    // piece 3: rule = {vid = 3, op_id = (1<<32)+2, subs_worker_id = 1; }, dst global shard id: 1
-    // piece 4: rule = {vid = 3, op_id = 3, subs_worker_id = 1; }, dst global shard id: 1
-
-    // for the remaining stages, we will discuss rule behaviors triggered by rule buffer on shard 0 only.
-    //
-    // stage 4: update subscription rules and publish new subscribed records.
-    // rule received(piece 1, op_id = (1<<32)+2(VSampler)) on shard id 1: new collected sample batch size: 1;
-    // rule received(piece 2, op_id = 3(ESampler)) on shard id 1: new collected sample batch size: 2(ref to stage 1);
-    // rule received(piece 3, op_id = (1<<32)+2(VSampler)) on shard id 0: new collected sample batch size: 1;
-    // rule received(piece 4, op_id = 3(ESampler)) on shard id 0: new collected sample batch size: 1(ref to stage 1);
-    // rule received(piece 5, op_id = (1<<32)+2(VSampler)) on shard id 1: new collected sample batch size: 1;
-    // rule received(piece 6, op_id = 3(ESampler)) on shard id 1: new collected sample batch size: 1(ref to stage 1);
-    //
-    // end of all stages.
-
-    // all the non-empty collected new sample batch will be send to Kafka by SamplePublisher.
+    // record batch 0: (vertex: 0, edges: 0 -> 1; 0 -> 2; 0 -> 3)
+    // record batch 1: (vertex: 1, edges: 1 -> 2; 1 -> 3)
+    // record batch 2: (vertex: 2, edges: 2 -> 3)
+    // record batch 2: (vertex: 2, edges:)
+    uint32_t num_v = 4;
+    uint32_t num_p = 4;
     return seastar::parallel_for_each(
         boost::irange(0u, num_v), [num_v, num_p, this] (uint32_t i) {
       VertexId vid = i;
@@ -178,14 +131,28 @@ TEST_F(SamplingActorModuleTest, RunAll) {
       return helper_.GetSamplingActorRef(shard_id).ApplyGraphUpdates(
           SamplingTestHelper::MakeRecordBatch(pid, vid, num_v)).discard_result();
     }).then([] {
+      // sample updates of vertex 0:
+      // - batch 1 (size = 3): (VSampler2: vertex 0) (ESampler1: 0 -> 1) (ESampler1: 0 -> 2)
+      // - batch 2 (size = 3): (VSampler2: vertex 1) (ESampler3: 1 -> 2) (ESampler1: 1 -> 3)
+      // - batch 2 (size = 2): (VSampler2: vertex 2) (ESampler3: 2 -> 3)
+      // sample updates of vertex 1:
+      // - batch 1 (size = 3): (VSampler2: vertex 1) (ESampler1: 1 -> 2) (ESampler1: 1 -> 3)
+      // - batch 2 (size = 2): (VSampler2: vertex 2) (ESampler3: 2 -> 3)
+      // - batch 2 (size = 1): (VSampler2: vertex 3)
+      // sample updates of vertex 2:
+      // - batch 1 (size = 2): (VSampler2: vertex 2) (ESampler1: 2 -> 3)
+      // - batch 2 (size = 1): (VSampler2: vertex 3)
+      // sample updates of vertex 3:
+      // - batch 1 (size = 1): (VSampler2: vertex 3)
+
       // kafka p0: 1 message, size = [3]
-      ConsumeSamplingOutputAndVerifyCorrectness(1, 3, 0);
+      ConsumeSamplingOutputAndVerifyCorrectness(3, 8, 0);
       // kafka p1: 2 messages, sizes = [3, 3]
-      ConsumeSamplingOutputAndVerifyCorrectness(2, 6, 1);
+      ConsumeSamplingOutputAndVerifyCorrectness(3, 6, 1);
       // kafka p2: 3 messages, sizes = [2, 2, 2]
-      ConsumeSamplingOutputAndVerifyCorrectness(3, 6, 2);
+      ConsumeSamplingOutputAndVerifyCorrectness(2, 3, 2);
       // kafka p3: 3 messages, sizes = [1, 1, 1]
-      ConsumeSamplingOutputAndVerifyCorrectness(3, 3, 3);
+      ConsumeSamplingOutputAndVerifyCorrectness(1, 1, 3);
     });
   });
   fut.wait();

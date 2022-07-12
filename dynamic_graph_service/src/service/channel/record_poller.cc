@@ -81,39 +81,35 @@ SampleBatchIngestor::SampleBatchIngestor(PartitionRouter* router,
 }
 
 std::future<size_t> SampleBatchIngestor::operator()(actor::BytesBuffer&& buf) {
-  auto batch = io::SampleUpdateBatch{std::move(buf)};
-  auto updates = batch.GetSampleUpdates();
-  for (auto &update : updates) {
+  auto updates = io::SampleUpdateBatch::Deserialize(std::move(buf));
+  for (auto& update : updates) {
     auto pid = partitioner_->GetPartitionId(update.key.pkey.vid);
-    partition_records_[pid].push_back(&update);
+    partition_records_[pid].emplace_back(std::move(update));
   }
   std::vector<io::SampleUpdateBatch> sample_batches;
   size_t num_records = 0;
   for (PartitionId pid = 0; pid < partition_records_.size(); ++pid) {
     if (!partition_records_[pid].empty()) {
-      auto sliced_batch = io::SampleUpdateBatch(pid, partition_records_[pid]);
-      num_records += sliced_batch.GetUpdatesNum();
-      sample_batches.emplace_back(std::move(sliced_batch));
-      partition_records_[pid].clear();
+      num_records += partition_records_[pid].size();
+      sample_batches.emplace_back(pid, std::move(partition_records_[pid]));
     }
   }
-
-  PartitionId pid = batch.GetStorePartitionId();
-  ShardId dst_l_sid = partition_router_->GetGlobalShardId(pid) - gsid_anchor_;
   return seastar::alien::submit_to(
-      *seastar::alien::internal::default_instance, dst_l_sid,
+      *seastar::alien::internal::default_instance,
+      shard_idx_,
       [this, batches = std::move(sample_batches), num_records] () mutable {
-    std::vector<seastar::future<>> ret_futs;
-    for (int i = 0; i < batches.size(); ++i) {
-      auto pid = batches[i].GetStorePartitionId();
+    shard_idx_ = (shard_idx_ + 1) % actor::LocalShardCount();
+    std::vector<seastar::future<>> futs;
+    futs.reserve(batches.size());
+    for (auto& batch : batches) {
+      auto pid = batch.GetStorePartitionId();
       auto l_sid = partition_router_->GetGlobalShardId(pid) - gsid_anchor_;
-      ret_futs.emplace_back(actor_refs_[l_sid].Update(
-          std::move(batches[i])).discard_result());
+      futs.emplace_back(actor_refs_[l_sid].Update(
+          std::move(batch)).discard_result());
     }
-
-    return seastar::when_all(ret_futs.begin(), ret_futs.end()).then(
-      [num_records] (auto) {
-        return seastar::make_ready_future<size_t>(num_records);
+    return seastar::when_all(futs.begin(), futs.end()).then(
+        [num_records] (auto) {
+      return seastar::make_ready_future<size_t>(num_records);
     });
   });
 }
@@ -389,8 +385,9 @@ void RecordPollingManager::BlockUntilReady() {
 
         LOG(INFO) << "Ready offset for kafka partition "
                 << kafka_pid << " is " << ready_offsets[i];
-      } catch (cppkafka::HandleException ex) {
-        LOG(WARNING) << "cppkafka::HandleException: " << ex.what();
+      } catch (cppkafka::HandleException& ex) {
+        LOG(WARNING) << "cppkafka::HandleException: "
+                     << ex.get_error().to_string();
       }
     }
 

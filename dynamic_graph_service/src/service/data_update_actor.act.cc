@@ -30,7 +30,7 @@ DataUpdateActor::DataUpdateActor(hiactor::actor_base* exec_ctx,
 
 seastar::future<actor::Void>
 DataUpdateActor::Update(io::SampleUpdateBatch&& batch) {
-  auto updates = batch.GetSampleUpdates();
+  auto updates = batch.ReleaseUpdates();
   for (auto& update : updates) {
     if (update.value.GetView().Type() == RecordType::VERTEX) {
       sample_store_->PutVertex(update.key,

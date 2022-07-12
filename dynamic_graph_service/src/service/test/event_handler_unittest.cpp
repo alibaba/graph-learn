@@ -21,7 +21,7 @@ using namespace std::chrono_literals;
 
 class EventHandlerTest : public ::testing::Test {
 public:
-  EventHandlerTest() : helper_(4, 4, 2) {}
+  EventHandlerTest() : helper_(4, 2) {}
   ~EventHandlerTest() override = default;
 
 protected:

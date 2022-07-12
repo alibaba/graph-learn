@@ -112,16 +112,16 @@ public:
         upstream_info.add_sub_kafka_pids(i);
       }
 
-      dgs::DownStreamInfoPb downstream_info;
-      downstream_info.set_store_partition_strategy("hash");
-      downstream_info.set_store_partition_num(serving_store_partition_num);
-      downstream_info.add_pub_kafka_servers(sampling2serving_kafka_server);
-      downstream_info.set_pub_kafka_topic(sampling2serving_kafka_topic);
-      downstream_info.set_store_partition_num(sampling2serving_kafka_partition_num);
-      downstream_info.set_worker_partition_num(1);
-      downstream_info.set_worker_partition_strategy("hash");
+      dgs::DownStreamKafkaInfoPb downstream_kafka_info;
+      downstream_kafka_info.add_pub_kafka_servers(sampling2serving_kafka_server);
+      downstream_kafka_info.set_pub_kafka_topic(sampling2serving_kafka_topic);
+      downstream_kafka_info.set_pub_kafka_partition_num(sampling2serving_kafka_partition_num);
+
+      dgs::DownStreamWorkerWisePartitionInfoPb downstream_partition_info;
+      downstream_partition_info.set_worker_partition_num(1);
+      downstream_partition_info.set_worker_partition_strategy("hash");
       for (uint32_t i = 0; i < sampling2serving_kafka_partition_num; ++i) {
-        downstream_info.add_pub_kafka_pids(i);
+        downstream_partition_info.add_kafka_to_worker_pid_vec(0);
       }
 
       dgs::CheckpointInfoPb checkpoint_info;
@@ -153,7 +153,8 @@ public:
             sampling_worker_ipaddrs_[i]);
       }
       *info.mutable_upstream_info() = upstream_info;
-      *info.mutable_downstream_info() = downstream_info;
+      *info.mutable_ds_kafka_info() = downstream_kafka_info;
+      *info.mutable_ds_worker_partition_info() = downstream_partition_info;
       *info.mutable_store_partition_info() = store_partition_info;
       *info.mutable_checkpoint_info() = checkpoint_info;
 

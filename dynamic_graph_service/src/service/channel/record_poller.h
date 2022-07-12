@@ -58,7 +58,8 @@ private:
   Partitioner*                     partitioner_;
   const uint32_t                   poller_id_;
   const uint32_t                   gsid_anchor_;
-  std::vector<std::vector<const storage::KVPair*>> partition_records_;
+  uint32_t                         shard_idx_ = 0;
+  std::vector<std::vector<storage::KVPair>> partition_records_;
 };
 
 /// The basic io records polling unit, which corresponds to a

@@ -39,9 +39,6 @@ SamplingActor::SamplingActor(hiactor::actor_base* exec_ctx,
     rule_log_period_(
       Options::GetInstance().GetLoggingOptions().rule_log_period),
     local_shard_id_(actor::LocalShardId()) {
-  auto& opts = Options::GetInstance().GetSamplePublishingOptions();
-  sample_publisher_ = SamplePublisher(
-      opts.kafka_topic, opts.kafka_partition_num);
   LOG(INFO) << "data logging period is " << data_log_period_;
   LOG(INFO) << "rule logging period is " << rule_log_period_;
 }
@@ -124,11 +121,9 @@ void SamplingActor::InitializeImpl(const AdminRequest& req) {
   rule_buf_handle_.SetPartitionRouter(
     PartitionRouter(param->sampling_partition_routing_info()));
 
-  sample_publisher_.UpdateSinkKafkaPartitions(
-      param->pub_kafka_pids(),
-      param->serving_partition_strategy(),
-      param->serving_partition_num(),
-      param->serving_worker_num());
+  sample_publisher_.UpdateDSPublishInfo(
+      param->serving_worker_num(),
+      param->kafka_to_serving_worker_vec());
 }
 
 seastar::future<actor::Void>
@@ -172,7 +167,8 @@ SamplingActor::ApplyGraphUpdates(io::RecordBatch&& input_batch) {
 
   // 5. Send all sampled records and downstream subscription rules.
   return seastar::when_all(
-      sample_publisher_.Publish(sampled_batch, subs_infos),
+      sample_publisher_.Publish(
+          std::move(sampled_batch), std::move(subs_infos)),
       rule_buf_handle_.SendAll()).then([] (auto) {
     return seastar::make_ready_future<actor::Void>();
   });
@@ -229,7 +225,8 @@ SamplingActor::UpdateSubsRules(io::SubsRuleBatch &&rule_batch) {
   CollectDownstreamSubsRules(sampled_batch, subs_info_buf);
 
   return seastar::when_all(
-      sample_publisher_.Publish(sampled_batch, subs_info_buf),
+      sample_publisher_.Publish(
+          std::move(sampled_batch), std::move(subs_info_buf)),
       rule_buf_handle_.SendAll()).then([] (auto) {
     return seastar::make_ready_future<actor::Integer>(
             actor::Integer(static_cast<int>(actor::GlobalShardId())));

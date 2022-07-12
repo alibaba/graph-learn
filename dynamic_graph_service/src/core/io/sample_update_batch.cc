@@ -18,68 +18,70 @@ limitations under the License.
 namespace dgs {
 namespace io {
 
-SampleUpdateBatch::SampleUpdateBatch(actor::BytesBuffer&& buf)
-  : buf_(std::move(buf)) {}
+SampleUpdateBatch::SampleUpdateBatch(PartitionId store_pid,
+                                     std::vector<storage::KVPair>&& updates)
+  : store_pid_(store_pid), updates_(std::move(updates)) {
+}
 
-// Layout of buffer:
-// partition_id | records_num | key_1 | record_size_1 | record_1, ...
-SampleUpdateBatch::SampleUpdateBatch(PartitionId pid,
-      const std::vector<const storage::KVPair*>& updates) {
-  uint32_t buf_size = sizeof(PartitionId);
-  uint32_t records_num = updates.size();
+SampleUpdateBatch::SampleUpdateBatch(SampleUpdateBatch&& other) noexcept
+  : store_pid_(other.store_pid_), updates_(std::move(other.updates_)) {}
+
+SampleUpdateBatch& SampleUpdateBatch::operator=(
+    SampleUpdateBatch&& other) noexcept {
+  if (this != &other) {
+    store_pid_ = other.store_pid_;
+    updates_ = std::move(other.updates_);
+  }
+  return *this;
+}
+
+actor::BytesBuffer
+SampleUpdateBatch::Serialize(const std::vector<storage::KVPair>& updates) {
+  uint32_t buf_size = 0;
+  uint32_t updates_num = updates.size();
   buf_size += sizeof(uint32_t);
-  for (int i = 0; i < records_num; i++) {
+  for (int i = 0; i < updates_num; i++) {
     buf_size += (sizeof(storage::Key) + sizeof(uint32_t) +
-      updates[i]->value.Size());
+        updates[i].value.Size());
   }
   // Copy the pid and #records into the buffer, followed by the size
   // and data of each record.
   actor::BytesBuffer buffer(buf_size);
   auto offset = buffer.get_write();
-  std::memcpy(offset, &pid, sizeof(PartitionId));
-  offset += sizeof(PartitionId);
-  std::memcpy(offset, &records_num, sizeof(uint32_t));
+  // write record number
+  std::memcpy(offset, &updates_num, sizeof(uint32_t));
   offset += sizeof(uint32_t);
-  for (int i = 0; i < records_num; i++) {
+  // write updates
+  for (size_t i = 0; i < updates_num; i++) {
     auto& kv_pair = updates[i];
-    std::memcpy(offset, &kv_pair->key, sizeof(storage::Key));
+    std::memcpy(offset, &kv_pair.key, sizeof(storage::Key));
     offset += sizeof(storage::Key);
-    uint32_t record_size = kv_pair->value.Size();
-    std::memcpy(offset, &record_size, sizeof(uint32_t));
+    uint32_t update_size = kv_pair.value.Size();
+    std::memcpy(offset, &update_size, sizeof(uint32_t));
     offset += sizeof(uint32_t);
-    std::memcpy(offset, kv_pair->value.Data(), record_size);
-    offset += record_size;
+    std::memcpy(offset, kv_pair.value.Data(), update_size);
+    offset += update_size;
   }
-  buf_ = std::move(buffer);
+  return buffer;
 }
 
-std::vector<storage::KVPair> SampleUpdateBatch::GetSampleUpdates() {
+std::vector<storage::KVPair>
+SampleUpdateBatch::Deserialize(actor::BytesBuffer&& buf) {
+  auto updates_num = *reinterpret_cast<const uint32_t*>(buf.get());
   std::vector<storage::KVPair> output;
-  auto updates_num = GetUpdatesNum();
-  auto offset = buf_.get() + sizeof(PartitionId) + sizeof(uint32_t);
+  output.reserve(updates_num);
+  auto offset = buf.get() + sizeof(uint32_t);
   for (int i = 0; i < updates_num; i++) {
     storage::Key key(0, 0, 0, 0);
     std::memcpy(&key, offset, sizeof(storage::Key));
     offset += sizeof(storage::Key);
-    uint32_t record_size = *reinterpret_cast<const uint32_t*>(offset);
+    uint32_t update_size = *reinterpret_cast<const uint32_t*>(offset);
     offset += sizeof(uint32_t);
-    actor::BytesBuffer record_buf = buf_.share(
-        offset - buf_.get(), record_size);
-    offset += record_size;
-    output.emplace_back(storage::KVPair(key, Record({std::move(record_buf)})));
+    actor::BytesBuffer update_buf = buf.share(offset - buf.get(), update_size);
+    offset += update_size;
+    output.emplace_back(key, Record({std::move(update_buf)}));
   }
   return output;
-}
-
-SampleUpdateBatch::SampleUpdateBatch(SampleUpdateBatch&& other) noexcept
-  : buf_(std::move(other.buf_)) {}
-
-SampleUpdateBatch& SampleUpdateBatch::operator=(
-    SampleUpdateBatch&& other) noexcept {
-  if (this != &other) {
-    buf_ = std::move(other.buf_);
-  }
-  return *this;
 }
 
 }  // namespace io

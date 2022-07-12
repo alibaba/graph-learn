@@ -54,11 +54,9 @@ struct SamplingInitPayload : public AdminRequest::Payload {
       storage::SubscriptionTable* subs_table,
       const std::string& sampling_partition_strategy,
       uint32_t sampling_partition_num,
-      const std::string& serving_partition_strategy,
-      uint32_t serving_partition_num,
-      uint32_t serving_worker_num,
       const std::vector<ShardId>& sampling_partition_routing_info,
-      const std::vector<PartitionId>&  pub_kafka_pids)
+      uint32_t serving_worker_num,
+      const std::vector<uint32_t>& kafka_to_serving_worker_vec)
     : AdminRequest::Payload(), buf_(std::move(buf)),
       rep_(GetMutableInstallQueryRequestRep(buf_.get_write())),
       sample_store_(sample_store),
@@ -66,11 +64,9 @@ struct SamplingInitPayload : public AdminRequest::Payload {
       subs_table_(subs_table),
       sampling_partition_strategy_(sampling_partition_strategy),
       sampling_partition_num_(sampling_partition_num),
-      serving_partition_strategy_(serving_partition_strategy),
-      serving_partition_num_(serving_partition_num),
-      serving_worker_num_(serving_worker_num),
       sampling_partition_routing_info_(sampling_partition_routing_info),
-      pub_kafka_pids_(pub_kafka_pids) {
+      serving_worker_num_(serving_worker_num),
+      kafka_to_serving_worker_vec_(kafka_to_serving_worker_vec) {
   }
 
   ~SamplingInitPayload() override = default;
@@ -107,24 +103,16 @@ struct SamplingInitPayload : public AdminRequest::Payload {
     return sampling_partition_num_;
   }
 
-  const std::string& serving_partition_strategy() const {
-    return serving_partition_strategy_;
+  const std::vector<ShardId>& sampling_partition_routing_info() const {
+    return sampling_partition_routing_info_;
   }
 
   uint32_t serving_worker_num() const {
     return serving_worker_num_;
   }
 
-  uint32_t serving_partition_num() const {
-    return serving_partition_num_;
-  }
-
-  const std::vector<ShardId>& sampling_partition_routing_info() const {
-    return sampling_partition_routing_info_;
-  }
-
-  const std::vector<uint32_t>& pub_kafka_pids() {
-    return pub_kafka_pids_;
+  const std::vector<uint32_t>& kafka_to_serving_worker_vec() const {
+    return kafka_to_serving_worker_vec_;
   }
 
 private:
@@ -135,11 +123,9 @@ private:
   storage::SubscriptionTable*     subs_table_;
   const std::string               sampling_partition_strategy_;
   const uint32_t                  sampling_partition_num_;
-  const std::string               serving_partition_strategy_;
-  const uint32_t                  serving_partition_num_;
-  const uint32_t                  serving_worker_num_;
   const std::vector<ShardId>      sampling_partition_routing_info_;
-  const std::vector<PartitionId>  pub_kafka_pids_;
+  const uint32_t                  serving_worker_num_;
+  const std::vector<uint32_t>     kafka_to_serving_worker_vec_;
 };
 
 struct ServingInitPayload : public AdminRequest::Payload {

@@ -309,13 +309,8 @@ RetrieveUpstreamInfo(const UpStreamInfoPb& pb) {
       sub_kafka_partition_num, std::move(sub_kafka_pids));
 }
 
-std::unique_ptr<Server::DownstreamInfo>
-RetrieveDownstreamInfo(const DownStreamInfoPb& pb) {
-  auto& store_partition_strategy = pb.store_partition_strategy();
-  uint32_t store_partition_num = pb.store_partition_num();
-  auto& worker_partition_strategy = pb.worker_partition_strategy();
-  uint32_t worker_partition_num = pb.worker_partition_num();
-  // get kafka servers
+std::unique_ptr<Server::DownstreamKafkaInfo>
+RetrieveDownstreamKafkaInfo(const DownStreamKafkaInfoPb& pb) {
   std::vector<std::string> pub_kafka_servers;
   pub_kafka_servers.reserve(pb.pub_kafka_servers_size());
   for (auto& server : pb.pub_kafka_servers()) {
@@ -323,18 +318,29 @@ RetrieveDownstreamInfo(const DownStreamInfoPb& pb) {
   }
   auto& pub_kafka_topic = pb.pub_kafka_topic();
   uint32_t pub_kafka_partition_num = pb.pub_kafka_partition_num();
-  // get published kafka partition ids
-  std::vector<PartitionId> pub_kafka_pids;
-  pub_kafka_pids.reserve(pb.pub_kafka_pids_size());
-  for (auto pid : pb.pub_kafka_pids()) {
-    pub_kafka_pids.push_back(pid);
+
+  return std::make_unique<Server::DownstreamKafkaInfo>(
+      std::move(pub_kafka_servers),
+      pub_kafka_topic,
+      pub_kafka_partition_num);
+}
+
+std::unique_ptr<Server::DownstreamWorkerPartitionInfo>
+RetrieveDownstreamWorkerPartitionInfo(
+    const DownStreamWorkerWisePartitionInfoPb& pb) {
+  auto& worker_partition_strategy = pb.worker_partition_strategy();
+  uint32_t worker_partition_num = pb.worker_partition_num();
+
+  std::vector<PartitionId> vec;
+  vec.reserve(pb.kafka_to_worker_pid_vec_size());
+  for (auto wid : pb.kafka_to_worker_pid_vec()) {
+    vec.push_back(wid);
   }
 
-  return std::make_unique<Server::DownstreamInfo>(
-      store_partition_strategy, store_partition_num,
-      worker_partition_strategy, worker_partition_num,
-      std::move(pub_kafka_servers), pub_kafka_topic,
-      pub_kafka_partition_num, std::move(pub_kafka_pids));
+  return std::make_unique<Server::DownstreamWorkerPartitionInfo>(
+      worker_partition_strategy,
+      worker_partition_num,
+      std::move(vec));
 }
 
 Server::StorePartitionInfo
@@ -430,7 +436,8 @@ void Service::RetrieveInitInfo(std::unique_ptr<Server::InitInfo>* info) {
   Server::StorePartitionInfo store_partition_info;
   Server::CheckpointInfo checkpoint_info;
   std::unique_ptr<Server::UpstreamInfo> upstream_info;
-  std::unique_ptr<Server::DownstreamInfo> downstream_info;
+  std::unique_ptr<Server::DownstreamKafkaInfo> ds_kafka_info;
+  std::unique_ptr<Server::DownstreamWorkerPartitionInfo> ds_partition_info;
 
   if (worker_type_ == WorkerType::Sampling) {
     auto& spl_info = res.sampling_info();
@@ -442,7 +449,9 @@ void Service::RetrieveInitInfo(std::unique_ptr<Server::InitInfo>* info) {
         spl_info.store_partition_info());
     checkpoint_info = RetrieveCheckpointInfo(spl_info.checkpoint_info());
     upstream_info = RetrieveUpstreamInfo(spl_info.upstream_info());
-    downstream_info = RetrieveDownstreamInfo(spl_info.downstream_info());
+    ds_kafka_info = RetrieveDownstreamKafkaInfo(spl_info.ds_kafka_info());
+    ds_partition_info = RetrieveDownstreamWorkerPartitionInfo(
+        spl_info.ds_worker_partition_info());
   } else if (worker_type_ == WorkerType::Serving) {
     auto& srv_info = res.serving_info();
     query_plan = srv_info.query_plan();
@@ -460,7 +469,8 @@ void Service::RetrieveInitInfo(std::unique_ptr<Server::InitInfo>* info) {
     std::move(store_partition_info),
     std::move(checkpoint_info),
     std::move(upstream_info),
-    std::move(downstream_info));
+    std::move(ds_kafka_info),
+    std::move(ds_partition_info));
 
   LOG(INFO) << "Initialization info is retrieved.";
 }
