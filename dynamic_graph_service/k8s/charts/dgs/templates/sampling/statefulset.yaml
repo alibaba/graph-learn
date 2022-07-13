@@ -15,7 +15,7 @@ metadata:
   {{- end }}
 spec:
   podManagementPolicy: Parallel
-  replicas: {{ .Values.sampling.replicaCount }}
+  replicas: {{ .Values.sampling.workerNum }}
   selector:
     matchLabels:
       {{- include "dgs.selectorLabels" . | nindent 6 }}

@@ -31,17 +31,17 @@ data:
       worker-num: {{ int .Values.dataloader.replicaCount }}
 
     sampling:
-      worker-num: {{ int .Values.sampling.replicaCount }}
+      worker-num: {{ int .Values.sampling.workerNum }}
       actor-local-shard-num: {{ int .Values.sampling.actorLocalShardNum }}
-      store-partitions: {{ int .Values.sampling.sampleStore.totalPartitions }}
-      store-partition-strategy: {{ .Values.sampling.sampleStore.partitionStrategy | quote }}
-      downstream-partition-strategy: {{ .Values.sampling.downstreamPartitionStrategy | quote }}
+      store-partitions: {{ int .Values.sampling.dataPartitionNum }}
+      store-partition-strategy: "hash"
+      downstream-partition-strategy: "hash"
 
     serving:
-      worker-num: {{ int .Values.serving.podCount }}
+      worker-num: {{ int .Values.serving.workerNum }}
       actor-local-shard-num: {{ int .Values.serving.actorLocalShardNum }}
-      store-partitions: {{ int .Values.serving.sampleStore.totalPartitions }}
-      store-partition-strategy: {{ .Values.serving.sampleStore.partitionStrategy | quote }}
+      store-partitions: {{ int .Values.serving.dataPartitionNum }}
+      store-partition-strategy: "hash"
 
     kafka:
       dl2spl:

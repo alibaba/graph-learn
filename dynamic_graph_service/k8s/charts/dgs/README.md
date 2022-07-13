@@ -67,18 +67,18 @@ The command removes all the Kubernetes components associated with the chart and 
 
 ### Image parameters
 
-| Name                            | Description                                                            | Value                                    |
-| ------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------- |
-| `image.dgs.registry`            | Core service image registry                                            | `"registry.cn-shanghai.aliyuncs.com"`    |
-| `image.dgs.repository`          | Core service image repository                                          | `"graph-learn/dynamic-graph-service"`    |
-| `image.dgs.tag`                 | Core service image tag (immutable tags are recommended)                | `"v0.1.0"`                               |
-| `image.dgs.pullPolicy`          | Core service image pull policy                                         | `IfNotPresent`                           |
-| `image.dgs.pullSecrets`         | Specify docker-registry secret names as an array                       | `[]`                                     |
-| `image.dl.registry`             | Dataloader image registry                                              | `"registry.cn-shanghai.aliyuncs.com"`    |
-| `image.dl.repository`           | Dataloader image repository                                            | `"graph-learn/graphscope"`               |
-| `image.dl.tag`                  | Dataloader image tag (immutable tags are recommended)                  | `"1.0"`                                  |
-| `image.dl.pullPolicy`           | Dataloader image pull policy                                           | `IfNotPresent`                           |
-| `image.dl.pullSecrets`          | Specify docker-registry secret names as an array                       | `[]`                                     |
+| Name                            | Description                                                            | Value                |
+| ------------------------------- | ---------------------------------------------------------------------- | -------------------- |
+| `image.dgs.registry`            | Core service image registry                                            | `"graphlearn"`       |
+| `image.dgs.repository`          | Core service image repository                                          | `"dgs-core"`         |
+| `image.dgs.tag`                 | Core service image tag (immutable tags are recommended)                | `"1.0.0"`            |
+| `image.dgs.pullPolicy`          | Core service image pull policy                                         | `IfNotPresent`       |
+| `image.dgs.pullSecrets`         | Specify docker-registry secret names as an array                       | `[]`                 |
+| `image.dl.registry`             | Dataloader image registry                                              | `"graphlearn"`       |
+| `image.dl.repository`           | Dataloader image repository                                            | `"dgs-dl"`           |
+| `image.dl.tag`                  | Dataloader image tag (immutable tags are recommended)                  | `"1.0.0"`            |
+| `image.dl.pullPolicy`           | Dataloader image pull policy                                           | `IfNotPresent`       |
+| `image.dl.pullSecrets`          | Specify docker-registry secret names as an array                       | `[]`                 |
 
 ### FrontEnd parameters
 
@@ -168,14 +168,12 @@ Specify the following additional parameters when loading from [GraphScope-Store]
 
 | Name                                               | Description                                                                                          | Value                            |
 | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------- |
-| `sampling.replicaCount`                            | Number of Sampling workers                                                                           | `2`                              |
+| `sampling.workerNum`                               | Number of Sampling workers                                                                           | `2`                              |
 | `sampling.workdir`                                 | Local ephemeral storage mount path for Sampling working directory                                    | `"/sampling_workdir"`            |
-| `sampling.actorLocalShardNum`                      | Local shard number for each Sampling Worker pod                                                      | `4`                              |
-| `sampling.downstreamPartitionStrategy`             | Partition strategy of downstream Serving workers                                                     | `"hash"`                         |
+| `sampling.actorLocalShardNum`                      | Local computing shard number for each Sampling Worker pod                                            | `4`                              |
+| `sampling.dataPartitionNum`                        | The total partition number of data across all Sampling Workers                                       | `8`                              |
 | `sampling.rocksdbEnv.highPriorityThreads`          | The thread number of high-priority rocksdb background tasks                                          | `2`                              |
 | `sampling.rocksdbEnv.lowPriorityThreads`           | The thread number of low-priority rocksdb background tasks                                           | `2`                              |
-| `sampling.sampleStore.totalPartitions`             | The total sample store partition number across all Sampling Workers                                  | `8`                              |
-| `sampling.sampleStore.partitionStrategy`           | The sample store partition strategy of Sampling Workers                                              | `"hash"`                         |
 | `sampling.sampleStore.memtableRep`                 | The rocksdb memtable structure type of sample store                                                  | `"hashskiplist"`                 |
 | `sampling.sampleStore.hashBucketCount`             | The hash bucket count of sample store memtable                                                       | `1048576`                        |
 | `sampling.sampleStore.skipListLookahead`           | The look-ahead factor of sample store memtable                                                       | `0`                              |
@@ -187,19 +185,19 @@ Specify the following additional parameters when loading from [GraphScope-Store]
 | `sampling.subscriptionTable.blockCacheCapacity`    | The capacity (bytes) of subscription table block cache                                               | `67108864`                       |
 | `sampling.subscriptionTable.ttlHours`              | The TTL hours for sampling rules in subscription table                                               | `1200`                           |
 | `sampling.recordPolling.threadNum`                 | The thread number for graph update consuming from kafka queues                                       | `2`                              |
-| `sampling.recordPolling.retryIntervalMs`           | The retry interval (ms) when no record has been polled                                               | `50`                             |
+| `sampling.recordPolling.retryIntervalMs`           | The retry interval (ms) when no record has been polled                                               | `100`                            |
 | `sampling.recordPolling.processConcurrency`        | The max processing concurrency for polled records                                                    | `100`                            |
 | `sampling.samplePublishing.producerPoolSize`       | The max number of kafka producer for sampling results                                                | `2`                              |
-| `sampling.samplePublishing.maxProduceRetryTimes`   | The maximum retry times of producing a kafka message                                                 | `1`                              |
-| `sampling.samplePublishing.callbackPollIntervalMs` | The interval(ms) for polling async producing callbacks                                               | `50`                             |
+| `sampling.samplePublishing.maxProduceRetryTimes`   | The maximum retry times of producing a kafka message                                                 | `3`                              |
+| `sampling.samplePublishing.callbackPollIntervalMs` | The interval(ms) for polling async producing callbacks                                               | `100`                            |
 | `sampling.logging.dataLogPeriod`                   | Specify how many graph update batches should be processed between two logs produced                  | `1`                              |
-| `sampling.logging.ruleLogPeriod`                   | Specify how many sampling rules should be processed between two logs produced                        | `10`                             |
+| `sampling.logging.ruleLogPeriod`                   | Specify how many sampling rules should be processed between two logs produced                        | `1`                              |
 
 ### Serving parameters
 
 | Name                                              | Description                                                                                         | Value                            |
 | ------------------------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------- |
-| `serving.podCount`                                | Number of Serving workers, each Serving Worker is an independent pod                                | `2`                              |
+| `serving.workerNum`                               | Number of Serving workers, each Serving Worker is an independent pod                                | `2`                              |
 | `serving.readinessProbe.enabled`                  | Enable readinessProbe on Serving worker containers                                                  | `true`                           |
 | `serving.readinessProbe.initialDelaySeconds`      | Initial delay seconds for readinessProbe                                                            | `30`                             |
 | `serving.readinessProbe.periodSeconds`            | Period seconds for readinessProbe                                                                   | `10`                             |
@@ -211,11 +209,10 @@ Specify the following additional parameters when loading from [GraphScope-Store]
 | `serving.httpService.externalTrafficPolicy`       | The external traffic policy of Serving http service                                                 | `Cluster`                        |       
 | `serving.httpService.annotations`                 | Additional custom annotations of Serving http service                                               | `{}`                             |
 | `serving.workdir`                                 | Local ephemeral storage mount path for Serving working directory                                    | `"/serving_workdir"`             |
-| `serving.actorLocalShardNum`                      | Local shard number for each Serving Worker pod                                                      | `4`                              |
+| `serving.actorLocalShardNum`                      | Local computing shard number for each Serving Worker pod                                            | `4`                              |
+| `serving.dataPartitionNum`                        | The partition number of data for each Serving Worker                                                | `4`                              |
 | `serving.rocksdbEnv.highPriorityThreads`          | The thread number of high-priority rocksdb background tasks                                         | `2`                              |
 | `serving.rocksdbEnv.lowPriorityThreads`           | The thread number of low-priority rocksdb background tasks                                          | `2`                              |
-| `serving.sampleStore.totalPartitions`             | The total sample store partition number across all Serving Workers                                  | `8`                              |
-| `serving.sampleStore.partitionStrategy`           | The sample store partition strategy of Serving Workers                                              | `"hash"`                         |
 | `serving.sampleStore.inMemoryMode`                | Specify whether to open rocksdb in-memory mode of sample store                                      | `false`
 | `serving.sampleStore.memtableRep`                 | The rocksdb memtable structure type of sample store                                                 | `"hashskiplist"`                 |
 | `serving.sampleStore.hashBucketCount`             | The hash bucket count of sample store memtable                                                      | `1048576`                        |
@@ -223,7 +220,7 @@ Specify the following additional parameters when loading from [GraphScope-Store]
 | `serving.sampleStore.blockCacheCapacity`          | The capacity (bytes) of sample store block cache                                                    | `67108864`                       |
 | `serving.sampleStore.ttlHours`                    | The TTL hours for serving data in sample store                                                      | `1200`                           |
 | `serving.recordPolling.threadNum`                 | The thread number for sample update consuming from kafka queues                                     | `2`                              |
-| `serving.recordPolling.retryIntervalMs`           | The retry interval (ms) when no record has been polled                                              | `50`                             |
+| `serving.recordPolling.retryIntervalMs`           | The retry interval (ms) when no record has been polled                                              | `100`                            |
 | `serving.recordPolling.processConcurrency`        | The max processing concurrency for polled records                                                   | `100`                            |
 | `serving.logging.dataLogPeriod`                   | Specify how many sample update batches should be processed between two logs produced                | `1`                              |
 | `serving.logging.requestLogPeriod`                | Interval of incoming inference query requests for logging serving statistics                        | `1`                              |

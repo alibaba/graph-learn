@@ -1,4 +1,4 @@
-{{- range $i, $e := until (.Values.serving.podCount | int) }}
+{{- range $i, $e := until (.Values.serving.workerNum | int) }}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
