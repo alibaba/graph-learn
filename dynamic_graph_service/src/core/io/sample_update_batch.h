@@ -25,11 +25,13 @@ namespace io {
 class SampleUpdateBatch {
 public:
   SampleUpdateBatch() = default;
-  SampleUpdateBatch(PartitionId store_pid, std::vector<storage::KVPair>&& updates);
+  SampleUpdateBatch(PartitionId store_pid,
+                    std::vector<storage::KVPair>&& updates);
+
   SampleUpdateBatch(const SampleUpdateBatch&) = delete;
   SampleUpdateBatch& operator=(const SampleUpdateBatch&) = delete;
-  SampleUpdateBatch(SampleUpdateBatch&& SampleUpdateBatch) noexcept;
-  SampleUpdateBatch& operator=(SampleUpdateBatch&& other) noexcept;
+  SampleUpdateBatch(SampleUpdateBatch&&) noexcept = default;
+  SampleUpdateBatch& operator=(SampleUpdateBatch&&) noexcept = default;
 
   /// Serialize updates without store partition info
   static actor::BytesBuffer

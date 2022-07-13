@@ -71,7 +71,6 @@ protected:
     consumer.set_timeout(std::chrono::milliseconds(2000));
 
     int32_t num_incoming_updates = 0;
-    std::cout << "**** Kafka Partition " << kafka_partition << " ****" << std::endl;
     while (--expected_msg_num >= 0) {
       auto msg = consumer.poll();
       EXPECT_TRUE(!msg == false);
@@ -84,12 +83,6 @@ protected:
         data_size, seastar::make_object_deleter(std::move(msg)));
 
       auto updates = io::SampleUpdateBatch::Deserialize(std::move(buf));
-      std::cout << "-- Sample Batch -- " << std::endl;
-      for (auto& update: updates) {
-        std::cout << "op id: " << update.key.pkey.op_id
-                  << ", vid: " << update.key.pkey.vid
-                  << std::endl;
-      }
       num_incoming_updates += static_cast<int32_t>(updates.size());
     }
     EXPECT_TRUE(num_incoming_updates == expected_update_num);
@@ -120,7 +113,7 @@ TEST_F(SamplingActorModuleTest, RunAll) {
     // record batch 0: (vertex: 0, edges: 0 -> 1; 0 -> 2; 0 -> 3)
     // record batch 1: (vertex: 1, edges: 1 -> 2; 1 -> 3)
     // record batch 2: (vertex: 2, edges: 2 -> 3)
-    // record batch 2: (vertex: 2, edges:)
+    // record batch 3: (vertex: 3, edges:)
     uint32_t num_v = 4;
     uint32_t num_p = 4;
     return seastar::parallel_for_each(

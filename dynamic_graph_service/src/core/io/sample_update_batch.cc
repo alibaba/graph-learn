@@ -23,18 +23,6 @@ SampleUpdateBatch::SampleUpdateBatch(PartitionId store_pid,
   : store_pid_(store_pid), updates_(std::move(updates)) {
 }
 
-SampleUpdateBatch::SampleUpdateBatch(SampleUpdateBatch&& other) noexcept
-  : store_pid_(other.store_pid_), updates_(std::move(other.updates_)) {}
-
-SampleUpdateBatch& SampleUpdateBatch::operator=(
-    SampleUpdateBatch&& other) noexcept {
-  if (this != &other) {
-    store_pid_ = other.store_pid_;
-    updates_ = std::move(other.updates_);
-  }
-  return *this;
-}
-
 actor::BytesBuffer
 SampleUpdateBatch::Serialize(const std::vector<storage::KVPair>& updates) {
   uint32_t buf_size = 0;
