@@ -24,7 +24,7 @@ SampleUpdateBatch::SampleUpdateBatch(PartitionId store_pid,
 }
 
 actor::BytesBuffer
-SampleUpdateBatch::Serialize(const storage::KVPair** updates, uint32_t size) {
+SampleUpdateBatch::Serialize(const storage::KVPair* const* updates, uint32_t size) {
   uint32_t buf_size = 0;
   buf_size += sizeof(uint32_t);
   for (uint32_t i = 0; i < size; i++) {

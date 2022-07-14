@@ -104,6 +104,7 @@ public:
 
 private:
   using WorkerSampleUpdates = std::vector<const storage::KVPair*>;
+
   struct WorkerKafkaRouter {
     std::vector<uint32_t> kafka_pids;
     uint32_t idx = 0;
@@ -117,6 +118,11 @@ private:
     }
   };
 
+  uint32_t ProduceWorkerUpdates(WorkerId wid,
+                                const WorkerSampleUpdates& updates,
+                                cppkafka::MessageBuilder& builder);
+
+private:
   const size_t  batch_size_ = 256 * 1024;
   std::string   kafka_topic_;
   uint32_t      kafka_partition_num_ = 0;
