@@ -31,16 +31,29 @@ message UpStreamInfoPb {
   repeated uint32 sub_kafka_pids = 4;
 }
 
-message DownStreamInfoPb {
+message DownStreamKafkaInfoPb {
+  repeated string pub_kafka_servers = 1;
+  string pub_kafka_topic = 2;
+  uint32 pub_kafka_partition_num = 3;
+}
+
+// When dataloader publishing graph updates, they will be partitioned
+// by store-wise strategy according to the total store partition
+// number of sampling workers.
+message DownStreamStoreWisePartitionInfoPb {
   string store_partition_strategy = 1;
   uint32 store_partition_num = 2;
-  string worker_partition_strategy = 3;
-  uint32 worker_partition_num = 4;
-  repeated string pub_kafka_servers = 5;
-  string pub_kafka_topic = 6;
-  uint32 pub_kafka_partition_num = 7;
-  // size of pub_kafka_pids is store_partition_num
-  repeated uint32 pub_kafka_pids = 8;
+  // vec size : downstream store partition number
+  repeated uint32 store_to_kafka_pid_vec = 3;
+}
+
+// When sampling worker publishing sample updates, they will be partitioned
+// by worker-wise strategy according to the total worker number of serving workers.
+message DownStreamWorkerWisePartitionInfoPb {
+  string worker_partition_strategy = 1;
+  uint32 worker_partition_num = 2;
+  // vec size : downstream kafka partition number
+  repeated uint32 kafka_to_worker_pid_vec = 3;
 }
 
 message ManagedStorePids {
@@ -79,7 +92,8 @@ message CheckpointInfoPb {
 }
 
 message DataLoaderInitInfoPb {
-  DownStreamInfoPb downstream_info = 1;
+  DownStreamKafkaInfoPb ds_kafka_info = 1;
+  DownStreamStoreWisePartitionInfoPb ds_store_partition_info = 2;
 }
 
 message SamplingInitInfoPb {
@@ -87,9 +101,10 @@ message SamplingInitInfoPb {
   uint32 num_local_shards = 2;
   repeated string ipaddrs = 3;
   StorePartitionInfoPb store_partition_info = 4;
-  UpStreamInfoPb   upstream_info = 5;
-  DownStreamInfoPb downstream_info = 6;
-  CheckpointInfoPb checkpoint_info = 7;
+  UpStreamInfoPb upstream_info = 5;
+  DownStreamKafkaInfoPb ds_kafka_info = 6;
+  DownStreamWorkerWisePartitionInfoPb ds_worker_partition_info = 7;
+  CheckpointInfoPb checkpoint_info = 8;
 }
 
 message ServingInitInfoPb {

@@ -23,7 +23,7 @@ static const int k_num_local_shards = 2;
 
 class RecordPollerTester : public ::testing::Test {
 public:
-  RecordPollerTester() : helper_(4, 4, k_num_local_shards, 4, 4) {}
+  RecordPollerTester() : helper_(4, k_num_local_shards, 4, 4) {}
   ~RecordPollerTester() override = default;
 
 protected:

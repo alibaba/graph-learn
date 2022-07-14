@@ -135,10 +135,11 @@ def make_service_config(yaml_config):
   spl2srv_kafka_topic = spl2srv_yaml_map.get("topic", "sample-batches")
   spl2srv_kafka_partition_num = spl2srv_yaml_map.get("partitions", 1)
 
-  assert(dl2spl_kafka_partition_num >= num_sampling_workers)
-  assert(spl2srv_kafka_partition_num >= num_serving_workers)
+  assert dl2spl_kafka_partition_num >= num_sampling_workers
+  assert num_sampling_store_partition >= num_sampling_workers
+  assert spl2srv_kafka_partition_num >= num_serving_workers
 
-  sampling_store_pids_group=dict()
+  sampling_store_pids_group = dict()
   for i in range(0, num_sampling_store_partition):
     wid = i % num_sampling_workers
     if wid not in sampling_store_pids_group:
@@ -148,11 +149,9 @@ def make_service_config(yaml_config):
 
   logging.info("---  sampling_store_pids_group  ---")
   for wid, pids in sampling_store_pids_group.items():
-    logging.info("worker id: {}, store pids: {}".format(
-        wid, pids))
-  logging.info("-----------------------------------")
+    logging.info("worker id: {}, store pids: {}".format(wid, pids))
 
-  serving_store_pids_group=dict()
+  serving_store_pids_group = dict()
   for i in range(0, num_serving_store_partition):
     for wid in range(0, num_serving_workers):
       if wid not in serving_store_pids_group:
@@ -162,11 +161,9 @@ def make_service_config(yaml_config):
 
   logging.info("---  serving_store_pids_group  ---")
   for wid, pids in serving_store_pids_group.items():
-    logging.info("worker id: {}, store pids: {}".format(
-        wid, pids))
-  logging.info("----------------------------------")
+    logging.info("worker id: {}, store pids: {}".format(wid, pids))
 
-  sampling_sub_kafka_pids=dict()
+  sampling_sub_kafka_pids = dict()
   for i in range(0, dl2spl_kafka_partition_num):
     wid = i % num_sampling_workers
     if wid not in sampling_sub_kafka_pids:
@@ -176,11 +173,9 @@ def make_service_config(yaml_config):
 
   logging.info("---  sampling_sub_kafka_pids  ---")
   for wid, pids in sampling_sub_kafka_pids.items():
-    logging.info("worker id: {}, kafka pids: {}".format(
-        wid, pids))
-  logging.info("---------------------------------")
+    logging.info("worker id: {}, kafka pids: {}".format(wid, pids))
 
-  serving_sub_kafka_pids=dict()
+  serving_sub_kafka_pids = dict()
   for i in range(0, spl2srv_kafka_partition_num):
     wid = i % num_serving_workers
     if wid not in serving_sub_kafka_pids:
@@ -190,40 +185,25 @@ def make_service_config(yaml_config):
 
   logging.info("---  serving_sub_kafka_pids  ---")
   for wid, pids in serving_sub_kafka_pids.items():
-    logging.info("worker id: {}, kafka pids: {}".format(
-        wid, pids))
-  logging.info("--------------------------------")
+    logging.info("worker id: {}, kafka pids: {}".format(wid, pids))
 
-  # downstream source vertex partition mapping.
-  src_vtx_store_pid_group = dict()
-  for i in range(0, num_serving_store_partition):
-    wid = i % num_serving_workers
-    if wid not in src_vtx_store_pid_group:
-      src_vtx_store_pid_group[wid] = [i]
-    else:
-      src_vtx_store_pid_group[wid].append(i)
-
-  sampling_pub_kafka_pids = [0] * num_serving_store_partition
-  for wid, pids in src_vtx_store_pid_group.items():
-    size = len(serving_sub_kafka_pids[wid])
-    for i in range(len(pids)):
-      kafka_pid = serving_sub_kafka_pids[wid][i % size]
-      sampling_pub_kafka_pids[pids[i]] = kafka_pid
-
-  logging.info("---  sampling_pub_kafka_pids  ---")
-  logging.info("{}".format(sampling_pub_kafka_pids))
-  logging.info("---------------------------------")
-
-  dataloader_pub_kafka_pids = [0] * num_sampling_store_partition
+  dataloader_pub_partition_vec = [0] * num_sampling_store_partition
   for wid, pids in sampling_store_pids_group.items():
     size = len(sampling_sub_kafka_pids[wid])
     for i in range(len(pids)):
       kafka_pid = sampling_sub_kafka_pids[wid][i % size]
-      dataloader_pub_kafka_pids[pids[i]] = kafka_pid
+      dataloader_pub_partition_vec[pids[i]] = kafka_pid
 
-  logging.info("---  dataloader_pub_kafka_pids  ---")
-  logging.info("{}".format(dataloader_pub_kafka_pids))
-  logging.info("----------------------------------")
+  logging.info("---  mapping vector: sampling worker store partition -> dl2spl kafka partition  ---")
+  logging.info("{}".format(dataloader_pub_partition_vec))
+
+  sampling_pub_partition_vec = [0] * spl2srv_kafka_partition_num
+  for wid, kafka_pids in serving_sub_kafka_pids.items():
+    for i in range(len(kafka_pids)):
+      sampling_pub_partition_vec[kafka_pids[i]] = wid
+
+  logging.info("---  mapping vector: spl2srv kafka partition -> serving worker id  ---")
+  logging.info("{}".format(sampling_pub_partition_vec))
 
   configs = {
     "schema_file": schema_file,
@@ -231,15 +211,17 @@ def make_service_config(yaml_config):
     "data_loading": {
       "worker_num": num_data_loader,
       "downstream": {
-        "store_partition_strategy": sampling_store_partition_strategy,
-        "store_partition_num": num_sampling_store_partition,
-        "worker_partition_strategy": "not supported now",
-        "worker_partition_num": num_sampling_workers,
-        "pub_kafka_servers": dl2spl_kafka_servers,
-        "pub_kafka_topic": dl2spl_kafka_topic,
-        "pub_kafka_partition_num": dl2spl_kafka_partition_num,
-        "pub_kafka_pids": dataloader_pub_kafka_pids,
-      }
+        "kafka": {
+          "pub_kafka_servers": dl2spl_kafka_servers,
+          "pub_kafka_topic": dl2spl_kafka_topic,
+          "pub_kafka_partition_num": dl2spl_kafka_partition_num,
+        },
+        "partition": {
+          "store_partition_strategy": sampling_store_partition_strategy,
+          "store_partition_num": num_sampling_store_partition,
+          "store_to_kafka_pid_vec": dataloader_pub_partition_vec
+        }
+      },
     },
     "sampling": {
       "worker_num": num_sampling_workers,
@@ -256,14 +238,16 @@ def make_service_config(yaml_config):
         "sub_kafka_pids": sampling_sub_kafka_pids,
       },
       "downstream": {
-        "store_partition_strategy": serving_store_partition_strategy,
-        "store_partition_num": num_serving_store_partition,
-        "worker_partition_strategy": serving_worker_partition_strategy,
-        "worker_partition_num": num_serving_workers,
-        "pub_kafka_servers": spl2srv_kafka_servers,
-        "pub_kafka_topic": spl2srv_kafka_topic,
-        "pub_kafka_partition_num": spl2srv_kafka_partition_num,
-        "pub_kafka_pids": sampling_pub_kafka_pids,
+        "kafka": {
+          "pub_kafka_servers": spl2srv_kafka_servers,
+          "pub_kafka_topic": spl2srv_kafka_topic,
+          "pub_kafka_partition_num": spl2srv_kafka_partition_num,
+        },
+        "partition": {
+          "worker_partition_strategy": serving_worker_partition_strategy,
+          "worker_partition_num": num_serving_workers,
+          "kafka_to_worker_pid_vec": sampling_pub_partition_vec
+        }
       }
     },
     "serving": {

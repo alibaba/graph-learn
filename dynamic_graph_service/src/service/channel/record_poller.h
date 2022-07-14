@@ -56,9 +56,10 @@ private:
   std::vector<DataUpdateActor_ref> actor_refs_;
   PartitionRouter*                 partition_router_;
   Partitioner*                     partitioner_;
+  const uint32_t                   partition_num_;
   const uint32_t                   poller_id_;
   const uint32_t                   gsid_anchor_;
-  std::vector<std::vector<const storage::KVPair*>> partition_records_;
+  uint32_t                         shard_idx_ = 0;
 };
 
 /// The basic io records polling unit, which corresponds to a

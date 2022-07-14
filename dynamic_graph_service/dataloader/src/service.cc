@@ -134,16 +134,17 @@ void Service::GetInfoAndInit() {
   }
 
   auto& opts = Options::GetInstance();
-  auto& ds_info = res.dataloader_info().downstream_info();
-  opts.data_partitions = ds_info.store_partition_num();
-  opts.output_kafka_brokers.resize(ds_info.pub_kafka_servers_size());
-  for (int i = 0; i < ds_info.pub_kafka_servers_size(); i++) {
-    opts.output_kafka_brokers[i] = ds_info.pub_kafka_servers(i);
+  auto& ds_kafka_info = res.dataloader_info().ds_kafka_info();
+  auto& ds_partition_info = res.dataloader_info().ds_store_partition_info();
+  opts.data_partitions = ds_partition_info.store_partition_num();
+  opts.output_kafka_brokers.resize(ds_kafka_info.pub_kafka_servers_size());
+  for (int i = 0; i < ds_kafka_info.pub_kafka_servers_size(); i++) {
+    opts.output_kafka_brokers[i] = ds_kafka_info.pub_kafka_servers(i);
   }
-  opts.output_kafka_topic = ds_info.pub_kafka_topic();
-  opts.output_kafka_partitions = ds_info.pub_kafka_partition_num();
+  opts.output_kafka_topic = ds_kafka_info.pub_kafka_topic();
+  opts.output_kafka_partitions = ds_kafka_info.pub_kafka_partition_num();
   std::vector<PartitionId> kafka_router;
-  for (auto pid : ds_info.pub_kafka_pids()) {
+  for (auto pid : ds_partition_info.store_to_kafka_pid_vec()) {
     kafka_router.push_back(pid);
   }
 
@@ -157,7 +158,7 @@ void Service::GetInfoAndInit() {
   }
   LOG(INFO) << "-- managed kafka partition ids: " << router_info;
 
-  Partitioner::GetInstance().Set(ds_info.store_partition_strategy(), std::move(kafka_router));
+  Partitioner::GetInstance().Set(ds_partition_info.store_partition_strategy(), std::move(kafka_router));
 
   LOG(INFO) << "Data loading service is initialized.";
 }

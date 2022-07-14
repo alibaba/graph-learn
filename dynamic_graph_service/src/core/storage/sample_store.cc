@@ -43,6 +43,18 @@ limitations under the License.
 namespace dgs {
 namespace storage {
 
+KVPair::KVPair(KVPair&& other) noexcept
+  : key(other.key), value(std::move(other.value)) {
+}
+
+KVPair& KVPair::operator=(KVPair&& other) noexcept {
+  if (this != &other) {
+    key = other.key;
+    value = std::move(other.value);
+  }
+  return *this;
+}
+
 SampleStore::SampleStore(
     const std::vector<PartitionId>& pids,
     Partitioner&& partitioner,

@@ -25,58 +25,33 @@ namespace io {
 class SampleUpdateBatch {
 public:
   SampleUpdateBatch() = default;
-  explicit SampleUpdateBatch(actor::BytesBuffer&& buf);
+  SampleUpdateBatch(PartitionId store_pid,
+                    std::vector<storage::KVPair>&& updates);
 
   SampleUpdateBatch(const SampleUpdateBatch&) = delete;
   SampleUpdateBatch& operator=(const SampleUpdateBatch&) = delete;
-  SampleUpdateBatch(SampleUpdateBatch&& SampleUpdateBatch) noexcept;
-  SampleUpdateBatch& operator=(SampleUpdateBatch&& other) noexcept;
+  SampleUpdateBatch(SampleUpdateBatch&&) noexcept = default;
+  SampleUpdateBatch& operator=(SampleUpdateBatch&&) noexcept = default;
 
-  SampleUpdateBatch(PartitionId pid,
-                    const std::vector<const storage::KVPair*>& updates);
+  /// Serialize updates without store partition info
+  static actor::BytesBuffer
+  Serialize(const storage::KVPair* const* updates, uint32_t size);
 
-  std::vector<storage::KVPair> GetSampleUpdates();
+  /// Deserialize updates from buffer without store partition info
+  static std::vector<storage::KVPair>
+  Deserialize(actor::BytesBuffer&& buf);
 
-  /// Get the destination partition id of this batch
+  /// Get the destination store partition id of this batch
   PartitionId GetStorePartitionId() const {
-    return *reinterpret_cast<const PartitionId*>(buf_.get());
+    return store_pid_;
   }
 
   size_t GetUpdatesNum() const {
-    return *reinterpret_cast<const uint32_t*>(buf_.get() + sizeof(PartitionId));
+    return updates_.size();
   }
 
-  /// Get the raw data pointer of the underlying buffer.
-  const char* Data() const {
-    return buf_.get();
-  }
-
-  /// Get the raw data size of the underlying buffer.
-  size_t Size() const {
-    return buf_.size();
-  }
-
-  /// Make a new record referring to the same underlying buffer.
-  SampleUpdateBatch Share() {
-    return SampleUpdateBatch{buf_.share()};
-  }
-
-  /// Make a new clone of current record.
-  SampleUpdateBatch Clone() const {
-    return SampleUpdateBatch{buf_.clone()};
-  }
-
-  /// Get the underlying temporary buffer.
-  const actor::BytesBuffer& Buffer() const {
-    return buf_;
-  }
-
-  /// Release the underlying string buffer of this record.
-  ///
-  /// \remark After calling this method, the current record
-  /// is no longer valid.
-  actor::BytesBuffer ReleaseBuffer() {
-    return std::move(buf_);
+  std::vector<storage::KVPair> ReleaseUpdates() {
+    return std::move(updates_);
   }
 
   /// As each SampleUpdateBatch polled from kafka will be
@@ -88,7 +63,8 @@ public:
   }
 
 private:
-  actor::BytesBuffer buf_;
+  PartitionId store_pid_ = 0;
+  std::vector<storage::KVPair> updates_;
 };
 
 }  // namespace io

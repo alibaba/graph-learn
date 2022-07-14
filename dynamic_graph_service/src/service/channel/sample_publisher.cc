@@ -96,11 +96,10 @@ void KafkaProducerPool::PollCallback(uint32_t interval) {
   }
 }
 
-SamplePublisher::SamplePublisher(const std::string& kafka_topic,
-                                 uint32_t kafka_partition_num)
-  : kafka_topic_(kafka_topic),
-    kafka_partition_num_(kafka_partition_num) {
+SamplePublisher::SamplePublisher() {
   auto& opts = Options::GetInstance().GetSamplePublishingOptions();
+  kafka_topic_ = opts.kafka_topic;
+  kafka_partition_num_ = opts.kafka_partition_num;
   retry_times_ = opts.max_produce_retry_times;
   pr_manager_ = std::make_shared<actor::VoidPromiseManager>(1024);
   auto* producer_pool = KafkaProducerPool::GetInstance();
@@ -108,67 +107,15 @@ SamplePublisher::SamplePublisher(const std::string& kafka_topic,
   kafka_producer_ = producer_pool->GetProducer(producer_idx);
 }
 
-SamplePublisher::SamplePublisher(SamplePublisher&& other) noexcept
-  : kafka_topic_(std::move(other.kafka_topic_)),
-    kafka_partition_num_(other.kafka_partition_num_),
-    worker_sink_kafka_partitions_(other.worker_sink_kafka_partitions_),
-    retry_times_(other.retry_times_),
-    worker_records_(std::move(other.worker_records_)),
-    pr_manager_(std::move(other.pr_manager_)),
-    kafka_producer_(std::move(other.kafka_producer_)) {
-  other.kafka_topic_ = "";
-  other.kafka_partition_num_ = 0;
-  other.retry_times_ = 0;
-}
-
-SamplePublisher& SamplePublisher::operator=(SamplePublisher&& other) noexcept {
-  if (this != &other) {
-    kafka_topic_ = std::move(other.kafka_topic_);
-    kafka_partition_num_ = other.kafka_partition_num_;
-    worker_sink_kafka_partitions_ = other.worker_sink_kafka_partitions_;
-    retry_times_ = other.retry_times_;
-    worker_records_ = std::move(other.worker_records_);
-    pr_manager_ = std::move(other.pr_manager_);
-    kafka_producer_ = std::move(other.kafka_producer_);
-    other.kafka_topic_ = "";
-    other.kafka_partition_num_ = 0;
-    other.retry_times_ = 0;
-  }
-  return *this;
-}
-
-void SamplePublisher::UpdateSinkKafkaPartitions(
-    const std::vector<uint32_t>& updates,
-    const std::string& serving_store_part_strategy,
-    uint32_t serving_store_part_num,
-    uint32_t serving_worker_num) {
-  try {
-    auto partitioner = PartitionerFactory::Create(
-        serving_store_part_strategy, serving_store_part_num);
-    partitioner_ = std::move(partitioner);
-    LOG(INFO) << "Update serving store partition info with strategy: "
-               << serving_store_part_strategy << ", partition num: "
-               << serving_store_part_num;
-  } catch (std::exception& ex) {
-    LOG(ERROR) << "Update serving store partition info failed: " << ex.what();
-  }
-
-  const auto downstream_store_pids_num = updates.size();
-
-  worker_records_.reserve(serving_worker_num);
-  worker_sink_kafka_partitions_.reserve(serving_worker_num);
-  for (int i = 0; i < serving_worker_num; ++i) {
-    // FIXME(@goldenleaves): using per worker specification.
-    worker_sink_kafka_partitions_.push_back(updates);
-    worker_record_id_set_.emplace_back(std::unordered_set<uint32_t>());
-
-    // index: downstream storage partition id.
-    // value: target kafka partition id.
-    WorkerWisePartitions part_records;
-    for (size_t j = 0; j < downstream_store_pids_num; j++) {
-      part_records.emplace_back(std::vector<const storage::KVPair*>{});
-    }
-    worker_records_.emplace_back(std::move(part_records));
+void SamplePublisher::UpdateDSPublishInfo(
+    uint32_t serving_worker_num,
+    const std::vector<uint32_t>& kafka_to_serving_worker_vec) {
+  assert(kafka_to_serving_worker_vec.size() == kafka_partition_num_);
+  worker_records_.resize(serving_worker_num);
+  worker_kafka_routers_.resize(serving_worker_num);
+  for (uint32_t i = 0; i < kafka_to_serving_worker_vec.size(); i++) {
+    auto wid = kafka_to_serving_worker_vec[i];
+    worker_kafka_routers_[wid].kafka_pids.push_back(i);
   }
 }
 
@@ -179,58 +126,35 @@ seastar::future<> SamplePublisher::Publish(
     return seastar::make_ready_future<>();
   }
 
-  for (auto &info : infos) {
-    assert(info.worker_id < worker_records_.size());
-    if (!worker_record_id_set_[info.worker_id].count(info.record_id)) {
-      auto dst_pid = partitioner_.GetPartitionId(
-        batch[info.record_id].key.pkey.vid);
-      worker_records_[info.worker_id][dst_pid].push_back(
-        &batch[info.record_id]);
-      worker_record_id_set_[info.worker_id].insert(info.record_id);
-    }
-  }
-
   std::vector<uint32_t> pr_ids;
   std::vector<seastar::future<>> futures;
   cppkafka::MessageBuilder builder(kafka_topic_);
 
-  for (WorkerId wid = 0; wid < worker_records_.size(); ++wid) {
-    auto& part_records = worker_records_[wid];
-    auto& sink_kafka_partitions = worker_sink_kafka_partitions_[wid];
-    for (PartitionId pid = 0; pid < part_records.size(); ++pid) {
-      if (part_records[pid].empty()) {
-        continue;
-      }
-      // Get the sink kafka partition id
-      // TODO(@goldenleaves): double-check
-      auto dst_kafka_pid = sink_kafka_partitions[pid];
-      builder.partition(static_cast<int>(dst_kafka_pid));
-      // Set payload with SampleUpdateBatch storing KVPairs.
-      io::SampleUpdateBatch update_batch(pid, part_records[pid]);
-      // TODO(@goldenleaves): reserve capacity.
-      part_records[pid].clear();
-      // FIXME(@goldenleaves): try to reduce memcpy
-      builder.payload({update_batch.Data(), update_batch.Size()});
-      if (update_batch.Size() > 1024 * 1024) {
-        LOG(WARNING) << "data batch size is " << batch.size()
-                     << ", subs info size is " << infos.size()
-                     << ", kafka message size: "
-                     << static_cast<float>(update_batch.Size()) / 1000.0
-                     << " KB, " << "dst kafka pid: " << pid;
-      }
-      // Get promise and set callback unit
-      auto pr_id = pr_manager_->acquire_pr();
+  std::vector<size_t> worker_batch_size(worker_records_.size(), 0);
+  for (auto& info : infos) {
+    auto wid = info.worker_id;
+    auto rid = info.record_id;
+    assert(wid < worker_records_.size());
+    worker_records_[wid].emplace_back(&batch[rid]);
+    worker_batch_size[wid] += batch[rid].Size();
+    if (worker_batch_size[wid] > batch_size_) {
+      auto pr_id = ProduceWorkerUpdates(wid, worker_records_[wid], builder);
       pr_ids.push_back(pr_id);
       futures.emplace_back(pr_manager_->get_future(pr_id));
-      builder.user_data(new ProducingCallbackUnit(
-      pr_manager_, pr_id, actor::LocalShardId(), retry_times_));
-      // Produce
-      kafka_producer_->produce(builder);
+      worker_records_[wid].clear();
+      worker_batch_size[wid] = 0;
     }
-    worker_record_id_set_[wid].clear();
+  }
+  for (WorkerId wid = 0; wid < worker_records_.size(); ++wid) {
+    if (!worker_records_[wid].empty()) {
+      auto pr_id = ProduceWorkerUpdates(wid, worker_records_[wid], builder);
+      pr_ids.push_back(pr_id);
+      futures.emplace_back(pr_manager_->get_future(pr_id));
+      worker_records_[wid].clear();
+    }
   }
 
-  // Return once all the sending tasks are completed
+  // Return when all the producing tasks are completed
   return seastar::when_all(futures.begin(), futures.end()).then(
       [pr_ids = std::move(pr_ids), this] (const std::vector<seastar::future<>>& ret) {
     for (auto pr_id : pr_ids) {
@@ -245,6 +169,23 @@ seastar::future<> SamplePublisher::Publish(
     }
     return seastar::make_ready_future<>();
   });
+}
+
+uint32_t SamplePublisher::ProduceWorkerUpdates(
+    WorkerId wid,
+    const WorkerSampleUpdates& updates,
+    cppkafka::MessageBuilder& builder) {
+  auto dst_kafka_pid = worker_kafka_routers_[wid].GetKafkaPid();
+  builder.partition(static_cast<int>(dst_kafka_pid));
+  auto buf = io::SampleUpdateBatch::Serialize(updates.data(), updates.size());
+  builder.payload({buf.get(), buf.size()});
+  // Get promise and set callback unit
+  auto pr_id = pr_manager_->acquire_pr();
+  builder.user_data(new ProducingCallbackUnit(
+      pr_manager_, pr_id, actor::LocalShardId(), retry_times_));
+  // Produce
+  kafka_producer_->produce(builder);
+  return pr_id;
 }
 
 }  // namespace dgs

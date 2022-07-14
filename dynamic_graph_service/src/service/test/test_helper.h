@@ -119,16 +119,14 @@ BasicTestHelper::MakePidVector(uint32_t num_partitions) {
 
 class SamplingTestHelper : public BasicTestHelper {
 public:
-  SamplingTestHelper(uint32_t num_pub_kafka_partitions,
-                     uint32_t num_store_partitions,
+  SamplingTestHelper(uint32_t num_store_partitions,
                      uint32_t num_local_shards,
-                     uint32_t num_ds_worker,
-                     uint32_t num_ds_store_partitions)
-    : num_pub_kafka_partitions_(num_pub_kafka_partitions),
-      num_store_partitions_(num_store_partitions),
+                     uint32_t num_pub_kafka_partitions,
+                     uint32_t num_ds_worker)
+    : num_store_partitions_(num_store_partitions),
       num_local_shards_(num_local_shards),
-      num_ds_worker_(num_ds_worker),
-      num_ds_store_partitions_(num_ds_store_partitions) {}
+      num_pub_kafka_partitions_(num_pub_kafka_partitions),
+      num_ds_worker_(num_ds_worker) {}
   ~SamplingTestHelper() override = default;
 
   void Initialize();
@@ -149,11 +147,10 @@ public:
   }
 
 private:
-  const uint32_t num_pub_kafka_partitions_;
   const uint32_t num_store_partitions_;
   const uint32_t num_local_shards_;
+  const uint32_t num_pub_kafka_partitions_;
   const uint32_t num_ds_worker_;
-  const uint32_t num_ds_store_partitions_;
   std::unique_ptr<PartitionRouter>            partition_router_;
   std::unique_ptr<storage::SampleStore>       store_;
   std::unique_ptr<storage::SampleBuilder>     sample_builder_;
@@ -207,7 +204,11 @@ void SamplingTestHelper::InstallQuery() {
       *seastar::alien::internal::default_instance, 0,
       [this] {
         auto req = MakeInstallQueryRequest();
-        auto pub_kafka_pids = MakePidVector(num_pub_kafka_partitions_);
+        std::vector<uint32_t> kafka_to_wid;
+        kafka_to_wid.resize(num_pub_kafka_partitions_);
+        for (uint32_t i = 0; i < num_pub_kafka_partitions_; i++) {
+          kafka_to_wid[i] = i % num_ds_worker_;
+        }
         auto payload = std::make_shared<SamplingInitPayload>(
             req.CloneBuffer(),
             store_.get(),
@@ -215,11 +216,9 @@ void SamplingTestHelper::InstallQuery() {
             subs_table_.get(),
             "hash",
             num_store_partitions_,
-            "hash",
-            num_ds_store_partitions_,
-            num_ds_worker_,
             partition_router_->GetRoutingInfo(),
-            pub_kafka_pids);
+            num_ds_worker_,
+            kafka_to_wid);
         return seastar::parallel_for_each(boost::irange(0u, num_local_shards_),
             [this, payload] (uint32_t i) {
           return sampling_act_refs_[i].ExecuteAdminOperation(
@@ -275,11 +274,9 @@ io::RecordBatch SamplingTestHelper::MakeRecordBatch(PartitionId pid,
 
 class ServingTestHelper : public BasicTestHelper {
 public:
-  ServingTestHelper(uint32_t num_pub_kafka_partitions,
-                     uint32_t num_store_partitions,
-                     uint32_t num_local_shards)
-  : num_pub_kafka_partitions_(num_pub_kafka_partitions),
-    num_store_partitions_(num_store_partitions),
+  ServingTestHelper(uint32_t num_store_partitions,
+                    uint32_t num_local_shards)
+  : num_store_partitions_(num_store_partitions),
     num_local_shards_(num_local_shards) {}
   ~ServingTestHelper() override = default;
 
@@ -305,7 +302,6 @@ public:
   }
 
 private:
-  const uint32_t num_pub_kafka_partitions_;
   const uint32_t num_store_partitions_;
   const uint32_t num_local_shards_;
   std::unique_ptr<PartitionRouter>       partition_router_;

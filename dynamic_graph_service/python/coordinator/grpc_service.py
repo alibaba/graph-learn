@@ -168,15 +168,22 @@ def set_upstream_init_info(pb, info, worker_id):
   pb.sub_kafka_pids.extend(info.get("sub_kafka_pids")[worker_id])
 
 
-def set_downstream_init_info(pb, info):
-  pb.store_partition_strategy = info.get("store_partition_strategy")
-  pb.store_partition_num = info.get("store_partition_num")
-  pb.worker_partition_strategy = info.get("worker_partition_strategy")
-  pb.worker_partition_num = info.get("worker_partition_num")
+def set_downstream_kafka_info(pb, info):
   pb.pub_kafka_servers.extend(info.get("pub_kafka_servers"))
   pb.pub_kafka_topic = info.get("pub_kafka_topic")
   pb.pub_kafka_partition_num = info.get("pub_kafka_partition_num")
-  pb.pub_kafka_pids.extend(info.get("pub_kafka_pids"))
+
+
+def set_downstream_store_wise_partition_info(pb, info):
+  pb.store_partition_strategy = info.get("store_partition_strategy")
+  pb.store_partition_num = info.get("store_partition_num")
+  pb.store_to_kafka_pid_vec.extend(info.get("store_to_kafka_pid_vec"))
+
+
+def set_downstream_worker_wise_partition_info(pb, info):
+  pb.worker_partition_strategy = info.get("worker_partition_strategy")
+  pb.worker_partition_num = info.get("worker_partition_num")
+  pb.kafka_to_worker_pid_vec.extend(info.get("kafka_to_worker_pid_vec"))
 
 
 def set_store_partition_info(pb, info):
@@ -250,14 +257,20 @@ class CoordinatorServicer(coordinator_pb2_grpc.CoordinatorServicer):
     init_info_pb = coordinator_pb2.GetInitInfoResponsePb()
     if worker_type == coordinator_pb2.DataLoader:
       data_loading_info_pb = init_info_pb.dataloader_info
-      set_downstream_init_info(data_loading_info_pb.downstream_info, sub_state.info.get("downstream"))
+      set_downstream_kafka_info(
+        data_loading_info_pb.ds_kafka_info, sub_state.info.get("downstream").get("kafka"))
+      set_downstream_store_wise_partition_info(
+        data_loading_info_pb.ds_store_partition_info, sub_state.info.get("downstream").get("partition"))
     elif worker_type == coordinator_pb2.Sampling:
       sampling_info_pb = init_info_pb.sampling_info
       # Set non-blocking infos
       sampling_info_pb.num_local_shards = sub_state.info.get("num_local_shards")
       set_store_partition_info(sampling_info_pb.store_partition_info, sub_state.info.get("store_partition"))
       set_upstream_init_info(sampling_info_pb.upstream_info, sub_state.info.get("upstream"), worker_id)
-      set_downstream_init_info(sampling_info_pb.downstream_info, sub_state.info.get("downstream"))
+      set_downstream_kafka_info(
+        sampling_info_pb.ds_kafka_info, sub_state.info.get("downstream").get("kafka"))
+      set_downstream_worker_wise_partition_info(
+        sampling_info_pb.ds_worker_partition_info, sub_state.info.get("downstream").get("partition"))
       sub_state.checkpoint_manager.set_init_pb_with_latest_checkpoint(worker_id, sampling_info_pb.checkpoint_info)
       # Wait until all sampling workers are registered and set ip address list.
       while sub_state.check_is_registered(worker_id):
