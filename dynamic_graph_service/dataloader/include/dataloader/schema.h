@@ -19,6 +19,9 @@ limitations under the License.
 #include <unordered_map>
 #include <vector>
 
+#include "boost/property_tree/json_parser.hpp"
+#include "boost/property_tree/ptree.hpp"
+
 #include "dataloader/typedefs.h"
 #include "dataloader/fbs/schema_generated.h"
 
@@ -27,13 +30,8 @@ namespace dataloader {
 
 class AttributeDef {
 public:
-  explicit AttributeDef(const AttributeDefRep* rep);
+  explicit AttributeDef(const boost::property_tree::ptree& node);
   ~AttributeDef() = default;
-
-  AttributeDef(const AttributeDef&) = default;
-  AttributeDef& operator=(const AttributeDef&) = default;
-  AttributeDef(AttributeDef&&) = default;
-  AttributeDef& operator=(AttributeDef&&) = default;
 
   AttributeType Type() const {
     return type_;
@@ -55,7 +53,7 @@ private:
 
 class VertexDef {
 public:
-  explicit VertexDef(const VertexDefRep* rep);
+  explicit VertexDef(const boost::property_tree::ptree& node);
   ~VertexDef() = default;
 
   VertexType Type() const {
@@ -203,6 +201,14 @@ private:
   std::unordered_map<std::string, EdgeDef> name_to_edge_def_;
   std::vector<EdgeRelationDef> edge_relation_defs_;
 };
+
+void test() {
+  std::string s = "[1, 2, 3, 4]";
+  std::stringstream ss(s);
+  boost::property_tree::ptree ptree;
+  boost::property_tree::read_json(ss, ptree);
+  auto a = ptree.get_child("a");
+}
 
 }  // namespace dataloader
 }  // namespace dgs

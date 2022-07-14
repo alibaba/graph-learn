@@ -43,7 +43,7 @@ find_package (CppKafka 0.3.1 REQUIRED)
 # Flatbuffers
 find_package (Flatbuffers 1.12.0 REQUIRED)
 # Boost
-find_package (Boost COMPONENTS thread program_options filesystem)
+find_package (Boost COMPONENTS headers program_options thread)
 # yaml-cpp
 find_package (yaml-cpp)
 # google logging

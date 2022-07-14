@@ -24,15 +24,39 @@ limitations under the License.
 namespace dgs {
 namespace dataloader {
 
-AttributeDef::AttributeDef(const AttributeDefRep* rep)
-  : type_(rep->type()),
-    name_(rep->name()->str()),
-  value_type_(static_cast<AttributeValueType>(rep->value_type())) {
+AttributeDef::AttributeDef(const boost::property_tree::ptree& node)
+  : type_(node.get_child("type").get_value<AttributeType>()),
+    name_(node.get_child("name").get_value<std::string>()) {
+  auto value_type_name = node.get_child("value_type").get_value<std::string>();
+  if (value_type_name == "BOOL") {
+    value_type_ = AttributeValueType::BOOL;
+  } else if (value_type_name == "CHAR") {
+    value_type_ = AttributeValueType::CHAR;
+  } else if (value_type_name == "INT16") {
+    value_type_ = AttributeValueType::INT16;
+  } else if (value_type_name == "INT32") {
+    value_type_ = AttributeValueType::INT32;
+  } else if (value_type_name == "INT64") {
+    value_type_ = AttributeValueType::INT64;
+  } else if (value_type_name == "FLOAT32") {
+    value_type_ = AttributeValueType::FLOAT32;
+  } else if (value_type_name == "FLOAT64") {
+    value_type_ = AttributeValueType::FLOAT64;
+  } else if (value_type_name == "STRING") {
+    value_type_ = AttributeValueType::STRING;
+  } else if (value_type_name == "BYTES") {
+    value_type_ = AttributeValueType::BYTES;
+  } else {
+    LOG(ERROR) << "Unsupported attribute definition, "
+               << "name: " << name_ << ", data type: " << value_type_name;
+    value_type_ = AttributeValueType::STRING;
+  }
 }
 
-VertexDef::VertexDef(const VertexDefRep* rep)
-  : type_(rep->vtype()),
-    name_(rep->name()->str()) {
+VertexDef::VertexDef(const boost::property_tree::ptree& node)
+  : type_(node.get_child("vtype").get_value<VertexType>()),
+    name_(node.get_child("name").get_value<std::string>()) {
+  auto
   auto attr_num = rep->attr_types()->size();
   attr_types_.reserve(attr_num);
   for (uint32_t i = 0; i < attr_num; i++) {
