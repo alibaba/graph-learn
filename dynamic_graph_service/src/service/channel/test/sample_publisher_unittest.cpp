@@ -75,8 +75,7 @@ public:
       std::vector<uint32_t> kafka_to_serving_worker_vec = {0, 1, 2, 3};
       publisher->UpdateDSPublishInfo(4, kafka_to_serving_worker_vec);
 
-      return publisher->Publish(std::move(batch), std::move(infos)
-      ).then_wrapped([] (auto&& f) {
+      return publisher->Publish(batch, infos).then_wrapped([] (auto&& f) {
         EXPECT_FALSE(f.failed());
         auto& pub_opts = Options::GetInstance().GetSamplePublishingOptions();
         cppkafka::Consumer consumer(cppkafka::Configuration{

@@ -95,15 +95,15 @@ public:
   SamplePublisher();
   ~SamplePublisher() = default;
 
-  seastar::future<> Publish(std::vector<storage::KVPair>&& batch,
-                            std::vector<storage::SubsInfo>&& infos);
+  seastar::future<> Publish(const std::vector<storage::KVPair>& batch,
+                            const std::vector<storage::SubsInfo>& infos);
 
   void UpdateDSPublishInfo(
       uint32_t serving_worker_num,
       const std::vector<uint32_t>& kafka_to_serving_worker_vec);
 
 private:
-  using WorkerSampleUpdates = std::vector<storage::KVPair>;
+  using WorkerSampleUpdates = std::vector<const storage::KVPair*>;
   struct WorkerKafkaRouter {
     std::vector<uint32_t> kafka_pids;
     uint32_t idx = 0;
@@ -117,9 +117,10 @@ private:
     }
   };
 
-  std::string  kafka_topic_;
-  uint32_t     kafka_partition_num_ = 0;
-  uint32_t     retry_times_ = 0;
+  const size_t  batch_size_ = 256 * 1024;
+  std::string   kafka_topic_;
+  uint32_t      kafka_partition_num_ = 0;
+  uint32_t      retry_times_ = 0;
   std::vector<WorkerSampleUpdates>           worker_records_;
   std::vector<WorkerKafkaRouter>             worker_kafka_routers_;
   std::shared_ptr<actor::VoidPromiseManager> pr_manager_;

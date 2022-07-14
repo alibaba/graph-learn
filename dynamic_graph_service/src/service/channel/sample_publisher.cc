@@ -120,8 +120,8 @@ void SamplePublisher::UpdateDSPublishInfo(
 }
 
 seastar::future<> SamplePublisher::Publish(
-    std::vector<storage::KVPair>&& batch,
-    std::vector<storage::SubsInfo>&& infos) {
+    const std::vector<storage::KVPair>& batch,
+    const std::vector<storage::SubsInfo>& infos) {
   if (batch.empty() || infos.empty()) {
     return seastar::make_ready_future<>();
   }
@@ -129,7 +129,7 @@ seastar::future<> SamplePublisher::Publish(
   for (auto &info : infos) {
     assert(info.worker_id < worker_records_.size());
     worker_records_[info.worker_id].emplace_back(
-        std::move(batch[info.record_id]));
+        &batch[info.record_id]);
   }
 
   std::vector<uint32_t> pr_ids;
@@ -137,24 +137,45 @@ seastar::future<> SamplePublisher::Publish(
   cppkafka::MessageBuilder builder(kafka_topic_);
 
   for (WorkerId wid = 0; wid < worker_records_.size(); ++wid) {
-    if (worker_records_[wid].empty()) {
+    auto& wr = worker_records_[wid];
+    if (wr.empty()) {
       continue;
     }
-    auto dst_kafka_pid = worker_kafka_routers_[wid].GetKafkaPid();
-    builder.partition(static_cast<int>(dst_kafka_pid));
-    // Serialize sample updates
-    auto bytes = io::SampleUpdateBatch::Serialize(worker_records_[wid]);
-    builder.payload({bytes.get(), bytes.size()});
-    // Get promise and set callback unit
-    auto pr_id = pr_manager_->acquire_pr();
-    pr_ids.push_back(pr_id);
-    futures.emplace_back(pr_manager_->get_future(pr_id));
-    builder.user_data(new ProducingCallbackUnit(
-        pr_manager_, pr_id, actor::LocalShardId(), retry_times_));
-    // Produce
-    kafka_producer_->produce(builder);
-    // Clear temp buffer
-    worker_records_[wid].clear();
+
+    // If worker updates size is too large, slice them into small batches.
+    std::vector<actor::BytesBuffer> sliced_batches;
+    size_t slice_size = 0;
+    size_t begin = 0, end = 0;
+    while (end < wr.size()) {
+      slice_size += wr[end]->Size();
+      end++;
+      if (slice_size > batch_size_) {
+        sliced_batches.emplace_back(
+            io::SampleUpdateBatch::Serialize(wr.data() + begin, end - begin));
+        begin = end;
+        slice_size = 0;
+      }
+    }
+    if (end > begin) {
+      sliced_batches.emplace_back(
+          io::SampleUpdateBatch::Serialize(wr.data() + begin, end - begin));
+    }
+    wr.clear();
+
+    // Produce worker update batches
+    for (auto& sliced_batch : sliced_batches) {
+      auto dst_kafka_pid = worker_kafka_routers_[wid].GetKafkaPid();
+      builder.partition(static_cast<int>(dst_kafka_pid));
+      builder.payload({sliced_batch.get(), sliced_batch.size()});
+      // Get promise and set callback unit
+      auto pr_id = pr_manager_->acquire_pr();
+      pr_ids.push_back(pr_id);
+      futures.emplace_back(pr_manager_->get_future(pr_id));
+      builder.user_data(new ProducingCallbackUnit(
+          pr_manager_, pr_id, actor::LocalShardId(), retry_times_));
+      // Produce
+      kafka_producer_->produce(builder);
+    }
   }
 
   // Return when all the producing tasks are completed

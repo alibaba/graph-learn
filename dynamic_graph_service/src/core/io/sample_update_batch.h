@@ -35,7 +35,7 @@ public:
 
   /// Serialize updates without store partition info
   static actor::BytesBuffer
-  Serialize(const std::vector<storage::KVPair>& batch);
+  Serialize(const storage::KVPair** updates, uint32_t size);
 
   /// Deserialize updates from buffer without store partition info
   static std::vector<storage::KVPair>

@@ -46,6 +46,10 @@ struct KVPair {
 
   KVPair(const Key& k, io::Record&& v)
     : key(k), value(std::move(v)) {}
+
+  size_t Size() const {
+    return sizeof(Key) + value.Size();
+  }
 };
 
 struct StorePartitionBackupInfo {

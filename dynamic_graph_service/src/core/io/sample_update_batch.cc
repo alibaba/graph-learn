@@ -24,30 +24,29 @@ SampleUpdateBatch::SampleUpdateBatch(PartitionId store_pid,
 }
 
 actor::BytesBuffer
-SampleUpdateBatch::Serialize(const std::vector<storage::KVPair>& updates) {
+SampleUpdateBatch::Serialize(const storage::KVPair** updates, uint32_t size) {
   uint32_t buf_size = 0;
-  uint32_t updates_num = updates.size();
   buf_size += sizeof(uint32_t);
-  for (int i = 0; i < updates_num; i++) {
+  for (uint32_t i = 0; i < size; i++) {
     buf_size += (sizeof(storage::Key) + sizeof(uint32_t) +
-        updates[i].value.Size());
+        updates[i]->value.Size());
   }
   // Copy the pid and #records into the buffer, followed by the size
   // and data of each record.
   actor::BytesBuffer buffer(buf_size);
   auto offset = buffer.get_write();
   // write record number
-  std::memcpy(offset, &updates_num, sizeof(uint32_t));
+  std::memcpy(offset, &size, sizeof(uint32_t));
   offset += sizeof(uint32_t);
   // write updates
-  for (size_t i = 0; i < updates_num; i++) {
-    auto& kv_pair = updates[i];
-    std::memcpy(offset, &kv_pair.key, sizeof(storage::Key));
+  for (uint32_t i = 0; i < size; i++) {
+    auto* kv_pair = updates[i];
+    std::memcpy(offset, &kv_pair->key, sizeof(storage::Key));
     offset += sizeof(storage::Key);
-    uint32_t update_size = kv_pair.value.Size();
+    uint32_t update_size = kv_pair->value.Size();
     std::memcpy(offset, &update_size, sizeof(uint32_t));
     offset += sizeof(uint32_t);
-    std::memcpy(offset, kv_pair.value.Data(), update_size);
+    std::memcpy(offset, kv_pair->value.Data(), update_size);
     offset += update_size;
   }
   return buffer;

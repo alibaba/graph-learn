@@ -167,9 +167,9 @@ SamplingActor::ApplyGraphUpdates(io::RecordBatch&& input_batch) {
 
   // 5. Send all sampled records and downstream subscription rules.
   return seastar::when_all(
-      sample_publisher_.Publish(
-          std::move(sampled_batch), std::move(subs_infos)),
-      rule_buf_handle_.SendAll()).then([] (auto) {
+      sample_publisher_.Publish(sampled_batch, subs_infos),
+      rule_buf_handle_.SendAll()
+  ).then([] (auto) {
     return seastar::make_ready_future<actor::Void>();
   });
 }
@@ -225,11 +225,11 @@ SamplingActor::UpdateSubsRules(io::SubsRuleBatch &&rule_batch) {
   CollectDownstreamSubsRules(sampled_batch, subs_info_buf);
 
   return seastar::when_all(
-      sample_publisher_.Publish(
-          std::move(sampled_batch), std::move(subs_info_buf)),
-      rule_buf_handle_.SendAll()).then([] (auto) {
+      sample_publisher_.Publish(sampled_batch, subs_info_buf),
+      rule_buf_handle_.SendAll()
+  ).then([] (auto) {
     return seastar::make_ready_future<actor::Integer>(
-            actor::Integer(static_cast<int>(actor::GlobalShardId())));
+        actor::Integer(static_cast<int>(actor::GlobalShardId())));
   });
 }
 
