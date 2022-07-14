@@ -124,27 +124,27 @@ TEST_F(SamplingActorModuleTest, RunAll) {
       return helper_.GetSamplingActorRef(shard_id).ApplyGraphUpdates(
           SamplingTestHelper::MakeRecordBatch(pid, vid, num_v)).discard_result();
     }).then([] {
-      // sample updates of vertex 0:
+      // sample updates for vertex 0:
       // - batch 1 (size = 3): (VSampler2: vertex 0) (ESampler1: 0 -> 1) (ESampler1: 0 -> 2)
       // - batch 2 (size = 3): (VSampler2: vertex 1) (ESampler3: 1 -> 2) (ESampler1: 1 -> 3)
       // - batch 2 (size = 2): (VSampler2: vertex 2) (ESampler3: 2 -> 3)
-      // sample updates of vertex 1:
+      // sample updates for vertex 1:
       // - batch 1 (size = 3): (VSampler2: vertex 1) (ESampler1: 1 -> 2) (ESampler1: 1 -> 3)
       // - batch 2 (size = 2): (VSampler2: vertex 2) (ESampler3: 2 -> 3)
       // - batch 2 (size = 1): (VSampler2: vertex 3)
-      // sample updates of vertex 2:
+      // sample updates for vertex 2:
       // - batch 1 (size = 2): (VSampler2: vertex 2) (ESampler1: 2 -> 3)
       // - batch 2 (size = 1): (VSampler2: vertex 3)
-      // sample updates of vertex 3:
+      // sample updates for vertex 3:
       // - batch 1 (size = 1): (VSampler2: vertex 3)
 
-      // kafka p0: 1 message, size = [3]
+      // kafka p0: 1 message, size = [3, 3, 2]
       ConsumeSamplingOutputAndVerifyCorrectness(3, 8, 0);
-      // kafka p1: 2 messages, sizes = [3, 3]
+      // kafka p1: 2 messages, sizes = [3, 2, 1]
       ConsumeSamplingOutputAndVerifyCorrectness(3, 6, 1);
-      // kafka p2: 3 messages, sizes = [2, 2, 2]
+      // kafka p2: 3 messages, sizes = [2, 1]
       ConsumeSamplingOutputAndVerifyCorrectness(2, 3, 2);
-      // kafka p3: 3 messages, sizes = [1, 1, 1]
+      // kafka p3: 3 messages, sizes = [1]
       ConsumeSamplingOutputAndVerifyCorrectness(1, 1, 3);
     });
   });

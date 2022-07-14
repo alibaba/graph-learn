@@ -83,15 +83,14 @@ SampleBatchIngestor::SampleBatchIngestor(PartitionRouter* router,
 std::future<size_t> SampleBatchIngestor::operator()(actor::BytesBuffer&& buf) {
   std::vector<storage::KVPair> partition_records[partition_num_];
   auto updates = io::SampleUpdateBatch::Deserialize(std::move(buf));
+  auto num_records = updates.size();
   for (auto& update : updates) {
     auto pid = partitioner_->GetPartitionId(update.key.pkey.vid);
     partition_records[pid].emplace_back(std::move(update));
   }
   std::vector<io::SampleUpdateBatch> sample_batches;
-  size_t num_records = 0;
   for (PartitionId pid = 0; pid < partition_num_; ++pid) {
     if (!partition_records[pid].empty()) {
-      num_records += partition_records[pid].size();
       sample_batches.emplace_back(pid, std::move(partition_records[pid]));
     }
   }
