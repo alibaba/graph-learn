@@ -150,6 +150,7 @@ seastar::future<> SamplePublisher::Publish(
       auto pr_id = ProduceWorkerUpdates(wid, worker_records_[wid], builder);
       pr_ids.push_back(pr_id);
       futures.emplace_back(pr_manager_->get_future(pr_id));
+      worker_records_[wid].clear();
     }
   }
 
