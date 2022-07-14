@@ -34,7 +34,7 @@ bool VertexSampler::Sample(const io::VertexRecordView& sample,
   } else {
     std::make_heap(samples_.begin(), samples_.end(), comparator_);
     pop_heap(samples_.begin(), samples_.end(), comparator_);
-    auto eldest = samples_.back();
+    auto& eldest = samples_.back();
     if (timestamp > eldest.timestamp) {
       index = eldest.index;
       samples_.pop_back();

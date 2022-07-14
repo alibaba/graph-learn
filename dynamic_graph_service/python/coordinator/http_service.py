@@ -33,7 +33,7 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
       logging.error("Grpc server is not set successfully.\n")
     content_length = int(self.headers['Content-Length'])
     body = self.rfile.read(content_length)
-    if self.path == "/administration/init/":
+    if self.path.startswith("/admin/init"):
       self.send_response(200)
       self.end_headers()
       response = BytesIO()
@@ -47,16 +47,12 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
         if res:
           self.__class__.grpc_server.init_query(msg)
         response.write(b'HTTP RESPONSE: INSTALL SUCCESSFUL.\n')
-        # logging.info("Http service is waiting for Service READY...")
-        # self.__class__.grpc_server.wait_for_ready()
-        # logging.info("Service is READY:)")
       except:
         qid[0] = None
         logging.info("Register query failed, with wrong query plan.")
         response.write(b'HTTP RESPONSE: INSTALL FAILED.\n')
-      # response.write(str.encode(str(qid[0])))
       self.wfile.write(response.getvalue())
-    elif self.path == "/administration/checkpoint/":
+    elif self.path.startswith("/admin/checkpoint"):
       self.send_response(200)
       self.end_headers()
       response = BytesIO()
@@ -69,8 +65,7 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
 
   def do_GET(self):
     response = BytesIO()
-    path = self.path.split('?')
-    if self.path == "/administration/schema/":
+    if self.path.startswith("/admin/schema"):
       self.send_response(200)
       self.end_headers()
       with open(self.schema_file, "rb") as f:
@@ -78,7 +73,7 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
           self.wfile.write(f.read())
           return
         except:
-          logging.error("Parse schema file failed....")
+          logging.error("Failed to read schema file ...")
     self.send_response(400)
     response.write(b'HTTP RESPONSE: GET FAILED.\n')
     self.wfile.write(response.getvalue())

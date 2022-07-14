@@ -89,7 +89,7 @@ The command removes all the Kubernetes components associated with the chart and 
 
 ### Common Pod parameters
 
-All workers have the same parameters of common pod assignment, worker-type={coordinator, dataloader, sampling, serving}.
+All workers have the same parameters of common pod assignment, worker-type={coordinator, sampling, serving}.
 
 | Name                                                 | Description                                                                                                | Value                               |
 | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ----------------------------------- |
@@ -141,28 +141,7 @@ All workers have the same parameters of common pod assignment, worker-type={coor
 | `coordinator.httpService.annotations`             | Additional custom annotations for Coordinator http service                                              | `{}`                                |
 | `coordinator.workdir`                             | Local ephemeral storage mount path for Coordinator working directory                                    | `"/coordinator_workdir"`            |
 | `coordinator.connectTimeoutSeconds`               | The max timeout seconds when other workers connect to Coordinator                                       | `60`                                |
-| `coordinator.heartbeatIntervalSeconds`            | The heartbeat interval in seconds when other workers report statistics to coordinator                   | `60`                                |
-
-### Dataloader parameters
-
-| Name                                             | Description                                                                                            | Value                               |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------ | ----------------------------------- |
-| `dataloader.replicaCount`                        | Number of Dataloader workers                                                                           | `1`                                 |
-| `dataloader.workdir`                             | Local ephemeral storage mount path for Dataloader working directory                                    | `"/dataloader_workdir"`             |
-| `dataloader.outputBatchSize`                     | The max number of graph update records in one output record batch                                      | `16`                                |
-| `dataloader.sourceType`                          | The data source type of dataloader. Allowed values: `dblp` or `graphscope`                             | `"dblp"`                            |
-
-Specify the following additional parameters when loading from [GraphScope-Store](https://graphscope.io/docs/persistent_graph_store.html) service:
-
-| Name                                                       | Description                                                          | Value                          |
-| ---------------------------------------------------------- | -------------------------------------------------------------------  | ------------------------------ |
-| `dataloader.graphscope.logPolling.kafkaBrokers`            | The brokers of kafka service for polling                             | `["localhost:9092"]`           |
-| `dataloader.graphscope.logPolling.kafkaTopic`              | The kafka topic name of graph update logs                            | `"graph-store"`                |
-| `dataloader.graphscope.logPolling.kafkaPartitions`         | The partition number of polling kafka topic                          | `2`                            |
-| `dataloader.graphscope.logPolling.offsetPersistIntervalMs` | The interval(ms) for persisting current log polling progress         | `5000`                         |
-| `dataloader.graphscope.logPolling.retryIntervalMs`         | The interval(ms) for retries after an invalid polling                | `100`                          |
-| `dataloader.graphscope.logPolling.flushIntervalMs`         | The max latency(ms) to flush current polled data into output queues  | `100`                          |
-| `dataloader.graphscope.bulkLoading.threadNum`              | The number of threads for bulk loading                               | `2`                            |
+| `coordinator.heartbeatIntervalSeconds`            | The heartbeat interval in seconds when other workers report statistics to coordinator                   | `10`                                |
 
 ### Sampling parameters
 

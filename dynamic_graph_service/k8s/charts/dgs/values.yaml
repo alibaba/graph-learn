@@ -2,51 +2,28 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+# Dynamic Graph Service image version
+# @param image.registry Dynamic Graph Service image registry
+# @param image.repository Dynamic Graph Service image repository
+# @param image.tag Dynamic Graph Service image tag (immutable tags are recommended)
+# @param image.pullPolicy Dynamic Graph Service image pull policy
+# @param image.pullSecrets Specify docker-registry secret names as an array
 image:
-  # Dynamic Graph Service image version
-  # @param image.dgs.registry Dynamic Graph Service image registry
-  # @param image.dgs.repository Dynamic Graph Service image repository
-  # @param image.dgs.tag Dynamic Graph Service image tag (immutable tags are recommended)
-  # @param image.dgs.pullPolicy Dynamic Graph Service image pull policy
-  # @param image.dgs.pullSecrets Specify docker-registry secret names as an array
-  dgs:
-    registry: "graphlearn"
-    repository: "dgs-core"
-    tag: "1.0.0"
-    # Specify a imagePullPolicy
-    # Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
-    # ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images
-    #
-    pullPolicy: IfNotPresent
-    # Optionally specify an array of imagePullSecrets (secrets must be manually created in the namespace)
-    # ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-    # Example:
-    # pullSecrets:
-    #   - myRegistryKeySecretName
-    #
-    pullSecrets: []
-  # Dataloader image version
-  # @param image.dl.registry Dataloader image registry
-  # @param image.dl.repository Dataloader image repository
-  # @param image.dl.tag Dataloader image tag (immutable tags are recommended)
-  # @param image.dl.pullPolicy Dataloader image pull policy
-  # @param image.dl.pullSecrets Specify docker-registry secret names as an array
-  dl:
-    registry: "graphlearn"
-    repository: "dgs-dl"
-    tag: "1.0.0"
-    # Specify a imagePullPolicy
-    # Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
-    # ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images
-    #
-    pullPolicy: IfNotPresent
-    # Optionally specify an array of imagePullSecrets (secrets must be manually created in the namespace)
-    # ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-    # Example:
-    # pullSecrets:
-    #   - myRegistryKeySecretName
-    #
-    pullSecrets: []
+  registry: "graphlearn"
+  repository: "dgs-core"
+  tag: "1.0.0"
+  # Specify a imagePullPolicy
+  # Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
+  # ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+  #
+  pullPolicy: IfNotPresent
+  # Optionally specify an array of imagePullSecrets (secrets must be manually created in the namespace)
+  # ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  # Example:
+  # pullSecrets:
+  #   - myRegistryKeySecretName
+  #
+  pullSecrets: []
 
 # @param nameOverride String to partially override dgs.fullname
 #
@@ -339,176 +316,8 @@ coordinator:
   connectTimeoutSeconds: 60
   # @param coordinator.heartbeatIntervalSeconds The heartbeat interval in seconds when other workers report statistics to coordinator
   #
-  heartbeatIntervalSeconds: 60
+  heartbeatIntervalSeconds: 10
 
-# Dataloader options
-#
-dataloader:
-  # Replica number of Dataloader pods assignment
-  #
-  replicaCount: 1
-  # @param dataloader.updateStrategy.type Dataloader deployment strategy type
-  # @param dataloader.updateStrategy.rollingUpdate Dataloader deployment rolling update configuration parameters
-  # ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#update-strategies
-  #
-  updateStrategy:
-    type: RollingUpdate
-    rollingUpdate: {}
-  # Extra dataloader pod labels
-  # Ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
-  #
-  podLabels: {}
-  # Dataloader pod annotations
-  # ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
-  #
-  podAnnotations: {}
-  # @param dataloader.podAffinityPreset Dataloader pod affinity preset. Ignored if `dataloader.affinity` is set. Allowed values: `soft` or `hard`
-  # ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
-  #
-  podAffinityPreset: ""
-  # @param dataloader.podAntiAffinityPreset Dataloader pod anti-affinity preset. Ignored if `dataloader.affinity` is set. Allowed values: `soft` or `hard`
-  # Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
-  #
-  podAntiAffinityPreset: "soft"
-  # Node dataloader.affinity preset
-  # Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
-  #
-  nodeAffinityPreset:
-    # @param dataloader.nodeAffinityPreset.type Node affinity preset type. Ignored if `dataloader.affinity` is set. Allowed values: `soft` or `hard`
-    #
-    type: ""
-    # @param dataloader.nodeAffinityPreset.key Node label key to match Ignored if `dataloader.affinity` is set.
-    # E.g.
-    # key: "kubernetes.io/e2e-az-name"
-    #
-    key: ""
-    # @param dataloader.nodeAffinityPreset.values Node label values to match. Ignored if `dataloader.affinity` is set.
-    # E.g.
-    # values:
-    #   - e2e-az1
-    #   - e2e-az2
-    #
-    values: []
-  # @param dataloader.affinity Affinity for pod assignment
-  # Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
-  # Note: dataloader.podAntiAffinityPreset, dataloader.podAntiAffinityPreset and dataloader.nodeAffinityPreset will be ignored when it's set
-  #
-  affinity: {}
-  # Node labels for dataloader pods assignment
-  # ref: https://kubernetes.io/docs/user-guide/node-selection/
-  #
-  nodeSelector: {}
-  # Toleration for dataloader pods assignment
-  # ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
-  #
-  tolerations: []
-  # Dataloader container's resource requests and limits
-  # ref: http://kubernetes.io/docs/user-guide/compute-resources/
-  #
-  resources: {}
-  # Dataloader persistence options for checkpoints
-  #
-  persistence:
-    # @param dataloader.persistence.enabled Enable dataloader checkpoints persistence using PVC
-    # If set to false, the checkpoint files will be stored in an "emptyDir"
-    #
-    enabled: false
-    # @param dataloader.persistence.existingClaim A manually managed Persistent Volume and Claim
-    # If defined, PVC must be created manually before volume will be bound
-    # The value is evaluated as a template
-    #
-    existingClaim: ""
-    # @param dataloader.persistence.storageClass PVC Storage Class for checkpoints volume
-    # If defined, storageClassName: <storageClass>
-    # If set to "-", storageClassName: "", which disables dynamic provisioning
-    # If undefined (the default) or set to null, no storageClassName spec is
-    # set, choosing the default provisioner.
-    #
-    storageClass: ""
-    # @param dataloader.persistence.accessModes Persistent Volume Access Modes
-    #
-    accessModes:
-      - ReadWriteOnce
-    # @param dataloader.persistence.size PVC Storage Request for checkpoints volume
-    #
-    size: 20Gi
-    # @param dataloader.persistence.annotations Annotations for the PVC
-    #
-    annotations: {}
-    # @param dataloader.persistence.selector Selector to match an existing Persistent Volume for checkpoint data PVC.
-    # If set, the PVC can't have a PV dynamically provisioned for it.
-    # selector:
-    #   matchLabels:
-    #     app: my-app
-    #
-    selector: {}
-    # @param dataloader.persistence.mountPath Mount path of the checkpoints volume
-    #
-    mountPath: "/dataloader_checkpoints"
-  # Configure extra options for dataloader containers' liveness probe
-  # ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes
-  # @param dataloader.livenessProbe.enabled Enable livenessProbe on dataloader containers
-  # @param dataloader.livenessProbe.initialDelaySeconds Initial delay seconds for livenessProbe
-  # @param dataloader.livenessProbe.periodSeconds Period seconds for livenessProbe
-  # @param dataloader.livenessProbe.timeoutSeconds Timeout seconds for livenessProbe
-  # @param dataloader.livenessProbe.failureThreshold Failure threshold for livenessProbe
-  # @param dataloader.livenessProbe.successThreshold Success threshold for livenessProbe
-  #
-  livenessProbe:
-    enabled: true
-    initialDelaySeconds: 10
-    periodSeconds: 10
-    timeoutSeconds: 1
-    failureThreshold: 3
-    successThreshold: 1
-  # @param dataloader.workdir Local ephemeral storage mount path for Dataloader working directory
-  #
-  workdir: "/dataloader_workdir"
-  # @param dataloader.outputBatchSize The max number of graph update records in one output record batch
-  #
-  outputBatchSize: 16
-  # @param dataloader.sourceType The data source type of dataloader. Allowed values: `dblp` or `graphscope`
-  #
-  sourceType: "dblp"
-  # Data loading options for dblp dataset
-  #
-  dblp:
-    # @param dataloader.dblp.divideYear The basis for dividing the dataset: all records before this year will
-    # be loaded in the bulk load stage, then service will be ready to serve inference queries, the other records
-    # after this year will be streaming loaded after it.
-    #
-    divideYear: 2009
-  # Data loading options for GraphScope-Store service
-  #
-  graphscope:
-    # Options for polling graph update logs from GraphScope-Store service
-    #
-    logPolling:
-      # @param dataloader.graphscope.logPolling.kafkaBrokers The brokers of kafka service for polling
-      #
-      kafkaBrokers:
-        - "localhost:9092"
-      # @param dataloader.graphscope.logPolling.kafkaTopic The kafka topic name of graph update logs
-      #
-      kafkaTopic: "graph-store"
-      # @param dataloader.graphscope.logPolling.kafkaPartitions The partition number of polling kafka topic
-      #
-      kafkaPartitions: 2
-      # @param dataloader.graphscope.logPolling.offsetPersistIntervalMs The interval(ms) for persisting current log polling progress
-      #
-      offsetPersistIntervalMs: 5000
-      # @param dataloader.graphscope.logPolling.retryIntervalMs The interval(ms) for retries after an invalid polling
-      #
-      retryIntervalMs: 100
-      # @param dataloader.graphscope.logPolling.flushIntervalMs The max latency(ms) to flush current polled data into output queues
-      #
-      flushIntervalMs: 100
-    # Options for bulk-loading GraphScope-Store checkpoints
-    #
-    bulkLoading:
-      # @param dataloader.graphscope.bulkLoading.threadNum The number of threads for bulk loading
-      #
-      threadNum: 2
 
 # Sampling Worker options
 #
@@ -616,7 +425,7 @@ sampling:
     mountPath: "/sampling_checkpoints"
   # Configure extra options for sampling worker containers' liveness probe
   # ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes
-  # @param sampling.livenessProbe.enabled Enable livenessProbe on dataloader containers
+  # @param sampling.livenessProbe.enabled Enable livenessProbe on sampling worker containers
   # @param sampling.livenessProbe.initialDelaySeconds Initial delay seconds for livenessProbe
   # @param sampling.livenessProbe.periodSeconds Period seconds for livenessProbe
   # @param sampling.livenessProbe.timeoutSeconds Timeout seconds for livenessProbe
@@ -702,6 +511,7 @@ sampling:
   logging:
     dataLogPeriod: 1
     ruleLogPeriod: 1
+
 
 # Serving Worker options
 #

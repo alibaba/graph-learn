@@ -18,18 +18,9 @@ metadata:
     nginx.ingress.kubernetes.io/server-snippet: |
       if ($request_uri ~ ^/infer\?qid=[\d]+&vid=[\d]+$) {
         set_by_lua_block $workerId {
-          return tonumber(ngx.req.get_uri_args()["vid"]) % {{ .Values.serving.podCount }}
+          return tonumber(ngx.req.get_uri_args()["vid"]) % {{ .Values.serving.workerNum }}
         }
         rewrite ^/infer(.*)$ /serving/w$workerId$1 break;
-      }
-
-      if ($request_method = POST) {
-        rewrite ^/admin/init/?$ /administration/init/ break;
-        rewrite ^/admin/checkpoint/?$ /administration/checkpoint/ break;
-      }
-
-      if ($request_method = GET) {
-        rewrite ^/admin/schema/?$ /administration/schema/ break;
       }
     nginx.ingress.kubernetes.io/configuration-snippet: |
        internal;
@@ -38,7 +29,7 @@ spec:
     - host: {{ .Values.frontend.ingressHostName }}
       http:
         paths:
-          {{- range $i, $e := until (.Values.serving.podCount | int) }}
+          {{- range $i, $e := until (.Values.serving.workerNum | int) }}
           - path: /serving/w{{ $i }}
             pathType: Exact
             backend:
@@ -47,7 +38,7 @@ spec:
                 port:
                   number: {{ $.Values.serving.httpService.port }}
           {{- end }}
-          - path: /administration
+          - path: /admin
             pathType: Prefix
             backend:
               service:
