@@ -36,8 +36,10 @@ pip install -U graph-learn
 ```
 cd examples
 # Prepare data
-cd data && python cora.py
-cd ../tf/ego_sage && python train_supervised.py
+cd data
+python cora.py
+cd ../tf/ego_sage
+python train_supervised.py
 ```
 
 使用kubeflow运行分布式GraphLearn-Training任务的示例：

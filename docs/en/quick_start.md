@@ -30,8 +30,10 @@ pip install -U graph-learn
 ```
 cd examples
 # Prepare data
-cd data && python cora.py
-cd ../tf/ego_sage && python train_supervised.py
+cd data
+python cora.py
+cd ../tf/ego_sage
+python train_supervised.py
 ```
 
 Quickly start **distributed** training mode with kubeflow.
