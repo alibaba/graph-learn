@@ -21,8 +21,6 @@ limitations under the License.
 namespace dgs {
 namespace dataloader {
 
-using DataStreamOffset = int64_t;
-
 using PartitionId = uint32_t;
 
 using VertexId = int64_t;

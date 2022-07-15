@@ -17,9 +17,8 @@ limitations under the License.
 #define DATALOADER_PARTITIONER_H_
 
 #include <functional>
+#include <vector>
 
-#include "dataloader/logging.h"
-#include "dataloader/options.h"
 #include "dataloader/typedefs.h"
 
 namespace dgs {
@@ -30,12 +29,12 @@ class Partitioner {
   using DataPartitionFunc = std::function<PartitionId(VertexId)>;
   using KafkaPartitionFunc = std::function<PartitionId(PartitionId)>;
 public:
-  static Partitioner& GetInstance() {
+  static Partitioner& Get() {
     static Partitioner partitioner;
     return partitioner;
   }
 
-  void Set(const std::string& data_partition_policy, std::vector<PartitionId>&& kafka_router);
+  void Set(uint32_t data_partition_num, std::vector<PartitionId>&& kafka_router);
 
   PartitionId GetDataPartitionId(VertexId vid) const {
     return data_func_(vid);
@@ -54,19 +53,13 @@ private:
 };
 
 inline
-void Partitioner::Set(const std::string& data_partition_policy, std::vector<PartitionId>&& kafka_router) {
-  auto& opts = Options::GetInstance();
-  /// TODO(@goldenleaves): support other partition policies.
-  if (data_partition_policy == "hash") {
-    data_func_ = [n = opts.data_partitions] (VertexId vid) {
-      return (vid % n + n) % n;
-    };
-  } else {
-    LOG(ERROR) << "Set unknown sampling store partitioning policy with: " << data_partition_policy;
-  }
-  if (kafka_router.size() != opts.data_partitions) {
+void Partitioner::Set(uint32_t data_partition_num, std::vector<PartitionId>&& kafka_router) {
+  if (kafka_router.size() != data_partition_num) {
     throw std::runtime_error("Error init info with dataloader publish kafka partition map: size mismatch!");
   }
+  data_func_ = [n = data_partition_num] (VertexId vid) {
+    return (vid % n + n) % n;
+  };
   kafka_func_ = [router = std::move(kafka_router)] (PartitionId data_partition) {
     return router[data_partition];
   };

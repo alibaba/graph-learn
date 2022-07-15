@@ -23,7 +23,6 @@ limitations under the License.
 #include "boost/property_tree/ptree.hpp"
 
 #include "dataloader/typedefs.h"
-#include "dataloader/fbs/schema_generated.h"
 
 namespace dgs {
 namespace dataloader {
@@ -76,7 +75,7 @@ private:
 
 class EdgeDef {
 public:
-  explicit EdgeDef(const EdgeDefRep* rep);
+  explicit EdgeDef(const boost::property_tree::ptree& node);
   ~EdgeDef() = default;
 
   EdgeType Type() const {
@@ -99,7 +98,7 @@ private:
 
 class EdgeRelationDef {
 public:
-  explicit EdgeRelationDef(const EdgeRelationDefRep* rep);
+  explicit EdgeRelationDef(const boost::property_tree::ptree& node);
   ~EdgeRelationDef() = default;
 
   EdgeType Type() const {
@@ -122,15 +121,13 @@ private:
 
 class Schema {
 public:
-  static Schema& GetInstance() {
+  static Schema& Get() {
     static Schema instance;
     return instance;
   }
 
-  bool Init();
-  bool Init(const std::string& schema_json_file, const std::string& fbs_file,
-            const std::vector<std::string>& fbs_include_paths);
-  void Init(const SchemaRep* rep);
+  void Init(const std::string& json);
+  void Init(const boost::property_tree::ptree& node);
 
   size_t AttrDefNum() const {
     return type_to_attr_def_.size();
@@ -201,14 +198,6 @@ private:
   std::unordered_map<std::string, EdgeDef> name_to_edge_def_;
   std::vector<EdgeRelationDef> edge_relation_defs_;
 };
-
-void test() {
-  std::string s = "[1, 2, 3, 4]";
-  std::stringstream ss(s);
-  boost::property_tree::ptree ptree;
-  boost::property_tree::read_json(ss, ptree);
-  auto a = ptree.get_child("a");
-}
 
 }  // namespace dataloader
 }  // namespace dgs

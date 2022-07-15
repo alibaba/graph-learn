@@ -33,21 +33,12 @@ else ()
 endif ()
 
 ## ThirdParty
-list (APPEND CMAKE_MODULE_PATH "${DataLoader_SOURCE_DIR}/cmake")
-# Protobuf
-find_package (Protobuf 3.10.0 REQUIRED)
-# gRPC
-find_package (gRPC 1.26.0 REQUIRED)
 # CppKafka
 find_package (CppKafka 0.3.1 REQUIRED)
 # Flatbuffers
 find_package (Flatbuffers 1.12.0 REQUIRED)
 # Boost
 find_package (Boost COMPONENTS headers program_options thread)
-# yaml-cpp
-find_package (yaml-cpp)
-# google logging
-find_package (glog)
 
 ## Generate flatbuffers header files
 set (FBS_SRC_DIR
@@ -68,56 +59,24 @@ add_custom_command (
   VERBATIM)
 add_custom_target (fbs_codegen DEPENDS ${FBS_GEN_HEADER_FILES})
 
-## Generate protobuf&grpc files
-set (PROTO_SRC_DIR
-  ${DGS_PROJECT_DIR}/proto)
-set (PROTO_SRC_FILES
-  ${PROTO_SRC_DIR}/coordinator.proto)
-set (PROTO_SOURCE_GEN_DIR
-  ${DataLoader_SOURCE_DIR}/src/proto)
-set (PROTO_HEADER_GEN_DIR
-  ${DataLoader_SOURCE_DIR}/include/dataloader/proto)
-file (MAKE_DIRECTORY ${PROTO_SOURCE_GEN_DIR})
-file (MAKE_DIRECTORY ${PROTO_HEADER_GEN_DIR})
-file (MAKE_DIRECTORY ${DataLoader_BINARY_DIR}/proto)
-protobuf_generate_cpp (PROTO_GEN_SOURCE_FILES PROTO_GEN_HEADER_FILES
-  ${PROTO_SRC_DIR}
-  ${DataLoader_BINARY_DIR}/proto
-  ${PROTO_SOURCE_GEN_DIR}
-  ${PROTO_HEADER_GEN_DIR}
-  ${PROTO_SRC_FILES})
-grpc_generate_cpp (GRPC_GEN_SOURCE_FILES GRPC_GEN_HEADER_FILES
-  ${PROTO_SRC_DIR}
-  ${DataLoader_BINARY_DIR}/proto
-  ${PROTO_SOURCE_GEN_DIR}
-  ${PROTO_HEADER_GEN_DIR}
-  ${PROTO_SRC_FILES})
-
 ## Build library
 set (DataLoader_PROJECT_FILES
   include/dataloader/batch_builder.h
   include/dataloader/batch_producer.h
-  include/dataloader/host.h
-  include/dataloader/logging.h
+  include/dataloader/dataloader.h
   include/dataloader/options.h
   include/dataloader/partitioner.h
   include/dataloader/schema.h
-  include/dataloader/service.h
   include/dataloader/typedefs.h
   include/dataloader/utils.h
-  src/host.cc
-  src/logging.cc
-  src/options.cc
-  src/schema.cc
-  src/service.cc)
+  src/batch_builder.cc
+  src/batch_producer.cc
+  src/dataloader.cc
+  src/schema.cc)
 
 add_library (dataloader ${DataLoader_LIBRARY_TYPE}
   ${DataLoader_PROJECT_FILES}
-  ${FBS_GEN_HEADER_FILES}
-  ${PROTO_GEN_SOURCE_FILES}
-  ${PROTO_GEN_HEADER_FILES}
-  ${GRPC_GEN_SOURCE_FILES}
-  ${GRPC_GEN_HEADER_FILES})
+  ${FBS_GEN_HEADER_FILES})
 
 add_dependencies (dataloader
   fbs_codegen)
@@ -130,19 +89,13 @@ target_include_directories (dataloader
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${DataLoader_SOURCE_DIR}/include>
   PRIVATE
-    ${DataLoader_SOURCE_DIR}/include/dataloader/proto
     ${DataLoader_SOURCE_DIR}/src)
 
 target_link_libraries (dataloader
   PUBLIC
-    protobuf::libprotobuf
-    gRPC::grpc
-    gRPC::grpc++
     CppKafka::cppkafka
     flatbuffers::flatbuffers
-    ${Boost_LIBRARIES}
-    yaml-cpp
-    glog::glog)
+    ${Boost_LIBRARIES})
 
 add_subdirectory (apps)
 
@@ -182,8 +135,6 @@ if (DataLoader_INSTALL)
     FILES
       ${DataLoader_BINARY_DIR}/DataLoaderConfig.cmake
       ${DataLoader_BINARY_DIR}/DataLoaderConfigVersion.cmake
-      ${DataLoader_SOURCE_DIR}/cmake/FindgRPC.cmake
-      ${DataLoader_SOURCE_DIR}/cmake/FindProtobuf.cmake
     DESTINATION ${DataLoader_CONFIG_INSTALL_DIR}
     COMPONENT config)
 endif ()

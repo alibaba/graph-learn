@@ -24,20 +24,19 @@ limitations under the License.
 namespace bpo = boost::program_options;
 
 std::string schema_json_file = "../../../conf/schema.e2e.json";
-std::string schema_fbs_dir = "../../../fbs";
 
 std::string GetVertexTypeName(dgs::dataloader::VertexType vtype) {
-  auto& schema = dgs::dataloader::Schema::GetInstance();
+  auto& schema = dgs::dataloader::Schema::Get();
   return schema.GetVertexDefByType(vtype).Name();
 }
 
 std::string GetEdgeTypeName(dgs::dataloader::EdgeType etype) {
-  auto& schema = dgs::dataloader::Schema::GetInstance();
+  auto& schema = dgs::dataloader::Schema::Get();
   return schema.GetEdgeDefByType(etype).Name();
 }
 
 std::string GetAttrTypeName(dgs::dataloader::AttributeType type) {
-  auto& schema = dgs::dataloader::Schema::GetInstance();
+  auto& schema = dgs::dataloader::Schema::Get();
   return schema.GetAttrDefByType(type).Name();
 }
 
@@ -120,8 +119,7 @@ int main(int argc, char** argv) {
     ("output-kafka-topic,t", bpo::value<std::string>(), "the output kafka topic")
     ("output-kafka-partition,p", bpo::value<int32_t>(), "the output kafka topic partition id")
     ("start-offset,o", bpo::value<int64_t>()->default_value(0), "start offset of topic record viewer")
-    ("schema-json-file,s", bpo::value<std::string>(), "graph schema json file")
-    ("schema-fbs-dir,f", bpo::value<std::string>(), "dir of graph schema definition fbs file");
+    ("schema-json-file,s", bpo::value<std::string>(), "graph schema json file");
   bpo::variables_map vm;
   try {
     bpo::store(bpo::parse_command_line(argc, argv, options), vm);
@@ -156,12 +154,10 @@ int main(int argc, char** argv) {
     schema_json_file = vm["schema-json-file"].as<std::string>();
   }
 
-  if (vm.count("schema-fbs-dir")) {
-    schema_fbs_dir = vm["schema-fbs-dir"].as<std::string>();
-  }
+  std::ifstream in_file(schema_json_file);
+  std::string schema_json((std::istreambuf_iterator<char>(in_file)), std::istreambuf_iterator<char>());
 
-  dgs::dataloader::Schema::GetInstance().Init(
-      schema_json_file, schema_fbs_dir + "/schema.fbs", { schema_fbs_dir });
+  dgs::dataloader::Schema::Get().Init(schema_json);
 
   cppkafka::Consumer consumer(cppkafka::Configuration{
     {"metadata.broker.list", brokers},

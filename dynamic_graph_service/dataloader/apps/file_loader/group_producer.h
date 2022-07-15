@@ -23,6 +23,8 @@ namespace dgs {
 namespace dataloader {
 namespace file {
 
+extern uint32_t batch_size;
+
 class GroupProducer {
 public:
   GroupProducer();

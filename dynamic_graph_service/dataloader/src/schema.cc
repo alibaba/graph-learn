@@ -15,11 +15,7 @@ limitations under the License.
 
 #include "dataloader/schema.h"
 
-#include "flatbuffers/idl.h"
-#include "flatbuffers/util.h"
-
-#include "dataloader/logging.h"
-#include "dataloader/options.h"
+#include <iostream>
 
 namespace dgs {
 namespace dataloader {
@@ -47,8 +43,9 @@ AttributeDef::AttributeDef(const boost::property_tree::ptree& node)
   } else if (value_type_name == "BYTES") {
     value_type_ = AttributeValueType::BYTES;
   } else {
-    LOG(ERROR) << "Unsupported attribute definition, "
-               << "name: " << name_ << ", data type: " << value_type_name;
+    std::cerr << "Unsupported attribute definition, "
+              << "name: " << name_ << ", data type: " << value_type_name
+              << std::endl;
     value_type_ = AttributeValueType::STRING;
   }
 }
@@ -56,98 +53,59 @@ AttributeDef::AttributeDef(const boost::property_tree::ptree& node)
 VertexDef::VertexDef(const boost::property_tree::ptree& node)
   : type_(node.get_child("vtype").get_value<VertexType>()),
     name_(node.get_child("name").get_value<std::string>()) {
-  auto
-  auto attr_num = rep->attr_types()->size();
-  attr_types_.reserve(attr_num);
-  for (uint32_t i = 0; i < attr_num; i++) {
-    attr_types_.emplace_back(rep->attr_types()->Get(i));
+  auto attr_types_node = node.get_child("attr_types");
+  for (auto& iter : attr_types_node) {
+    attr_types_.push_back(iter.second.get_value<AttributeType>());
   }
 }
 
-EdgeDef::EdgeDef(const EdgeDefRep* rep)
-  : type_(rep->etype()),
-    name_(rep->name()->str()) {
-  auto attr_num = rep->attr_types()->size();
-  attr_types_.reserve(attr_num);
-  for (uint32_t i = 0; i < attr_num; i++) {
-    attr_types_.emplace_back(rep->attr_types()->Get(i));
+EdgeDef::EdgeDef(const boost::property_tree::ptree& node)
+  : type_(node.get_child("etype").get_value<EdgeType>()),
+    name_(node.get_child("name").get_value<std::string>()) {
+  auto attr_types_node = node.get_child("attr_types");
+  for (auto& iter : attr_types_node) {
+    attr_types_.push_back(iter.second.get_value<AttributeType>());
   }
 }
 
-EdgeRelationDef::EdgeRelationDef(const EdgeRelationDefRep* rep)
-  : etype_(rep->etype()),
-    src_type_(rep->src_vtype()),
-    dst_type_(rep->dst_vtype()) {
+EdgeRelationDef::EdgeRelationDef(const boost::property_tree::ptree& node)
+  : etype_(node.get_child("etype").get_value<EdgeType>()),
+    src_type_(node.get_child("src_vtype").get_value<VertexType>()),
+    dst_type_(node.get_child("dst_vtype").get_value<VertexType>()) {
 }
 
-bool Schema::Init() {
-  auto& opts = Options::GetInstance();
-  return Init(opts.schema_file, opts.fbs_file_dir + "/schema.fbs", { opts.fbs_file_dir });
+void Schema::Init(const std::string& json) {
+  std::stringstream ss(json);
+  boost::property_tree::ptree ptree;
+  boost::property_tree::read_json(ss, ptree);
+  Init(ptree);
 }
 
-bool Schema::Init(const std::string& schema_json_file,
-                  const std::string& fbs_file,
-                  const std::vector<std::string>& fbs_include_paths) {
-  std::string schema_buf;
-  std::string json_buf;
-  if (!flatbuffers::LoadFile(fbs_file.c_str(), false, &schema_buf)) {
-    LOG(ERROR) << "Loading failed with schema fbs file: " << fbs_file;
-    return false;
-  }
-  if (!flatbuffers::LoadFile(schema_json_file.c_str(), false, &json_buf)) {
-    LOG(ERROR) << "Loading failed with schema json file: " << schema_json_file;
-    return false;
-  }
-  std::vector<const char*> includes;
-  std::transform(fbs_include_paths.begin(),
-                 fbs_include_paths.end(),
-                 std::back_inserter(includes),
-                 [] (const std::string& str) { return str.c_str(); });
-  flatbuffers::Parser parser;
-  if (!parser.Parse(schema_buf.c_str(), includes.data())) {
-    LOG(ERROR) << "Parsing failed with schema fbs file: " << fbs_file;
-    return false;
-  }
-  if (!parser.Parse(json_buf.c_str())) {
-    LOG(ERROR) << "Parsing failed with schema json file:  " << schema_json_file;
-    return false;
-  }
-  Init(GetSchemaRep(parser.builder_.GetBufferPointer()));
-  return true;
-}
-
-void Schema::Init(const dgs::SchemaRep* rep) {
-  auto attr_num = rep->attr_defs()->size();
-  type_to_attr_def_.reserve(attr_num);
-  name_to_attr_def_.reserve(attr_num);
-  for (uint32_t i = 0; i < attr_num; i++) {
-    auto* attr_rep = rep->attr_defs()->Get(i);
-    type_to_attr_def_.emplace(attr_rep->type(), AttributeDef{attr_rep});
-    name_to_attr_def_.emplace(attr_rep->name()->str(), AttributeDef{attr_rep});
+void Schema::Init(const boost::property_tree::ptree& node) {
+  auto& attr_defs_node = node.get_child("attr_defs");
+  for (auto& iter : attr_defs_node) {
+    AttributeDef def(iter.second);
+    type_to_attr_def_.emplace(def.Type(), def);
+    name_to_attr_def_.emplace(def.Name(), def);
   }
 
-  auto vertex_num = rep->vertex_defs()->size();
-  type_to_vertex_def_.reserve(vertex_num);
-  name_to_vertex_def_.reserve(vertex_num);
-  for (uint32_t i = 0; i < vertex_num; i++) {
-    auto* vertex_rep = rep->vertex_defs()->Get(i);
-    type_to_vertex_def_.emplace(vertex_rep->vtype(), VertexDef{vertex_rep});
-    name_to_vertex_def_.emplace(vertex_rep->name()->str(), VertexDef{vertex_rep});
+  auto& vertex_defs_node = node.get_child("vertex_defs");
+  for (auto& iter : vertex_defs_node) {
+    VertexDef def(iter.second);
+    type_to_vertex_def_.emplace(def.Type(), def);
+    name_to_vertex_def_.emplace(def.Name(), def);
   }
 
-  auto edge_num = rep->edge_defs()->size();
-  type_to_edge_def_.reserve(edge_num);
-  name_to_edge_def_.reserve(edge_num);
-  for (uint32_t i = 0; i < edge_num; i++) {
-    auto* edge_rep = rep->edge_defs()->Get(i);
-    type_to_edge_def_.emplace(edge_rep->etype(), EdgeDef{edge_rep});
-    name_to_edge_def_.emplace(edge_rep->name()->str(), EdgeDef{edge_rep});
+  auto& edge_defs_node = node.get_child("edge_defs");
+  for (auto& iter : edge_defs_node) {
+    EdgeDef def(iter.second);
+    type_to_edge_def_.emplace(def.Type(), def);
+    name_to_edge_def_.emplace(def.Name(), def);
   }
 
-  auto edge_relation_num = rep->edge_relation_defs()->size();
-  edge_relation_defs_.reserve(edge_relation_num);
-  for (uint32_t i = 0; i < edge_relation_num; i++) {
-    edge_relation_defs_.emplace_back(rep->edge_relation_defs()->Get(i));
+  auto& edge_relation_defs_node = node.get_child("edge_relation_defs");
+  for (auto& iter : edge_relation_defs_node) {
+    edge_relation_defs_.emplace_back(iter.second);
   }
 }
 

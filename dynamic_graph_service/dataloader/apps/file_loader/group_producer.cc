@@ -15,20 +15,24 @@ limitations under the License.
 
 #include "group_producer.h"
 
+#include "dataloader/partitioner.h"
+
 namespace dgs {
 namespace dataloader {
 namespace file {
 
+uint32_t batch_size = 16;
+
 GroupProducer::GroupProducer()
-  : batch_size_(Options::GetInstance().output_batch_size),
-    data_partition_num_(Options::GetInstance().data_partitions),
+  : batch_size_(batch_size),
+    data_partition_num_(Options::Get().data_partitions),
     producer_() {
   batch_builders_.reserve(data_partition_num_);
   msg_builders_.reserve(data_partition_num_);
   for (uint32_t i = 0; i < data_partition_num_; i++) {
     batch_builders_.emplace_back(i);
-    msg_builders_.emplace_back(Options::GetInstance().output_kafka_topic);
-    msg_builders_[i].partition(static_cast<int32_t>(Partitioner::GetInstance().GetKafkaPartitionId(i)));
+    msg_builders_.emplace_back(Options::Get().output_kafka_topic);
+    msg_builders_[i].partition(static_cast<int32_t>(Partitioner::Get().GetKafkaPartitionId(i)));
   }
 }
 
@@ -37,7 +41,7 @@ GroupProducer::~GroupProducer() {
 }
 
 void GroupProducer::AddVertex(VertexType vtype, VertexId vid, const std::vector<AttrInfo>& attrs) {
-  auto data_pid = Partitioner::GetInstance().GetDataPartitionId(vid);
+  auto data_pid = Partitioner::Get().GetDataPartitionId(vid);
   auto& bb = batch_builders_.at(data_pid);
   bb.AddVertexUpdate(vtype, vid, attrs);
   if (bb.RecordNum() >= batch_size_) {
@@ -47,7 +51,7 @@ void GroupProducer::AddVertex(VertexType vtype, VertexId vid, const std::vector<
 
 void GroupProducer::AddEdge(EdgeType etype, VertexType src_vtype, VertexType dst_vtype,
                             VertexId src_vid, VertexId dst_vid, const std::vector<AttrInfo>& attrs) {
-  auto data_pid = Partitioner::GetInstance().GetDataPartitionId(src_vid);
+  auto data_pid = Partitioner::Get().GetDataPartitionId(src_vid);
   auto& bb = batch_builders_.at(data_pid);
   bb.AddEdgeUpdate(etype, src_vtype, dst_vtype, src_vid, dst_vid, attrs);
   if (bb.RecordNum() >= batch_size_) {
