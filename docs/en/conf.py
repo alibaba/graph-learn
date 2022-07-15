@@ -14,7 +14,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../../../'))
 
-os.system("sudo apt-get install openjdk-8-jdk")
+os.system("apt-get install openjdk-8-jdk")
 os.system("mkdir -p apis/apis/apis/")
 os.system("javadoc -d apis/apis/apis/ -sourcepath ../../dynamic_graph_service/gsl_client/src/main/java/ -classpath ../../dynamic_graph_service/gsl_client/src/main/java/ org.aliyun.gsl_client")
 
