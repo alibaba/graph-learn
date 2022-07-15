@@ -13,7 +13,6 @@ Welcome to GraphLearn's documentation!
    intro
    quick_start
    tutorial
-   release
 
 .. toctree::
    :maxdepth: 3

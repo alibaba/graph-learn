@@ -1,6 +1,6 @@
 # Tutorial
 
-This document if a turotial of offline training and online inference for a GNN model with:
+This document is a turotial of offline training and online inference for a GNN model with:
   - GraphLearn,
   - Dynamic graph service,
   - Tensorflow model serving.

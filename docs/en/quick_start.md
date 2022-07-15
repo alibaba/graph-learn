@@ -20,7 +20,7 @@ docker pull graphlearn/graphlearn
 2. update wheel
 
 ```
-pip install -U graphlearn
+pip install -U graph-learn
 ```
 
 > You can also build wheel from source, [ref](gl/install.md)
