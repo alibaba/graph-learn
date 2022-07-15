@@ -35,13 +35,11 @@ class NaiveCoordinatorImpl : public dgs::Coordinator::Service {
 public:
   NaiveCoordinatorImpl() : dgs::Coordinator::Service() {
     sem_init(&ready_for_notify_, 0, 0);
-    sem_init(&all_is_inited_, 0, 0);
     sampling_worker_ipaddrs_.resize(g_num_workers);
   }
 
   ~NaiveCoordinatorImpl() override {
     sem_destroy(&ready_for_notify_);
-    sem_destroy(&all_is_inited_);
   }
 
   grpc::Status RegisterWorker(grpc::ServerContext* context,
@@ -117,11 +115,11 @@ public:
       downstream_kafka_info.set_pub_kafka_topic(sampling2serving_kafka_topic);
       downstream_kafka_info.set_pub_kafka_partition_num(sampling2serving_kafka_partition_num);
 
-      dgs::DownStreamWorkerWisePartitionInfoPb downstream_partition_info;
+      dgs::DownStreamPartitionInfoPb downstream_partition_info;
       downstream_partition_info.set_worker_partition_num(1);
       downstream_partition_info.set_worker_partition_strategy("hash");
       for (uint32_t i = 0; i < sampling2serving_kafka_partition_num; ++i) {
-        downstream_partition_info.add_kafka_to_worker_pid_vec(0);
+        downstream_partition_info.add_kafka_to_wid(0);
       }
 
       dgs::CheckpointInfoPb checkpoint_info;
@@ -154,7 +152,7 @@ public:
       }
       *info.mutable_upstream_info() = upstream_info;
       *info.mutable_ds_kafka_info() = downstream_kafka_info;
-      *info.mutable_ds_worker_partition_info() = downstream_partition_info;
+      *info.mutable_ds_partition_info() = downstream_partition_info;
       *info.mutable_store_partition_info() = store_partition_info;
       *info.mutable_checkpoint_info() = checkpoint_info;
 
@@ -213,35 +211,12 @@ public:
     return grpc::Status::OK;
   }
 
-  grpc::Status ReportInited(grpc::ServerContext* context,
-                            const dgs::ReportInitedRequestPb* request,
-                            dgs::ReportInitedResponsePb* response) override {
-    if (request->worker_type() == dgs::WorkerType::Sampling) {
-      if (++num_inited_sampling_workers < g_num_workers) {
-        sem_wait(&all_is_inited_);
-      } else {
-        sem_post(&all_is_inited_);
-      }
-    }
-
-    fmt::print("Inside ReportInited. Request worker id is: : {}\n", request->worker_id());
-
-    return {};
-  }
-
-  grpc::Status GetCheckReadyInfo(grpc::ServerContext* context,
-                                 const dgs::CheckReadyInfoRequestPb* request,
-                                 dgs::CheckReadyInfoResponsePb* response) override {
-    fmt::print("Inside GetCheckReadyInfo. Request worker id is: : {}\n", request->worker_id());
-
-    return {};
-  }
-
-  grpc::Status ReportServerIsReady(grpc::ServerContext* context,
-                                   const dgs::ServerIsReadyRequestPb* request,
-                                   dgs::ServerIsReadyResponsePb* response) override {
-    fmt::print("Inside ReportServerIsReady. Request worker id is: : {}\n", request->worker_id());
-
+  grpc::Status ReportStarted(grpc::ServerContext* context,
+                            const dgs::ReportStartedRequestPb* request,
+                            dgs::ReportStartedResponsePb* response) override {
+    std::string worker_type = (request->worker_type() == dgs::WorkerType::Sampling) ?
+        "SamplingWorker" : "ServingWorker";
+    fmt::print("{}-{} is started.\n", worker_type, request->worker_id());
     return {};
   }
 
@@ -261,11 +236,8 @@ public:
   }
 
 private:
-  sem_t            ready_for_notify_;
-  sem_t            all_is_inited_;
+  sem_t            ready_for_notify_{};
   std::atomic<int> num_sampling_workers_{0};
-  std::atomic<int> num_inited_sampling_workers{0};
-
   std::vector<std::string> sampling_worker_ipaddrs_;
   std::mutex               ip_addrs_mtx_;
 };

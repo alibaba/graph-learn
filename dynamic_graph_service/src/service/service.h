@@ -35,9 +35,7 @@ private:
   void Configure(const std::string& config_file);
   void RegisterSelf();
   void RetrieveInitInfo(std::unique_ptr<Server::InitInfo>* info);
-  void WaitUntilAllAreInited();
-  void WaitUntilAllAreReady();
-  void ReportSelfIsReady();
+  void ReportSelfIsStarted();
   void ReportStatsInfo();
   static void WriteTerminateFlag();
 

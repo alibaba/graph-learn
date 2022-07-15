@@ -123,7 +123,7 @@ void SamplingActor::InitializeImpl(const AdminRequest& req) {
 
   sample_publisher_.UpdateDSPublishInfo(
       param->serving_worker_num(),
-      param->kafka_to_serving_worker_vec());
+      param->kafka_to_serving_wid_vec());
 }
 
 seastar::future<actor::Void>

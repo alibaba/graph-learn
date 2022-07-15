@@ -67,18 +67,13 @@ The command removes all the Kubernetes components associated with the chart and 
 
 ### Image parameters
 
-| Name                            | Description                                                            | Value                |
-| ------------------------------- | ---------------------------------------------------------------------- | -------------------- |
-| `image.dgs.registry`            | Core service image registry                                            | `"graphlearn"`       |
-| `image.dgs.repository`          | Core service image repository                                          | `"dgs-core"`         |
-| `image.dgs.tag`                 | Core service image tag (immutable tags are recommended)                | `"1.0.0"`            |
-| `image.dgs.pullPolicy`          | Core service image pull policy                                         | `IfNotPresent`       |
-| `image.dgs.pullSecrets`         | Specify docker-registry secret names as an array                       | `[]`                 |
-| `image.dl.registry`             | Dataloader image registry                                              | `"graphlearn"`       |
-| `image.dl.repository`           | Dataloader image repository                                            | `"dgs-dl"`           |
-| `image.dl.tag`                  | Dataloader image tag (immutable tags are recommended)                  | `"1.0.0"`            |
-| `image.dl.pullPolicy`           | Dataloader image pull policy                                           | `IfNotPresent`       |
-| `image.dl.pullSecrets`          | Specify docker-registry secret names as an array                       | `[]`                 |
+| Name                        | Description                                                            | Value                |
+| --------------------------- | ---------------------------------------------------------------------- | -------------------- |
+| `image.registry`            | Core service image registry                                            | `"graphlearn"`       |
+| `image.repository`          | Core service image repository                                          | `"dgs-core"`         |
+| `image.tag`                 | Core service image tag (immutable tags are recommended)                | `"1.0.0"`            |
+| `image.pullPolicy`          | Core service image pull policy                                         | `IfNotPresent`       |
+| `image.pullSecrets`         | Specify docker-registry secret names as an array                       | `[]`                 |
 
 ### FrontEnd parameters
 

@@ -100,7 +100,7 @@ public:
 
   void UpdateDSPublishInfo(
       uint32_t serving_worker_num,
-      const std::vector<uint32_t>& kafka_to_serving_worker_vec);
+      const std::vector<uint32_t>& kafka_to_serving_wid);
 
 private:
   using WorkerSampleUpdates = std::vector<const storage::KVPair*>;

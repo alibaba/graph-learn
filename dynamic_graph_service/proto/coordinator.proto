@@ -3,26 +3,11 @@ syntax = "proto3";
 package dgs;
 
 enum WorkerType {
-  DataLoader = 0;
-  Sampling   = 1;
-  Serving    = 2;
+  Sampling   = 0;
+  Serving    = 1;
 };
 
-message RegisterWorkerRequestPb {
-  WorkerType worker_type = 1;
-  uint32     worker_id = 2;
-  string     worker_ip = 3;
-}
-
-message RegisterWorkerResponsePb {
-  bool   suc = 1;
-  uint32 num_workers = 2;
-}
-
-message GetInitInfoRequestPb {
-  WorkerType worker_type = 1;
-  uint32     worker_id = 2;
-}
+// Common message types
 
 message UpStreamInfoPb {
   repeated string sub_kafka_servers = 1;
@@ -37,23 +22,13 @@ message DownStreamKafkaInfoPb {
   uint32 pub_kafka_partition_num = 3;
 }
 
-// When dataloader publishing graph updates, they will be partitioned
-// by store-wise strategy according to the total store partition
-// number of sampling workers.
-message DownStreamStoreWisePartitionInfoPb {
-  string store_partition_strategy = 1;
-  uint32 store_partition_num = 2;
-  // vec size : downstream store partition number
-  repeated uint32 store_to_kafka_pid_vec = 3;
-}
-
 // When sampling worker publishing sample updates, they will be partitioned
 // by worker-wise strategy according to the total worker number of serving workers.
-message DownStreamWorkerWisePartitionInfoPb {
+message DownStreamPartitionInfoPb {
   string worker_partition_strategy = 1;
   uint32 worker_partition_num = 2;
-  // vec size : downstream kafka partition number
-  repeated uint32 kafka_to_worker_pid_vec = 3;
+  // vector router: kafka partition id -> serving worker id
+  repeated uint32 kafka_to_wid = 3;
 }
 
 message ManagedStorePids {
@@ -91,11 +66,6 @@ message CheckpointInfoPb {
   repeated SubsPartitionBackupInfoPb  subs_table_backups = 3;
 }
 
-message DataLoaderInitInfoPb {
-  DownStreamKafkaInfoPb ds_kafka_info = 1;
-  DownStreamStoreWisePartitionInfoPb ds_store_partition_info = 2;
-}
-
 message SamplingInitInfoPb {
   string query_plan = 1;
   uint32 num_local_shards = 2;
@@ -103,7 +73,7 @@ message SamplingInitInfoPb {
   StorePartitionInfoPb store_partition_info = 4;
   UpStreamInfoPb upstream_info = 5;
   DownStreamKafkaInfoPb ds_kafka_info = 6;
-  DownStreamWorkerWisePartitionInfoPb ds_worker_partition_info = 7;
+  DownStreamPartitionInfoPb ds_partition_info = 7;
   CheckpointInfoPb checkpoint_info = 8;
 }
 
@@ -115,37 +85,36 @@ message ServingInitInfoPb {
   CheckpointInfoPb checkpoint_info = 5;
 }
 
+/// rpc message types
+
+message RegisterWorkerRequestPb {
+  WorkerType worker_type = 1;
+  uint32     worker_id = 2;
+  string     worker_ip = 3;
+}
+
+message RegisterWorkerResponsePb {
+  bool   suc = 1;
+  uint32 num_workers = 2;
+}
+
+message GetInitInfoRequestPb {
+  WorkerType worker_type = 1;
+  uint32     worker_id = 2;
+}
+
 message GetInitInfoResponsePb {
-  DataLoaderInitInfoPb dataloader_info = 1;
-  SamplingInitInfoPb   sampling_info = 2;
-  ServingInitInfoPb    serving_info = 3;
-  bool                 terminate_service = 4;
+  SamplingInitInfoPb   sampling_info = 1;
+  ServingInitInfoPb    serving_info = 2;
+  bool                 terminate_service = 3;
 }
 
-message ReportInitedRequestPb {
+message ReportStartedRequestPb {
   WorkerType worker_type = 1;
   uint32     worker_id = 2;
 }
 
-message ReportInitedResponsePb {
-  bool terminate_service = 1;
-}
-
-message CheckReadyInfoRequestPb {
-  WorkerType worker_type = 1;
-  uint32     worker_id = 2;
-}
-
-message CheckReadyInfoResponsePb {
-  bool terminate_service  = 1;
-}
-
-message ServerIsReadyRequestPb {
-  WorkerType worker_type = 1;
-  uint32     worker_id = 2;
-}
-
-message ServerIsReadyResponsePb {
+message ReportStartedResponsePb {
   bool terminate_service = 1;
 }
 
@@ -177,13 +146,7 @@ service Coordinator {
 
   rpc GetInitInfo (GetInitInfoRequestPb) returns (GetInitInfoResponsePb) {}
 
-  // SamplingWorkers report local inited state to Coordinator, and return after all the
-  // SamplingWorkers have reported inited.
-  rpc ReportInited (ReportInitedRequestPb) returns (ReportInitedResponsePb) {}
-
-  rpc GetCheckReadyInfo (CheckReadyInfoRequestPb) returns (CheckReadyInfoResponsePb) {}
-
-  rpc ReportServerIsReady (ServerIsReadyRequestPb) returns (ServerIsReadyResponsePb) {}
+  rpc ReportStarted (ReportStartedRequestPb) returns (ReportStartedResponsePb) {}
 
   rpc ReportStatistics (ReportStatisticsRequestPb) returns (ReportStatisticsResponsePb) {}
 

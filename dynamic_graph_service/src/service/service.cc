@@ -15,8 +15,6 @@ limitations under the License.
 
 #include "service/service.h"
 
-#include <fstream>
-
 #include "grpc/support/time.h"
 #include "grpcpp/create_channel.h"
 
@@ -65,26 +63,13 @@ void Service::Run() {
   if (is_termination_.load(std::memory_order_relaxed)) {
       goto FINAL;
   }
+
   server_->Init(*init_info);
-
-  WaitUntilAllAreInited();
-  if (is_termination_.load(std::memory_order_relaxed)) {
-    goto FINAL;
-  }
-
   server_->Start();
-
   reporter = std::thread(&Service::ReportStatsInfo, this);
 
-  WaitUntilAllAreReady();
-  if (is_termination_.load(std::memory_order_relaxed)) {
-    goto FINAL;
-  }
-
-  server_->BlockUntilReady();
-  LOG(INFO) << "Service is ready...";
-
-  ReportSelfIsReady();
+  ReportSelfIsStarted();
+  LOG(INFO) << "Service is Started...";
 
 FINAL:
   if (reporter.joinable()) {
@@ -118,51 +103,15 @@ void Service::RegisterSelf() {
   LOG(INFO) << "Registered current worker with id: " << worker_id_;
 }
 
-void Service::WaitUntilAllAreInited() {
-  grpc::ClientContext context;
-  ReportInitedRequestPb req;
-  ReportInitedResponsePb res;
-
-  req.set_worker_id(worker_id_);
-  req.set_worker_type(worker_type_);
-
-  auto s = stub_->ReportInited(&context, req, &res);
-  if (!s.ok()) {
-    throw std::runtime_error(s.error_message());
-  }
-
-  if (res.terminate_service()) {
-    is_termination_.store(true);
-  }
-}
-
-void Service::WaitUntilAllAreReady() {
-  CheckReadyInfoRequestPb  req;
-  CheckReadyInfoResponsePb res;
+void Service::ReportSelfIsStarted() {
+  ReportStartedRequestPb  req;
+  ReportStartedResponsePb res;
   grpc::ClientContext context;
 
   req.set_worker_type(worker_type_);
   req.set_worker_id(worker_id_);
 
-  auto s = stub_->GetCheckReadyInfo(&context, req, &res);
-  if (!s.ok()) {
-    throw std::runtime_error(s.error_message());
-  }
-
-  if (res.terminate_service()) {
-    is_termination_.store(true);
-  }
-}
-
-void Service::ReportSelfIsReady() {
-  ServerIsReadyRequestPb  req;
-  ServerIsReadyResponsePb res;
-  grpc::ClientContext context;
-
-  req.set_worker_type(worker_type_);
-  req.set_worker_id(worker_id_);
-
-  auto s = stub_->ReportServerIsReady(&context, req, &res);
+  auto s = stub_->ReportStarted(&context, req, &res);
   if (!s.ok()) {
     throw std::runtime_error(s.error_message());
   }
@@ -325,19 +274,19 @@ RetrieveDownstreamKafkaInfo(const DownStreamKafkaInfoPb& pb) {
       pub_kafka_partition_num);
 }
 
-std::unique_ptr<Server::DownstreamWorkerPartitionInfo>
-RetrieveDownstreamWorkerPartitionInfo(
-    const DownStreamWorkerWisePartitionInfoPb& pb) {
+std::unique_ptr<Server::DownstreamPartitionInfo>
+RetrieveDownstreamPartitionInfo(
+    const DownStreamPartitionInfoPb& pb) {
   auto& worker_partition_strategy = pb.worker_partition_strategy();
   uint32_t worker_partition_num = pb.worker_partition_num();
 
   std::vector<PartitionId> vec;
-  vec.reserve(pb.kafka_to_worker_pid_vec_size());
-  for (auto wid : pb.kafka_to_worker_pid_vec()) {
+  vec.reserve(pb.kafka_to_wid_size());
+  for (auto wid : pb.kafka_to_wid()) {
     vec.push_back(wid);
   }
 
-  return std::make_unique<Server::DownstreamWorkerPartitionInfo>(
+  return std::make_unique<Server::DownstreamPartitionInfo>(
       worker_partition_strategy,
       worker_partition_num,
       std::move(vec));
@@ -437,7 +386,7 @@ void Service::RetrieveInitInfo(std::unique_ptr<Server::InitInfo>* info) {
   Server::CheckpointInfo checkpoint_info;
   std::unique_ptr<Server::UpstreamInfo> upstream_info;
   std::unique_ptr<Server::DownstreamKafkaInfo> ds_kafka_info;
-  std::unique_ptr<Server::DownstreamWorkerPartitionInfo> ds_partition_info;
+  std::unique_ptr<Server::DownstreamPartitionInfo> ds_partition_info;
 
   if (worker_type_ == WorkerType::Sampling) {
     auto& spl_info = res.sampling_info();
@@ -450,8 +399,8 @@ void Service::RetrieveInitInfo(std::unique_ptr<Server::InitInfo>* info) {
     checkpoint_info = RetrieveCheckpointInfo(spl_info.checkpoint_info());
     upstream_info = RetrieveUpstreamInfo(spl_info.upstream_info());
     ds_kafka_info = RetrieveDownstreamKafkaInfo(spl_info.ds_kafka_info());
-    ds_partition_info = RetrieveDownstreamWorkerPartitionInfo(
-        spl_info.ds_worker_partition_info());
+    ds_partition_info = RetrieveDownstreamPartitionInfo(
+        spl_info.ds_partition_info());
   } else if (worker_type_ == WorkerType::Serving) {
     auto& srv_info = res.serving_info();
     query_plan = srv_info.query_plan();

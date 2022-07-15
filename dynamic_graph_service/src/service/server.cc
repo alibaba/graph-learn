@@ -123,10 +123,6 @@ void Server::Start() {
   LOG(INFO) << "Record Poller is started.";
 }
 
-void Server::BlockUntilReady() {
-  poller_manager_.BlockUntilReady();
-}
-
 void Server::Backup(
     std::vector<storage::StorePartitionBackupInfo>* sample_store_backup_infos,
     std::vector<storage::SubsPartitionBackupInfo>* subs_table_backup_infos) {
@@ -138,11 +134,11 @@ SamplingServer::SamplingServer()
     subs_table_(), sampling_refs_() {}
 
 void SamplingServer::Init(const InitInfo& init_info) {
-  Server::Init(init_info);
-
   // Init kafka producer pool
   KafkaProducerPool::GetInstance()->Init();
   LOG(INFO) << "Kafka Producer Pool is inited.";
+
+  Server::Init(init_info);
 
   // Create actor refs.
   BuildActorRefs<SamplingActor_ref>(sampling_refs_,
@@ -180,7 +176,7 @@ void SamplingServer::Init(const InitInfo& init_info) {
       init_info.store_partition_info.partition_num,
       init_info.store_partition_info.routing_info,
       init_info.downstream_partition_info->worker_partition_num,
-      init_info.downstream_partition_info->kafka_to_worker_pid_vec);
+      init_info.downstream_partition_info->kafka_to_wid);
 
   auto fut = seastar::alien::submit_to(
       *seastar::alien::internal::default_instance, 0,
@@ -229,7 +225,7 @@ void ServingServer::Init(const InitInfo& init_info) {
   auto payload = std::make_shared<ServingInitPayload>(
       std::move(buf), sample_store_.get());
 
-  auto fut_1 = seastar::alien::submit_to(
+  auto fut = seastar::alien::submit_to(
       *seastar::alien::internal::default_instance, 0,
       [this, payload] () mutable {
     uint32_t count = actor::LocalShardCount();
@@ -243,7 +239,7 @@ void ServingServer::Init(const InitInfo& init_info) {
       ).discard_result();  // NOLINT
     });
   });  // NOLINT
-  fut_1.wait();
+  fut.wait();
   LOG(INFO) << "Serving actors are inited.";
 }
 
@@ -264,8 +260,8 @@ void ServingServer::Finalize() {
   Server::Finalize();
 }
 
-void ServingServer::BlockUntilReady() {
-  Server::BlockUntilReady();
+void ServingServer::Start() {
+  Server::Start();
 
   rate_limiter_ = std::make_unique<AdaptiveRateLimiter>(&poller_manager_);
   rate_limiter_->Start();
@@ -275,12 +271,11 @@ void ServingServer::BlockUntilReady() {
   event_handler_ = std::make_unique<EventHandler>(
       this_worker_id_, http_port, rate_limiter_.get());
 
-  auto fut_2 = seastar::alien::submit_to(
+  auto fut = seastar::alien::submit_to(
       *seastar::alien::internal::default_instance, 0,
       [this] { return event_handler_->Start(); });
-  fut_2.wait();
-
-  LOG(INFO) << "Event handler is ready for serving.";
+  fut.wait();
+  LOG(INFO) << "Event handler is started.";
 }
 
 Server::UpstreamInfo::UpstreamInfo(
@@ -303,13 +298,13 @@ Server::DownstreamKafkaInfo::DownstreamKafkaInfo(
     pub_kafka_partition_num(pub_kafka_partition_num) {
 }
 
-Server::DownstreamWorkerPartitionInfo::DownstreamWorkerPartitionInfo(
+Server::DownstreamPartitionInfo::DownstreamPartitionInfo(
     const std::string& worker_partition_strategy,
     uint32_t worker_partition_num,
-    std::vector<uint32_t>&& kafka_to_worker_pid_vec)
+    std::vector<uint32_t>&& kafka_to_wid)
   : worker_partition_strategy(worker_partition_strategy),
     worker_partition_num(worker_partition_num),
-    kafka_to_worker_pid_vec(std::move(kafka_to_worker_pid_vec)) {
+    kafka_to_wid(std::move(kafka_to_wid)) {
 }
 
 Server::StorePartitionInfo::StorePartitionInfo(
@@ -342,7 +337,7 @@ Server::InitInfo::InitInfo(
     Server::CheckpointInfo&& checkpoint_info,
     std::unique_ptr<UpstreamInfo>&& upstream_info,
     std::unique_ptr<DownstreamKafkaInfo>&& ds_kafka_info,
-    std::unique_ptr<DownstreamWorkerPartitionInfo>&& ds_partition_info)
+    std::unique_ptr<DownstreamPartitionInfo>&& ds_partition_info)
   : worker_type(worker_type),
     worker_id(worker_id),
     num_workers(num_workers),
