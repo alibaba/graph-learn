@@ -132,7 +132,7 @@ class CheckpointState(IntEnum):
   DOING = 2  # worker has been notified to do backups
 
 
-class SubStateCheckpointManager(object):
+class SubServiceCheckpointManager(object):
   def __init__(self, worker_num, meta_dir, kafka_pids_group, store_pids_group, independent=False):
     self._worker_num = worker_num
     self._independent_mode = independent

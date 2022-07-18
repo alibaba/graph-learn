@@ -25,8 +25,9 @@ from io import BytesIO
 
 class CoordinatorHttpHandler(BaseHTTPRequestHandler):
   grpc_server = None
-  schema_file = ""
   meta = None
+  schema_json = ""
+  dl_ds_info = {}
 
   def do_POST(self):
     if self.__class__.grpc_server is None:
@@ -62,28 +63,37 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
       response.write(bytes("CREATING SERVING WORKER CHECKPOINT {}.\n"
                            .format("SUCCESSFUL" if serving_res else "FAILED")))
       self.wfile.write(response.getvalue())
+    else:
+      self.send_response(400)
+      self.end_headers()
+      self.wfile.write(b'Unsupported POST Request.\n')
 
   def do_GET(self):
-    response = BytesIO()
     if self.path.startswith("/admin/schema"):
       self.send_response(200)
       self.end_headers()
-      with open(self.schema_file, "rb") as f:
-        try:
-          self.wfile.write(f.read())
-          return
-        except:
-          logging.error("Failed to read schema file ...")
-    self.send_response(400)
-    response.write(b'HTTP RESPONSE: GET FAILED.\n')
-    self.wfile.write(response.getvalue())
+      self.wfile.write(bytes(self.schema_json))
+    elif self.path.startswith("/admin/dataloader-init-info"):
+      dl_init_info = {
+        "downstream": self.dl_ds_info,
+        "schema_json": self.schema_json
+      }
+      dl_init_json_str = json.dumps(dl_init_info)
+      self.send_response(200)
+      self.end_headers()
+      self.wfile.write(bytes(dl_init_json_str))
+    else:
+      self.send_response(400)
+      self.end_headers()
+      self.wfile.write(b'Unsupported GET Request.\n')
 
 
 class CoordinatorHttpService(object):
-  def __init__(self, configs, grpc_server, meta, port=8080):
+  def __init__(self, port, grpc_server, meta, schema_json, dl_ds_info):
     CoordinatorHttpHandler.grpc_server = grpc_server
     CoordinatorHttpHandler.meta = meta
-    CoordinatorHttpHandler.schema_file = configs.get("schema_file")
+    CoordinatorHttpHandler.schema_json = schema_json
+    CoordinatorHttpHandler.dl_ds_info = dl_ds_info
     self._port = port
     self._server = HTTPServer(('', self._port), CoordinatorHttpHandler)
 
