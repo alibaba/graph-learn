@@ -66,8 +66,8 @@ void Initialize(const std::string& dgs_service_host) {
       Partitioner::Get().Set(opts.data_partitions, std::move(kafka_router));
 
       std::cout << "*** Initialing Data Loading Components Successfully ***" << std::endl;
-      std::cout << "-- graph schema json: " << std::endl;
-      std::cout << schema_node.get_value<std::string>() << std::endl;
+      std::cout << "-- graph schema: " << std::endl;
+      boost::property_tree::write_json(std::cout, schema_node);
       std::cout << "-- downstream kafka brokers: " << opts.output_kafka_brokers << std::endl;
       std::cout << "-- downstream kafka topic: " << opts.output_kafka_topic << std::endl;
       std::cout << "-- downstream kafka partitions: " << opts.output_kafka_partitions << std::endl;
