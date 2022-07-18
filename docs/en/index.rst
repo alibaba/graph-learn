@@ -11,8 +11,6 @@ Welcome to GraphLearn's documentation!
    :caption: Introduction
 
    intro
-   quick_start
-   tutorial
 
 .. toctree::
    :maxdepth: 3
@@ -32,14 +30,9 @@ Welcome to GraphLearn's documentation!
 
    dgs/intro
    dgs/deploy
-   dgs/developer
-
-.. toctree::
-   :maxdepth: 2
-   :caption: API doc
-
+   dgs/dataloader
+   dgs/tutorial
    apis/index
-
 
 
 Indices and tables

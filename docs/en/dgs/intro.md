@@ -35,17 +35,15 @@ When Serving Worker serves a Query request sent by a Client, the Query result is
 
 The Data Flow of the data update flows sequentially through.
 
-(1) **Queue Service**: as the stream data source or Graph Storage Service, and File System as the batch data source.
+(1) **DataLoader**: from the data source via Bulk Loader to load a batch update or via Event Poller to load a streaming update, which then flows through Record Builder to build a VertexUpdateRecord or EdgeUpdateRecord.
 
-(2) **DataLoader**: from the data source via Bulk Loader to load a batch update or via Event Poller to load a streaming update, which then flows through Record Builder to build a VertexUpdateRecord or EdgeUpdateRecord.
+(2) **DataLoader - Sampling Worker queue**: Record flows into the corresponding Sampling Worker according to a certain slicing strategy, and slicing, flow control and Ckpt are performed through the queue.
 
-(3) **DataLoader - Sampling Worker queue**: Record flows into the corresponding Sampling Worker according to a certain slicing strategy, and slicing, flow control and Ckpt are performed through the queue.
+(3) **Sampling Worker**: According to the installed Query, the inflowing Record is sampled and written to Sample Store, and samples are sent out from SampleStore according to the Dependency information on Subgraph router. The Dependency information, which is actually the subscription information of the Subgraph on the Serving Worker to the record, is represented as a SubscriptionTable.
 
-(4) **Sampling Worker**: According to the installed Query, the inflowing Record is sampled and written to Sample Store, and samples are sent out from SampleStore according to the Dependency information on Subgraph router. The Dependency information, which is actually the subscription information of the Subgraph on the Serving Worker to the record, is represented as a SubscriptionTable.
+(4) **Sampling worker - Serving worker queue**: Sampling worker sends samples to the corresponding SubGraph based on the subscription information of the samples by the Serving Worker.
 
-(5) **Sampling worker - Serving worker queue**: Sampling worker sends samples to the corresponding SubGraph based on the subscription information of the samples by the Serving Worker.
-
-(6) **Sering Worker**: pull data from the queue and write it to the local SubGraph Store, and when there is a sample request from the client, it reads the samples from the local SubGraph Store through Query Executor, organizes them, and returns the sample subgraph to the client.
+(5) **Serving Worker**: pull data from the queue and write it to the local SubGraph Store, and when there is a sample request from the client, it reads the samples from the local SubGraph Store through Query Executor, organizes them, and returns the sample subgraph to the client.
 
 ## Performance
 Query: 2 hop sampling and feature lookup for all the vertices.

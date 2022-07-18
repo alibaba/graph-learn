@@ -33,17 +33,15 @@ Serving Worker在服务一个Client发送过来的Query请求时，Query的结�
 
 数据更新的Data Flow依次流经:
 
-(1) **Queue Service**：作为流数据源或Graph Storage Service，File System作为批数据源；
+(1) **DataLoader**：从数据源通过Bulk Loader加载批量更新或通过Event Poller加载流式更新，然后流经Record Builder构建一个VertexUpdateRecord或EdgeUpdateRecord；
 
-(2) **DataLoader**：从数据源通过Bulk Loader加载批量更新或通过Event Poller加载流式更新，然后流经Record Builder构建一个VertexUpdateRecord或EdgeUpdateRecord；
+(2) **DataLoader - Sampling Worker queue**：Record根据一定的分片策略流入对应的Sampling Worker，通过queue进行分片、流控和Ckpt；
 
-(3) **DataLoader - Sampling Worker queue**：Record根据一定的分片策略流入对应的Sampling Worker，通过queue进行分片、流控和Ckpt；
+(3) **Sampling Worker**：根据安装的Query，对流入的Record进行流式的采样，写入Sample Store，并根据Subgraph router上Dependency信息，从SampleStore取出样本发送出去。Sampling Worker之间交互Dependency信息，实际上是Serving Worker上的Subgraph对record的订阅信息，以SubscriptionTable来表示。
 
-(4) **Sampling Worker**：根据安装的Query，对流入的Record进行流式的采样，写入Sample Store，并根据Subgraph router上Dependency信息，从SampleStore取出样本发送出去。Sampling Worker之间交互Dependency信息，实际上是Serving Worker上的Subgraph对record的订阅信息，以SubscriptionTable来表示。
+(4) **Sampling worker - Serving worker queue**：Sampling Worker根据样本被Serving Worker的订阅信息，将样本发送给对应的SubGraph。
 
-(5) **Sampling worker - Serving worker queue**：Sampling Worker根据样本被Serving Worker的订阅信息，将样本发送给对应的SubGraph。
-
-(6) **Sering Worker**: 从queue中pull数据，写入本地SubGraph Store。当前端有采样请求时，通过Query Executor，从本地SubGraph Store读取样本并组织起来，返回样本子图给客户端。
+(5) **Serving Worker**: 从queue中pull数据，写入本地SubGraph Store。当前端有采样请求时，通过Query Executor，从本地SubGraph Store读取样本并组织起来，返回样本子图给客户端。
 
 ## Performance
 一个两跳采样，属性维度100 float的latency在P99在20ms以下时，单机QPS>20000。

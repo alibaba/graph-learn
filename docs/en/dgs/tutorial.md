@@ -1,43 +1,50 @@
-# 训练推理教程
+# Tutorial
 
-本文档帮助我们利用GraphLearn、动态图采样服务和tensorflow model serving，开始一个GNN模型的离线训练和在线推理。
+This document is a turotial of offline training and online inference for a GNN model with:
+  - GraphLearn,
+  - Dynamic graph service,
+  - Tensorflow model serving.
 
-这里以EgoSage的有监督模型为例，包含以下部分：
-1. 准备数据，包含离线训练的批数据和在线推理的流数据。
-2. 使用离线批数据训练EgoGage模型。
-3. 导出模型。
-4. 部署模型到tensorflow model serving上。
-5. 部署在线图采样服务。
-6. 启动Java Client，进行采样并预测。
+Here is an example of a supervised job with EgoSage, containing the following sections.
+1. Prepare data, including bulk-loading data for offline training and streaming data for online inference.
+2. Train the EgoGage model using the offline bulk-loading data.
+3. Exporting TF model.
+4. Deploying TF model on tensorflow model serving.
+4. Deploy the online graph sampling service.
+5. Start Java Client, sample and predict.
 
-## 1. Prepare data
-我们先用cora数据为例；在线部署用模拟的数据。
+The 1-3 parts are envolved in GraphLearn-Traing, ref to [GraphLearn-Training](../gl/intro.md) for details.
+
+## Prepare data
+We start with cora as an example, online deployment with simulated data.
 ```shell
 cd examples/data
 python cora.py
 ```
 
-TODO：用一套数据。
+TODO(@Seventeen17): use open streaming data source
 
-## 2. Train model offline
+## Train model offline
 ```shell
 cd graphlearn/examples/tf/ego_sage
 python train_supervised.py
 ```
 
-## 3. Export TF SavedModel
-首先，需要将模型导出，这里我们需要根据计算图筛选一部分输入作为model serving的输入，可以借助Tensorboard查看计算图，以确定serving子图的输入。
-离线训练模型保持在graphlearn/examples/tf/ego_sage/ckpt中，这里我们将最终serving的model保存在./ego_sage_sup_model目录下，子图的输入是0，2，3这几个placeholder。
+## Export TF SavedModel
+First, export model as tf SavedModel, we need to filter some of the placeholders as model serving inputs based on the computational graph, you can view the computational graph with the help of Tensorboard to determine the inputs for the serving subgraph.
+The offline training model is saved in `graphlearn/examples/tf/ego_sage/ckpt`, and we save the final serving model in `./ego_sage_sup_model` directory, the inputs to the subgraphs are the placeholders `0,2,3`.
+
 ```shell
 cd graphlearn/examples/tf/serving
 python export_serving_model.py ../ego_sage ckpt ego_sage_sup_model 0,2,3
 ```
 
-查看saved model的输入输出以确认正确：
+Check inputs and output of saved model.
 ```shell
 saved_model_cli show --dir ego_sage_sup_model/1/ --all
 ```
-输出应该如下：
+
+Outputs are as following.
 ```
 MetaGraphDef with tag-set: 'serve' contains the following SignatureDefs:
 
@@ -63,14 +70,14 @@ signature_def['predict_actions']:
   Method name is: tensorflow/serving/predict
 ```
 
-## 4. Deploy TF Model
-首先安装tensorflow-model-server
+## Deploy TF Model
+Install tensorflow-model-server.
 ```shell
 echo "deb [arch=amd64] http://storage.googleapis.com/tensorflow-serving-apt stable tensorflow-model-server tensorflow-model-server-universal" | sudo tee /etc/apt/sources.list.d/tensorflow-serving.list && \
 curl https://storage.googleapis.com/tensorflow-serving-apt/tensorflow-serving.release.pub.gpg | sudo apt-key add -
 apt-get update && apt-get install tensorflow-model-server
 ```
-启动tensorflow-model-server，并部署模型
+Start tensorflow-model-server and deploy model
 ```shell
 nohup tensorflow_model_server --port=9000  \
 --model_name=saved_model_modified   \
@@ -78,16 +85,21 @@ nohup tensorflow_model_server --port=9000  \
 >server.log 2>&1
 ```
 
-## 5. Deploy dgs
+## Deploy Dynamic Graph Service.
+Ref: k8s/README.md
+TODO(@Seventeen17)
 
-## 5. Sample and Predict
-我们给了一个快速开始的例子：
+## Sample and Predict
+We show a quick start example without dgs.
+TODO(@Seventeen17): replace me when dgs deployment doc is ready.
+
 ```
 cd dgs/gsl_client
 mvn -Dtest=PredictClientTest test
 ```
 
-完整的写法参考App：
+The complete usgaes are shown in `App`.
+
 ```java
 String server = "http://dynamic-graph-service.info";
 Graph g = Graph.connect(server);
