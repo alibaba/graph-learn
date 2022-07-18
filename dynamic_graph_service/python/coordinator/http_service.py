@@ -77,12 +77,12 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
     elif self.path.startswith("/admin/dataloader-init-info"):
       dl_init_info = {
         "downstream": self.dl_ds_info,
-        "schema_json": self.schema_json
+        "schema": self.schema_json
       }
       dl_init_json_str = json.dumps(dl_init_info)
       self.send_response(200)
       self.end_headers()
-      self.wfile.write(bytes(dl_init_json_str))
+      self.wfile.write(bytes(dl_init_json_str, "UTF-8"))
     else:
       self.send_response(400)
       self.end_headers()
@@ -94,7 +94,7 @@ class CoordinatorHttpService(object):
     CoordinatorHttpHandler.grpc_server = grpc_server
     CoordinatorHttpHandler.meta = meta
     CoordinatorHttpHandler.schema = schema
-    CoordinatorHttpHandler.schema_json = json.load(schema)
+    CoordinatorHttpHandler.schema_json = json.loads(schema)
     CoordinatorHttpHandler.dl_ds_info = dl_ds_info
     self._port = port
     self._server = HTTPServer(('', self._port), CoordinatorHttpHandler)

@@ -222,14 +222,13 @@ def make_service_config(yaml_map):
     "meta_dir": meta_dir,
     "dataloader_downstream": {
       "kafka": {
-        "pub_kafka_servers": dl2spl_kafka_servers,
-        "pub_kafka_topic": dl2spl_kafka_topic,
-        "pub_kafka_partition_num": dl2spl_kafka_partition_num,
+        "brokers": ",".join(dl2spl_kafka_servers),
+        "topic": dl2spl_kafka_topic,
+        "partitions": dl2spl_kafka_partition_num,
       },
       "partition": {
-        "store_partition_strategy": sampling_store_partition_strategy,
-        "store_partition_num": num_sampling_store_partition,
-        "partition_to_kafka_pid": dl_pub_kafka_router
+        "data_partition_num": num_sampling_store_partition,
+        "kafka_router": dl_pub_kafka_router
       }
     },
     "sampling": {
