@@ -1,2 +1,2 @@
-Dynamic-Graph-Service JAVA Client apis
+JAVA Client apis
 =======================================

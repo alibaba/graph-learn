@@ -36,7 +36,7 @@ using EdgeTrackerId = uint32_t;
 using GlobalBackupId = uint32_t;
 using PartitionBackupId = uint32_t;
 
-// FIXME(@xmqin): Currently, enum value of RecordType should be
+// FIXME(@goldenleaves): Currently, enum value of RecordType should be
 // always exactly same with the enum value of RecordUnionRep
 // which is defined in record_generated.h(fbs generated file).
 // However, there is no gurantee to it. Modification in one of

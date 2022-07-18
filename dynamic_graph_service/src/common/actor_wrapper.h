@@ -73,7 +73,7 @@ inline uint32_t GetWorkerShardIdAnchor(WorkerId wid) {
 
 // The higher the value, the higher the priority
 static_assert(kDataUpdateActorInstId < kServingActorInstId,
-    "The data update actor id should be smaller than sering actor");
+    "The data update actor id should be smaller than serving actor");
 
 }  // namespace actor
 }  // namespace dgs
