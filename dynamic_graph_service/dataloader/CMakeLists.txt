@@ -21,6 +21,7 @@ set (CMAKE_CXX_FLAGS_RELEASE "-O2")
 set (DataLoader_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set (DataLoader_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set (DGS_PROJECT_DIR ${DataLoader_SOURCE_DIR}/..)
+set (ThirdParty_DIR ${DGS_PROJECT_DIR}/../third_party)
 
 option (DataLoader_BUILD_SHARED "Build dataloader as a shared library." ON)
 option (DataLoader_INSTALL "Install dataloader targets." ON)
@@ -34,11 +35,15 @@ endif ()
 
 ## ThirdParty
 # CppKafka
+list (APPEND CMAKE_PREFIX_PATH ${ThirdParty_DIR}/cppkafka/build)
 find_package (CppKafka 0.3.1 REQUIRED)
 # Flatbuffers
+list (APPEND CMAKE_PREFIX_PATH ${ThirdParty_DIR}/flatbuffers/build)
 find_package (Flatbuffers 1.12.0 REQUIRED)
 # Boost
 find_package (Boost COMPONENTS headers program_options thread)
+# Curl
+find_package (CURL REQUIRED)
 
 ## Generate flatbuffers header files
 set (FBS_SRC_DIR
@@ -95,7 +100,8 @@ target_link_libraries (dataloader
   PUBLIC
     CppKafka::cppkafka
     flatbuffers::flatbuffers
-    ${Boost_LIBRARIES})
+    ${Boost_LIBRARIES}
+    CURL::libcurl)
 
 add_subdirectory (apps)
 

@@ -26,7 +26,8 @@ from io import BytesIO
 class CoordinatorHttpHandler(BaseHTTPRequestHandler):
   grpc_server = None
   meta = None
-  schema_json = ""
+  schema = ""
+  schema_json = {}
   dl_ds_info = {}
 
   def do_POST(self):
@@ -72,7 +73,7 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
     if self.path.startswith("/admin/schema"):
       self.send_response(200)
       self.end_headers()
-      self.wfile.write(bytes(self.schema_json))
+      self.wfile.write(bytes(self.schema))
     elif self.path.startswith("/admin/dataloader-init-info"):
       dl_init_info = {
         "downstream": self.dl_ds_info,
@@ -89,10 +90,11 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
 
 
 class CoordinatorHttpService(object):
-  def __init__(self, port, grpc_server, meta, schema_json, dl_ds_info):
+  def __init__(self, port, grpc_server, meta, schema, dl_ds_info):
     CoordinatorHttpHandler.grpc_server = grpc_server
     CoordinatorHttpHandler.meta = meta
-    CoordinatorHttpHandler.schema_json = schema_json
+    CoordinatorHttpHandler.schema = schema
+    CoordinatorHttpHandler.schema_json = json.load(schema)
     CoordinatorHttpHandler.dl_ds_info = dl_ds_info
     self._port = port
     self._server = HTTPServer(('', self._port), CoordinatorHttpHandler)

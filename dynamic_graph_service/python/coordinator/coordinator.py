@@ -95,12 +95,12 @@ class Coordinator(object):
       serving_manager=self._serving_mgr
     )
     with open(config_dict.get("schema_file"), "rb") as f:
-      schema_json_str = f.read()
+      schema_str = f.read()
     self._http_service = CoordinatorHttpService(
       port=http_port,
       grpc_server=self._grpc_service,
       meta=self._meta,
-      schema_json=schema_json_str,
+      schema=schema_str,
       dl_ds_info=config_dict.get("dataloader_downstream")
     )
 
