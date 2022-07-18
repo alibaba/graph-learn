@@ -16,16 +16,16 @@ limitations under the License.
 #ifndef FILE_LOADER_LOADER_H_
 #define FILE_LOADER_LOADER_H_
 
+#include "dataloader/group_producer.h"
 #include "dataloader/schema.h"
 #include "dataloader/typedefs.h"
-
-#include "group_producer.h"
 
 namespace dgs {
 namespace dataloader {
 namespace file {
 
 extern char delimiter;
+extern uint32_t batch_size;
 
 class FileLoader {
 public:

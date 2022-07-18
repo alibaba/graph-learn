@@ -32,6 +32,12 @@ struct AttrInfo {
     : attr_type(attr_type), value_type(value_type), value_bytes(std::move(value_bytes)) {}
 };
 
+template <typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, bool>::type>
+inline
+std::string ToBytes(T val) {
+  return std::string{reinterpret_cast<char*>(&val), sizeof(T)};
+}
+
 /// The graph update record batch builder based on flatbuffers.
 /// Use this to serialize the incoming graph update records into output flatbuffers format.
 class BatchBuilder {

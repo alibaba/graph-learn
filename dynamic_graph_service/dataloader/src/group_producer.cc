@@ -13,18 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "group_producer.h"
+#include "dataloader/group_producer.h"
 
 #include "dataloader/partitioner.h"
 
 namespace dgs {
 namespace dataloader {
-namespace file {
 
-uint32_t batch_size = 16;
-
-GroupProducer::GroupProducer()
-  : batch_size_(batch_size),
+GroupProducer::GroupProducer(uint32_t max_batch_size)
+  : batch_size_(max_batch_size),
     data_partition_num_(Options::Get().data_partitions),
     producer_() {
   batch_builders_.reserve(data_partition_num_);
@@ -76,6 +73,5 @@ void GroupProducer::Flush(uint32_t data_partition) {
   bb.Clear();
 }
 
-}  // namespace file
 }  // namespace dataloader
 }  // namespace dgs

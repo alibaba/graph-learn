@@ -69,6 +69,7 @@ set (DataLoader_PROJECT_FILES
   include/dataloader/batch_builder.h
   include/dataloader/batch_producer.h
   include/dataloader/dataloader.h
+  include/dataloader/group_producer.h
   include/dataloader/options.h
   include/dataloader/partitioner.h
   include/dataloader/schema.h
@@ -77,6 +78,7 @@ set (DataLoader_PROJECT_FILES
   src/batch_builder.cc
   src/batch_producer.cc
   src/dataloader.cc
+  src/group_producer.cc
   src/schema.cc)
 
 add_library (dataloader ${DataLoader_LIBRARY_TYPE}

@@ -24,8 +24,10 @@ namespace dataloader {
 namespace file {
 
 char delimiter = '&';
+uint32_t batch_size = 16;
 
-FileLoader::FileLoader(const std::string& pattern_file) {
+FileLoader::FileLoader(const std::string& pattern_file)
+  : group_producer_(batch_size) {
   std::ifstream infile;
   infile.open(pattern_file);
   if (!infile.good()) {

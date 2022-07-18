@@ -17,7 +17,7 @@ limitations under the License.
 #define DATALOADER_DATALOADER_H_
 
 #include "dataloader/batch_builder.h"
-#include "dataloader/batch_producer.h"
+#include "dataloader/group_producer.h"
 #include "dataloader/partitioner.h"
 #include "dataloader/schema.h"
 
@@ -34,7 +34,7 @@ namespace dataloader {
 ///
 /// This func must be called before your program runs.
 ///
-void Initialize(const std::string& dgs_service_host);
+void Initialize(const std::string& dgs_host);
 
 /// Setting a barrier for current dataloader instance.
 ///
@@ -57,7 +57,7 @@ void Initialize(const std::string& dgs_service_host);
 ///
 /// On a gsl-client, you can check the barrier status or wait for it to be ready.
 ///
-void SetBarrier(const std::string& dgs_service_host,
+void SetBarrier(const std::string& dgs_host,
                 const std::string& barrier_name,
                 uint32_t dl_count,
                 uint32_t dl_id);

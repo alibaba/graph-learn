@@ -1,13 +1,18 @@
-## Introduction
+# Service Deployment
 
-This chart bootstraps a Dynamic-Graph-Service deployment on a [Kubernetes](https://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
+The Dynamic-Graph-Service can be deployed on a [Kubernetes](https://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
 ## Prerequisites
 
 - Kubernetes 1.19+
 - Helm 3.2.0+
 - PV provisioner support in the underlying infrastructure
-- Pre-deployed [Kafka](https://kafka.apache.org/) queue service with corresponding topics created, configure it with [Kafka service parameters](#kafka-service-parameters)
+
+## Deploy kafka queue service
+The Dynamic-Graph-Service uses [Kafka](https://kafka.apache.org/) queue service to store streaming graph updates and sampled results.
+Before deploy a dgs service, you must deploy a kafka cluster first and create the following kafka queues:
+- `dl2spl`: receiving graph updates from your data-source loaders, and consumed by sampling workers.
+- `spl2srv`: receiving sampled results from sampling workers, and consumed by serving workers.
 
 ## Installing the Chart
 
@@ -15,11 +20,20 @@ To install the chart with the release name `my-release`(TODO: support remote hel
 
 ```console
 helm install my-release $project_dir/k8s/charts/dgs \
-    --set-file graphSchema=/path/to/schema/json/file
+    --set-file graphSchema=/path/to/schema/json/file \
+    --set kafka.dl2spl.brokers=[your kafka broker list of dl2spl] \
+    --set kafka.dl2spl.topic="your_kafka_topic_of_dl2spl" \
+    --set kafka.dl2spl.partitions=your_kafka_partitions_of_dl2spl \
+    --set kafka.spl2srv.brokers=[your kafka broker list of spl2srv] \
+    --set kafka.spl2srv.topic="your_kafka_topic_of_spl2srv" \
+    --set kafka.spl2srv.partitions=your_kafka_partitions_of_spl2srv
 ```
 
 The graph schema must be specified from a json string or file by parameter `graphSchema`.
 A [template](../../../conf/schema.template.json) schema file can be followed to write your customized graph schema.
+
+The info of `dl2spl` and `spl2srv`  of your pre-deployed kafka cluster should be configured when you install the chart,
+ref to [Kafka service parameters](#kafka-service-parameters)
 
 These commands deploy Dynamic-Graph-Service on the Kubernetes cluster in the default configuration.
 The [Parameters](#parameters) section lists the parameters that can be configured during installation.

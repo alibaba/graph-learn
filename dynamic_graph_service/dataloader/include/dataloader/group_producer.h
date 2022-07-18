@@ -21,13 +21,10 @@ limitations under the License.
 
 namespace dgs {
 namespace dataloader {
-namespace file {
-
-extern uint32_t batch_size;
 
 class GroupProducer {
 public:
-  GroupProducer();
+  explicit GroupProducer(uint32_t max_batch_size);
   ~GroupProducer();
 
   void AddVertex(VertexType vtype, VertexId vid, const std::vector<AttrInfo>& attrs);
@@ -47,7 +44,6 @@ private:
   std::vector<cppkafka::MessageBuilder> msg_builders_;
 };
 
-}  // namespace file
 }  // namespace dataloader
 }  // namespace dgs
 

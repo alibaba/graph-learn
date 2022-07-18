@@ -14,7 +14,5 @@
 
 add_app (file_dataloader
   file_dataloader.cc
-  group_producer.cc
-  group_producer.h
   loader.cc
   loader.h)

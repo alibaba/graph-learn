@@ -29,12 +29,12 @@ size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
   return size * nmemb;
 }
 
-void Initialize(const std::string& dgs_service_host) {
+void Initialize(const std::string& dgs_host) {
   CURL *curl;
   std::string res;
   curl = curl_easy_init();
   if (curl) {
-    auto url = dgs_service_host + "/admin/dataloader-init-info";
+    auto url = dgs_host + "/admin/dataloader-init-info";
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &res);
@@ -81,7 +81,7 @@ void Initialize(const std::string& dgs_service_host) {
   }
 }
 
-void SetBarrier(const std::string& dgs_service_host,
+void SetBarrier(const std::string& dgs_host,
                 const std::string& barrier_name,
                 uint32_t dl_count,
                 uint32_t dl_id) {
