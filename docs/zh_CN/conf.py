@@ -19,11 +19,9 @@
 
 import os
 import sys
-# sys.path.insert(0, os.path.abspath('../../../'))
 
-# os.system("apt-get install openjdk-8-jdk")
-# os.system("mkdir -p apis/apis/apis/")
-# os.system("javadoc -d apis/apis/apis/ -sourcepath ../../dynamic_graph_service/gsl_client/src/main/java/ -classpath ../../dynamic_graph_service/gsl_client/src/main/java/ org.aliyun.gsl_client")
+os.system("mkdir -p apis/apis/apis/")
+os.system("javadoc -d apis/apis/apis/ -sourcepath ../../dynamic_graph_service/gsl_client/src/main/java/ -classpath ../../dynamic_graph_service/gsl_client/src/main/java/ org.aliyun.gsl_client")
 
 
 
@@ -63,7 +61,7 @@ language = 'zh_CN'
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
-# html_extra_path = ['apis/apis/']
+html_extra_path = ['apis/apis/']
 
 
 # -- Options for HTML output -------------------------------------------------
