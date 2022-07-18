@@ -1,7 +1,6 @@
 package org.aliyun.gsl_client.predict;
 
 import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.NettyChannelBuilder;
 import tensorflow.serving.Model;
@@ -9,33 +8,22 @@ import tensorflow.serving.PredictionServiceGrpc;
 import tensorflow.serving.Predict.PredictRequest;
 import tensorflow.serving.Predict.PredictResponse;
 import org.tensorflow.framework.TensorProto;
-import org.tensorflow.framework.TensorShapeProto;
 
 import com.google.protobuf.Int64Value;
 
-import org.aliyun.gsl_client.parser.Plan;
-import org.aliyun.gsl_client.parser.PlanNode;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.aliyun.gsl_client.Decoder;
-import org.aliyun.gsl_client.Query;
-import org.aliyun.dgs.EntryRep;
-import org.aliyun.dgs.RecordRep;
-import org.aliyun.gsl_client.Value;
 
 public class TFPredictClient {
-  private Plan plan;
   private Decoder decoder;
 
   private PredictionServiceGrpc.PredictionServiceBlockingStub blockingStub;
 
   private final ManagedChannel channel;
 
-  public TFPredictClient(Query query, Decoder decoder, String host, int port) {
-    this.plan = query.getPlan();
+  public TFPredictClient(Decoder decoder, String host, int port) {
     this.decoder = decoder;
 
     channel = NettyChannelBuilder.forAddress(host, port)
@@ -54,10 +42,15 @@ public class TFPredictClient {
 
     EgoTensor egoTensor = new EgoTensor(egoGraph, decoder);
 
+    int idx = 0;
+    String prefix = "IteratorGetNext_ph_input";
+    String key = prefix;
     for (int i = 0; i < egoGraph.numHops(); ++i) {
-      short vtype = egoGraph.getVtype(i);
-      for (int j = 0; j < decoder.getFeatTypes(vtype).size(); ++i) {
-        requestBuilder.putInputs("placeholder_", egoTensor.hop(i).get(j));
+      int vtype = egoGraph.getVtype(i);
+      for (int j = 0; j < decoder.getFeatTypes(vtype).size(); ++j) {
+        requestBuilder.putInputs(key, egoTensor.hop(i).get(j));
+        idx += 1;
+        key = prefix + "_" + Integer.toString(idx);
       }
     }
 

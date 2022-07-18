@@ -37,3 +37,9 @@
 
 # glog files
 **/*.log.*
+
+# sphinx generated files
+**/_build
+**/_static
+**/_templates
+**/apis/apis/apis

@@ -9,6 +9,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import org.aliyun.gsl_client.Decoder;
+import org.aliyun.gsl_client.Query;
 import org.aliyun.gsl_client.Value;
 import org.aliyun.gsl_client.ValueBuilder;
 import org.aliyun.gsl_client.exception.UserException;
@@ -17,6 +18,11 @@ import org.aliyun.gsl_client.predict.EgoGraph;
 import org.aliyun.gsl_client.predict.EgoTensor;
 
 public class ConvertTensorTest extends TestCase {
+  private ArrayList<Integer> vtypes = new ArrayList<Integer>(Arrays.asList(0, 1, 1));
+  private ArrayList<Integer> vops = new ArrayList<Integer>(Arrays.asList(2, 4, 4));
+  private ArrayList<Integer> hops = new ArrayList<Integer>(Arrays.asList(1, 10, 5));
+  private ArrayList<Integer> eops = new ArrayList<Integer>(Arrays.asList(0, 1, 3));
+
   /*
    * Test results:
    * Convert Samples with 100 Float feats Time taken: 0.038 millseconds
@@ -34,7 +40,9 @@ public class ConvertTensorTest extends TestCase {
 
   private Value generatedValue(Decoder d) {
     long inputVid = 0L;
-    ValueBuilder builder = new ValueBuilder(1 + 1 + 10 + 10 + 50, d);
+    Plan plan = new Plan();
+    Query query = new Query(plan);
+    ValueBuilder builder = new ValueBuilder(query, 1 + 1 + 10 + 10 + 50, d, 0L);
     builder.addVopRes(2, (short)0, inputVid, 1);
     builder.addEopRes(1, (short)2, (short)0, (short)1, inputVid, 10);
     for (int i = 0; i < 10; ++i) {
@@ -55,7 +63,7 @@ public class ConvertTensorTest extends TestCase {
     for (int i = 0; i < 1000; ++i) {
       Value val = generatedValue(decoder);
 
-      EgoGraph g = val.getEgoGraph(plan, decoder);
+      EgoGraph g = val.getEgoGraph(vtypes, vops, hops, eops);
       EgoTensor t = new EgoTensor(g, decoder);
     }
 
@@ -66,7 +74,7 @@ public class ConvertTensorTest extends TestCase {
     for (int i = 0; i < 1000; ++i) {
       Value val = generatedValue(decoder);
       Instant start = Instant.now();
-      EgoGraph g = val.getEgoGraph(plan, decoder);
+      EgoGraph g = val.getEgoGraph(vtypes, vops, hops, eops);
       EgoTensor t = new EgoTensor(g, decoder);
       Instant end = Instant.now();
       Duration timeElapsed = Duration.between(start, end);
@@ -75,12 +83,12 @@ public class ConvertTensorTest extends TestCase {
     return total;
   }
 
-  public void testConvert1kFloat() {
+  public void testConvert1kFloat() throws UserException {
     Decoder decoder = new Decoder();
-    decoder.addFeatDesc((short)0,
+    decoder.addFeatDesc(0,
                         new ArrayList<String>(Arrays.asList("float")),
                         new ArrayList<Integer>(Arrays.asList(1000)));
-    decoder.addFeatDesc((short)1,
+    decoder.addFeatDesc(1,
                         new ArrayList<String>(Arrays.asList("float")),
                         new ArrayList<Integer>(Arrays.asList(1000)));
 
@@ -88,12 +96,12 @@ public class ConvertTensorTest extends TestCase {
     System.out.printf("Convert 1K Float Time taken: %.3f millseconds\n", total.toMillis() / 1000f);
   }
 
-  public void testConvert100Float() {
+  public void testConvert100Float() throws UserException {
     Decoder decoder = new Decoder();
-    decoder.addFeatDesc((short)0,
+    decoder.addFeatDesc(0,
                         new ArrayList<String>(Arrays.asList("float")),
                         new ArrayList<Integer>(Arrays.asList(100)));
-    decoder.addFeatDesc((short)1,
+    decoder.addFeatDesc(1,
                         new ArrayList<String>(Arrays.asList("float")),
                         new ArrayList<Integer>(Arrays.asList(100)));
 
@@ -101,13 +109,13 @@ public class ConvertTensorTest extends TestCase {
     System.out.printf("Convert 100 Float Time taken: %.3f millseconds\n", total.toMillis() / 1000f);
   }
 
-  public void testConvertString() {
+  public void testConvertString() throws UserException {
     // 1 string feat with 100 bytes.
     Decoder decoder = new Decoder();
-    decoder.addFeatDesc((short)0,
+    decoder.addFeatDesc(0,
                         new ArrayList<String>(Arrays.asList("string")),
                         new ArrayList<Integer>(Arrays.asList(100)));
-    decoder.addFeatDesc((short)1,
+    decoder.addFeatDesc(1,
                         new ArrayList<String>(Arrays.asList("string")),
                         new ArrayList<Integer>(Arrays.asList(100)));
 
@@ -115,7 +123,7 @@ public class ConvertTensorTest extends TestCase {
     System.out.printf("Convert 1 String Time taken: %.3f millseconds\n", total.toMillis() / 1000f);
   }
 
-  public void testConvert10String() {
+  public void testConvert10String() throws UserException {
     // 10 string feat, each string feat with 100 bytes.
     Decoder decoder = new Decoder();
     ArrayList<String> featTypes = new ArrayList<>();

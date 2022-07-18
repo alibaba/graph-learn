@@ -1,34 +1,42 @@
 package org.aliyun.gsl_client;
 
+import org.aliyun.graphlearn.EdgeRecordRep;
+import org.aliyun.graphlearn.VertexRecordRep;
 import org.aliyun.gsl_client.exception.UserException;
-import org.aliyun.gsl_client.parser.Plan;
-import org.aliyun.gsl_client.parser.schema.Schema;
+import org.aliyun.gsl_client.parser.PlanNode;
 import org.aliyun.gsl_client.predict.EgoGraph;
 import org.aliyun.gsl_client.status.ErrorCode;
-import org.apache.commons.lang3.ObjectUtils.Null;
-import org.aliyun.dgs.AttributeRecordRep;
-import org.aliyun.dgs.AttributeValueTypeRep;
-import org.aliyun.dgs.EdgeRecordRep;
-import org.aliyun.dgs.VertexRecordRep;
-import org.aliyun.dgs.EntryRep;
-import org.aliyun.dgs.QueryResponseRep;
-import org.aliyun.dgs.RecordBatchRep;
-import org.aliyun.dgs.RecordRep;
-import org.aliyun.dgs.RecordUnionRep;
+import org.aliyun.graphlearn.EntryRep;
+import org.aliyun.graphlearn.QueryResponseRep;
+import org.aliyun.graphlearn.RecordBatchRep;
+import org.aliyun.graphlearn.RecordRep;
+import org.aliyun.graphlearn.RecordUnionRep;
 
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Vector;
 
+/**
+ * Value contains the input of query and a byte buffer contains the
+ * output of query executed once, which is represented as flatbuffer table
+ * `QueryResponseRep`.
+ */
 public class Value {
+  private Query query;
+  private Long input;
   private ByteBuffer bv = null;
   private QueryResponseRep rep = null;
 
-  public Value(byte[] content) throws UserException {
+  /**
+   * Constructor for Value with query input and query output as byte array.
+   * @param query(Query), given query.
+   * @param input(Long), query input
+   * @param content(byte[]), query output, the byte array is data of flatbuffer
+   * table `QueryResponseRep`.
+   * @throws UserException
+   */
+  public Value(Query query, Long input, byte[] content) throws UserException {
+    this.query = query;
+    this.input = input;
     bv = ByteBuffer.wrap(content);
     try {
       rep = QueryResponseRep.getRootAsQueryResponseRep(bv);
@@ -37,30 +45,70 @@ public class Value {
     }
   }
 
-  public Value(ByteBuffer buf) {
+  /**
+   * Constructor for Value with query input and query output as ByteBuffer.
+   * @param query(Query), given query.
+   * @param input(Long), query input.
+   * @param buf(ByteBuffer), query output, the ByteBuffer is data of flatbuffer
+   * table `QueryResponseRep`.
+   */
+  public Value(Query query, Long input, ByteBuffer buf) {
+    this.query = query;
+    this.input = input;
     rep = QueryResponseRep.getRootAsQueryResponseRep(buf);
   }
 
+  /**
+   * Clear the data in byte buffer.
+   */
   public void clear() {
     bv.clear();
   }
 
-  public boolean vaild() {
-    try {
-      read();
-    } catch (UserException e) {
-      return false;
-    }
-    return true;
-  }
-
+  /**
+   * Number of entries in QueryResponse. Each entry contains the sampling
+   * results for one vertex with corresponding sampling op.
+   * @return int, number of entities, each entry is value of flatbuffer table
+   * `EntryRep`.
+   */
   public int size() {
     return rep.resultsLength();
   }
 
-  public EgoGraph getEgoGraph(Plan plan, Decoder d) {
-    EgoGraph egoGraph = new EgoGraph(plan);
-    egoGraph.addVids(0, 0);
+  /**
+   * Format the query results as EgoGraph.
+   * @param query(Query), the executed query.
+   * @return EgoGraph
+   */
+  public EgoGraph getEgoGraph(String srcVtype) throws UserException{
+    ArrayList<PlanNode> nodes = query.getPlan().getEgoGraphNodes(srcVtype);
+    ArrayList<Integer> vtypes = new ArrayList<Integer>();
+    ArrayList<Integer> vops = new ArrayList<Integer>();
+    ArrayList<Integer> hops = new ArrayList<Integer>();
+    ArrayList<Integer> eops = new ArrayList<Integer>();
+    for (PlanNode node : nodes) {
+      if (node.getKind().equals("EDGE_SAMPLER")) {
+        eops.add(node.getId());
+        hops.add(node.getParam("fanout"));
+      } else {
+        vtypes.add(node.getParam("vtype"));
+        vops.add(node.getId());
+      }
+    }
+    EgoGraph egoGraph = new EgoGraph(vtypes, vops, hops, eops);
+    return feedEgoGraph(egoGraph);
+  }
+
+  public EgoGraph getEgoGraph(ArrayList<Integer> vtypes,
+                              ArrayList<Integer> vops,
+                              ArrayList<Integer> hops,
+                              ArrayList<Integer> eops) {
+    EgoGraph egoGraph = new EgoGraph(vtypes, vops, hops, eops);
+    return feedEgoGraph(egoGraph);
+  }
+
+  private EgoGraph feedEgoGraph(EgoGraph egoGraph) {
+    egoGraph.addVids(0, input);
     for (int i = 0; i < size(); ++i) {
       EntryRep entry = rep.results(i);
       RecordBatchRep batch = entry.value();
@@ -77,69 +125,9 @@ public class Value {
         RecordRep rec = batch.records(0);
         VertexRecordRep vrec = (VertexRecordRep)rec.record(new VertexRecordRep());
 
-        ArrayList<ByteBuffer> feats = new ArrayList<>();
-        int nFeats = d.getFeatTypes(egoGraph.getVtypeFromOpId(entry.opid())).size();
-        for (int featIdx = 0; featIdx < nFeats; ++featIdx) {
-          AttributeRecordRep attrs = vrec.attributesVector().get((short)featIdx);
-          ByteBuffer bb = attrs.valueBytesAsByteBuffer();
-          feats.add(bb);
-        }
-        egoGraph.addFeatures(entry.opid(), entry.vid(), feats);
+        egoGraph.addFeatures(entry.opid(), entry.vid(), vrec);
       }
     }
     return egoGraph;
-  }
-
-  public void read() throws UserException {
-    int size = rep.resultsLength();
-
-    for (int i = 0; i < size; ++i) {
-      EntryRep entry = rep.results(i);
-      StringBuilder builder = new StringBuilder(512);
-      builder.append("OpId: ");
-      builder.append(entry.opid());
-      builder.append("\t");
-      builder.append("Vid: ");
-      builder.append(entry.vid());
-      builder.append("\n");
-
-      RecordBatchRep batch = entry.value();
-      int batchSize = batch.recordsLength();
-      builder.append("----");
-      builder.append("batch size: ");
-      builder.append(batchSize);
-      builder.append("\n");
-
-      byte recordType = 0;
-      if (batchSize > 0) {
-        RecordRep record = batch.records(0);
-        recordType = record.recordType();
-      } else {
-        throw new UserException(ErrorCode.HTTP_ERROR, "RecordBatch is empty.");
-      }
-      if (recordType == 0) {
-        throw new UserException(ErrorCode.HTTP_ERROR, "recordType is unkown.");
-      }
-      if (recordType == 2) {
-        for (int j = 0; j < batchSize; ++j) {
-          RecordRep rec = batch.records(j);
-          builder.append("----");
-          EdgeRecordRep erec = (EdgeRecordRep)rec.record(new EdgeRecordRep());
-          builder.append(erec.srcId());
-          builder.append("\t");
-          builder.append(erec.dstId());
-          builder.append("\n");
-        }
-      } else {
-        for (int j = 0; j < batchSize; ++j) {
-          RecordRep rec = batch.records(j);
-          builder.append("----");
-          VertexRecordRep vrec = (VertexRecordRep)rec.record(new VertexRecordRep());
-          builder.append(vrec.vid());
-          builder.append("\n");
-        }
-      }
-      System.out.println(builder);
-    }
   }
 }

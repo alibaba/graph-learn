@@ -4,7 +4,7 @@ namespace dgs;
 
 table EntryRep {
   opid: uint8;
-  vid: int64;
+  vid: int32;
   value: RecordBatchRep;
 }
 

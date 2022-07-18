@@ -109,11 +109,11 @@ public class GraphImpl implements Graph {
   public CompletableFuture<Value> runAsync(Query query) throws UserException {
     CompletableFuture<Value> fut = new CompletableFuture<>();
     try {
-      int input = query.getPlan().root().getSource().next();
+      long input = query.getPlan().root().getSource().next();
       fut = client.run(query.getId(), input).thenApply(res -> {
         try {
-          Value value = new Value(res);
-          return value;
+         Value value = new Value(query, input, res);
+         return value;
         } catch (UserException e) {
           e.printStackTrace();
           return null;
@@ -128,18 +128,22 @@ public class GraphImpl implements Graph {
 
   public Value run(Query query) throws UserException {
     byte[] content = null;
+    Long input = null;
     try {
-      int input = query.getPlan().root().getSource().next();
+      input = query.getPlan().root().getSource().next();
       CompletableFuture<byte[]> fut = client.run(query.getId(), input);
       content = fut.join();
+      Value value = new Value(query, input, content);
+      return value;
     } catch (Exception e) {
       throw new UserException(ErrorCode.HTTP_ERROR, e.getMessage());
     }
-    Value value = new Value(content);
-    return value;
   }
 
   public Schema getSchema() throws UserException {
+    if (this.schema != null) {
+      return this.schema;
+    }
     byte[] content = null;
     try {
       CompletableFuture<byte[]> fut = client.getSchema();

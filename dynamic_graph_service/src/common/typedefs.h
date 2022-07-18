@@ -33,7 +33,6 @@ using WorkerId = uint32_t;
 using QueryId = uint32_t;
 using PartitionId = uint32_t;
 using EdgeTrackerId = uint32_t;
-using GraphValueType = uint32_t;  // EdgeType or VertexType
 using GlobalBackupId = uint32_t;
 using PartitionBackupId = uint32_t;
 
@@ -69,12 +68,8 @@ using Timestamp = uint64_t;
 using FrontierType = uint64_t;
 
 using QueryId = uint32_t;
-// FIXME(@goldenleaves): replace me later.
-using QueryDef = std::string;
-using QueryPriority = uint32_t;
-using FieldIndex = uint32_t;
-
-using QueryReqType = uint64_t;
+using QueryPriority = uint8_t;
+using FieldIndex = uint8_t;
 
 using ActorInstanceIdType = uint32_t;
 

@@ -20,7 +20,7 @@ table AttributeDefRep {
 }
 
 table VertexDefRep {
-  vtype:int16;
+  vtype:int32;
   name:string;
   attr_types:[int16];
 }
@@ -33,8 +33,8 @@ table EdgeDefRep {
 
 table EdgeRelationDefRep {
   etype:int16;
-  src_vtype:int16;
-  dst_vtype:int16;
+  src_vtype:int32;
+  dst_vtype:int32;
 }
 
 table SchemaRep {

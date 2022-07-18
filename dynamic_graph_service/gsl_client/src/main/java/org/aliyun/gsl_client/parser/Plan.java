@@ -1,8 +1,10 @@
 package org.aliyun.gsl_client.parser;
 
+import java.util.ArrayList;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.aliyun.graphlearn.PlanNode.ChildLink;
 import org.aliyun.gsl_client.exception.UserException;
 import org.aliyun.gsl_client.parser.optimizer.Rule;
 import org.aliyun.gsl_client.status.ErrorCode;
@@ -74,6 +76,22 @@ public class Plan {
       }
     }
     throw new UserException(ErrorCode.PAESE_ERROR, "Query has no node alias as " + alias);
+  }
+
+  public ArrayList<PlanNode> getEgoGraphNodes(String alias) throws UserException {
+    ArrayList<PlanNode> nodes = new ArrayList<>();
+    for (int i = 0; i < size(); ++i) {
+      PlanNode root = planNodes.get(i);
+      if (root.getAlias().equals(alias)) {
+        nodes.add(root);
+        while (root.getChildLinks().size() > 0) {
+          // For ego graph, only one child supported.
+          root = root.getChildLinks().get(0).node;
+          nodes.add(root);
+        }
+      }
+    }
+    return nodes;
   }
 
   public Vector<PlanNode> nodes() {

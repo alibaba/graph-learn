@@ -8,8 +8,12 @@ import org.aliyun.gsl_client.parser.optimizer.FusionRule;
 import org.aliyun.gsl_client.parser.optimizer.Rule;
 import org.aliyun.gsl_client.status.ErrorCode;
 
+/**
+ * Traversal is a walker on vertices and edges along with connected
+ * paths. Traversal supports sampling, getting properties on one or
+ * a batch of traversed vertices or edges.
+ */
 public class Traversal {
-  // private fields.
   public Context context;
   public PlanNode plan_node;
 
@@ -26,8 +30,12 @@ public class Traversal {
     return this;
   }
 
-  // Traverse to the Vertex along with the given path, which must be
-  // the out edge type of the upstream type of vertex.
+  /**
+   * Traverse to the destination Vertex along with the given edge.
+   * @param path, edge type begin current vertex type.
+   * @return Traversal, which is on the destination vertex along with the path.
+   * @throws UserException
+   */
   public Traversal outV(String path) throws UserException {
     // 1. new PlanNode add to plan
     Plan plan = context.getPlan();
@@ -47,8 +55,12 @@ public class Traversal {
     }
   }
 
-  // Traverse to the Edge along with the given path, which must be
-  // the out edge type of the upstream type of vertex.
+  /**
+   * Traverse to the Edge along with the given path.
+   * @param path, edge type begin current vertex type.
+   * @return Traversal, which is on the Edge along with the path.
+   * @throws UserException
+   */
   public Traversal outE(String path) throws UserException {
     Plan plan = context.getPlan();
     try {
@@ -64,30 +76,56 @@ public class Traversal {
     }
   }
 
+  /**
+   * Not implemented yet.
+   * @return
+   * @throws UserException
+   */
   public Traversal inV() throws UserException {
-    // TODO(@Seventeen17)
     return this;
   }
 
+  /**
+   * Not implemented yet.
+   * @return
+   * @throws UserException
+   */
   public Traversal outV() throws UserException {
-    // TODO(@Seventeen17)
     return this;
   }
 
-  // sample neighbor counts for each input node
+  /**
+   * Sampling fanout for current traversed object.
+   * @param fanout, neighbor count for each upstream vertex.
+   * @return Traversal itself.
+   * @throws UserException
+   */
   public Traversal sample(int fanout) throws UserException {
     this.plan_node.addParam("fanout", fanout);
     return this;
   }
 
-  // strategy for sampler.
+  /**
+   * Sampling strategy for current traversed object.
+   * @param strategy, sampling strategy.
+   *    "topk_by_timestamp": sampling by topk timestamp.
+   *    "edge_weight": sampling with distribution of edge weight.
+   *    "random": random sampling.
+   * @return Traversal itself.
+   * @throws UserException
+   */
   public Traversal by(String strategy) throws UserException {
-    // TODO(@Seventeen17): Map string strategy to int.
     this.plan_node.addParam("strategy", 0);
     return this;
   }
 
-  // Set property version for Vertex
+  /**
+   * Count of properties version for current traversed object.
+   * @param version, count of version.
+   * @param keys, filed filter for properties, not implemented yet.
+   * @return Traversal, not move.
+   * @throws UserException
+   */
   public Traversal properties(Integer version, String... keys) throws UserException {
     Plan plan = context.getPlan();
     try {
@@ -103,11 +141,21 @@ public class Traversal {
     }
   }
 
+  /**
+   * Add a name for each Traversal
+   * @param name(String), each Traversal should be unique in one query.
+   * @return Traversal itself.
+   */
   public Traversal alias(String name) {
     this.plan_node.setAlias(name);
     return this;
   }
 
+  /**
+   * End up the query, and generate a optimized query plan.
+   * @return Query
+   * @throws UserException
+   */
   public Query values() throws UserException {
     Plan plan = context.getPlan();
     try {
