@@ -56,6 +56,7 @@ import os
 import argparse
 import yaml
 
+from barrier import KafkaOffsetsFetcher, GlobalBarrierMonitor
 from grpc_service import CoordinatorGrpcService
 from http_service import CoordinatorHttpService
 from state_manager import SamplingStateManager, ServingStateManager
@@ -87,8 +88,31 @@ class Coordinator(object):
   def __init__(self, config_dict, grpc_port, http_port):
     assert (type(config_dict) == dict)
     self._meta = Meta()
-    self._sampling_mgr = SamplingStateManager(config_dict.get("sampling"), config_dict.get("meta_dir"))
-    self._serving_mgr = ServingStateManager(config_dict.get("serving"), config_dict.get("meta_dir"))
+    self._sampling_mgr = SamplingStateManager(
+      sampling_configs=config_dict.get("sampling"),
+      meta_root_dir=config_dict.get("meta_dir")
+    )
+    self._serving_mgr = ServingStateManager(
+      serving_configs=config_dict.get("serving"),
+      meta_root_dir=config_dict.get("meta_dir")
+    )
+    dl2spl_offsets_fetcher = KafkaOffsetsFetcher(
+      brokers=config_dict.get("dataloader").get("downstream").get("kafka").get("brokers"),
+      topic=config_dict.get("dataloader").get("downstream").get("kafka").get("topic"),
+      partitions=config_dict.get("dataloader").get("downstream").get("kafka").get("partitions")
+    )
+    spl2srv_offsets_fetcher = KafkaOffsetsFetcher(
+      brokers=config_dict.get("sampling").get("downstream").get("kafka").get("pub_kafka_servers"),
+      topic=config_dict.get("sampling").get("downstream").get("kafka").get("pub_kafka_topic"),
+      partitions=config_dict.get("sampling").get("downstream").get("kafka").get("pub_kafka_partition_num")
+    )
+    self._barrier_monitor = GlobalBarrierMonitor(
+      meta_root_dir=config_dict.get("meta_dir"),
+      dl2spl_fetcher=dl2spl_offsets_fetcher,
+      spl2srv_fetcher=spl2srv_offsets_fetcher,
+      sampling_checkpoint_mgr=self._sampling_mgr.checkpoint_manager,
+      serving_checkpoint_mgr=self._serving_mgr.checkpoint_manager
+    )
     self._grpc_service = CoordinatorGrpcService(
       port=grpc_port,
       sampling_manager=self._sampling_mgr,
@@ -99,9 +123,10 @@ class Coordinator(object):
     self._http_service = CoordinatorHttpService(
       port=http_port,
       grpc_server=self._grpc_service,
+      barrier_monitor=self._barrier_monitor,
       meta=self._meta,
       schema=schema_str,
-      dl_ds_info=config_dict.get("dataloader_downstream")
+      dl_ds_info=config_dict.get("dataloader").get("downstream")
     )
 
     self._http_server_t = threading.Thread(target=self._http_service.start, daemon=True)
@@ -220,15 +245,17 @@ def make_service_config(yaml_map):
   coord_configs = {
     "schema_file": schema_file,
     "meta_dir": meta_dir,
-    "dataloader_downstream": {
-      "kafka": {
-        "brokers": dl2spl_kafka_servers,
-        "topic": dl2spl_kafka_topic,
-        "partitions": dl2spl_kafka_partition_num,
-      },
-      "partition": {
-        "data_partition_num": num_sampling_store_partition,
-        "kafka_router": dl_pub_kafka_router
+    "dataloader": {
+      "downstream": {
+        "kafka": {
+          "brokers": dl2spl_kafka_servers,
+          "topic": dl2spl_kafka_topic,
+          "partitions": dl2spl_kafka_partition_num,
+        },
+        "partition": {
+          "data_partition_num": num_sampling_store_partition,
+          "kafka_router": dl_pub_kafka_router
+        }
       }
     },
     "sampling": {

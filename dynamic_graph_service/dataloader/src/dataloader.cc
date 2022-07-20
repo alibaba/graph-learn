@@ -89,7 +89,26 @@ void SetBarrier(const std::string& dgs_host,
                 const std::string& barrier_name,
                 uint32_t dl_count,
                 uint32_t dl_id) {
-  // TODO
+  CURL *curl;
+  std::string res;
+  curl = curl_easy_init();
+  if (curl) {
+    auto url = dgs_host + "/admin/barrier";
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    std::stringstream params;
+    params << "name=" << barrier_name << "&dl_count=" << dl_count << "&dl_id=" << dl_id;
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, params.str().c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &res);
+    auto s = curl_easy_perform(curl);
+    if (s == CURLE_OK && res == "Done") {
+      std::cout << "Set barrier " << barrier_name << " on dataloader " << dl_id << std::endl;
+    } else {
+      std::cerr << "Cannot set barrier " << barrier_name << " on dataloader " << dl_id << std::endl;
+    }
+  } else {
+    std::cerr << "Cannot init curl environment." << std::endl;
+  }
 }
 
 }  // namespace dataloader

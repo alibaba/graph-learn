@@ -25,6 +25,7 @@ from io import BytesIO
 
 class CoordinatorHttpHandler(BaseHTTPRequestHandler):
   grpc_server = None
+  barrier_monitor = None
   meta = None
   schema = ""
   schema_json = {}
@@ -48,22 +49,42 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
         res = self.__class__.meta.register(qid, msg)
         if res:
           self.__class__.grpc_server.init_query(msg)
-        response.write(b'HTTP RESPONSE: INSTALL SUCCESSFUL.\n')
+        response.write(b'Install Successfully.\n')
       except:
         qid[0] = None
         logging.info("Register query failed, with wrong query plan.")
-        response.write(b'HTTP RESPONSE: INSTALL FAILED.\n')
+        response.write(b'Install Failed.\n')
       self.wfile.write(response.getvalue())
     elif self.path.startswith("/admin/checkpoint"):
       self.send_response(200)
       self.end_headers()
       response = BytesIO()
       sampling_res, serving_res = self.__class__.grpc_server.start_checkpointing()
-      response.write(bytes("CREATING SAMPLING WORKER CHECKPOINT {}.\n"
-                           .format("SUCCESSFUL" if sampling_res else "FAILED")))
-      response.write(bytes("CREATING SERVING WORKER CHECKPOINT {}.\n"
-                           .format("SUCCESSFUL" if serving_res else "FAILED")))
+      response.write(bytes("Creating Sampling Worker Checkpoint {}.\n"
+                           .format("Successfully" if sampling_res else "Failed")))
+      response.write(bytes("Creating Serving Worker Checkpoint {}.\n"
+                           .format("Successfully" if serving_res else "Failed")))
       self.wfile.write(response.getvalue())
+    elif self.path.startswith("/admin/barrier"):
+      self.send_response(200)
+      self.end_headers()
+      barrier_name = None
+      dl_count = None
+      dl_id = None
+      params = body.decode("utf-8").split("&")
+      for param in params:
+        kv = param.split("=")
+        if kv[0] == "name":
+          barrier_name = kv[1]
+        elif kv[0] == "dl_count":
+          dl_count = kv[1]
+        elif kv[0] == "dl_id":
+          dl_id = kv[1]
+      if (barrier_name is None) or (dl_count is None) or (dl_id is None):
+        self.wfile.write(b'Wrong Params.\n')
+      else:
+        self.barrier_monitor.set_barrier_from_dataloader(barrier_name, dl_count, dl_id)
+        self.wfile.write(b'Done')
     else:
       self.send_response(400)
       self.end_headers()
@@ -83,6 +104,19 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
       self.send_response(200)
       self.end_headers()
       self.wfile.write(bytes(dl_init_json_str, "UTF-8"))
+    elif self.path.startswith("/admin/barrier-status"):
+      self.send_response(200)
+      self.end_headers()
+      param = self.path.split("?")[1]
+      kv = param.split("=")
+      if kv[0] == "name":
+        barrier_name = kv[1]
+        if self.barrier_monitor.check_ready(barrier_name):
+          self.wfile.write(b'Ready')
+        else:
+          self.wfile.write(b'Not Ready')
+      else:
+        self.wfile.write(b'Missing Barrier Name.\n')
     else:
       self.send_response(400)
       self.end_headers()
@@ -90,8 +124,9 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
 
 
 class CoordinatorHttpService(object):
-  def __init__(self, port, grpc_server, meta, schema, dl_ds_info):
+  def __init__(self, port, grpc_server, barrier_monitor, meta, schema, dl_ds_info):
     CoordinatorHttpHandler.grpc_server = grpc_server
+    CoordinatorHttpHandler.barrier_monitor = barrier_monitor
     CoordinatorHttpHandler.meta = meta
     CoordinatorHttpHandler.schema = schema
     CoordinatorHttpHandler.schema_json = json.loads(schema)

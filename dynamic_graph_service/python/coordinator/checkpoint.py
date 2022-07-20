@@ -149,6 +149,14 @@ class SubServiceCheckpointManager(object):
     self._pending_checkpoints = {}
     self._lock = threading.Lock()
 
+  def get_all_ready_offsets(self):
+    ready_dict = {}
+    with self._lock:
+      for worker_dict in self._ready_offset_dicts:
+        for pid, offset in worker_dict.items():
+          ready_dict[pid] = offset
+      return ready_dict
+
   def update_kafka_ready_offsets(self, worker_id, pb):
     with self._lock:
       ready_offset_dict = self._ready_offset_dicts[worker_id]

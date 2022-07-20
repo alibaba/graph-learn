@@ -26,11 +26,12 @@ using namespace dgs::dataloader::file;
 int main(int argc, char** argv) {
   bpo::options_description options("File Dataloader Options");
   options.add_options()
-  ("dgs-service-host", bpo::value<std::string>(), "dgs service host")
-  ("pattern-file", bpo::value<std::string>(), "pattern definition file of records")
-  ("data-file", bpo::value<std::string>(), "data file of records")
-  ("delimiter", bpo::value<char>()->default_value('&'), "delimiter of file contents")
-  ("batch-size", bpo::value<uint32_t>()->default_value(16), "output batch size");
+    ("dgs-service-host", bpo::value<std::string>(), "dgs service host")
+    ("pattern-file", bpo::value<std::string>(), "pattern definition file of records")
+    ("data-file", bpo::value<std::string>(), "data file of records")
+    ("delimiter", bpo::value<char>()->default_value('&'), "delimiter of file contents")
+    ("batch-size", bpo::value<uint32_t>()->default_value(16), "output batch size")
+    ("barrier", bpo::value<std::string>(), "set a barrier after loading");
   bpo::variables_map vm;
   try {
     bpo::store(bpo::parse_command_line(argc, argv, options), vm);
@@ -70,6 +71,10 @@ int main(int argc, char** argv) {
 
   FileLoader loader(pattern_file);
   loader.Load(data_file);
+
+  if (vm.count("barrier")) {
+    dgs::dataloader::SetBarrier(dgs_host, vm["barrier"].as<std::string>(), 1, 0);
+  }
 
   return 0;
 }

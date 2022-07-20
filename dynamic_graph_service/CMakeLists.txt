@@ -372,6 +372,7 @@ add_custom_command (TARGET package POST_BUILD
 
   COMMAND ${CMAKE_COMMAND} -E make_directory "${DGS_PACKAGE_PYTHON_DIR}/coordinator"
   COMMAND /bin/bash -c "cp -f ${DGS_PYTHON_DIR}/coordinator/__init__.py ${DGS_PACKAGE_PYTHON_DIR}/coordinator"
+  COMMAND /bin/bash -c "cp -f ${DGS_PYTHON_DIR}/coordinator/barrier.py ${DGS_PACKAGE_PYTHON_DIR}/coordinator"
   COMMAND /bin/bash -c "cp -f ${DGS_PYTHON_DIR}/coordinator/checkpoint.py ${DGS_PACKAGE_PYTHON_DIR}/coordinator"
   COMMAND /bin/bash -c "cp -f ${DGS_PYTHON_DIR}/coordinator/coordinator.py ${DGS_PACKAGE_PYTHON_DIR}/coordinator"
   COMMAND /bin/bash -c "cp -f ${DGS_PYTHON_DIR}/coordinator/grpc_service.py ${DGS_PACKAGE_PYTHON_DIR}/coordinator"
