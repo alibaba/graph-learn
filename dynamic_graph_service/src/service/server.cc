@@ -134,11 +134,11 @@ SamplingServer::SamplingServer()
     subs_table_(), sampling_refs_() {}
 
 void SamplingServer::Init(const InitInfo& init_info) {
+  Server::Init(init_info);
+
   // Init kafka producer pool
   KafkaProducerPool::GetInstance()->Init();
   LOG(INFO) << "Kafka Producer Pool is inited.";
-
-  Server::Init(init_info);
 
   // Create actor refs.
   BuildActorRefs<SamplingActor_ref>(sampling_refs_,

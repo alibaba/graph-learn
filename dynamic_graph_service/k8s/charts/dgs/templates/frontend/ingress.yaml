@@ -22,8 +22,6 @@ metadata:
         }
         rewrite ^/infer(.*)$ /serving/w$workerId$1 break;
       }
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-       internal;
 spec:
   rules:
     - host: {{ .Values.frontend.ingressHostName }}
