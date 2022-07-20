@@ -14,24 +14,19 @@
 # =============================================================================
 
 import argparse
-import http.client
 import json
 import os
 
 
 def install(dgs_host, json_file):
-  conn = http.client.HTTPSConnection(dgs_host)
-
-  headers = {"Content-type": 'application/json'}
+  url = dgs_host + "/admin/init"
 
   with open(json_file, 'r') as f:
     install_query_req = json.loads(f.read())
   content_data = json.dumps(install_query_req)
 
-  conn.request("POST", "/admin/init", content_data, headers)
-
-  res = conn.getresponse()
-  print(res.read().decode())
+  res = os.system("curl -X POST -H \"Content-Type: text/plain\" -d \'" + content_data + "\' " + url)
+  print(res)
 
 
 if __name__ == '__main__':
