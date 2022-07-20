@@ -25,8 +25,7 @@ def install(dgs_host, json_file):
     install_query_req = json.loads(f.read())
   content_data = json.dumps(install_query_req)
 
-  res = os.system("curl -X POST -H \"Content-Type: text/plain\" -d \'" + content_data + "\' " + url)
-  print(res)
+  os.system("curl -X POST -H \"Content-Type: text/plain\" -d \'" + content_data + "\' " + url)
 
 
 if __name__ == '__main__':
