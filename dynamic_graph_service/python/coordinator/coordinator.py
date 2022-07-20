@@ -58,7 +58,7 @@ import yaml
 
 from grpc_service import CoordinatorGrpcService
 from http_service import CoordinatorHttpService
-from manager import SamplingServiceManager, ServingServiceManager
+from state_manager import SamplingStateManager, ServingStateManager
 
 
 class Meta(object):
@@ -87,8 +87,8 @@ class Coordinator(object):
   def __init__(self, config_dict, grpc_port, http_port):
     assert (type(config_dict) == dict)
     self._meta = Meta()
-    self._sampling_mgr = SamplingServiceManager(config_dict.get("sampling"), config_dict.get("meta_dir"))
-    self._serving_mgr = ServingServiceManager(config_dict.get("serving"), config_dict.get("meta_dir"))
+    self._sampling_mgr = SamplingStateManager(config_dict.get("sampling"), config_dict.get("meta_dir"))
+    self._serving_mgr = ServingStateManager(config_dict.get("serving"), config_dict.get("meta_dir"))
     self._grpc_service = CoordinatorGrpcService(
       port=grpc_port,
       sampling_manager=self._sampling_mgr,

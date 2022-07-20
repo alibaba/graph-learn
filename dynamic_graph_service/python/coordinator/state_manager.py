@@ -85,14 +85,14 @@ class SubServiceStateManager(object):
     return True
 
 
-class SamplingServiceManager(SubServiceStateManager):
+class SamplingStateManager(SubServiceStateManager):
   def __init__(self, sampling_configs, meta_root_dir):
     num_workers = sampling_configs.get("worker_num")
     super().__init__(num_workers)
     self.name = "SamplingWorker"
     self.checkpoint_manager = SubServiceCheckpointManager(
       worker_num=num_workers,
-      meta_dir=os.path.join(meta_root_dir, self.name),
+      meta_dir=os.path.join(meta_root_dir, "checkpoint", self.name),
       kafka_pids_group=sampling_configs.get("upstream").get("sub_kafka_pids"),
       store_pids_group=sampling_configs.get("store_partition").get("managed_pids_group"),
       independent=False
@@ -107,14 +107,14 @@ class SamplingServiceManager(SubServiceStateManager):
     return composed_ip_list
 
 
-class ServingServiceManager(SubServiceStateManager):
+class ServingStateManager(SubServiceStateManager):
   def __init__(self, serving_configs, meta_root_dir):
     num_workers = serving_configs.get("worker_num")
     super().__init__(num_workers)
     self.name = "ServingWorker"
     self.checkpoint_manager = SubServiceCheckpointManager(
       worker_num=num_workers,
-      meta_dir=os.path.join(meta_root_dir, self.name),
+      meta_dir=os.path.join(meta_root_dir, "checkpoint", self.name),
       kafka_pids_group=serving_configs.get("upstream").get("sub_kafka_pids"),
       store_pids_group=serving_configs.get("store_partition").get("managed_pids_group"),
       independent=True

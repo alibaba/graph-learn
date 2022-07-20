@@ -8,7 +8,7 @@ for further consuming.
 ## Rules to Follow
 
 When you process you source data and produce them in your dataloader, you should follow these rules:
-- The graph schema from your data source must be consistent with dgs.
+- The graph schema from your source data must be consistent with dgs.
 - A produced kafka message must be a batch of graph updates, defined as a flatbuffers table [RecordBatchRep](https://github.com/alibaba/graph-learn/blob/master/dynamic_graph_service/fbs/record.fbs).
 - Graph updates and partitioned for sampling workers, all records in one batch must have the same data partition id.
 
