@@ -109,12 +109,12 @@ SamplePublisher::SamplePublisher() {
 
 void SamplePublisher::UpdateDSPublishInfo(
     uint32_t serving_worker_num,
-    const std::vector<uint32_t>& kafka_to_serving_worker_vec) {
+    const std::vector<uint32_t>& kafka_to_serving_wid) {
   assert(kafka_to_serving_worker_vec.size() == kafka_partition_num_);
   worker_records_.resize(serving_worker_num);
   worker_kafka_routers_.resize(serving_worker_num);
-  for (uint32_t i = 0; i < kafka_to_serving_worker_vec.size(); i++) {
-    auto wid = kafka_to_serving_worker_vec[i];
+  for (uint32_t i = 0; i < kafka_to_serving_wid.size(); i++) {
+    auto wid = kafka_to_serving_wid[i];
     worker_kafka_routers_[wid].kafka_pids.push_back(i);
   }
 }

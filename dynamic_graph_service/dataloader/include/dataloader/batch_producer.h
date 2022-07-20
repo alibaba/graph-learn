@@ -19,7 +19,6 @@ limitations under the License.
 #include "cppkafka/utils/buffered_producer.h"
 
 #include "dataloader/batch_builder.h"
-#include "dataloader/partitioner.h"
 #include "dataloader/options.h"
 
 namespace dgs {
@@ -40,39 +39,6 @@ public:
 private:
   cppkafka::BufferedProducer<std::string> producer_;
 };
-
-inline
-BatchProducer::BatchProducer()
-  : producer_(cppkafka::Configuration{
-    {"metadata.broker.list",  Options::GetInstance().FormatOutputKafkaBrokers()},
-    {"broker.address.family", "v4"}}) {
-  producer_.set_produce_failure_callback([] (const cppkafka::Message& msg) {
-    return false;
-  });
-  producer_.set_max_number_retries(0);
-}
-
-inline
-void BatchProducer::SyncProduce(const cppkafka::MessageBuilder& builder) {
-  int retry_ms = 1;
-  while (true) {
-    try {
-      producer_.sync_produce(builder);
-      break;
-    } catch (...) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(retry_ms));
-      retry_ms = std::min(1000, retry_ms * 2);
-    }
-  }
-}
-
-inline
-void BatchProducer::SyncProduce(const BatchBuilder& builder) {
-  cppkafka::MessageBuilder msg_builder(Options::GetInstance().output_kafka_topic);
-  msg_builder.partition(static_cast<int32_t>(Partitioner::GetInstance().GetKafkaPartitionId(builder.GetPartitionId())));
-  msg_builder.payload({builder.GetBufferPointer(), builder.GetBufferSize()});
-  SyncProduce(msg_builder);
-}
 
 }  // namespace dataloader
 }  // namespace dgs

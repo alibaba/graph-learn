@@ -56,7 +56,7 @@ struct SamplingInitPayload : public AdminRequest::Payload {
       uint32_t sampling_partition_num,
       const std::vector<ShardId>& sampling_partition_routing_info,
       uint32_t serving_worker_num,
-      const std::vector<uint32_t>& kafka_to_serving_worker_vec)
+      const std::vector<uint32_t>& kafka_to_serving_wid)
     : AdminRequest::Payload(), buf_(std::move(buf)),
       rep_(GetMutableInstallQueryRequestRep(buf_.get_write())),
       sample_store_(sample_store),
@@ -66,7 +66,7 @@ struct SamplingInitPayload : public AdminRequest::Payload {
       sampling_partition_num_(sampling_partition_num),
       sampling_partition_routing_info_(sampling_partition_routing_info),
       serving_worker_num_(serving_worker_num),
-      kafka_to_serving_worker_vec_(kafka_to_serving_worker_vec) {
+      kafka_to_serving_wid_(kafka_to_serving_wid) {
   }
 
   ~SamplingInitPayload() override = default;
@@ -111,8 +111,8 @@ struct SamplingInitPayload : public AdminRequest::Payload {
     return serving_worker_num_;
   }
 
-  const std::vector<uint32_t>& kafka_to_serving_worker_vec() const {
-    return kafka_to_serving_worker_vec_;
+  const std::vector<uint32_t>& kafka_to_serving_wid_vec() const {
+    return kafka_to_serving_wid_;
   }
 
 private:
@@ -125,7 +125,7 @@ private:
   const uint32_t                  sampling_partition_num_;
   const std::vector<ShardId>      sampling_partition_routing_info_;
   const uint32_t                  serving_worker_num_;
-  const std::vector<uint32_t>     kafka_to_serving_worker_vec_;
+  const std::vector<uint32_t>     kafka_to_serving_wid_;
 };
 
 struct ServingInitPayload : public AdminRequest::Payload {

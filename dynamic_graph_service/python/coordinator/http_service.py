@@ -25,15 +25,17 @@ from io import BytesIO
 
 class CoordinatorHttpHandler(BaseHTTPRequestHandler):
   grpc_server = None
-  schema_file = ""
   meta = None
+  schema = ""
+  schema_json = {}
+  dl_ds_info = {}
 
   def do_POST(self):
     if self.__class__.grpc_server is None:
       logging.error("Grpc server is not set successfully.\n")
     content_length = int(self.headers['Content-Length'])
     body = self.rfile.read(content_length)
-    if self.path == "/administration/init/":
+    if self.path.startswith("/admin/init"):
       self.send_response(200)
       self.end_headers()
       response = BytesIO()
@@ -47,16 +49,12 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
         if res:
           self.__class__.grpc_server.init_query(msg)
         response.write(b'HTTP RESPONSE: INSTALL SUCCESSFUL.\n')
-        # logging.info("Http service is waiting for Service READY...")
-        # self.__class__.grpc_server.wait_for_ready()
-        # logging.info("Service is READY:)")
       except:
         qid[0] = None
         logging.info("Register query failed, with wrong query plan.")
         response.write(b'HTTP RESPONSE: INSTALL FAILED.\n')
-      # response.write(str.encode(str(qid[0])))
       self.wfile.write(response.getvalue())
-    elif self.path == "/administration/checkpoint/":
+    elif self.path.startswith("/admin/checkpoint"):
       self.send_response(200)
       self.end_headers()
       response = BytesIO()
@@ -66,29 +64,38 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
       response.write(bytes("CREATING SERVING WORKER CHECKPOINT {}.\n"
                            .format("SUCCESSFUL" if serving_res else "FAILED")))
       self.wfile.write(response.getvalue())
+    else:
+      self.send_response(400)
+      self.end_headers()
+      self.wfile.write(b'Unsupported POST Request.\n')
 
   def do_GET(self):
-    response = BytesIO()
-    path = self.path.split('?')
-    if self.path == "/administration/schema/":
+    if self.path.startswith("/admin/schema"):
       self.send_response(200)
       self.end_headers()
-      with open(self.schema_file, "rb") as f:
-        try:
-          self.wfile.write(f.read())
-          return
-        except:
-          logging.error("Parse schema file failed....")
-    self.send_response(400)
-    response.write(b'HTTP RESPONSE: GET FAILED.\n')
-    self.wfile.write(response.getvalue())
+      self.wfile.write(bytes(self.schema))
+    elif self.path.startswith("/admin/dataloader-init-info"):
+      dl_init_info = {
+        "downstream": self.dl_ds_info,
+        "schema": self.schema_json
+      }
+      dl_init_json_str = json.dumps(dl_init_info)
+      self.send_response(200)
+      self.end_headers()
+      self.wfile.write(bytes(dl_init_json_str, "UTF-8"))
+    else:
+      self.send_response(400)
+      self.end_headers()
+      self.wfile.write(b'Unsupported GET Request.\n')
 
 
 class CoordinatorHttpService(object):
-  def __init__(self, configs, grpc_server, meta, port=8080):
+  def __init__(self, port, grpc_server, meta, schema, dl_ds_info):
     CoordinatorHttpHandler.grpc_server = grpc_server
     CoordinatorHttpHandler.meta = meta
-    CoordinatorHttpHandler.schema_file = configs.get("schema_file")
+    CoordinatorHttpHandler.schema = schema
+    CoordinatorHttpHandler.schema_json = json.loads(schema)
+    CoordinatorHttpHandler.dl_ds_info = dl_ds_info
     self._port = port
     self._server = HTTPServer(('', self._port), CoordinatorHttpHandler)
 

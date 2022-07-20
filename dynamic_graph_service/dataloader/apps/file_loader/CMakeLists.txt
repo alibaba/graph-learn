@@ -12,33 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-add_app (file_data_loading_service
-  file_data_loading_service.cc
-  core/group_producer.cc
-  core/group_producer.h
-  core/loader.cc
-  core/loader.h
-  core/line_processer.cc
-  core/line_processer.h)
-
-# packaging file data loading service
-set (FILE_DL_PACKAGE_DIR file_dl_package)
-set (FILE_DL_PACKAGE_BIN_DIR ${FILE_DL_PACKAGE_DIR}/bin)
-set (FILE_DL_PACKAGE_LIB_DIR ${FILE_DL_PACKAGE_DIR}/lib)
-set (FILE_DL_PACKAGE_FBS_DIR ${FILE_DL_PACKAGE_DIR}/fbs)
-add_custom_target (file_dl_package)
-add_custom_command (TARGET file_dl_package POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${FILE_DL_PACKAGE_BIN_DIR}
-  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:file_data_loading_service> "${FILE_DL_PACKAGE_BIN_DIR}"
-  COMMAND /bin/bash -c "cp -f ${CMAKE_CURRENT_SOURCE_DIR}/scripts/dblp_preprossing.py ${FILE_DL_PACKAGE_BIN_DIR}"
-
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${FILE_DL_PACKAGE_LIB_DIR}
-  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:dataloader> "${FILE_DL_PACKAGE_LIB_DIR}"
-
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${FILE_DL_PACKAGE_FBS_DIR}
-  COMMAND /bin/bash -c "cp -f ${DGS_PROJECT_DIR}/fbs/*.fbs ${FILE_DL_PACKAGE_FBS_DIR}"
-
-  COMMAND /bin/bash -c "tar zcvf file-dataloader-built.tgz ${FILE_DL_PACKAGE_DIR}"
-
-  WORKING_DIRECTORY ${DataLoader_BINARY_DIR}
-  VERBATIM)
+add_app (file_dataloader
+  file_dataloader.cc
+  loader.cc
+  loader.h)

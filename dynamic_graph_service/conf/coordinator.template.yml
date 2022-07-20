@@ -2,9 +2,6 @@ schema-file: "../../conf/schema.e2e.json"
 
 meta-dir: "./coordinator_meta"
 
-data-loading:
-  worker-num: 1
-
 sampling:
   worker-num: 2
   actor-local-shard-num: 4

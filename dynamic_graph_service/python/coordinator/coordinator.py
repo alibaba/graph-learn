@@ -16,7 +16,6 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from cmath import log
 
 """ Packages dependency:
 Run the following command first.
@@ -56,8 +55,10 @@ import threading
 import os
 import argparse
 import yaml
+
 from grpc_service import CoordinatorGrpcService
 from http_service import CoordinatorHttpService
+from state_manager import SamplingStateManager, ServingStateManager
 
 
 class Meta(object):
@@ -86,8 +87,22 @@ class Coordinator(object):
   def __init__(self, config_dict, grpc_port, http_port):
     assert (type(config_dict) == dict)
     self._meta = Meta()
-    self._grpc_service = CoordinatorGrpcService(config_dict, grpc_port)
-    self._http_service = CoordinatorHttpService(config_dict, self._grpc_service, self._meta, http_port)
+    self._sampling_mgr = SamplingStateManager(config_dict.get("sampling"), config_dict.get("meta_dir"))
+    self._serving_mgr = ServingStateManager(config_dict.get("serving"), config_dict.get("meta_dir"))
+    self._grpc_service = CoordinatorGrpcService(
+      port=grpc_port,
+      sampling_manager=self._sampling_mgr,
+      serving_manager=self._serving_mgr
+    )
+    with open(config_dict.get("schema_file"), "rb") as f:
+      schema_str = f.read()
+    self._http_service = CoordinatorHttpService(
+      port=http_port,
+      grpc_server=self._grpc_service,
+      meta=self._meta,
+      schema=schema_str,
+      dl_ds_info=config_dict.get("dataloader_downstream")
+    )
 
     self._http_server_t = threading.Thread(target=self._http_service.start, daemon=True)
     self._grpc_server_t = threading.Thread(target=self._grpc_service.start, daemon=True)
@@ -103,27 +118,24 @@ class Coordinator(object):
     self._http_service.stop()
 
 
-def make_service_config(yaml_config):
-  schema_file = yaml_config.get("schema-file", "")
-  meta_dir = yaml_config.get("meta-dir", "./coordinator_meta")
+def make_service_config(yaml_map):
+  schema_file = yaml_map.get("schema-file", "")
+  meta_dir = yaml_map.get("meta-dir", "./coordinator_meta")
 
-  data_loading_yaml_map = yaml_config.get("data-loading", {})
-  num_data_loader = data_loading_yaml_map.get("worker-num", 1)
-
-  sampling_yaml_map = yaml_config.get("sampling", {})
+  sampling_yaml_map = yaml_map.get("sampling", {})
   num_sampling_workers = sampling_yaml_map.get("worker-num", 1)
   sampling_actor_local_shard_num = sampling_yaml_map.get("actor-local-shard-num", 1)
   num_sampling_store_partition = sampling_yaml_map.get("store-partitions", 1)
   sampling_store_partition_strategy = sampling_yaml_map.get("store-partition-strategy", "hash")
   serving_worker_partition_strategy = sampling_yaml_map.get("downstream-partition-strategy", "hash")
 
-  serving_yaml_map = yaml_config.get("serving", {})
+  serving_yaml_map = yaml_map.get("serving", {})
   num_serving_workers = serving_yaml_map.get("worker-num", 1)
   serving_actor_local_shard_num = serving_yaml_map.get("actor-local-shard-num", 1)
   num_serving_store_partition = serving_yaml_map.get("store-partitions", 1)
   serving_store_partition_strategy = serving_yaml_map.get("store-partition-strategy", "hash")
 
-  kafka_yaml_map = yaml_config.get("kafka", {})
+  kafka_yaml_map = yaml_map.get("kafka", {})
 
   dl2spl_yaml_map = kafka_yaml_map.get("dl2spl", {})
   dl2spl_kafka_servers = dl2spl_yaml_map.get("servers", ["localhost:9092"])
@@ -187,41 +199,37 @@ def make_service_config(yaml_config):
   for wid, pids in serving_sub_kafka_pids.items():
     logging.info("worker id: {}, kafka pids: {}".format(wid, pids))
 
-  dataloader_pub_partition_vec = [0] * num_sampling_store_partition
+  dl_pub_kafka_router = [0] * num_sampling_store_partition
   for wid, pids in sampling_store_pids_group.items():
     size = len(sampling_sub_kafka_pids[wid])
     for i in range(len(pids)):
       kafka_pid = sampling_sub_kafka_pids[wid][i % size]
-      dataloader_pub_partition_vec[pids[i]] = kafka_pid
+      dl_pub_kafka_router[pids[i]] = kafka_pid
 
   logging.info("---  mapping vector: sampling worker store partition -> dl2spl kafka partition  ---")
-  logging.info("{}".format(dataloader_pub_partition_vec))
+  logging.info("{}".format(dl_pub_kafka_router))
 
-  sampling_pub_partition_vec = [0] * spl2srv_kafka_partition_num
+  sampling_pub_kafka_router = [0] * spl2srv_kafka_partition_num
   for wid, kafka_pids in serving_sub_kafka_pids.items():
     for i in range(len(kafka_pids)):
-      sampling_pub_partition_vec[kafka_pids[i]] = wid
+      sampling_pub_kafka_router[kafka_pids[i]] = wid
 
   logging.info("---  mapping vector: spl2srv kafka partition -> serving worker id  ---")
-  logging.info("{}".format(sampling_pub_partition_vec))
+  logging.info("{}".format(sampling_pub_kafka_router))
 
-  configs = {
+  coord_configs = {
     "schema_file": schema_file,
     "meta_dir": meta_dir,
-    "data_loading": {
-      "worker_num": num_data_loader,
-      "downstream": {
-        "kafka": {
-          "pub_kafka_servers": dl2spl_kafka_servers,
-          "pub_kafka_topic": dl2spl_kafka_topic,
-          "pub_kafka_partition_num": dl2spl_kafka_partition_num,
-        },
-        "partition": {
-          "store_partition_strategy": sampling_store_partition_strategy,
-          "store_partition_num": num_sampling_store_partition,
-          "store_to_kafka_pid_vec": dataloader_pub_partition_vec
-        }
+    "dataloader_downstream": {
+      "kafka": {
+        "brokers": dl2spl_kafka_servers,
+        "topic": dl2spl_kafka_topic,
+        "partitions": dl2spl_kafka_partition_num,
       },
+      "partition": {
+        "data_partition_num": num_sampling_store_partition,
+        "kafka_router": dl_pub_kafka_router
+      }
     },
     "sampling": {
       "worker_num": num_sampling_workers,
@@ -246,7 +254,7 @@ def make_service_config(yaml_config):
         "partition": {
           "worker_partition_strategy": serving_worker_partition_strategy,
           "worker_partition_num": num_serving_workers,
-          "kafka_to_worker_pid_vec": sampling_pub_partition_vec
+          "kafka_to_wid": sampling_pub_kafka_router
         }
       }
     },
@@ -267,7 +275,7 @@ def make_service_config(yaml_config):
     }
   }
 
-  return configs
+  return coord_configs
 
 
 if __name__ == '__main__':

@@ -26,5 +26,4 @@ function (add_app target)
 endfunction ()
 
 add_subdirectory (file_loader)
-add_subdirectory (graphscope_loader)
 add_subdirectory (output_viewer)

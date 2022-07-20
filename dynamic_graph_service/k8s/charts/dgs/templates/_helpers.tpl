@@ -43,10 +43,6 @@ If release name contains chart name it will be used as a full name.
 {{- printf "%s-0.%s-headless.%s.svc.%s" (include "dgs.coordinator.name" .) (include "dgs.coordinator.name" .) .Release.Namespace .Values.clusterDomain -}}
 {{- end -}}
 
-{{- define "dgs.dataloader.name" -}}
-{{- printf "%s-%s" (include "dgs.fullname" .) "dataloader" | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-
 {{- define "dgs.sampling.name" -}}
 {{- printf "%s-%s" (include "dgs.fullname" .) "sampling" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}

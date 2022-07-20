@@ -21,8 +21,6 @@ limitations under the License.
 namespace dgs {
 namespace dataloader {
 
-using DataStreamOffset = int64_t;
-
 using PartitionId = uint32_t;
 
 using VertexId = int64_t;
@@ -31,7 +29,6 @@ using EdgeType = int16_t;
 using AttributeType = int16_t;
 
 enum AttributeValueType : uint8_t {
-  UNSPECIFIED = 0,
   BOOL = 1,
   CHAR = 2,
   INT16 = 3,

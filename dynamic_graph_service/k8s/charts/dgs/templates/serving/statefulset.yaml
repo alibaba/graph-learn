@@ -1,4 +1,4 @@
-{{- range $i, $e := until (.Values.serving.podCount | int) }}
+{{- range $i, $e := until (.Values.serving.workerNum | int) }}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -61,11 +61,11 @@ spec:
         {{- include "common.tplvalues.render" (dict "value" $.Values.serving.tolerations "context" $) | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "dgs.serviceAccountName" $ }}
-      {{- include "dgs.images.pullSecrets" (dict "imageRoot" $.Values.image.dgs) | nindent 6 }}
+      {{- include "dgs.images.pullSecrets" (dict "imageRoot" $.Values.image) | nindent 6 }}
       initContainers:
         - name: serving-{{ $i }}-init
-          image: {{ include "dgs.images.image" (dict "imageRoot" $.Values.image.dgs) }}
-          imagePullPolicy: {{ $.Values.image.dgs.pullPolicy | quote }}
+          image: {{ include "dgs.images.image" (dict "imageRoot" $.Values.image) }}
+          imagePullPolicy: {{ $.Values.image.pullPolicy | quote }}
           command:
             - /bin/bash
             - -c
@@ -83,8 +83,8 @@ spec:
               mountPath: {{ $.Values.serving.persistence.mountPath }}
       containers:
         - name: serving-{{ $i }}
-          image: {{ include "dgs.images.image" (dict "imageRoot" $.Values.image.dgs) }}
-          imagePullPolicy: {{ $.Values.image.dgs.pullPolicy | quote }}
+          image: {{ include "dgs.images.image" (dict "imageRoot" $.Values.image) }}
+          imagePullPolicy: {{ $.Values.image.pullPolicy | quote }}
           command:
             - /bin/bash
             - -c

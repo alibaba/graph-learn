@@ -13,47 +13,45 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef FILE_LOADER_LINE_PROCESSOR_H_
-#define FILE_LOADER_LINE_PROCESSOR_H_
+#ifndef FILE_LOADER_LOADER_H_
+#define FILE_LOADER_LOADER_H_
 
+#include "dataloader/group_producer.h"
 #include "dataloader/schema.h"
 #include "dataloader/typedefs.h"
-
-#include "group_producer.h"
 
 namespace dgs {
 namespace dataloader {
 namespace file {
 
 extern char delimiter;
+extern uint32_t batch_size;
 
-class LineProcessor {
-  using LineProcessFunc = std::function<void(std::string*, size_t, GroupProducer&)>;
-  using AttrParseFunc = std::function<AttrInfo(std::string&&)>;
+class FileLoader {
 public:
-  static LineProcessor& GetInstance() {
-    static LineProcessor instance;
-    return instance;
-  }
+  explicit FileLoader(const std::string& pattern_file);
+  ~FileLoader() = default;
 
-  void Init(const std::string& pattern_file);
-
-  void Process(const std::string& line, GroupProducer& p);
+  void Load(const std::string& file_path);
 
 private:
-  LineProcessor() = default;
+  using LineProcessFunc = std::function<void(std::string*, size_t, GroupProducer&)>;
+  using AttrParseFunc = std::function<AttrInfo(std::string&&)>;
+
+  static std::vector<AttrParseFunc> GetAttrParsers(std::string* attr_pattern, size_t n);
 
   void AddVertexPattern(std::vector<std::string>&& line_patterns);
   void AddEdgePattern(std::vector<std::string>&& line_patterns);
 
-  static std::vector<AttrParseFunc> GetAttrParsers(std::string* attr_pattern, size_t n);
+  void ProcessLine(const std::string& line);
 
 private:
   std::unordered_map<std::string, LineProcessFunc> processors_;
+  GroupProducer group_producer_;
 };
 
 }  // namespace file
 }  // namespace dataloader
 }  // namespace dgs
 
-#endif // FILE_LOADER_LINE_PROCESSOR_H_
+#endif // FILE_LOADER_LOADER_H_

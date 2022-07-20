@@ -15,7 +15,7 @@ metadata:
   {{- end }}
 spec:
   podManagementPolicy: Parallel
-  replicas: {{ .Values.sampling.replicaCount }}
+  replicas: {{ .Values.sampling.workerNum }}
   selector:
     matchLabels:
       {{- include "dgs.selectorLabels" . | nindent 6 }}
@@ -56,11 +56,11 @@ spec:
         {{- include "common.tplvalues.render" (dict "value" .Values.sampling.tolerations "context" $) | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "dgs.serviceAccountName" . }}
-      {{- include "dgs.images.pullSecrets" (dict "imageRoot" .Values.image.dgs) | nindent 6 }}
+      {{- include "dgs.images.pullSecrets" (dict "imageRoot" .Values.image) | nindent 6 }}
       initContainers:
         - name: sampling-init
-          image: {{ include "dgs.images.image" (dict "imageRoot" .Values.image.dgs) }}
-          imagePullPolicy: {{ .Values.image.dgs.pullPolicy | quote }}
+          image: {{ include "dgs.images.image" (dict "imageRoot" .Values.image) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
           command:
             - /bin/bash
             - -c
@@ -79,8 +79,8 @@ spec:
               mountPath: {{ .Values.sampling.persistence.mountPath }}
       containers:
         - name: sampling
-          image: {{ include "dgs.images.image" (dict "imageRoot" .Values.image.dgs) }}
-          imagePullPolicy: {{ .Values.image.dgs.pullPolicy | quote }}
+          image: {{ include "dgs.images.image" (dict "imageRoot" .Values.image) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
           command:
             - /bin/bash
             - -c

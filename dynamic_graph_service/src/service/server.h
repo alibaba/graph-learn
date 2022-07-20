@@ -32,7 +32,7 @@ class Server {
 public:
   struct UpstreamInfo;
   struct DownstreamKafkaInfo;
-  struct DownstreamWorkerPartitionInfo;
+  struct DownstreamPartitionInfo;
   struct StorePartitionInfo;
   struct CheckpointInfo;
   struct InitInfo;
@@ -45,8 +45,6 @@ public:
   virtual void Finalize();
 
   virtual void Start();
-
-  virtual void BlockUntilReady();
 
   virtual void Pause() = 0;
   virtual void Resume() = 0;
@@ -100,7 +98,7 @@ public:
   void Init(const InitInfo& init_info) final;
   void Finalize() final;
 
-  void BlockUntilReady() final;
+  void Start() final;
 
   void Pause() final {}
   void Resume() final {}
@@ -134,14 +132,14 @@ struct Server::DownstreamKafkaInfo {
                       uint32_t pub_kafka_partition_num);
 };
 
-struct Server::DownstreamWorkerPartitionInfo {
+struct Server::DownstreamPartitionInfo {
   std::string worker_partition_strategy;
   uint32_t    worker_partition_num;
-  std::vector<uint32_t> kafka_to_worker_pid_vec;
+  std::vector<uint32_t> kafka_to_wid;
 
-  DownstreamWorkerPartitionInfo(const std::string& worker_partition_strategy,
-                                uint32_t worker_partition_num,
-                                std::vector<uint32_t>&& kafka_to_worker_pid_vec);
+  DownstreamPartitionInfo(const std::string& worker_partition_strategy,
+                          uint32_t worker_partition_num,
+                          std::vector<uint32_t>&& kafka_to_wid);
 };
 
 struct Server::StorePartitionInfo {
@@ -179,11 +177,11 @@ struct Server::InitInfo {
   uint32_t    num_workers;
   std::string query_plan;
   uint32_t    num_local_actor_shards;
-  StorePartitionInfo              store_partition_info;
-  CheckpointInfo                  checkpoint_info;
-  std::unique_ptr<UpstreamInfo>   upstream_info;
-  std::unique_ptr<DownstreamKafkaInfo> downstream_kafka_info;
-  std::unique_ptr<DownstreamWorkerPartitionInfo> downstream_partition_info;
+  StorePartitionInfo                       store_partition_info;
+  CheckpointInfo                           checkpoint_info;
+  std::unique_ptr<UpstreamInfo>            upstream_info;
+  std::unique_ptr<DownstreamKafkaInfo>     downstream_kafka_info;
+  std::unique_ptr<DownstreamPartitionInfo> downstream_partition_info;
 
   InitInfo(WorkerType worker_type,
            uint32_t worker_id,
@@ -194,7 +192,7 @@ struct Server::InitInfo {
            CheckpointInfo&& checkpoint_info,
            std::unique_ptr<UpstreamInfo>&& upstream_info,
            std::unique_ptr<DownstreamKafkaInfo>&& ds_kafka_info,
-           std::unique_ptr<DownstreamWorkerPartitionInfo>&& ds_partition_info);
+           std::unique_ptr<DownstreamPartitionInfo>&& ds_partition_info);
 };
 
 }  // namespace dgs

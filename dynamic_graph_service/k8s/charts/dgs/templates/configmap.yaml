@@ -27,21 +27,18 @@ data:
 
     meta-dir: "{{ .Values.coordinator.persistence.mountPath }}/coordinator_meta"
 
-    data-loading:
-      worker-num: {{ int .Values.dataloader.replicaCount }}
-
     sampling:
-      worker-num: {{ int .Values.sampling.replicaCount }}
+      worker-num: {{ int .Values.sampling.workerNum }}
       actor-local-shard-num: {{ int .Values.sampling.actorLocalShardNum }}
-      store-partitions: {{ int .Values.sampling.sampleStore.totalPartitions }}
-      store-partition-strategy: {{ .Values.sampling.sampleStore.partitionStrategy | quote }}
-      downstream-partition-strategy: {{ .Values.sampling.downstreamPartitionStrategy | quote }}
+      store-partitions: {{ int .Values.sampling.dataPartitionNum }}
+      store-partition-strategy: "hash"
+      downstream-partition-strategy: "hash"
 
     serving:
-      worker-num: {{ int .Values.serving.podCount }}
+      worker-num: {{ int .Values.serving.workerNum }}
       actor-local-shard-num: {{ int .Values.serving.actorLocalShardNum }}
-      store-partitions: {{ int .Values.serving.sampleStore.totalPartitions }}
-      store-partition-strategy: {{ .Values.serving.sampleStore.partitionStrategy | quote }}
+      store-partitions: {{ int .Values.serving.dataPartitionNum }}
+      store-partition-strategy: "hash"
 
     kafka:
       dl2spl:
@@ -58,36 +55,6 @@ data:
           {{- end }}
         topic: {{ .Values.kafka.spl2srv.topic | quote }}
         partitions: {{ int .Values.kafka.spl2srv.partitions }}
-
-  # Set dataloader option file
-  dataloader.cnf: |-
-    fbs-file-dir: "{{ .Values.dataloader.workdir }}/package/fbs"
-    schema-file: "{{ .Values.configPath }}/schema.json"
-
-    coord-ipaddr: "{{ $coordHost }}:{{ $coordRpcPort }}"
-    coord-connect-timeout-sec: {{ int .Values.coordinator.connectTimeoutSeconds }}
-    coord-heartbeat-interval-sec: {{ int .Values.coordinator.heartbeatIntervalSeconds }}
-
-    output-batch-size: {{ int .Values.dataloader.outputBatchSize }}
-
-    {{- if (eq "graphscope" (lower .Values.dataloader.sourceType)) }}
-    graphscope:
-      log-polling:
-        kafka-brokers:
-          {{- range .Values.dataloader.graphscope.logPolling.kafkaBrokers }}
-          - {{ . | quote }}
-          {{- end }}
-        kafka-topic: {{ .Values.dataloader.graphscope.logPolling.kafkaTopic | quote }}
-        kafka-partition-num: {{ int .Values.dataloader.graphscope.logPolling.kafkaPartitions }}
-        meta-dir: "{{ .Values.dataloader.persistence.mountPath }}/polling_offsets"
-        offset-persist-ms: {{ int .Values.dataloader.graphscope.logPolling.offsetPersistIntervalMs }}
-        retry-ms: {{ int .Values.dataloader.graphscope.logPolling.retryIntervalMs }}
-        flush-ms: {{ int .Values.dataloader.graphscope.logPolling.flushIntervalMs }}
-      bulk-loading:
-        thread-num: {{ int .Values.dataloader.graphscope.bulkLoading.threadNum }}
-        meta-dir: "{{ .Values.dataloader.persistence.mountPath }}/bulk_load_flags"
-        checkpoint-restore-dir: "{{ .Values.dataloader.workdir }}/restored"
-    {{- end }}
 
   # Set sampling worker option file
   sampling.cnf: |-

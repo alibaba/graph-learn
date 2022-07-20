@@ -19,21 +19,18 @@ limitations under the License.
 #include <unordered_map>
 #include <vector>
 
+#include "boost/property_tree/json_parser.hpp"
+#include "boost/property_tree/ptree.hpp"
+
 #include "dataloader/typedefs.h"
-#include "dataloader/fbs/schema_generated.h"
 
 namespace dgs {
 namespace dataloader {
 
 class AttributeDef {
 public:
-  explicit AttributeDef(const AttributeDefRep* rep);
+  explicit AttributeDef(const boost::property_tree::ptree& node);
   ~AttributeDef() = default;
-
-  AttributeDef(const AttributeDef&) = default;
-  AttributeDef& operator=(const AttributeDef&) = default;
-  AttributeDef(AttributeDef&&) = default;
-  AttributeDef& operator=(AttributeDef&&) = default;
 
   AttributeType Type() const {
     return type_;
@@ -55,7 +52,7 @@ private:
 
 class VertexDef {
 public:
-  explicit VertexDef(const VertexDefRep* rep);
+  explicit VertexDef(const boost::property_tree::ptree& node);
   ~VertexDef() = default;
 
   VertexType Type() const {
@@ -78,7 +75,7 @@ private:
 
 class EdgeDef {
 public:
-  explicit EdgeDef(const EdgeDefRep* rep);
+  explicit EdgeDef(const boost::property_tree::ptree& node);
   ~EdgeDef() = default;
 
   EdgeType Type() const {
@@ -101,7 +98,7 @@ private:
 
 class EdgeRelationDef {
 public:
-  explicit EdgeRelationDef(const EdgeRelationDefRep* rep);
+  explicit EdgeRelationDef(const boost::property_tree::ptree& node);
   ~EdgeRelationDef() = default;
 
   EdgeType Type() const {
@@ -124,15 +121,13 @@ private:
 
 class Schema {
 public:
-  static Schema& GetInstance() {
+  static Schema& Get() {
     static Schema instance;
     return instance;
   }
 
-  bool Init();
-  bool Init(const std::string& schema_json_file, const std::string& fbs_file,
-            const std::vector<std::string>& fbs_include_paths);
-  void Init(const SchemaRep* rep);
+  void Init(const std::string& json);
+  void Init(const boost::property_tree::ptree& node);
 
   size_t AttrDefNum() const {
     return type_to_attr_def_.size();

@@ -1,4 +1,4 @@
-{{- range $i, $e := until (.Values.serving.podCount | int) }}
+{{- range $i, $e := until (.Values.serving.workerNum | int) }}
 ---
 apiVersion: v1
 kind: Service
