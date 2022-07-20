@@ -52,7 +52,11 @@ void Initialize(const std::string& dgs_host) {
 
       // Init downstream kafka info
       auto& kafka_node = ptree.get_child("downstream.kafka");
-      opts.output_kafka_brokers = kafka_node.get_child("brokers").get_value<std::string>();
+      std::vector<std::string> brokers;
+      for (auto& iter: kafka_node.get_child("brokers")) {
+        brokers.emplace_back(iter.second.get_value<std::string>());
+      }
+      opts.output_kafka_brokers = StrJoin(brokers, ",");
       opts.output_kafka_topic = kafka_node.get_child("topic").get_value<std::string>();
       opts.output_kafka_partitions = kafka_node.get_child("partitions").get_value<uint32_t>();
 

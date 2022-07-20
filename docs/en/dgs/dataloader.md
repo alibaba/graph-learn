@@ -1,16 +1,16 @@
 # Loading From Your Data Source
 
-By using kafka queues as the entry for streaming graph updates, the Dynamic-Graph-Service can decouple the different
-data sources and sampling workers.
-you should develop your own dataloader to read you data source and produce the graph updates into output kafka queues
+By using kafka queues as the entry for streaming graph updates, the Dynamic-Graph-Service (abbreviated as dgs) can
+decouple the different data sources and sampling workers.
+Users can develop their own data loaders to ingest the source data and push graph updates into the output kafka queues
 for further consuming.
 
 ## Rules to Follow
 
-When you process you source data and produce them in your dataloader, you should follow these rules:
-- The graph schema from your source data must be consistent with dgs.
+When processing source data in the dataloader, these rules should be followed:
+- The graph schema from source data must be consistent with dgs.
 - A produced kafka message must be a batch of graph updates, defined as a flatbuffers table [RecordBatchRep](https://github.com/alibaba/graph-learn/blob/master/dynamic_graph_service/fbs/record.fbs).
-- Graph updates and partitioned for sampling workers, all records in one batch must have the same data partition id.
+- Graph updates are partitioned for sampling workers, all records in one batch must have the same data partition id.
 
 ## Dataloader SDK
 
@@ -25,21 +25,21 @@ Build dataloader sdk with cmake:
 ```shell
 $ cd dynamic_graph_service/dataloader
 $ mkdir build && cd build
-$ cmake -DCMAKE_INSTALL_PREFIX=$your_install_prefix ..
+$ cmake -DCMAKE_INSTALL_PREFIX=$install_prefix ..
 $ make && make install
 ```
 
-use it in your CMakeLists.txt:
+use it in CMakeLists.txt:
 ```cmake
-list (APPEND CMAKE_PREFIX_PATH $your_install_prefix)
+list (APPEND CMAKE_PREFIX_PATH $install_prefix)
 find_package (DataLoader)
-target_link_libraries(your_project_name
+target_link_libraries (program_name
   PUBLIC DataLoader::dataloader)
 ```
 
 ### Initialization
-You must initialize the dataloader sdk components before your program runs.
-We provide a simple func to help do this, after deploying Dynamic-Graph-Service, specify the dgs host name and
+The dataloader must be initialized before the program runs.
+We provide a simple func to help do this, after deploying dgs, specify the dgs host name and
 the sdk will fetch info from dgs and init automatically.
 ```c++
 void Initialize(const std::string& dgs_host);
@@ -91,12 +91,12 @@ int main() {
 }
 ```
 
-We provide a default file loader to load a data file according to the data format you define,
+We provide a default file loader to load a data file according to the data format defined by users,
 refer to [file-loader](https://github.com/alibaba/graph-learn/blob/master/dynamic_graph_service/dataloader/apps/file_loader).
 
 ## Data Loading Barrier
 
-Sometimes, you may want to deploy your own data-loading cluster with multiple dataloader instances.
+Sometimes, users may want to deploy their own data-loading cluster with multiple dataloader instances.
 To help users track the data-loading progress of the cluster, we provide a barrier mechanism to check
 the status of data produced from dataloader to dgs service at a synchronized view.
 
@@ -105,11 +105,11 @@ Setting a barrier will insert a checking-point into the output data stream (kafk
 when all produced data (produced from all dataloader instances) before this checking-point are sampled and ready
 for serving in dgs service, the barrier will be set to "ready" status.
 
-A global barrier is uniquely identified by its "barrier_name". For a specific barrier, you must set it on all
+A global barrier is uniquely identified by its "barrier_name". For a specific barrier, it must be set on all
 dataloader instances separately along with current instance's unique id.
 A global barrier is invalid until it is set on all dataloader instances.
 
-We provide an `SetBarrier` func to help you set a barrier on a specific dataloader instance.
+We provide an `SetBarrier` func to help set a barrier on a specific dataloader instance.
 ```c++
 void SetBarrier(const std::string& dgs_host,
                 const std::string& barrier_name,

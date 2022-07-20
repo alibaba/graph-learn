@@ -20,6 +20,7 @@ limitations under the License.
 #include "dataloader/group_producer.h"
 #include "dataloader/partitioner.h"
 #include "dataloader/schema.h"
+#include "dataloader/utils.h"
 
 namespace dgs {
 namespace dataloader {

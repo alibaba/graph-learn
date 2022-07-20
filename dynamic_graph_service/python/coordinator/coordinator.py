@@ -222,7 +222,7 @@ def make_service_config(yaml_map):
     "meta_dir": meta_dir,
     "dataloader_downstream": {
       "kafka": {
-        "brokers": ",".join(dl2spl_kafka_servers),
+        "brokers": dl2spl_kafka_servers,
         "topic": dl2spl_kafka_topic,
         "partitions": dl2spl_kafka_partition_num,
       },
