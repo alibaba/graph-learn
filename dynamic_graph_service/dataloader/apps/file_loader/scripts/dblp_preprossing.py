@@ -23,8 +23,8 @@ output_dir = "./"
 pattern_file = "dblp.pattern"
 data_file = "dblp.data"
 
-year_min = 1949
-year_max = 2019
+year_min = 2016
+year_max = 2022
 
 
 def write_pattern_file():

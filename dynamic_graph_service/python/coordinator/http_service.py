@@ -77,9 +77,9 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
         if kv[0] == "name":
           barrier_name = kv[1]
         elif kv[0] == "dl_count":
-          dl_count = kv[1]
+          dl_count = int(kv[1])
         elif kv[0] == "dl_id":
-          dl_id = kv[1]
+          dl_id = int(kv[1])
       if (barrier_name is None) or (dl_count is None) or (dl_id is None):
         self.wfile.write(b'Wrong Params.\n')
       else:
