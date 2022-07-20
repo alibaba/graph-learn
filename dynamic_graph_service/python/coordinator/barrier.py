@@ -43,7 +43,7 @@ class KafkaOffsetsFetcher(object):
     end_offsets = self._consumer_client.end_offsets(self._topic_partitions)
     pid_to_offset_dict = {}
     for p, offset in end_offsets.items():
-      pid_to_offset_dict[p.partition] = offset
+      pid_to_offset_dict[p.partition] = offset - 1
     return pid_to_offset_dict
 
 

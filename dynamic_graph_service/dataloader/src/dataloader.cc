@@ -97,7 +97,9 @@ void SetBarrier(const std::string& dgs_host,
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     std::stringstream params;
     params << "name=" << barrier_name << "&dl_count=" << dl_count << "&dl_id=" << dl_id;
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, params.str().c_str());
+    auto params_str = params.str();
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, params_str.c_str());
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, params_str.size());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &res);
     auto s = curl_easy_perform(curl);
