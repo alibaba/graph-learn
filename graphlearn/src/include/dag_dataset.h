@@ -43,7 +43,12 @@ private:
   int32_t cap_;
   int32_t cursor_;
 
+#if __APPLE__
+  using macos_sem_t = int64_t;
+  std::vector<macos_sem_t> occupied_;
+#else
   std::vector<sem_t> occupied_;
+#endif
   std::atomic<int32_t> head_;
   std::unique_ptr<ThreadPool> tp_;
   std::vector<GetDagValuesResponse*> buffer_;

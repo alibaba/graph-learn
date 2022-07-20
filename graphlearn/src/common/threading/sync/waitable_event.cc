@@ -18,6 +18,7 @@ limitations under the License.
 #include "common/threading/atomic/atomic.h"
 #include "common/threading/sync/cond.h"
 #include "common/threading/sync/lock.h"
+#include "common/threading/sync/semaphore_shim.h"
 
 namespace graphlearn {
 

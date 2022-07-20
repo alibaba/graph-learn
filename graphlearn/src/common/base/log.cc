@@ -19,7 +19,16 @@ limitations under the License.
 
 namespace graphlearn {
 
+// ::google::IsGoogleLoggingInitialized() requires a relative new version
+// of glog, thus we use our own static initialization guard.
+static bool _is_google_logging_initialized = false;
+
 void InitGoogleLogging() {
+  if (_is_google_logging_initialized) {
+    return;
+  }
+  _is_google_logging_initialized = true;
+
   FLAGS_alsologtostderr = false;
   FLAGS_colorlogtostderr = true;
   FLAGS_log_dir = ".";
@@ -28,6 +37,11 @@ void InitGoogleLogging() {
 }
 
 void UninitGoogleLogging() {
+  if (!_is_google_logging_initialized) {
+    return;
+  }
+  _is_google_logging_initialized = false;
+
   ::google::ShutdownGoogleLogging();
 }
 

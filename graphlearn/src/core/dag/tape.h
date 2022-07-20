@@ -23,6 +23,8 @@ limitations under the License.
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
+#include "common/threading/sync/semaphore_shim.h"
 #include "include/op_request.h"
 
 namespace graphlearn {
@@ -88,7 +90,11 @@ private:
   std::atomic<bool> faked_;
   std::atomic<bool> ready_;
 
+#if __APPLE__
+  macos_sem_t cond_;
+#else
   sem_t      cond_;
+#endif
   std::atomic<int32_t> epoch_;
   // DagNode with Id i records on index i-1
   std::vector<Tensor::Map> recordings_;
@@ -117,8 +123,14 @@ private:
   Tape* Pop(int32_t client_id);
 
 private:
+private:
+#if __APPLE__
+  macos_sem_t empty_;
+  macos_sem_t occupied_;
+#else
   sem_t      empty_;
   sem_t      occupied_;
+#endif
   int32_t    cap_;
   int32_t    epoch_;
   const Dag* dag_;

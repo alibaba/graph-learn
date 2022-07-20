@@ -18,7 +18,7 @@ limitations under the License.
 
 #include <cstdint>
 #include <vector>
-#include <tr1/unordered_map>  // NOLINT [build/c++tr1]
+#include <unordered_map>
 #include "core/io/element_value.h"
 
 namespace graphlearn {
@@ -30,7 +30,7 @@ typedef int32_t IndexType;
 typedef std::vector<IdType> IdList;
 typedef std::vector<IndexType> IndexList;
 typedef std::vector<std::vector<IdType>> IdMatrix;
-typedef std::tr1::unordered_map<IdType, IndexType> MAP;
+typedef std::unordered_map<IdType, IndexType> MAP;
 
 template <class T>
 class Array {

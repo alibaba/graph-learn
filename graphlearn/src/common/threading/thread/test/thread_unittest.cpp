@@ -51,7 +51,9 @@ TEST(ThreadTest, LaunchWithFunction) {
   ThreadHandle handle = CreateThread(func);
   sem_wait(&sCount_added);
   sem_destroy(&sCount_added);
+#if !__APPLE__
   EXPECT_NE(0u, handle);
+#endif
   EXPECT_EQ(1, sCount);
 }
 
@@ -60,7 +62,9 @@ TEST(ThreadTest, LaunchWithMethod) {
   Closure<void>* func = NewClosure(&foo, &Foo::Bar);
   ThreadHandle handle = CreateThread(func);
   sem_wait(&foo.count_added);
+#if !__APPLE__
   EXPECT_NE(0u, handle);
+#endif
   EXPECT_EQ(1, foo.count);
 }
 

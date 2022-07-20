@@ -11,8 +11,14 @@
 **/__pycache__/
 
 # build dir
+**/dist/
 **/build/
 **/built/
+**/cmake-build/
+
+# build artifacts
+**/*.so
+**/*.dylib
 
 # codegen dir
 **/generated/

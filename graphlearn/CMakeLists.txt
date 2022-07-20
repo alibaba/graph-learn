@@ -67,22 +67,76 @@ set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${GL_BUILT_BIN_DIR})
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${GL_BUILT_LIB_DIR})
 set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${GL_BUILT_LIB_DIR})
 
+set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 ## Threads dependency
 find_package (Threads REQUIRED)
 
 ## glog package
-set (glog_INSTALL_DIR ${THIRD_PARTY_DIR}/glog/build)
-list (APPEND CMAKE_PREFIX_PATH ${glog_INSTALL_DIR})
-find_package (glog CONFIG REQUIRED)
+include (cmake/FindGlog.cmake)
+if (GLOG_FOUND)
+  add_library (glog::glog UNKNOWN IMPORTED)
+  include (cmake/FindGFlags.cmake)
+  set_target_properties (glog::glog PROPERTIES IMPORTED_LOCATION "${GLOG_LIBRARY}")
+  set_target_properties (glog::glog PROPERTIES INTERFACE_LINK_LIBRARIES "${GFLAGS_LIBRARIES}")
+  set_target_properties (glog::glog PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+    "$<BUILD_INTERFACE:${GFLAGS_INCLUDE_DIRS}>;$<BUILD_INTERFACE:${GLOG_INCLUDE_DIRS}>")
+else ()
+  set (glog_INSTALL_DIR ${THIRD_PARTY_DIR}/glog/build)
+  list (APPEND CMAKE_PREFIX_PATH ${glog_INSTALL_DIR})
+  find_package (glog CONFIG REQUIRED)
+endif ()
 
-## grpc package
-set (gRPC_INSTALL_DIR ${THIRD_PARTY_DIR}/grpc/build)
-list (APPEND CMAKE_PREFIX_PATH ${gRPC_INSTALL_DIR})
-find_package (protobuf CONFIG REQUIRED)
-find_package (gRPC CONFIG REQUIRED)
+## protobuf and gRPC package
+find_package (Protobuf QUIET)
+if (NOT Protobuf_FOUND)
+  set (gRPC_INSTALL_DIR ${THIRD_PARTY_DIR}/grpc/build)
+  list (APPEND CMAKE_PREFIX_PATH ${gRPC_INSTALL_DIR})
+  find_package (protobuf CONFIG REQUIRED)
+endif ()
+
+## grpc install by homebrew requires openssl
+if (APPLE)
+  # If we're on OS X check for Homebrew's copy of OpenSSL instead of Apple's
+  if (NOT OpenSSL_DIR)
+      find_program(HOMEBREW brew)
+      if (HOMEBREW STREQUAL "HOMEBREW-NOTFOUND")
+          message(WARNING "Homebrew not found: not using Homebrew's OpenSSL")
+          if (NOT OPENSSL_ROOT_DIR)
+              message(WARNING "Use -DOPENSSL_ROOT_DIR for non-Apple OpenSSL")
+          endif()
+      else()
+          execute_process(COMMAND brew --prefix openssl
+              OUTPUT_VARIABLE OPENSSL_ROOT_DIR
+              OUTPUT_STRIP_TRAILING_WHITESPACE)
+      endif()
+  endif()
+  find_package(OpenSSL ${ARGN})
+endif()
+
+macro (get_target_import_location var target)
+  if (TARGET ${target})
+    get_target_property(${var} ${target} IMPORTED_LOCATION)
+    if ("${${var}}" STREQUAL "${var}-NOTFOUND")
+      get_target_property(${var} ${target} IMPORTED_LOCATION_RELEASE)
+    endif ()
+  endif ()
+endmacro ()
+
+find_package (gRPC CONFIG QUIET)
+if (gRPC_FOUND)
+  if (TARGET gRPC::grpc_cpp_plugin)
+    get_target_import_location(GL_GRPC_CPP_PLUGIN gRPC::grpc_cpp_plugin)
+  else ()
+    set (GL_GRPC_CPP_PLUGIN ${gRPC_INSTALL_DIR}/bin/grpc_cpp_plugin)
+  endif ()
+else ()
+  include (${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindGRPC.cmake)
+  set_target_properties(gRPC::grpc++ PROPERTIES INTERFACE_LINK_LIBRARIES "${Protobuf_LIBRARIES}")
+  get_target_import_location(GL_GRPC_CPP_PLUGIN gRPC::grpc_cpp_plugin)
+endif ()
 
 ## grpc codegen
-set (GL_GRPC_CPP_PLUGIN ${gRPC_INSTALL_DIR}/bin/grpc_cpp_plugin)
 set (GL_PROTO_GEN_DIR ${GL_SRC_DIR}/generated/proto)
 file (MAKE_DIRECTORY ${GL_PROTO_GEN_DIR})
 set (GL_PROTO_SRC_FILES
@@ -103,7 +157,7 @@ function (generate_grpc_files target_name grpc_gen_files)
     list (APPEND ${grpc_gen_files} ${GEN_FILES})
     add_custom_command (
       OUTPUT ${GEN_FILES}
-      DEPENDS protobuf::protoc ${GL_GRPC_CPP_PLUGIN} ${FIL}
+      DEPENDS protobuf::protoc gRPC::grpc_cpp_plugin ${FIL}
       COMMENT "Generating for proto file: ${FIL_WE}.proto ..."
       COMMAND protobuf::protoc -I ${GL_PROTO_DIR} --cpp_out=${GL_PROTO_GEN_DIR} ${FIL}
       COMMAND protobuf::protoc -I ${GL_PROTO_DIR} --grpc_out=${GL_PROTO_GEN_DIR}
@@ -147,6 +201,10 @@ file (GLOB_RECURSE GL_SERVICE_FILES
   ${GL_SERVICE_DIR}/*.h)
 
 # contrib knn
+if (APPLE)
+  # knn module is not buildable on MacOS
+  set(KNN OFF)
+endif ()
 set (GL_KNN_DIR ${GL_SRC_DIR}/contrib/knn)
 set (FAISS_BUILT_DIR ${GL_KNN_DIR}/faiss)
 set (FAISS_INCLUDE_DIR ${FAISS_BUILT_DIR}/include)
@@ -233,6 +291,10 @@ set (GL_CXX_FLAGS
   # fixme: check format security
   -Wno-format-security)
 
+if (APPLE)
+  set (GL_CXX_FLAGS ${GL_CXX_FLAGS} -Wno-deprecated-declarations)
+endif ()
+
 ## add library
 add_library (graphlearn_shared SHARED
   ${GL_COMMON_FILES}
@@ -292,9 +354,22 @@ endif ()
 ## tests
 if (TESTING)
   # googletest package
-  set (GTest_INSTALL_DIR ${THIRD_PARTY_DIR}/googletest/build)
-  list (APPEND CMAKE_PREFIX_PATH ${GTest_INSTALL_DIR})
-  find_package (GTest CONFIG REQUIRED)
+  include (cmake/FindGTest.cmake)
+  if (GTEST_FOUND)
+    add_library (GTest::gtest UNKNOWN IMPORTED)
+    set_target_properties (GTest::gtest PROPERTIES IMPORTED_LOCATION "${GTEST_LIBRARY}")
+    set_target_properties (GTest::gtest PROPERTIES INTERFACE_LINK_LIBRARIES "${GTEST_LIBRARIES}")
+    set_target_properties (GTest::gtest PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+      "$<BUILD_INTERFACE:${GTEST_INCLUDE_DIRS}>")
+    add_library (GTest::gtest_main UNKNOWN IMPORTED)
+    set_target_properties (GTest::gtest_main PROPERTIES IMPORTED_LOCATION "${GTEST_MAIN_LIBRARY}")
+    set_target_properties (GTest::gtest_main PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+      "$<BUILD_INTERFACE:${GTEST_INCLUDE_DIRS}>")
+  else ()
+    set (GTest_INSTALL_DIR ${THIRD_PARTY_DIR}/googletest/build)
+    list (APPEND CMAKE_PREFIX_PATH ${GTest_INSTALL_DIR})
+    find_package (GTest CONFIG REQUIRED)
+  endif ()
 
   add_custom_target (gl_tests)
   function (add_gl_tests)
@@ -368,3 +443,11 @@ add_custom_command (TARGET python
   COMMAND rm -f ${GL_PYTHON_DIR}/__init__.py
   WORKING_DIRECTORY ${GL_ROOT}
   VERBATIM)
+
+# install the graphlearn_shared library
+install(TARGETS graphlearn_shared
+        EXPORT graphlearn-targets
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
+        RUNTIME DESTINATION bin
+)
