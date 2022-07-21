@@ -24,10 +24,10 @@ from kafka.structs import TopicPartition
 
 
 def check_barrier_offsets(barrier_offsets, ready_offsets):
-  for name, offset in barrier_offsets:
-    if name not in ready_offsets.keys():
+  for pid, offset in barrier_offsets.items():
+    if pid not in ready_offsets.keys():
       return False
-    if ready_offsets[name] < offset:
+    if ready_offsets[pid] < offset:
       return False
   return True
 
