@@ -136,8 +136,10 @@ class CoordinatorHttpService(object):
 
   def start(self):
     logging.info("Http Server for Coordinator running on port {}.\n".format(self._port))
+    CoordinatorHttpHandler.barrier_monitor.start()
     self._server.serve_forever()
 
   def stop(self):
     self._server.server_close()
+    CoordinatorHttpHandler.barrier_monitor.stop()
     logging.info('Stopping Http Server...\n')
