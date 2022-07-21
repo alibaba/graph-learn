@@ -69,9 +69,6 @@ class SubServiceBarrierState(object):
       finished_barriers = []
       ready_offsets = self._checkpoint_mgr.get_all_ready_offsets()
       for name, barrier_offsets in self._barrier_offsets_dict.items():
-        logging.info("-- [debug] barrier name: {}".format(name))
-        logging.info("-- [debug] barrier offsets: {}".format(barrier_offsets))
-        logging.info("-- [debug] ready offsets: {}".format(ready_offsets))
         if check_barrier_offsets(barrier_offsets, ready_offsets):
           finished_barriers.append(name)
       return finished_barriers
@@ -137,14 +134,12 @@ class GlobalBarrierMonitor(object):
     while not self._stopped:
       # execute every 5 seconds
       time.sleep(5)
-      logging.info("*** [debug] start to check sampling barriers ***")
       sampling_finished = self._sampling_barrier_state.collect_finished_barriers()
       if len(sampling_finished) > 0:
         spl2srv_offsets = self._spl2srv_fetcher.query_current_offsets()
         for name in sampling_finished:
           self._sampling_barrier_state.remove_barrier(name)
           self._serving_barrier_state.add_barrier(name, spl2srv_offsets)
-      logging.info("*** [debug] start to check serving barriers ***")
       serving_finished = self._serving_barrier_state.collect_finished_barriers()
       if len(serving_finished) > 0:
         for name in serving_finished:
