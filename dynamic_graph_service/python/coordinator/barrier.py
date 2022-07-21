@@ -17,6 +17,7 @@ import logging
 import os
 import pickle
 import threading
+import time
 
 from kafka import KafkaConsumer
 from kafka.structs import TopicPartition
@@ -68,9 +69,9 @@ class SubServiceBarrierState(object):
       finished_barriers = []
       ready_offsets = self._checkpoint_mgr.get_all_ready_offsets()
       for name, barrier_offsets in self._barrier_offsets_dict.items():
-        print("-- [debug] barrier name: {}".format(name))
-        print("-- [debug] barrier offsets: {}".format(barrier_offsets))
-        print("-- [debug] ready offsets: {}".format(ready_offsets))
+        logging.info("-- [debug] barrier name: {}".format(name))
+        logging.info("-- [debug] barrier offsets: {}".format(barrier_offsets))
+        logging.info("-- [debug] ready offsets: {}".format(ready_offsets))
         if check_barrier_offsets(barrier_offsets, ready_offsets):
           finished_barriers.append(name)
       return finished_barriers
@@ -86,17 +87,22 @@ class GlobalBarrierMonitor(object):
     self._pending_barriers = {}
     self._ready_barriers = set()
 
-    # scheduled task executor for barrier checking every 5 seconds
-    self._timer = threading.Timer(5, self.__check_and_switch_barrier_states)
-
     # restore existed barriers
     self.__restore_barriers()
 
+    # scheduled task executor for barrier checking every 5 seconds
+    self._checking_t = threading.Thread(
+      target=self.__check_and_switch_barrier_states,
+      daemon=True
+    )
+    self._stopped = False
+
   def start(self):
-    self._timer.start()
+    self._checking_t.start()
 
   def stop(self):
-    self._timer.cancel()
+    self._stopped = True
+    self._checking_t.join()
 
   def set_barrier_from_dataloader(self, barrier_name, dl_count, dl_id):
     if barrier_name not in self._pending_barriers.keys():
@@ -128,17 +134,20 @@ class GlobalBarrierMonitor(object):
       self._sampling_barrier_state.add_barrier(filename, offsets)
 
   def __check_and_switch_barrier_states(self):
-    print("*** [debug] start to check sampling barriers ***")
-    sampling_finished = self._sampling_barrier_state.collect_finished_barriers()
-    if len(sampling_finished) > 0:
-      spl2srv_offsets = self._spl2srv_fetcher.query_current_offsets()
-      for name in sampling_finished:
-        self._sampling_barrier_state.remove_barrier(name)
-        self._serving_barrier_state.add_barrier(name, spl2srv_offsets)
-    print("*** [debug] start to check serving barriers ***")
-    serving_finished = self._serving_barrier_state.collect_finished_barriers()
-    if len(serving_finished) > 0:
-      for name in serving_finished:
-        self._serving_barrier_state.remove_barrier(name)
-        self._ready_barriers.add(name)
-        logging.info("Global barrier {} is ready.".format(name))
+    while not self._stopped:
+      # execute every 5 seconds
+      time.sleep(5)
+      logging.info("*** [debug] start to check sampling barriers ***")
+      sampling_finished = self._sampling_barrier_state.collect_finished_barriers()
+      if len(sampling_finished) > 0:
+        spl2srv_offsets = self._spl2srv_fetcher.query_current_offsets()
+        for name in sampling_finished:
+          self._sampling_barrier_state.remove_barrier(name)
+          self._serving_barrier_state.add_barrier(name, spl2srv_offsets)
+      logging.info("*** [debug] start to check serving barriers ***")
+      serving_finished = self._serving_barrier_state.collect_finished_barriers()
+      if len(serving_finished) > 0:
+        for name in serving_finished:
+          self._serving_barrier_state.remove_barrier(name)
+          self._ready_barriers.add(name)
+          logging.info("Global barrier {} is ready.".format(name))
