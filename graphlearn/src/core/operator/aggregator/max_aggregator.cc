@@ -23,7 +23,7 @@ class MaxAggregator : public Aggregator {
 public:
   virtual ~MaxAggregator() {}
 
-  void InitFunc(float* value, int32_t size) {
+  void InitFunc(float* value, int32_t size) override {
     for (int32_t i = 0; i < size; ++i) {
       value[i] = FLT_MIN_10_EXP;
     }

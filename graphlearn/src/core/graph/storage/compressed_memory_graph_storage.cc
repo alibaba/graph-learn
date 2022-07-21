@@ -114,11 +114,11 @@ public:
     return topo_->GetAllOutDegrees();
   }
 
-  const IdList* GetAllSrcIds() const override {
+  const IdArray GetAllSrcIds() const override {
     return topo_->GetAllSrcIds();
   }
 
-  const IdList* GetAllDstIds() const override {
+  const IdArray GetAllDstIds() const override {
     return topo_->GetAllDstIds();
   }
 

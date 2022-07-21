@@ -43,12 +43,14 @@ void SetContext(::grpc::ClientContext* ctx) {
 }  // anonymous namespace
 
 GrpcChannel::GrpcChannel(const std::string& endpoint)
-    : broken_(false), endpoint_(endpoint) {
+    : endpoint_(endpoint) {
   if (endpoint.empty()) {
-    broken_ = true;
+    broken_.store(true);
   } else {
+    broken_.store(false);
     NewChannel(endpoint);
   }
+  stopped_.store(false);
 }
 
 GrpcChannel::~GrpcChannel() {
@@ -56,23 +58,28 @@ GrpcChannel::~GrpcChannel() {
 
 void GrpcChannel::MarkBroken() {
   ScopedLocker<std::mutex> _(&mtx_);
-  broken_ = true;
+  broken_.store(true);
 }
 
 bool GrpcChannel::IsBroken() const {
-  return broken_;
+  return broken_.load();
+}
+
+bool GrpcChannel::IsStopped() const {
+  return stopped_.load();
 }
 
 void GrpcChannel::Reset(const std::string& endpoint) {
   ScopedLocker<std::mutex> _(&mtx_);
   NewChannel(endpoint);
-  broken_ = false;
+  broken_.store(false);
+  stopped_.store(false);
   endpoint_ = endpoint;
   LOG(WARNING) << "Reset channel from " << endpoint_ << " to " << endpoint;
 }
 
 Status GrpcChannel::CallMethod(const OpRequestPb* req, OpResponsePb* res) {
-  if (broken_) {
+  if (broken_.load()) {
     return error::Unavailable("Channel is broken, please retry later");
   }
 
@@ -83,7 +90,7 @@ Status GrpcChannel::CallMethod(const OpRequestPb* req, OpResponsePb* res) {
 }
 
 Status GrpcChannel::CallDag(const DagDef* req, StatusResponsePb* res) {
-  if (broken_) {
+  if (broken_.load()) {
     return error::Unavailable("Channel is broken, please retry later");
   }
 
@@ -95,7 +102,7 @@ Status GrpcChannel::CallDag(const DagDef* req, StatusResponsePb* res) {
 
 Status GrpcChannel::CallDagValues(const DagValuesRequestPb* req,
                                   DagValuesResponsePb* res) {
-  if (broken_) {
+  if (broken_.load()) {
     return error::Unavailable("Channel is broken, please retry later");
   }
 
@@ -106,7 +113,13 @@ Status GrpcChannel::CallDagValues(const DagValuesRequestPb* req,
 }
 
 Status GrpcChannel::CallStop(const StopRequestPb* req, StatusResponsePb* res) {
-  if (broken_) {
+  // TODO(tao): do we need such a check ?
+  //
+  // if (stopped_.load()) {
+  //   return Status::OK();
+  // }
+  stopped_.store(true);
+  if (broken_.load()) {
     return error::Unavailable("Channel is broken, please retry later");
   }
 
@@ -118,7 +131,7 @@ Status GrpcChannel::CallStop(const StopRequestPb* req, StatusResponsePb* res) {
 
 Status GrpcChannel::CallReport(const StateRequestPb* req,
                                StatusResponsePb* res) {
-  if (broken_) {
+  if (broken_.load()) {
     return error::Unavailable("Channel is broken, please retry later");
   }
 

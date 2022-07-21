@@ -37,6 +37,14 @@ option (GPU
   "Enable gpu"
   OFF)
 
+option (WITH_VINEYARD
+  "Enable vineyard"
+  OFF)
+
+option (VINEYARD_USE_OID
+  "Use OID when work with vineyard graphs"
+  ON)
+
 set (GL_CXX_DIALECT
   "c++11"
   CACHE
@@ -247,6 +255,17 @@ else ()
   set (GL_KNN_FILES)
 endif ()
 
+## contrib vineyard
+if (WITH_VINEYARD)
+  message(INFO "Graph-learn is built with vineyard support.")
+  find_package (vineyard)
+  include_directories (SYSTEM ${VINEYARD_INCLUDE_DIRS})
+  add_definitions (-DWITH_VINEYARD)
+  if (VINEYARD_USE_OID)
+    add_definitions (-DVINEYARD_USE_OID)
+  endif ()
+endif ()
+
 ## cxx flags
 if (DEBUG)
   set (GL_MODE_FLAGS -DDEBUG -g)
@@ -285,11 +304,15 @@ set (GL_CXX_FLAGS
   -fPIC
   -fvisibility-inlines-hidden
   -pthread
-  -mavx
-  -msse4.2
-  -msse4.1
   # fixme: check format security
   -Wno-format-security)
+
+if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
+  set (GL_CXX_FLAGS ${GL_CXX_FLAGS}
+    -mavx
+    -msse4.2
+    -msse4.1)
+endif ()
 
 if (APPLE)
   set (GL_CXX_FLAGS ${GL_CXX_FLAGS} -Wno-deprecated-declarations)
@@ -336,6 +359,11 @@ if (KNN)
 
   target_link_options (graphlearn_shared
     PUBLIC -lm -lquadmath -lgfortran)
+endif ()
+
+if (WITH_VINEYARD)
+  target_include_directories (graphlearn_shared PUBLIC ${VINEYARD_INCLUDE_DIRS})
+  target_link_libraries (graphlearn_shared PUBLIC ${VINEYARD_LIBRARIES})
 endif ()
 
 if (GPU)
@@ -403,6 +431,10 @@ if (TESTING)
     file (GLOB_RECURSE KNN_TEST_FILES
       ${GL_KNN_DIR}/*.cpp)
     add_gl_tests (${KNN_TEST_FILES})
+  endif ()
+
+  if (WITH_VINEYARD)
+    target_compile_options(vineyard_storage_unittest PRIVATE "-std=c++14")
   endif ()
 endif()
 

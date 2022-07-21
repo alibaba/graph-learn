@@ -51,12 +51,16 @@ public:
   virtual IndexType GetOutDegree(IdType src_id) const = 0;
   virtual const IndexList* GetAllInDegrees() const = 0;
   virtual const IndexList* GetAllOutDegrees() const = 0;
-  virtual const IdList* GetAllSrcIds() const = 0;
-  virtual const IdList* GetAllDstIds() const = 0;
+  virtual const IdArray GetAllSrcIds() const = 0;
+  virtual const IdArray GetAllDstIds() const = 0;
 };
 
 GraphStorage* NewMemoryGraphStorage();
 GraphStorage* NewCompressedMemoryGraphStorage();
+GraphStorage* NewVineyardGraphStorage(
+  const std::string& edge_type,
+  const std::string& view_type,
+  const std::string &use_attrs);
 
 }  // namespace io
 }  // namespace graphlearn

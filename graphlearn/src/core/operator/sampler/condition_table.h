@@ -122,6 +122,20 @@ public:
     }
   }
 
+  template<class T>
+  ConditionTable* LookupOrCreate(
+     const std::string& type,
+     const std::string& id_type,
+     const SelectedColumns& selected_cols,
+     const io::IdArray ids,
+     const std::vector<T>& weights) {
+    std::vector<int64_t> tmp_ids(ids.Size());
+    for (size_t idx = 0; idx < ids.Size(); ++idx) {
+      tmp_ids[idx] = ids[idx];
+    }
+    return LookupOrCreate(type, id_type, selected_cols, tmp_ids, weights);
+  }
+
   inline ConditionTable* LookupOrCreate(
      const std::string& type,
      const std::string& id_type,
@@ -143,6 +157,23 @@ public:
      const std::string& type,
      const std::string& id_type,
      const SelectedColumns& selected_cols,
+     const io::IdArray ids,
+     const io::Array<float> weights) {
+    std::vector<int64_t> tmp_ids(ids.Size());
+    for (size_t idx = 0; idx < ids.Size(); ++idx) {
+      tmp_ids[idx] = ids[idx];
+    }
+    std::vector<float> tmp_w(weights.Size());
+    for (size_t idx = 0; idx < weights.Size(); ++idx) {
+      tmp_w[idx] = weights[idx];
+    }
+    return LookupOrCreate(type, id_type, selected_cols, tmp_ids, tmp_w);
+  }
+
+  inline ConditionTable* LookupOrCreate(
+     const std::string& type,
+     const std::string& id_type,
+     const SelectedColumns& selected_cols,
      const std::vector<int64_t>& ids) {
     ScopedLocker<std::mutex> _(&mtx_);
     auto it = map_.find(type);
@@ -153,6 +184,18 @@ public:
     } else {
       return it->second;
     }
+  }
+
+  inline ConditionTable* LookupOrCreate(
+     const std::string& type,
+     const std::string& id_type,
+     const SelectedColumns& selected_cols,
+     const io::IdArray ids) {
+    std::vector<int64_t> tmp_ids(ids.Size());
+    for (size_t idx = 0; idx < ids.Size(); ++idx) {
+      tmp_ids[idx] = ids[idx];
+    }
+    return LookupOrCreate(type, id_type, selected_cols, tmp_ids);
   }
 
 private:

@@ -351,7 +351,7 @@ public:
                    NodeFrom node_from);
   virtual ~GetDegreeRequest() = default;
 
-  OpRequest* Clone() const;
+  OpRequest* Clone() const override;
 
   void Init(const Tensor::Map& params) override;
   void Set(const Tensor::Map& tensors) override;

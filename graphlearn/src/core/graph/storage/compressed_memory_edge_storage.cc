@@ -154,20 +154,20 @@ public:
     }
   }
 
-  const IdList* GetSrcIds() const override {
-    return &src_ids_;
+  const IdArray GetSrcIds() const override {
+    return IdArray(src_ids_.data(), src_ids_.size());
   }
 
-  const IdList* GetDstIds() const override {
-    return &dst_ids_;
+  const IdArray GetDstIds() const override {
+    return IdArray(dst_ids_.data(), dst_ids_.size());
   }
 
-  const std::vector<float>* GetWeights() const override {
-    return &weights_;
+  const Array<float> GetWeights() const override {
+    return Array<float>(weights_);
   }
 
-  const std::vector<int32_t>* GetLabels() const override {
-    return &labels_;
+  const Array<int32_t> GetLabels() const override {
+    return Array<int32_t>(labels_);
   }
 
   const std::vector<Attribute>* GetAttributes() const override {

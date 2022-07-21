@@ -21,6 +21,7 @@ limitations under the License.
 #include "common/base/macros.h"
 #include "common/base/progress.h"
 #include "common/threading/sync/cond.h"
+#include "core/graph/storage/storage_mode.h"
 #include "core/io/element_value.h"
 #include "core/io/edge_loader.h"
 #include "core/io/node_loader.h"
@@ -186,7 +187,12 @@ Status GraphStore::Init(
     const std::vector<io::NodeSource>& nodes) {
   
   for (const auto& e : edges) {
-    graphs_->LookupOrCreate(e.edge_type);
+    std::string decorated_edge_view = e.src_id_type + "|" + e.dst_id_type;
+    if (!e.view_type.empty()) {
+      decorated_edge_view += "|" + e.view_type;
+    }
+    graphs_->LookupOrCreate(e.edge_type, decorated_edge_view, e.use_attrs);
+
     auto it = e_types_.find(e.edge_type);
     if (it == e_types_.end()) {
       e_types_.insert({e.edge_type, 1});
@@ -195,7 +201,7 @@ Status GraphStore::Init(
     }
   }
   for (const auto& n : nodes) {
-    noders_->LookupOrCreate(n.id_type);
+    noders_->LookupOrCreate(n.id_type, n.view_type, n.use_attrs);
     n_types_.insert({n.id_type, 1});
   }
   return Status::OK();
@@ -205,6 +211,11 @@ Status GraphStore::Load(
     const std::vector<io::EdgeSource>& edges,
     const std::vector<io::NodeSource>& nodes) {
   Init(edges, nodes);
+
+  if (io::IsVineyardStorageEnabled()) {
+    return Status::OK();
+  }
+
   Initializer<io::EdgeSource,
               io::EdgeLoader,
               io::EdgeValue,
@@ -301,7 +312,7 @@ void GraphStore::BuildLocalCount() {
   for (auto it = n_types_.begin(); it != n_types_.end(); ++it) {
     Noder* noder = noders_->LookupOrCreate(it->first);
     ::graphlearn::io::NodeStorage* storage = noder->GetLocalStorage();
-    local_count_.push_back(storage->GetIds()->size() * it->second);
+    local_count_.push_back(storage->GetIds().Size() * it->second);
   }
 }
 

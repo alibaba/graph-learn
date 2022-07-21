@@ -83,6 +83,9 @@ struct NodeSource {
   IndexOption   option;
   bool          local_shared;
 
+  std::string view_type;
+  std::string use_attrs;
+
   NodeSource() : format(kAttributed), local_shared(true) {
   }
 
@@ -93,6 +96,8 @@ struct NodeSource {
     attr_info = right.attr_info;
     option = right.option;
     local_shared = right.local_shared;
+    view_type = right.view_type;
+    use_attrs = right.use_attrs;
   }
 
   bool IsWeighted() const {
@@ -111,6 +116,8 @@ struct NodeSource {
     std::stringstream ss;
     ss << "path:" << path
        << " id_type:" << id_type
+       << " view_type: " << view_type
+       << " use attrs: " << use_attrs
        << " format:" << format;
     attr_info.Serialize(&ss);
     return ss.str();
@@ -128,6 +135,9 @@ struct EdgeSource {
   IndexOption   option;
   bool          local_shared;
 
+  std::string view_type;
+  std::string use_attrs;
+
   EdgeSource() : format(kWeighted), direction(kOrigin), local_shared(true) {
   }
 
@@ -141,6 +151,8 @@ struct EdgeSource {
     attr_info = right.attr_info;
     option = right.option;
     local_shared = right.local_shared;
+    view_type = right.view_type;
+    use_attrs = right.use_attrs;
   }
 
   inline bool IsWeighted() const {
@@ -162,6 +174,8 @@ struct EdgeSource {
        << " src_id_type:" << src_id_type
        << " dst_id_type:" << dst_id_type
        << " format:" << format
+       << " view_type: " << view_type
+       << " use attrs: " << use_attrs
        << " direction:" << static_cast<int32_t>(direction);
     attr_info.Serialize(&ss);
     return ss.str();

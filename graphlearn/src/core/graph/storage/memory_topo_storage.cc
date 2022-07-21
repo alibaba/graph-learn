@@ -74,19 +74,19 @@ public:
     }
   }
 
-  const IdList* GetAllSrcIds() const override {
+  const IdArray GetAllSrcIds() const override {
     if (IsDataDistributionEnabled()) {
       return statics_->GetAllSrcIds();
     } else {
-      return nullptr;
+      return IdArray(nullptr, 0);
     }
   }
 
-  const IdList* GetAllDstIds() const override {
+  const IdArray GetAllDstIds() const override {
     if (IsDataDistributionEnabled()) {
       return statics_->GetAllDstIds();
     } else {
-      return nullptr;
+      return IdArray(nullptr, 0);
     }
   }
 

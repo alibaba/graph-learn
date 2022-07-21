@@ -120,6 +120,9 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
   // getters
   m.def("get_tracker_mode", &GetGlobalFlagTrackerMode);
 
+  m.def("set_vineyard_graph_id", &SetGlobalFlagVineyardGraphID);
+  m.def("set_vineyard_ipc_socket", &SetGlobalFlagVineyardIPCSocket);
+
   py::enum_<error::Code>(m, "ErrorCode")
     .value("OK", error::Code::OK)
     .value("CANCELLED", error::Code::CANCELLED)
@@ -201,7 +204,9 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
     .def_readwrite("id_type", &io::NodeSource::id_type)
     .def_readwrite("format", &io::NodeSource::format)
     .def_readwrite("attr_info", &io::NodeSource::attr_info)
-    .def_readwrite("option", &io::NodeSource::option);
+    .def_readwrite("option", &io::NodeSource::option)
+    .def_readwrite("view_type", &io::NodeSource::view_type)
+    .def_readwrite("use_attrs", &io::NodeSource::use_attrs);
 
   py::class_<io::EdgeSource>(m, "EdgeSource")
     .def(py::init<>())
@@ -212,7 +217,9 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
     .def_readwrite("format", &io::EdgeSource::format)
     .def_readwrite("direction", &io::EdgeSource::direction)
     .def_readwrite("attr_info", &io::EdgeSource::attr_info)
-    .def_readwrite("option", &io::EdgeSource::option);
+    .def_readwrite("option", &io::EdgeSource::option)
+    .def_readwrite("view_type", &io::EdgeSource::view_type)
+    .def_readwrite("use_attrs", &io::EdgeSource::use_attrs);
 
   py::class_<Status>(m, "Status")
     .def("ok", &Status::ok)
@@ -243,7 +250,8 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
         &NewRpcClient,
         py::return_value_policy::take_ownership,
         py::arg("server_id") = -1,
-        py::arg("server_own") = false);
+        py::arg("server_own") = false,
+        py::arg("client_own") = true);
 
   init_client_module(m);
 

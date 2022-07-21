@@ -11,7 +11,8 @@
 **/__pycache__/
 
 # build dir
-**/dist/
+graph-learn/dist/
+dynamic_graph_service/dist/
 **/build/
 **/built/
 **/cmake-build/

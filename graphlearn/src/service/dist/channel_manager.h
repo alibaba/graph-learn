@@ -16,6 +16,7 @@ limitations under the License.
 #ifndef GRAPHLEARN_SERVICE_DIST_CHANNEL_MANAGER_H_
 #define GRAPHLEARN_SERVICE_DIST_CHANNEL_MANAGER_H_
 
+#include <atomic>
 #include <cstdint>
 #include <mutex>  // NOLINT [build/c++11]
 #include <string>
@@ -34,6 +35,7 @@ public:
   ~ChannelManager();
 
   void SetCapacity(int32_t capacity);
+   std::vector<int32_t> GetOwnServers();
 
   /// Stop the background refresh thread.
   /// Be sure that ChannelManager shoud stop after NamingEngine.
@@ -50,7 +52,7 @@ private:
 
 private:
   std::mutex    mtx_;
-  bool          stopped_;
+  std::atomic<bool> stopped_;
   NamingEngine* engine_;
   LoadBalancer* balancer_;
   std::vector<GrpcChannel*> channels_;

@@ -1,3 +1,9 @@
 graph_learn.egg-info/
 dist/
 examples/tf/*.tar.gz
+
+# clangd
+.cache/
+
+# core dump
+/core

@@ -83,16 +83,16 @@ private:
     if (strategy == "in_degree") {
       auto weights = storage->GetAllInDegrees();
       *ct = ct_factory->LookupOrCreate(type, id_type, selected_cols,
-                                       *ids, *weights);
+                                       ids, *weights);
       *am = am_factory->LookupOrCreate(type, weights);
     } else if (strategy == "node_weight"){
       auto weights = storage->GetNodeWeights();
       *ct = ct_factory->LookupOrCreate(type, id_type, selected_cols,
-                                       *ids, *weights);
+                                       ids, weights);
       *am = am_factory->LookupOrCreate(type, weights);
     } else {  // random as default.
-      *ct = ct_factory->LookupOrCreate(type, id_type, selected_cols, *ids);
-      *am = am_factory->LookupOrCreate(type, ids->size());
+      *ct = ct_factory->LookupOrCreate(type, id_type, selected_cols, ids);
+      *am = am_factory->LookupOrCreate(type, ids.Size());
     }
   }
 
@@ -144,7 +144,7 @@ private:
           }
         }
 
-        int64_t item = ids->at(indices[cursor++]);
+        int64_t item = ids[indices[cursor++]];
         if (nbr_set.find(item) == nbr_set.end()) {
           res->AppendNeighborId(item);
           if (unique) {
