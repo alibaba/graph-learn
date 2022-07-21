@@ -19,6 +19,7 @@ limitations under the License.
 #include <limits>
 #include "common/base/errors.h"
 #include "common/base/log.h"
+#include "common/threading/sync/semaphore_shim.h"
 #include "include/config.h"
 
 namespace graphlearn {

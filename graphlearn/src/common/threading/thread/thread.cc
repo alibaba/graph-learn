@@ -17,6 +17,8 @@ limitations under the License.
 
 #include <cassert>
 #include <cstdlib>
+#include <string>
+
 #include "common/base/uncopyable.h"
 #include "common/threading/sync/waitable_event.h"
 

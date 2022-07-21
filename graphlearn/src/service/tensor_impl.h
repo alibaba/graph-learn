@@ -97,22 +97,30 @@ public:
   }
 
   void AddInt32(const int32_t* begin, const int32_t* end) {
-    int32_buf_->Add(begin, end);
+    for (auto iter = begin; iter != end; ++iter) {
+      int32_buf_->Add(*iter);
+    }
     size_ = int32_buf_->size();
   }
 
   void AddInt64(const int64_t* begin, const int64_t* end) {
-    int64_buf_->Add(begin, end);
+    for (auto iter = begin; iter != end; ++iter) {
+      int64_buf_->Add(*iter);
+    }
     size_ = int64_buf_->size();
   }
 
   void AddFloat(const float* begin, const float* end) {
-    float_buf_->Add(begin, end);
+    for (auto iter = begin; iter != end; ++iter) {
+      float_buf_->Add(*iter);
+    }
     size_ = float_buf_->size();
   }
 
   void AddDouble(const double* begin, const double* end) {
-    double_buf_->Add(begin, end);
+    for (auto iter = begin; iter != end; ++iter) {
+      double_buf_->Add(*iter);
+    }
     size_ = double_buf_->size();
   }
 
@@ -133,7 +141,7 @@ public:
   }
 
   void SetString(int32_t index, const std::string& v) {
-    string_buf_->at(index) = v;
+    (*string_buf_)[index] = v;
   }
 
   int32_t GetInt32(int32_t index) const {

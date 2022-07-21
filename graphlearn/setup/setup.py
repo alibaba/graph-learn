@@ -39,6 +39,8 @@ libraries = []
 extra_compile_args = []
 extra_link_args = []
 
+include_dirs.append('/usr/include')
+include_dirs.append('/usr/local/include')
 include_dirs.append(ROOT_PATH)
 include_dirs.append(ROOT_PATH + '/src')
 include_dirs.append(ROOT_PATH + '/src/include')
@@ -53,7 +55,8 @@ if OPEN_KNN == 'OPEN':
 extra_compile_args.append('-D__USE_XOPEN2K8')
 extra_compile_args.append('-std=c++11')
 extra_compile_args.append('-fvisibility=hidden')
-extra_link_args.append('-Wl,-rpath=$ORIGIN/python/lib/')
+if sys.platform == 'linux' or sys.platform == 'linux2':
+  extra_link_args.append('-Wl,-rpath=$ORIGIN/python/lib/')
 
 libraries.append('graphlearn_shared')
 # if OPEN_KNN == 'OPEN':
