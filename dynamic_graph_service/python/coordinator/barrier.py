@@ -66,6 +66,10 @@ class SubServiceBarrierState(object):
     with self._lock:
       self._barrier_offsets_dict.pop(barrier_name)
 
+  def contains_barrier(self, barrier_name):
+    with self._lock:
+      return barrier_name in self._barrier_offsets_dict.keys()
+
   def collect_finished_barriers(self):
     with self._lock:
       if len(self._barrier_offsets_dict) == 0:
@@ -116,8 +120,20 @@ class GlobalBarrierMonitor(object):
       self._pending_barriers.pop(barrier_name)
       logging.info("Global barrier {} has been set.".format(barrier_name))
 
-  def check_ready(self, barrier_name):
-    return barrier_name in self._ready_barriers
+  def check_status(self, barrier_name):
+    if barrier_name in self._ready_barriers:
+      return "READY"
+    elif self._serving_barrier_state.contains_barrier(barrier_name):
+      return "SAMPLED"
+    elif self._sampling_barrier_state.contains_barrier(barrier_name):
+      return "PRODUCED"
+    else:
+      return "NOT_SET"
+
+  def check_existed(self, barrier_name):
+    return (barrier_name in self._ready_barriers) or \
+           (self._serving_barrier_state.contains_barrier(barrier_name)) or \
+           (self._sampling_barrier_state.contains_barrier(barrier_name))
 
   def __persist_barrier(self, barrier_name, barrier_offsets):
     f = os.path.join(self._barrier_meta_dir, barrier_name)
