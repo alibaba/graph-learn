@@ -78,6 +78,7 @@ int main(int argc, char** argv) {
     while (dgs::dataloader::CheckBarrier(dgs_host, barrier) != dgs::dataloader::READY) {
       std::this_thread::sleep_for(std::chrono::seconds(3));
     }
+    std::cout << "The barrier " << barrier << " is ready!" << std::endl;
   }
 
   return 0;
