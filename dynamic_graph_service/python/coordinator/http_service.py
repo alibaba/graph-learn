@@ -58,9 +58,9 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
       response = BytesIO()
       sampling_res, serving_res = self.__class__.grpc_server.start_checkpointing()
       response.write(bytes("Creating Sampling Worker Checkpoint {}.\n"
-                           .format("Successfully" if sampling_res else "Failed")))
+                           .format("Successfully" if sampling_res else "Failed"), "utf-8"))
       response.write(bytes("Creating Serving Worker Checkpoint {}.\n"
-                           .format("Successfully" if serving_res else "Failed")))
+                           .format("Successfully" if serving_res else "Failed"), "utf-8"))
       self.send_response(200)
       self.end_headers()
       self.wfile.write(response.getvalue())
@@ -74,7 +74,7 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
       if (barrier_name is None) or (dl_count is None) or (dl_id is None):
         response.write(b'Wrong Parameters.\n')
       elif self.barrier_monitor.check_existed(barrier_name):
-        response.write(bytes("Barrier {} Already Set.\n".format(barrier_name)))
+        response.write(bytes("Barrier {} Already Set.\n".format(barrier_name), "utf-8"))
       else:
         res_code = 200
         self.barrier_monitor.set_barrier_from_dataloader(barrier_name, int(dl_count), int(dl_id))
@@ -92,7 +92,7 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
     if url_parsed.path == "/admin/schema":
       self.send_response(200)
       self.end_headers()
-      self.wfile.write(bytes(self.schema))
+      self.wfile.write(bytes(self.schema, "utf-8"))
     elif url_parsed.path == "/admin/init-info/dataloader":
       dl_init_info = {
         "downstream": self.dl_ds_info,
@@ -101,7 +101,7 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
       dl_init_json_str = json.dumps(dl_init_info)
       self.send_response(200)
       self.end_headers()
-      self.wfile.write(bytes(dl_init_json_str, "UTF-8"))
+      self.wfile.write(bytes(dl_init_json_str, "utf-8"))
     elif url_parsed.path == "/admin/barrier/status":
       params = dict(parse_qsl(url_parsed.query))
       barrier_name = params.get("name")
@@ -112,7 +112,7 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
       else:
         res_code = 200
         status = self.barrier_monitor.check_status(barrier_name)
-        response.write(bytes(status))
+        response.write(bytes(status, "utf-8"))
       self.send_response(res_code)
       self.end_headers()
       self.wfile.write(response.getvalue())

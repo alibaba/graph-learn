@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
     auto barrier = vm["wait-barrier"].as<std::string>();
     dgs::dataloader::SetBarrier(dgs_host, barrier, 1, 0);
     while (dgs::dataloader::CheckBarrier(dgs_host, barrier) != dgs::dataloader::READY) {
-      std::this_thread::sleep_for(std::chrono::seconds(1));
+      std::this_thread::sleep_for(std::chrono::seconds(3));
     }
   }
 
