@@ -38,7 +38,7 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
     url_parsed = urlparse(self.path)
     content_length = int(self.headers['Content-Length'])
     content = self.rfile.read(content_length)
-    if url_parsed.path is "/admin/init":
+    if url_parsed.path == "/admin/init":
       qid = [None]
       json_str = content.decode("utf-8")
       try:
@@ -54,7 +54,7 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
         self.send_response(400)
         self.end_headers()
         self.wfile.write(b'Invalid Query Plan\n')
-    elif url_parsed.path is "/admin/checkpoint":
+    elif url_parsed.path == "/admin/checkpoint":
       response = BytesIO()
       sampling_res, serving_res = self.__class__.grpc_server.start_checkpointing()
       response.write(bytes("Creating Sampling Worker Checkpoint {}.\n"
@@ -64,7 +64,7 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
       self.send_response(200)
       self.end_headers()
       self.wfile.write(response.getvalue())
-    elif url_parsed.path is "/admin/barrier/set":
+    elif url_parsed.path == "/admin/barrier/set":
       params = dict(parse_qsl(content.decode("utf-8")))
       barrier_name = params.get("name")
       dl_count = params.get("count")
@@ -89,11 +89,11 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
 
   def do_GET(self):
     url_parsed = urlparse(self.path)
-    if url_parsed.path is "/admin/schema":
+    if url_parsed.path == "/admin/schema":
       self.send_response(200)
       self.end_headers()
       self.wfile.write(bytes(self.schema))
-    elif url_parsed.path is "/admin/init-info/dataloader":
+    elif url_parsed.path == "/admin/init-info/dataloader":
       dl_init_info = {
         "downstream": self.dl_ds_info,
         "schema": self.schema_json
@@ -102,7 +102,7 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
       self.send_response(200)
       self.end_headers()
       self.wfile.write(bytes(dl_init_json_str, "UTF-8"))
-    elif url_parsed.path is "/admin/barrier/status":
+    elif url_parsed.path == "/admin/barrier/status":
       params = dict(parse_qsl(url_parsed.query))
       barrier_name = params.get("name")
       res_code = 400
