@@ -150,9 +150,29 @@ On each dataloader instance, set a barrier after bulk load finished:
     // streaming load ...
 ```
 
-After all dataloader instances have set the barrier, you can further check the barrier status on a gsl-client.
+We provide another `CheckBarrier` func to help users check the barrier status
+after all dataloader instances have set the barrier.
 
+```c++
+    /// Status enum of global barrier.
+    ///  "NOT_SET":   The barrier has not been set.
+    ///  "PRODUCED":  All data before this barrier have been produced but not sampled.
+    ///  "SAMPLED":   All data before this barrier have been sampled but not ready for serving.
+    ///  "READY":     All data before this barrier have been sampled and ready for serving.
+    ///
+    enum BarrierStatus {
+        NOT_SET,
+        PRODUCED,
+        SAMPLED,
+        READY
+    };
+
+    /// Check a global barrier status
+    ///
+    BarrierStatus CheckBarrier(const std::string& dgs_host, const std::string& barrier_name);
+```
+
+Users can also check barrier status on their gsl-clients:
 ```java
-    // FIXME(@Seventeen17): change the example code here
-    Boolean ready = Client.CheckBarrier("bulk_load");
+    TODO(@Seventeen17): add the java example code here
 ```

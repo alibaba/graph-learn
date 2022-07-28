@@ -34,7 +34,7 @@ void Initialize(const std::string& dgs_host) {
   std::string res;
   curl = curl_easy_init();
   if (curl) {
-    auto url = dgs_host + "/admin/dataloader-init-info";
+    auto url = dgs_host + "/admin/init-info/dataloader";
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &res);
@@ -77,7 +77,7 @@ void Initialize(const std::string& dgs_host) {
       std::cout << "-- downstream kafka partitions: " << opts.output_kafka_partitions << std::endl;
       std::cout << "-- downstream data partitions: " << opts.data_partitions << std::endl;
     } else {
-      std::cerr << "Cannot get data loading init info." << std::endl;
+      std::cerr << "Cannot get data loading init info: " << res << std::endl;
     }
     curl_easy_cleanup(curl);
   } else {
@@ -89,7 +89,60 @@ void SetBarrier(const std::string& dgs_host,
                 const std::string& barrier_name,
                 uint32_t dl_count,
                 uint32_t dl_id) {
-  // TODO
+  CURL *curl;
+  std::string res;
+  curl = curl_easy_init();
+  if (curl) {
+    auto url = dgs_host + "/admin/barrier/set";
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    std::stringstream params;
+    params << "name=" << barrier_name << "&count=" << dl_count << "&id=" << dl_id;
+    auto params_str = params.str();
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, params_str.c_str());
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, params_str.size());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &res);
+    auto s = curl_easy_perform(curl);
+    if (s == CURLE_OK) {
+      std::cout << "Set barrier " << barrier_name << " on dataloader " << dl_id
+                << ": " << res << std::endl;
+    } else {
+      std::cerr << "Cannot set barrier " << barrier_name << " on dataloader " << dl_id
+                << ": " << res << std::endl;
+    }
+  } else {
+    std::cerr << "Cannot init curl environment." << std::endl;
+  }
+}
+
+BarrierStatus CheckBarrier(const std::string& dgs_host, const std::string& barrier_name) {
+  CURL *curl;
+  std::string res;
+  curl = curl_easy_init();
+  if (curl) {
+    std::stringstream url_ss;
+    url_ss << dgs_host << "/admin/barrier/status" << "?" << "name=" << barrier_name;
+    curl_easy_setopt(curl, CURLOPT_URL, url_ss.str().c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &res);
+    auto s = curl_easy_perform(curl);
+    if (s == CURLE_OK) {
+      if (res == "PRODUCED") {
+        return BarrierStatus::PRODUCED;
+      } else if (res == "SAMPLED") {
+        return BarrierStatus::SAMPLED;
+      } else if (res == "READY") {
+        return BarrierStatus::READY;
+      } else {
+        return BarrierStatus::NOT_SET;
+      }
+    } else {
+      std::cerr << "Cannot get status of barrier " << barrier_name << ": " << res << std::endl;
+    }
+  } else {
+    std::cerr << "Cannot init curl environment." << std::endl;
+  }
+  return BarrierStatus::NOT_SET;
 }
 
 }  // namespace dataloader

@@ -21,12 +21,10 @@ attr_delimiter = ";"
 
 output_dir = "./"
 pattern_file = "dblp.pattern"
-content_bulk = "dblp.content.bulk"
-content_streaming = "dblp.content.streaming"
+data_file = "dblp.data"
 
-year_min = 1949
-year_max = 2019
-divide_year = 2009
+year_min = 2016
+year_max = 2022
 
 
 def write_pattern_file():
@@ -72,27 +70,12 @@ def process_dataset(dataset):
   p2i = {p: (i + len(author_set) + len(venue_set)) for i, p in enumerate(paper_set)}
   sort_buf = sorted(sort_buf, key=lambda x: x[2])
 
-  idx = 0
-  with open(os.path.join(output_dir, content_bulk), 'w') as fw:
+  with open(os.path.join(output_dir, data_file), 'w') as fw:
     for a in author_set:
       fw.write("author{d}{author_id}{d}0\n".format(d=delimiter, author_id=a2i[a]))
     for v in venue_set:
       fw.write("venue{d}{venue_id}{d}0\n".format(d=delimiter, venue_id=v2i[v]))
     for line in sort_buf:
-      author, title, year, volume, venue, number = line
-      if year < divide_year:
-        fw.write("paper{d}{paper_id}{d}{year}{d}{title}{ad}{volume}{ad}{number}\n"
-                 .format(d=delimiter, ad=attr_delimiter, paper_id=p2i[title], year=year,
-                         title=title, volume=volume, number=number))
-        fw.write("published{d}{paper_id}{d}{venue_id}{d}{year}\n"
-                 .format(d=delimiter, paper_id=p2i[title], venue_id=v2i[venue], year=year))
-        fw.write("written{d}{paper_id}{d}{author_id}{d}{year}\n"
-                 .format(d=delimiter, paper_id=p2i[title], author_id=a2i[author], year=year))
-        idx += 1
-      else:
-        break
-  with open(os.path.join(output_dir, content_streaming), 'w') as fw:
-    for line in sort_buf[idx:]:
       author, title, year, volume, venue, number = line
       fw.write("paper{d}{paper_id}{d}{year}{d}{title}{ad}{volume}{ad}{number}\n"
                .format(d=delimiter, ad=attr_delimiter, paper_id=p2i[title], year=year,
@@ -104,19 +87,17 @@ def process_dataset(dataset):
 
   print("Generated processed files of dataset: {}.".format(dataset))
   print("-> pattern file: \"{}\"".format(os.path.join(output_dir, pattern_file)))
-  print("-> data for bulk load: \"{}\"".format(os.path.join(output_dir, content_bulk)))
-  print("-> data for streaming load: \"{}\"".format(os.path.join(output_dir, content_streaming)))
+  print("-> data file: \"{}\"".format(os.path.join(output_dir, data_file)))
 
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='DBLP Dataset Preprocessing Tool')
   parser.add_argument('--dataset', action="store", dest="dataset",
                       help="The csv file path of dblp dataset.")
-  parser.add_argument('--divide-year', action="store", dest="divide_year",
-                      help="The basis for dividing the dataset: all records before "
-                           "this year will be loaded in the bulk load stage, then "
-                           "service will be ready to serve inference queries, the "
-                           "other records after this year will be streaming loaded after it.")
+  parser.add_argument('--start-year', action="store", dest="start_year",
+                      help="only records after the start year will be processed.")
+  parser.add_argument('--end-year', action="store", dest="end_year",
+                      help="only records before the end year will be processed.")
   parser.add_argument('--output-dir', action="store", dest="output_dir",
                       help="The output directory of processed files.")
   args = parser.parse_args()
@@ -126,8 +107,10 @@ if __name__ == '__main__':
   if not os.path.exists(args.dataset):
     raise RuntimeError("Missing dataset file: {}!".format(args.dataset))
 
-  if args.divide_year is not None:
-    divide_year = int(args.divide_year)
+  if args.start_year is not None:
+    year_min = int(args.start_year)
+  if args.end_year is not None:
+    year_max = int(args.end_year)
 
   if args.output_dir is not None:
     output_dir = args.output_dir
