@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef DATALOADER_BYTES_BUF_H_
-#define DATALOADER_BYTES_BUF_H_
+#ifndef DATALOADER_ATTRIBUTE_H_
+#define DATALOADER_ATTRIBUTE_H_
 
 #include <memory>
 #include <string>
@@ -144,4 +144,4 @@ struct AttrInfo {
 }  // namespace dataloader
 }  // namespace dgs
 
-#endif // DATALOADER_BYTES_BUF_H_
+#endif // DATALOADER_ATTRIBUTE_H_
