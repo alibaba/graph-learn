@@ -24,24 +24,24 @@ AttributeDef::AttributeDef(const boost::property_tree::ptree& node)
   : type_(node.get_child("type").get_value<AttributeType>()),
     name_(node.get_child("name").get_value<std::string>()) {
   auto value_type_name = node.get_child("value_type").get_value<std::string>();
-  if (value_type_name == "BOOL") {
-    value_type_ = AttributeValueType::BOOL;
-  } else if (value_type_name == "CHAR") {
-    value_type_ = AttributeValueType::CHAR;
-  } else if (value_type_name == "INT16") {
-    value_type_ = AttributeValueType::INT16;
-  } else if (value_type_name == "INT32") {
+  if (value_type_name == "INT32") {
     value_type_ = AttributeValueType::INT32;
+  } else if (value_type_name == "INT32_LIST") {
+    value_type_ = AttributeValueType::INT32_LIST;
   } else if (value_type_name == "INT64") {
     value_type_ = AttributeValueType::INT64;
+  } else if (value_type_name == "INT64_LIST") {
+    value_type_ = AttributeValueType::INT64_LIST;
   } else if (value_type_name == "FLOAT32") {
     value_type_ = AttributeValueType::FLOAT32;
+  } else if (value_type_name == "FLOAT32_LIST") {
+    value_type_ = AttributeValueType::FLOAT32_LIST;
   } else if (value_type_name == "FLOAT64") {
     value_type_ = AttributeValueType::FLOAT64;
+  } else if (value_type_name == "FLOAT64_LIST") {
+    value_type_ = AttributeValueType::FLOAT64_LIST;
   } else if (value_type_name == "STRING") {
     value_type_ = AttributeValueType::STRING;
-  } else if (value_type_name == "BYTES") {
-    value_type_ = AttributeValueType::BYTES;
   } else {
     std::cerr << "Unsupported attribute definition, "
               << "name: " << name_ << ", data type: " << value_type_name

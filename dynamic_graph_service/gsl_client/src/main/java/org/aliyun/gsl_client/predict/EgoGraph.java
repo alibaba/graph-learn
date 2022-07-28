@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.aliyun.graphlearn.VertexRecordRep;
+import org.aliyun.dgs.VertexRecordRep;
 
 
 public class EgoGraph {
