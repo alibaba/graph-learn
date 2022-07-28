@@ -36,7 +36,7 @@ protected:
 };
 
 TEST_F(ServingServiceTest, RunAll) {
-  Service service("../../conf/serving.ut.yml", 0);
+  Service service("../../conf/ut/serving.ut.yml", 0);
   FLAGS_alsologtostderr = true;
   service.Run();
 }

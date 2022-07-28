@@ -32,7 +32,7 @@ protected:
 };
 
 TEST_F(SamplingServiceTest, RunAll) {
-  Service service("../../conf/sampling.ut.yml", 0);
+  Service service("../../conf/ut/sampling.ut.yml", 0);
   FLAGS_alsologtostderr = true;
   service.Run();
 }

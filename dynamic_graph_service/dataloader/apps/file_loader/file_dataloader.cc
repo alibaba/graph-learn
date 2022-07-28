@@ -30,6 +30,8 @@ int main(int argc, char** argv) {
     ("pattern-file", bpo::value<std::string>(), "pattern definition file of records")
     ("data-file", bpo::value<std::string>(), "data file of records")
     ("delimiter", bpo::value<char>()->default_value('&'), "delimiter of file contents")
+    ("list-attr-delimiter", bpo::value<char>()->default_value(','), "delimiter of list-type attribute values")
+    ("reversed-edge", bpo::value<bool>()->default_value(false), "add extra reversed edge for undirected graph updates")
     ("batch-size", bpo::value<uint32_t>()->default_value(16), "output batch size")
     ("wait-barrier", bpo::value<std::string>(), "set a barrier and wait it after loading");
   bpo::variables_map vm;
@@ -65,6 +67,8 @@ int main(int argc, char** argv) {
   std::string data_file = vm["data-file"].as<std::string>();
 
   delimiter = vm["delimiter"].as<char>();
+  list_attr_delimiter = vm["list-attr-delimiter"].as<char>();
+  reversed_edge = vm["reversed-edge"].as<bool>();
   batch_size = vm["batch-size"].as<uint32_t>();
 
   dgs::dataloader::Initialize(dgs_host);

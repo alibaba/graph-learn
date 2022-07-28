@@ -19,11 +19,12 @@ limitations under the License.
 #include "cppkafka/consumer.h"
 
 #include "dataloader/schema.h"
+#include "dataloader/utils.h"
 #include "dataloader/fbs/record_generated.h"
 
 namespace bpo = boost::program_options;
 
-std::string schema_json_file = "../../../conf/schema.e2e.json";
+std::string schema_json_file = "../../../conf/schema.template.json";
 
 std::string GetVertexTypeName(dgs::dataloader::VertexType vtype) {
   auto& schema = dgs::dataloader::Schema::Get();
@@ -40,20 +41,43 @@ std::string GetAttrTypeName(dgs::dataloader::AttributeType type) {
   return schema.GetAttrDefByType(type).Name();
 }
 
+template <typename T, typename = typename std::enable_if_t<std::is_arithmetic<T>::value, bool>>
+std::string GetValueAsStr(const flatbuffers::Vector<int8_t>* value_bytes) {
+  assert(value_bytes->size() == sizeof(T));
+  auto value = *reinterpret_cast<const T*>(value_bytes->data());
+  return std::to_string(value);
+}
+
+template <typename T, typename = typename std::enable_if_t<std::is_arithmetic<T>::value, bool>>
+std::string GetValueListAsStr(const flatbuffers::Vector<int8_t>* value_bytes) {
+  assert(value_bytes->size() % sizeof(T) == 0);
+  auto value = reinterpret_cast<const T*>(value_bytes->data());
+  auto size = value_bytes->size() / sizeof(T);
+  std::vector<std::string> strs;
+  for (size_t i = 0; i < size; i++) {
+    strs.push_back(std::to_string(value[i]));
+  }
+  return dgs::dataloader::StrJoin(strs, ",");
+}
+
 std::string GetProperty(const dgs::AttributeRecordRep* rep) {
   auto value_type = rep->value_type();
   if (value_type == dgs::AttributeValueTypeRep_INT32) {
-    auto value = *reinterpret_cast<const int32_t*>(rep->value_bytes()->data());
-    return std::to_string(value);
+    return GetValueAsStr<int32_t>(rep->value_bytes());
+  } else if (value_type == dgs::AttributeValueTypeRep_INT32_LIST) {
+    return GetValueListAsStr<int32_t>(rep->value_bytes());
   } else if (value_type == dgs::AttributeValueTypeRep_INT64) {
-    auto value = *reinterpret_cast<const int64_t*>(rep->value_bytes()->data());
-    return std::to_string(value);
+    return GetValueAsStr<int64_t>(rep->value_bytes());
+  } else if (value_type == dgs::AttributeValueTypeRep_INT64_LIST) {
+    return GetValueListAsStr<int64_t>(rep->value_bytes());
   } else if (value_type == dgs::AttributeValueTypeRep_FLOAT32) {
-    auto value = *reinterpret_cast<const float*>(rep->value_bytes()->data());
-    return std::to_string(value);
+    return GetValueAsStr<float>(rep->value_bytes());
+  } else if (value_type == dgs::AttributeValueTypeRep_FLOAT32_LIST) {
+    return GetValueListAsStr<float>(rep->value_bytes());
   } else if (value_type == dgs::AttributeValueTypeRep_FLOAT64) {
-    auto value = *reinterpret_cast<const double*>(rep->value_bytes()->data());
-    return std::to_string(value);
+    return GetValueAsStr<double>(rep->value_bytes());
+  } else if (value_type == dgs::AttributeValueTypeRep_FLOAT64_LIST) {
+    return GetValueListAsStr<double>(rep->value_bytes());
   } else if (value_type == dgs::AttributeValueTypeRep_STRING) {
     return {reinterpret_cast<const char*>(rep->value_bytes()->data()), rep->value_bytes()->size()};
   }

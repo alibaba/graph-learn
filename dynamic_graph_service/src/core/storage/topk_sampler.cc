@@ -21,7 +21,7 @@ namespace dgs {
 namespace storage {
 
 bool TopKSampler::Sample(const io::EdgeRecordView& sample, uint32_t& index) {
-  Timestamp timestamp = sample.LookUpAttrByType(timestamp_type_).AsInt64();
+  Timestamp timestamp = sample.LookUpAttrByType(timestamp_type_).AsValue<int64_t>();
   if (samples_.size() < capacity_) {
     index = samples_.size();
     samples_.emplace_back(Entry{timestamp, index});

@@ -74,7 +74,7 @@ void TestOptionsLoad() {
 }
 
 void TestOptionsLoadFile() {
-  std::string options_file = "../../conf/serving.ut.yml";
+  std::string options_file = "../../conf/ut/serving.ut.yml";
   auto& opts = Options::GetInstance();
   EXPECT_TRUE(opts.LoadFile(options_file));
   EXPECT_EQ(opts.GetWorkerType(), WorkerType::Serving);

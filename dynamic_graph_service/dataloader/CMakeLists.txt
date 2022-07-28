@@ -66,6 +66,7 @@ add_custom_target (fbs_codegen DEPENDS ${FBS_GEN_HEADER_FILES})
 
 ## Build library
 set (DataLoader_PROJECT_FILES
+  include/dataloader/attribute.h
   include/dataloader/batch_builder.h
   include/dataloader/batch_producer.h
   include/dataloader/dataloader.h

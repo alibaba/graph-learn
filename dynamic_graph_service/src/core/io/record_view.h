@@ -62,18 +62,39 @@ public:
     return rep_;
   }
 
-  bool AsBool() const;
-  int8_t AsChar() const;
-  int16_t AsInt16() const;
-  int32_t AsInt32() const;
-  int64_t AsInt64() const;
-  float AsFloat32() const;
-  double AsFloat64() const;
+  template <typename T>
+  T AsValue() const;
+
+  template <typename T>
+  std::vector<T> AsValueList() const;
+
   std::string AsString() const;  // with copy
 
 protected:
   const AttributeRecordRep* rep_;
 };
+
+template <typename T>
+T AttributeView::AsValue() const {
+  static_assert(std::is_same_v<T, int32_t> || std::is_same_v<T, int64_t> ||
+                std::is_same_v<T, float> || std::is_same_v<T, double>,
+                "Unsupported value type");
+  assert(Valid());
+  assert(rep_->value_bytes()->size() == sizeof(T));
+  return *reinterpret_cast<const T*>(rep_->value_bytes()->data());
+}
+
+template <typename T>
+std::vector<T> AttributeView::AsValueList() const {
+  static_assert(std::is_same_v<T, int32_t> || std::is_same_v<T, int64_t> ||
+                std::is_same_v<T, float> || std::is_same_v<T, double>,
+                "Unsupported value type");
+  assert(Valid());
+  assert(rep_->value_bytes()->size() % sizeof(T) == 0);
+  auto* value = reinterpret_cast<const T*>(rep_->value_bytes()->data());
+  auto num = rep_->value_bytes()->size() / sizeof(T);
+  return {value, value + num};
+}
 
 /// Use this structure to view an io vertex update record.
 ///
