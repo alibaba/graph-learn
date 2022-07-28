@@ -58,6 +58,6 @@ public class PredictClientTest extends TestCase {
     Value content = generatedValue(decoder);
     EgoGraph egoGraph = content.getEgoGraph(vtypes, vops, hops, eops);
     ArrayList<Integer> phs = new ArrayList<Integer>(Arrays.asList(0, 2, 3));
-    client.predict("ego_sage_model", 1, egoGraph, phs);
+    client.predict("ego_sage_model", 1, egoGraph);
   }
 }

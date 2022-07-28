@@ -3,16 +3,15 @@ package org.aliyun.gsl_client.parser.schema;
 import org.apache.commons.lang3.StringUtils;
 
 public enum DataType {
-    UNSPECIFIED(0),
-    BOOL(1),
-    CHAR(2),
-    INT16(3),
-    INT32(4),
-    INT64(5),
-    FLOAT32(6),
-    FLOAT64(7),
-    STRING(8),
-    BYTES(9);
+    INT32(0),
+    INT32_LIST(1),
+    INT64(2),
+    INT64_LIST(3),
+    FLOAT32(4),
+    FLOAT32_LIST(5),
+    FLOAT64(6),
+    FLOAT64_LIST(7),
+    STRING(8);
 
     private final byte type;
     private static final DataType[] TYPES = DataType.values();
