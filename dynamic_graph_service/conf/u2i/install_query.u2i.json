@@ -10,15 +10,27 @@
         "links": [
           { "node": 1, "src_output": 0, "dst_input": 0},
           { "node": 2, "src_output": 0, "dst_input": 0}
-        ]
+        ],
+        "params": [
+          {"key": "vtype", "value": 0},
+          {"key": "versions", "value": 1}
+        ],
+        "filter": {
+          "weighted": false,
+          "labeled": false,
+          "attributed": false
+        }
       },
       {
         "id": 1,
         "kind": "EDGE_SAMPLER",
         "type": "EDGE",
-        "links": [{ "node": 3, "src_output": 1, "dst_input": 0}],
+        "links": [
+          { "node": 3, "src_output": 1, "dst_input": 0},
+          { "node": 4, "src_output": 1, "dst_input": 0}
+        ],
         "params": [
-          {"key": "vtype", "value": 1},
+          {"key": "vtype", "value": 0},
           {"key": "etype", "value": 2},
           {"key": "fanout", "value": 5},
           {"key": "strategy", "value": 0}
@@ -34,8 +46,10 @@
         "kind": "VERTEX_SAMPLER",
         "type": "VERTEX",
         "links": [],
-        "params": [{"key": "vtype", "value": 1},
-          {"key": "versions", "value": 5}],
+        "params": [
+          {"key": "vtype", "value": 0},
+          {"key": "versions", "value": 1}
+        ],
         "filter": {
           "weighted": false,
           "labeled": false,
@@ -46,10 +60,12 @@
         "id": 3,
         "kind": "EDGE_SAMPLER",
         "type": "EDGE",
-        "links": [],
+        "links": [
+          { "node": 4, "src_output": 1, "dst_input": 0}
+        ],
         "params": [
           {"key": "vtype", "value": 1},
-          {"key": "etype", "value": 2},
+          {"key": "etype", "value": 3},
           {"key": "fanout", "value": 5},
           {"key": "strategy", "value": 0}
         ],
@@ -57,6 +73,21 @@
           "weighted": true,
           "labeled": false,
           "attributed": false
+        }
+      },
+      {
+        "id": 4,
+        "kind": "VERTEX_SAMPLER",
+        "type": "VERTEX",
+        "links": [],
+        "params": [
+          {"key": "vtype", "value": 1},
+          {"key": "versions", "value": 1}
+        ],
+        "filter": {
+          "weighted": false,
+          "labeled": false,
+          "attributed": true
         }
       }
     ]

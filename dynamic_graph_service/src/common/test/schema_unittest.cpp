@@ -39,7 +39,7 @@ TEST(Schema, Construct) {
   auto& attr_def_map = schema.AttrDefMap();
   EXPECT_EQ(attr_def_map.at(2).Name(), "label");
   EXPECT_EQ(attr_def_map.at(3).ValueType(), AttributeValueType::STRING);
-  EXPECT_EQ(attr_def_map.at(4).ValueType(), AttributeValueType::FLOAT64);
+  EXPECT_EQ(attr_def_map.at(4).ValueType(), AttributeValueType::FLOAT32_LIST);
 
   EXPECT_EQ(schema.VertexDefNum(), 2);
   auto& user_def = schema.GetVertexDefByType(0);

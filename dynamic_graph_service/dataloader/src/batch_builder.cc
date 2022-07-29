@@ -43,8 +43,7 @@ BatchBuilder::AddAttributes(const std::vector<AttrInfo>& attrs) {
   flat_attrs_vec.reserve(attrs.size());
   for (auto& a: attrs) {
     auto flat_value_type = static_cast<AttributeValueTypeRep>(a.value_type);
-    auto flat_value_bytes = builder_.CreateVector(
-        reinterpret_cast<const int8_t*>(a.value_bytes.data()), a.value_bytes.size());
+    auto flat_value_bytes = builder_.CreateVector(a.value_bytes.Data(), a.value_bytes.Size());
     auto flat_attr = CreateAttributeRecordRep(
         builder_, a.attr_type, flat_value_type, flat_value_bytes);
     flat_attrs_vec.push_back(flat_attr);

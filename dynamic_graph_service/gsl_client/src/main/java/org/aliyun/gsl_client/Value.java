@@ -1,16 +1,16 @@
 package org.aliyun.gsl_client;
 
-import org.aliyun.graphlearn.EdgeRecordRep;
-import org.aliyun.graphlearn.VertexRecordRep;
+import org.aliyun.dgs.EdgeRecordRep;
+import org.aliyun.dgs.VertexRecordRep;
 import org.aliyun.gsl_client.exception.UserException;
 import org.aliyun.gsl_client.parser.PlanNode;
 import org.aliyun.gsl_client.predict.EgoGraph;
 import org.aliyun.gsl_client.status.ErrorCode;
-import org.aliyun.graphlearn.EntryRep;
-import org.aliyun.graphlearn.QueryResponseRep;
-import org.aliyun.graphlearn.RecordBatchRep;
-import org.aliyun.graphlearn.RecordRep;
-import org.aliyun.graphlearn.RecordUnionRep;
+import org.aliyun.dgs.EntryRep;
+import org.aliyun.dgs.QueryResponseRep;
+import org.aliyun.dgs.RecordBatchRep;
+import org.aliyun.dgs.RecordRep;
+import org.aliyun.dgs.RecordUnionRep;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;

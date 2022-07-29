@@ -72,18 +72,20 @@ int main() {
     // add "user" vertex with vid = 111.
     p.AddVertex(user_type, 111, {
         {schema.GetAttrDefByName("name").Type(), STRING, "Li Hua"},
-        {schema.GetAttrDefByName("country").Type(), STRING, "China"}
+        {schema.GetAttrDefByName("timestamp").Type(), INT64, 1000}
     });
     
     // add "item" vertex with vid = 222.
     p.AddVertex(item_type, 222, {
         {schema.GetAttrDefByName("name").Type(), STRING, "Coca-Cola"},
-        {schema.GetAttrDefByName("price").Type(), FLOAT32, ToBytes<float>(2.5)}
+        {schema.GetAttrDefByName("feature").Type(), FLOAT32_LIST, std::vector<float>{1.0, 1.4, 2.2}},
+        {schema.GetAttrDefByName("timestamp").Type(), INT64, 1001}
     });
     
     // add "buy" edge
     p.AddEdge(buy_type, user_type, item_type, 111, 222, {
-        {schema.GetAttrDefByName("timestamp").Type(), INT64, ToBytes<int64_t>(20220701)}
+        {schema.GetAttrDefByName("wight").Type(), FLOAT64, 4.0},
+        {schema.GetAttrDefByName("timestamp").Type(), INT64, 1002}
     });
     
     // flush and produce

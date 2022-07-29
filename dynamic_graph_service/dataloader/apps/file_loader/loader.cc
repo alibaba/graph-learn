@@ -24,6 +24,8 @@ namespace dataloader {
 namespace file {
 
 char delimiter = '&';
+char list_attr_delimiter = ',';
+bool reversed_edge = false;
 uint32_t batch_size = 16;
 
 FileLoader::FileLoader(const std::string& pattern_file)
@@ -70,63 +72,95 @@ std::vector<FileLoader::AttrParseFunc> FileLoader::GetAttrParsers(std::string* a
     auto attr_type = attr_def.Type();
     auto attr_value_type = attr_def.ValueType();
     switch (attr_value_type) {
-      case BOOL: {
-        std::cerr << "attribute bool type not implemented" << std::endl;
-        break;
-      }
-      case CHAR: {
-        std::cerr << "attribute char type not implemented" << std::endl;
-        break;
-      }
-      case INT16: {
-        std::cerr << "attribute int16 type not implemented" << std::endl;
-        break;
-      }
-      case INT32: {
+      case AttributeValueType::INT32: {
         AttrParseFunc func = [attr_type, attr_value_type] (std::string&& attr_str) {
-          int32_t attr = std::stoi(attr_str);
-          std::string attr_bytes(reinterpret_cast<const char*>(&attr), sizeof(attr));
-          return AttrInfo{attr_type, attr_value_type, std::move(attr_bytes)};
+          int32_t value = std::stoi(attr_str);
+          return AttrInfo{attr_type, attr_value_type, value};
         };
         attr_parsers.emplace_back(std::move(func));
         break;
       }
-      case INT64: {
+      case AttributeValueType::INT32_LIST: {
         AttrParseFunc func = [attr_type, attr_value_type] (std::string&& attr_str) {
-          int64_t attr = std::stoll(attr_str);
-          std::string attr_bytes(reinterpret_cast<const char*>(&attr), sizeof(attr));
-          return AttrInfo{attr_type, attr_value_type, std::move(attr_bytes)};
+          std::vector<std::string> value_strs = StrSplit(attr_str, list_attr_delimiter);
+          std::vector<int32_t> values;
+          values.reserve(value_strs.size());
+          for (auto& str : value_strs) {
+            values.push_back(std::stoi(str));
+          }
+          return AttrInfo{attr_type, attr_value_type, std::move(values)};
         };
         attr_parsers.emplace_back(std::move(func));
         break;
       }
-      case FLOAT32: {
+      case AttributeValueType::INT64: {
         AttrParseFunc func = [attr_type, attr_value_type] (std::string&& attr_str) {
-          float attr = std::stof(attr_str);
-          std::string attr_bytes(reinterpret_cast<const char*>(&attr), sizeof(attr));
-          return AttrInfo{attr_type, attr_value_type, std::move(attr_bytes)};
+          int64_t value = std::stoll(attr_str);
+          return AttrInfo{attr_type, attr_value_type, value};
         };
         attr_parsers.emplace_back(std::move(func));
         break;
       }
-      case FLOAT64: {
+      case AttributeValueType::INT64_LIST: {
         AttrParseFunc func = [attr_type, attr_value_type] (std::string&& attr_str) {
-          double attr = std::stod(attr_str);
-          std::string attr_bytes(reinterpret_cast<const char*>(&attr), sizeof(attr));
-          return AttrInfo{attr_type, attr_value_type, std::move(attr_bytes)};
+          std::vector<std::string> value_strs = StrSplit(attr_str, list_attr_delimiter);
+          std::vector<int64_t> values;
+          values.reserve(value_strs.size());
+          for (auto& str : value_strs) {
+            values.push_back(std::stoll(str));
+          }
+          return AttrInfo{attr_type, attr_value_type, std::move(values)};
         };
         attr_parsers.emplace_back(std::move(func));
         break;
       }
-      case STRING: {
+      case AttributeValueType::FLOAT32: {
+        AttrParseFunc func = [attr_type, attr_value_type] (std::string&& attr_str) {
+          float value = std::stof(attr_str);
+          return AttrInfo{attr_type, attr_value_type, value};
+        };
+        attr_parsers.emplace_back(std::move(func));
+        break;
+      }
+      case AttributeValueType::FLOAT32_LIST: {
+        AttrParseFunc func = [attr_type, attr_value_type] (std::string&& attr_str) {
+          std::vector<std::string> value_strs = StrSplit(attr_str, list_attr_delimiter);
+          std::vector<float> values;
+          values.reserve(value_strs.size());
+          for (auto& str : value_strs) {
+            values.push_back(std::stof(str));
+          }
+          return AttrInfo{attr_type, attr_value_type, std::move(values)};
+        };
+        attr_parsers.emplace_back(std::move(func));
+        break;
+      }
+      case AttributeValueType::FLOAT64: {
+        AttrParseFunc func = [attr_type, attr_value_type] (std::string&& attr_str) {
+          double value = std::stod(attr_str);
+          return AttrInfo{attr_type, attr_value_type, value};
+        };
+        attr_parsers.emplace_back(std::move(func));
+        break;
+      }
+      case AttributeValueType::FLOAT64_LIST: {
+        AttrParseFunc func = [attr_type, attr_value_type] (std::string&& attr_str) {
+          std::vector<std::string> value_strs = StrSplit(attr_str, list_attr_delimiter);
+          std::vector<double> values;
+          values.reserve(value_strs.size());
+          for (auto& str : value_strs) {
+            values.push_back(std::stod(str));
+          }
+          return AttrInfo{attr_type, attr_value_type, std::move(values)};
+        };
+        attr_parsers.emplace_back(std::move(func));
+        break;
+      }
+      case AttributeValueType::STRING: {
         AttrParseFunc func = [attr_type, attr_value_type] (std::string&& attr_str) {
           return AttrInfo{attr_type, attr_value_type, std::move(attr_str)};
         };
         attr_parsers.emplace_back(std::move(func));
-        break;
-      }
-      case BYTES: {
-        std::cerr << "attribute bytes type not implemented" << std::endl;
         break;
       }
       default:
@@ -200,6 +234,9 @@ void FileLoader::AddEdgePattern(std::vector<std::string>&& line_patterns) {
       attr_infos.emplace_back(attr_parsers[i](std::move(attr_pattern[i])));
     }
     p.AddEdge(etype, src_vtype, dst_vtype, src_vid, dst_vid, attr_infos);
+    if (reversed_edge) {
+      p.AddEdge(etype, dst_vtype, src_vtype, dst_vid, src_vid, attr_infos);
+    }
   };
   processors_.emplace(ename, std::move(func));
 }

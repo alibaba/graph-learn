@@ -64,7 +64,7 @@ public:
                            dgs::GetInitInfoResponsePb* response) override {
     static const uint32_t num_local_shards = 2;
 
-    std::ifstream f("../../conf/install_query.ut.json");
+    std::ifstream f("../../conf/ut/install_query.ut.json");
     std::string query_plan;
 
     f.seekg(0, std::ios::end);

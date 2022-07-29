@@ -3,7 +3,7 @@ package org.aliyun.gsl_client.predict;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
-import org.aliyun.graphlearn.AttributeValueTypeRep;
+import org.aliyun.dgs.AttributeValueTypeRep;
 import org.aliyun.gsl_client.Decoder;
 import org.tensorflow.framework.DataType;
 import org.tensorflow.framework.TensorProto;
@@ -31,12 +31,10 @@ public class EgoTensor {
         DataType dType = DataType.UNRECOGNIZED;
         short size = 0;
         switch (featTypes.get(featIdx)) {
+          // FIXME(@Seventeen17): refactor here
           case AttributeValueTypeRep.FLOAT32: dType = DataType.DT_FLOAT;
                                               size = 4;
                                               break;
-          case AttributeValueTypeRep.INT16: dType = DataType.DT_INT16;
-                                            size = 2;
-                                            break;
           case AttributeValueTypeRep.INT32: dType = DataType.DT_INT32;
                                             size = 4;
                                             break;

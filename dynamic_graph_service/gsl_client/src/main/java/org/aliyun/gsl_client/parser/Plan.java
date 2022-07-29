@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.aliyun.graphlearn.PlanNode.ChildLink;
+import org.aliyun.dgs.PlanNode.ChildLink;
 import org.aliyun.gsl_client.exception.UserException;
 import org.aliyun.gsl_client.parser.optimizer.Rule;
 import org.aliyun.gsl_client.status.ErrorCode;

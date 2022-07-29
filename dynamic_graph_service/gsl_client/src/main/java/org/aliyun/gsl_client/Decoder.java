@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.aliyun.graphlearn.AttributeValueTypeRep;
+import org.aliyun.dgs.AttributeValueTypeRep;
 import org.aliyun.gsl_client.exception.UserException;
 import org.aliyun.gsl_client.parser.schema.Schema;
 import org.aliyun.gsl_client.status.ErrorCode;

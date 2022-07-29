@@ -16,27 +16,12 @@ limitations under the License.
 #ifndef DATALOADER_BATCH_BUILDER_H_
 #define DATALOADER_BATCH_BUILDER_H_
 
+#include "dataloader/attribute.h"
 #include "dataloader/typedefs.h"
 #include "dataloader/fbs/record_generated.h"
 
 namespace dgs {
 namespace dataloader {
-
-struct AttrInfo {
-  AttributeType attr_type = 0;
-  AttributeValueType value_type = INT32;
-  std::string value_bytes;
-
-  AttrInfo() = default;
-  AttrInfo(AttributeType attr_type, AttributeValueType value_type, std::string&& value_bytes)
-    : attr_type(attr_type), value_type(value_type), value_bytes(std::move(value_bytes)) {}
-};
-
-template <typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, bool>::type>
-inline
-std::string ToBytes(T val) {
-  return std::string{reinterpret_cast<char*>(&val), sizeof(T)};
-}
 
 /// The graph update record batch builder based on flatbuffers.
 /// Use this to serialize the incoming graph update records into output flatbuffers format.

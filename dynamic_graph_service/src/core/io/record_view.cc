@@ -18,55 +18,6 @@ limitations under the License.
 namespace dgs {
 namespace io {
 
-bool AttributeView::AsBool() const {
-  assert(Valid());
-  assert(ValueType() == AttributeValueType::BOOL);
-  assert(rep_->value_bytes()->size() == sizeof(bool));
-  return *reinterpret_cast<const bool*>(rep_->value_bytes()->data());
-}
-
-int8_t AttributeView::AsChar() const {
-  assert(Valid());
-  assert(ValueType() == AttributeValueType::CHAR);
-  assert(rep_->value_bytes()->size() == sizeof(int8_t));
-  return *reinterpret_cast<const int8_t*>(rep_->value_bytes()->data());
-}
-
-int16_t AttributeView::AsInt16() const {
-  assert(Valid());
-  assert(ValueType() == AttributeValueType::INT16);
-  assert(rep_->value_bytes()->size() == sizeof(int16_t));
-  return *reinterpret_cast<const int16_t*>(rep_->value_bytes()->data());
-}
-
-int32_t AttributeView::AsInt32() const {
-  assert(Valid());
-  assert(ValueType() == AttributeValueType::INT32);
-  assert(rep_->value_bytes()->size() == sizeof(int32_t));
-  return *reinterpret_cast<const int32_t*>(rep_->value_bytes()->data());
-}
-
-int64_t AttributeView::AsInt64() const {
-  assert(Valid());
-  assert(ValueType() == AttributeValueType::INT64);
-  assert(rep_->value_bytes()->size() == sizeof(int64_t));
-  return *reinterpret_cast<const int64_t*>(rep_->value_bytes()->data());
-}
-
-float AttributeView::AsFloat32() const {
-  assert(Valid());
-  assert(ValueType() == AttributeValueType::FLOAT32);
-  assert(rep_->value_bytes()->size() == sizeof(float));
-  return *reinterpret_cast<const float*>(rep_->value_bytes()->data());
-}
-
-double AttributeView::AsFloat64() const {
-  assert(Valid());
-  assert(ValueType() == AttributeValueType::FLOAT64);
-  assert(rep_->value_bytes()->size() == sizeof(double));
-  return *reinterpret_cast<const double*>(rep_->value_bytes()->data());
-}
-
 std::string AttributeView::AsString() const {
   assert(Valid());
   assert(ValueType() == AttributeValueType::STRING);

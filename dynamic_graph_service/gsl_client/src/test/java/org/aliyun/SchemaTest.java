@@ -29,7 +29,7 @@ public class SchemaTest extends TestCase {
     assertEquals(schema.getAttrDef("weight").getTypeId(), 1);
     assertEquals(schema.getAttrDef(2).getName(), "label");
     assertEquals(schema.getAttrDef("attr1").getTypeId(), 3);
-    assertEquals(schema.getAttrDef(4).getDataType(), DataType.FLOAT64);
+    assertEquals(schema.getAttrDef(4).getDataType(), DataType.FLOAT32_LIST);
 
     TypeDef userDef = schema.getTypeDef("user");
     assertEquals(userDef.getTypeKind(), TypeKind.VERTEX);
@@ -56,7 +56,7 @@ public class SchemaTest extends TestCase {
             .addAttribute("age", DataType.parseString("int32"))
             .addAttribute("country", DataType.STRING)
             .addAttribute("content", DataType.parseString("String"))
-            .addAttribute("pagerank", DataType.FLOAT64)
+            .addAttribute("pagerank", DataType.parseString("Float32_List"))
             .addAttribute("time", DataType.parseString("STRING"))
             .addVertex("person", Arrays.asList("name", "age", "country"))
             .addVertex("post", Arrays.asList("content", "pagerank"))
@@ -72,7 +72,7 @@ public class SchemaTest extends TestCase {
     Schema schema2 = builder2.removeAttribute("country")
             .removeAttribute("pagerank")
             .addAttribute("city", DataType.STRING)
-            .addAttribute("pagerank2", DataType.FLOAT64)
+            .addAttribute("pagerank2", DataType.FLOAT64_LIST)
             .removeVertexAttribute("person", "country")
             .addVertexAttribute("person", "city")
             .addVertexAttribute("post", "pagerank2")

@@ -55,7 +55,7 @@ InstallQueryRequest BasicTestHelper::MakeInstallQueryRequest() {
   std::string schemafile;
   std::string jsonfile;
   const char* default_schema = "../../fbs/install_query_req.fbs";
-  const char* default_json = "../../conf/install_query.ut.json";
+  const char* default_json = "../../conf/ut/install_query.ut.json";
   bool ok;
   ok = flatbuffers::LoadFile(default_schema, false, &schemafile);
   if (!ok) { LOG(FATAL) << "Load install_query_request schema file failed.\n"; }
@@ -94,13 +94,13 @@ void BasicTestHelper::PrintQueryResponse(const QueryResponse& res) {
         fmt::print("{}th record: vid={}, timestamp={}\n",
                    idx,
                    vertex.Id(),
-                   vertex.LookUpAttrByType(timestamp_type).AsInt64());
+                   vertex.LookUpAttrByType(timestamp_type).AsValue<int64_t>());
       } else {
         auto edge = rec_view.AsEdgeRecord();
         fmt::print("{}th record: src_vid={}, dst_vid={}, timestamp={}\n",
                    idx,
                    edge.SrcId(), edge.DstId(),
-                   edge.LookUpAttrByType(timestamp_type).AsInt64());
+                   edge.LookUpAttrByType(timestamp_type).AsValue<int64_t>());
       }
     }
   }

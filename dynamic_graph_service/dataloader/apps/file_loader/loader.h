@@ -25,6 +25,8 @@ namespace dataloader {
 namespace file {
 
 extern char delimiter;
+extern char list_attr_delimiter;
+extern bool reversed_edge;
 extern uint32_t batch_size;
 
 class FileLoader {

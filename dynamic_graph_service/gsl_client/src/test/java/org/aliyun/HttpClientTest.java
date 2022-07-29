@@ -50,7 +50,9 @@ public class HttpClientTest extends TestCase {
 
   public void testRun() {
     try {
-      CompletableFuture<byte[]> fut = client.run("0",2 );
+      String queryId = "0";
+      long input = 2;
+      CompletableFuture<byte[]> fut = client.run(queryId, input);
       byte[] content = fut.join();
       String s = new String(content, StandardCharsets.UTF_8);
       assertEquals(s, "HTTP RESPONSE: Run Query SUCCEED.\n");

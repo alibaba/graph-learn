@@ -26,7 +26,7 @@ bool VertexSampler::Sample(const io::VertexRecordView& sample,
     return true;
   }
 
-  Timestamp timestamp = sample.LookUpAttrByType(timestamp_type_).AsInt64();
+  Timestamp timestamp = sample.LookUpAttrByType(timestamp_type_).AsValue<int64_t>();
   if (samples_.size() < capacity_) {
     index = samples_.size();
     samples_.emplace_back(Entry{timestamp, index});

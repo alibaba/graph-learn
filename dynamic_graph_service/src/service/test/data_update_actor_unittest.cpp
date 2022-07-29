@@ -68,7 +68,7 @@ public:
             io::Record record;
             EXPECT_TRUE(store_->GetVertex(key, &record));
             EXPECT_TRUE(record.GetView().AsVertexRecord()
-              .GetAttrByIdx(0).AsInt64() == 1000);
+            .GetAttrByIdx(0).AsValue<int64_t>() == 1000);
             hiactor::actor_engine().exit();
           });
       });
