@@ -29,11 +29,11 @@ int main(int argc, char** argv) {
     ("dgs-service-host", bpo::value<std::string>(), "dgs service host")
     ("pattern-file", bpo::value<std::string>(), "pattern definition file of records")
     ("data-file", bpo::value<std::string>(), "data file of records")
-    ("delimiter", bpo::value<char>()->default_value('&'), "delimiter of file contents")
-    ("list-attr-delimiter", bpo::value<char>()->default_value(','), "delimiter of list-type attribute values")
+    ("delimiter", bpo::value<char>()->default_value(','), "delimiter of file contents")
+    ("list-attr-delimiter", bpo::value<char>()->default_value(':'), "delimiter of list-type attribute values")
     ("reversed-edges", bpo::value<std::string>()->default_value(""), "add extra reversed edges for undirected edge types, separated by semicolons")
     ("batch-size", bpo::value<uint32_t>()->default_value(16), "output batch size")
-    ("wait-barrier", bpo::value<std::string>(), "set a barrier and wait it after loading");
+    ("barrier", bpo::value<std::string>(), "set a barrier after loading");
   bpo::variables_map vm;
   try {
     bpo::store(bpo::parse_command_line(argc, argv, options), vm);
@@ -76,13 +76,9 @@ int main(int argc, char** argv) {
   FileLoader loader(pattern_file);
   loader.Load(data_file);
 
-  if (vm.count("wait-barrier")) {
-    auto barrier = vm["wait-barrier"].as<std::string>();
+  if (vm.count("barrier")) {
+    auto barrier = vm["barrier"].as<std::string>();
     dgs::dataloader::SetBarrier(dgs_host, barrier, 1, 0);
-    while (dgs::dataloader::CheckBarrier(dgs_host, barrier) != dgs::dataloader::READY) {
-      std::this_thread::sleep_for(std::chrono::seconds(3));
-    }
-    std::cout << "The barrier " << barrier << " is ready!" << std::endl;
   }
 
   return 0;

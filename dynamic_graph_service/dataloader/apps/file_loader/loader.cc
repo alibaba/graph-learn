@@ -23,8 +23,8 @@ namespace dgs {
 namespace dataloader {
 namespace file {
 
-char delimiter = '&';
-char list_attr_delimiter = ',';
+char delimiter = ',';
+char list_attr_delimiter = ':';
 std::vector<std::string> reversed_edges = {};
 uint32_t batch_size = 16;
 
