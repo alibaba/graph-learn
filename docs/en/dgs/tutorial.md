@@ -176,7 +176,7 @@ cd dynamic_graph_service/dataloader
     --pattern-file /tmp/u2i_gen/streaming/u2i.pattern \
     --data-file /tmp/u2i_gen/streaming/u2i.streaming \
     --reversed-edges i2i \
-    --batch-size 16 \
+    --batch-size 32 \
     --barrier u2i_finished
 ```
 > **Tip**: If you want to deploy your dataloader in the same k8s cluster with dgs, you should make sure that the

@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
 
   delimiter = vm["delimiter"].as<char>();
   list_attr_delimiter = vm["list-attr-delimiter"].as<char>();
-  reversed_edges = dgs::dataloader::StrSplit(vm["reversed-edge"].as<std::string>(), ';');
+  reversed_edges = dgs::dataloader::StrSplit(vm["reversed-edges"].as<std::string>(), ';');
   batch_size = vm["batch-size"].as<uint32_t>();
 
   dgs::dataloader::Initialize(dgs_host);
