@@ -25,7 +25,7 @@ cd dynamic_graph_service
 python3 python/data/u2i/u2i_generator.py --output-dir /tmp/u2i_gen
 ```
 
-This generator will first create a static graph for bulk-loading data, which will be used for offline training.
+This generator will first create a static graph for bulk-loading data, which is used for offline training.
 While generating the streaming data, the previously generated bulk-loading data will be used as the initial state
 of the graph whose timestamp set to 0. After that, we generate more graph updates with increasing timestamps.
 The generated data are stored in `/tmp/u2i_gen/training` and `/tmp/u2i_gen/streaming` respectively.
