@@ -23,9 +23,9 @@ namespace dgs {
 namespace dataloader {
 namespace file {
 
-char delimiter = '&';
-char list_attr_delimiter = ',';
-bool reversed_edge = false;
+char delimiter = ',';
+char list_attr_delimiter = ':';
+std::vector<std::string> reversed_edges = {};
 uint32_t batch_size = 16;
 
 FileLoader::FileLoader(const std::string& pattern_file)
@@ -197,6 +197,15 @@ void FileLoader::AddVertexPattern(std::vector<std::string>&& line_patterns) {
   processors_.emplace(vname, std::move(func));
 }
 
+bool NeedReversed(const std::string& etype) {
+  for (auto& r_etype : reversed_edges) {
+    if (r_etype == etype) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void FileLoader::AddEdgePattern(std::vector<std::string>&& line_patterns) {
   if (line_patterns.size() < 3) {
     std::cerr << "Incorrect filed number of edge pattern type: " << line_patterns[0] << ", ignore!" << std::endl;
@@ -218,7 +227,7 @@ void FileLoader::AddEdgePattern(std::vector<std::string>&& line_patterns) {
   auto dst_vname = std::move(StrSplit(line_patterns[2], ':')[1]);
   auto dst_vtype = schema.GetVertexDefByName(dst_vname).Type();
   auto attr_parsers = GetAttrParsers(line_patterns.data() + 3, line_patterns.size() - 3);
-  LineProcessFunc func = [etype, src_vtype, dst_vtype, attr_parsers = std::move(attr_parsers)]
+  LineProcessFunc func = [reversed = NeedReversed(ename), etype, src_vtype, dst_vtype, attr_parsers = std::move(attr_parsers)]
       (std::string* line_pattern, size_t n, GroupProducer& p) {
     if (n != (3 + attr_parsers.size())) {
       std::cerr << "Load invalid edge record, ignore!" << std::endl;
@@ -234,7 +243,7 @@ void FileLoader::AddEdgePattern(std::vector<std::string>&& line_patterns) {
       attr_infos.emplace_back(attr_parsers[i](std::move(attr_pattern[i])));
     }
     p.AddEdge(etype, src_vtype, dst_vtype, src_vid, dst_vid, attr_infos);
-    if (reversed_edge) {
+    if (reversed) {
       p.AddEdge(etype, dst_vtype, src_vtype, dst_vid, src_vid, attr_infos);
     }
   };

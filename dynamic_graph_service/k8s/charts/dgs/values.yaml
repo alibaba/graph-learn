@@ -505,12 +505,12 @@ sampling:
     maxProduceRetryTimes: 3
     callbackPollIntervalMs: 100
   # Logging Options
-  # @param sampling.logging.dataLogPeriod Specify how many graph update batches should be processed between two logs produced
-  # @param sampling.logging.ruleLogPeriod Specify how many sampling rules should be processed between two logs produced
+  # @param sampling.logging.dataLogPeriod Specify how many graph update batches should be processed between two logs
+  # @param sampling.logging.ruleLogPeriod Specify how many sampling rules should be processed between two logs
   #
   logging:
-    dataLogPeriod: 1
-    ruleLogPeriod: 1
+    dataLogPeriod: 10
+    ruleLogPeriod: 10
 
 
 # Serving Worker options
@@ -714,9 +714,9 @@ serving:
     retryIntervalMs: 100
     processConcurrency: 100
   # Logging Options
-  # @param serving.logging.dataLogPeriod Specify how many sample update batches should be processed between two logs produced
+  # @param serving.logging.dataLogPeriod Specify how many sample update batches should be processed between two logs
   # @param serving.logging.requestLogPeriod Interval of incoming inference query requests for logging serving statistics
   #
   logging:
-    dataLogPeriod: 1
+    dataLogPeriod: 10
     requestLogPeriod: 1

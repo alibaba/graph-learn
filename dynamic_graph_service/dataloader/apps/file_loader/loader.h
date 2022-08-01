@@ -26,7 +26,7 @@ namespace file {
 
 extern char delimiter;
 extern char list_attr_delimiter;
-extern bool reversed_edge;
+extern std::vector<std::string> reversed_edges;
 extern uint32_t batch_size;
 
 class FileLoader {
