@@ -16,10 +16,16 @@ Before deploy a dgs service, you must deploy a kafka cluster first and create th
 
 ## Installing the Chart
 
-To install the chart with the release name `my-release`(TODO: support remote helm package manager):
+Get repo info:
+```shell
+helm repo add dgs https://graphlearn.oss-cn-hangzhou.aliyuncs.com/charts/dgs/
+helm repo update
+```
 
-```console
-helm install my-release $project_dir/dynamic_graph_service/k8s/charts/dgs \
+Install the chart with release name `my-release`:
+
+```shell
+helm install my-release dgs/dgs \
     --set-file graphSchema=/path/to/schema/json/file \
     --set kafka.dl2spl.brokers=[your kafka broker list of dl2spl] \
     --set kafka.dl2spl.topic="your_kafka_topic_of_dl2spl" \
@@ -45,7 +51,7 @@ The [Parameters](#parameters) section lists the parameters that can be configure
 
 To uninstall/delete the `my-release` deployment:
 
-```console
+```shell
 helm delete my-release
 ```
 
@@ -63,8 +69,6 @@ The command removes all the Kubernetes components associated with the chart and 
 | `clusterDomain`            | Default Kubernetes cluster domain                                                       | `cluster.local`       |
 | `commonLabels`             | Labels to add to all deployed objects                                                   | `{}`                  |
 | `commonAnnotations`        | Annotations to add to all deployed objects                                              | `{}`                  |
-| `labelGroupOverride`       | The self-managed label group prefix name                                                | `""`                  |
-| `remoteFileRepoURL`        | The url of remote file repository that contains service binary packages and datasets    | `"https://graphlearn.oss-cn-hangzhou.aliyuncs.com"` |
 | `graphSchema`              | The json string of graph schema, **must** be set during installation                    | `""`                  |
 | `configPath`               | The service configmap mount path                                                        | `"/dgs_conf"`         |
 | `glog.toConsole`           | Specify whether program logs are written to standard error as well as to files          | `false`               |

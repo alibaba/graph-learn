@@ -73,7 +73,7 @@ spec:
               mkdir -p {{ $.Values.serving.persistence.mountPath }}/sample_store
 
               mkdir -p {{ $.Values.serving.workdir }}/package
-              wget {{ $.Values.remoteFileRepoURL }}/package/dgs-built.tgz -q -P /tmp
+              wget {{ $.Values.packageURL }} -q -P /tmp
               tar zxvf /tmp/dgs-built.tgz -C {{ $.Values.serving.workdir }}/package --strip-components 1
               rm -f /tmp/dgs-built.tgz
           volumeMounts:

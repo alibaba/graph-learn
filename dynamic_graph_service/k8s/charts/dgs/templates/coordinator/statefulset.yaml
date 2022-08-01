@@ -68,7 +68,7 @@ spec:
               mkdir -p {{ .Values.coordinator.persistence.mountPath }}/coordinator_meta
 
               mkdir -p {{ .Values.coordinator.workdir }}/package
-              wget {{ .Values.remoteFileRepoURL }}/package/dgs-built.tgz -q -P /tmp
+              wget {{ .Values.packageURL }} -q -P /tmp
               tar zxvf /tmp/dgs-built.tgz -C {{ .Values.coordinator.workdir }}/package --strip-components 1
               rm -f /tmp/dgs-built.tgz
           volumeMounts:

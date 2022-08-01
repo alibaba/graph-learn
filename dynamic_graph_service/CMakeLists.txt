@@ -13,7 +13,7 @@
 # limitations under the License.
 
 cmake_minimum_required (VERSION 3.13)
-project (DynamicGraphService VERSION 1.0 LANGUAGES CXX)
+project (DynamicGraphService VERSION 1.0.0 LANGUAGES CXX)
 
 ## gcc version checks
 if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "8.0.0")
@@ -385,7 +385,7 @@ add_custom_command (TARGET package POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory "${DGS_PACKAGE_PROTO_DIR}"
   COMMAND /bin/bash -c "cp -f ${DGS_PROTO_DIR}/*.proto ${DGS_PACKAGE_PROTO_DIR}"
 
-  COMMAND /bin/bash -c "tar zcvf dgs-built.tgz ${DGS_PACKAGE_DIR}"
+  COMMAND /bin/bash -c "tar zcvf dgs-built-${DynamicGraphService_VERSION}.tgz ${DGS_PACKAGE_DIR}"
 
   WORKING_DIRECTORY ${DGS_BUILD_DIR}
   VERBATIM)
