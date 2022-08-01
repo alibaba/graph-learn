@@ -179,8 +179,8 @@ All workers have the same parameters of common pod assignment, worker-type={coor
 | `sampling.samplePublishing.producerPoolSize`       | The max number of kafka producer for sampling results                                                | `2`                              |
 | `sampling.samplePublishing.maxProduceRetryTimes`   | The maximum retry times of producing a kafka message                                                 | `3`                              |
 | `sampling.samplePublishing.callbackPollIntervalMs` | The interval(ms) for polling async producing callbacks                                               | `100`                            |
-| `sampling.logging.dataLogPeriod`                   | Specify how many graph update batches should be processed between two logs produced                  | `10`                              |
-| `sampling.logging.ruleLogPeriod`                   | Specify how many sampling rules should be processed between two logs produced                        | `10`                              |
+| `sampling.logging.dataLogPeriod`                   | Specify how many graph update batches should be processed between two logs                           | `10`                             |
+| `sampling.logging.ruleLogPeriod`                   | Specify how many sampling rules should be processed between two logs                                 | `10`                             |
 
 ### Serving parameters
 
@@ -211,7 +211,7 @@ All workers have the same parameters of common pod assignment, worker-type={coor
 | `serving.recordPolling.threadNum`                 | The thread number for sample update consuming from kafka queues                                     | `2`                              |
 | `serving.recordPolling.retryIntervalMs`           | The retry interval (ms) when no record has been polled                                              | `100`                            |
 | `serving.recordPolling.processConcurrency`        | The max processing concurrency for polled records                                                   | `100`                            |
-| `serving.logging.dataLogPeriod`                   | Specify how many sample update batches should be processed between two logs produced                | `10`                              |
+| `serving.logging.dataLogPeriod`                   | Specify how many sample update batches should be processed between two logs                         | `10`                             |
 | `serving.logging.requestLogPeriod`                | Interval of incoming inference query requests for logging serving statistics                        | `1`                              |
 
 ### Other Parameters
