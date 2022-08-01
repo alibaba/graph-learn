@@ -509,8 +509,8 @@ sampling:
   # @param sampling.logging.ruleLogPeriod Specify how many sampling rules should be processed between two logs produced
   #
   logging:
-    dataLogPeriod: 1
-    ruleLogPeriod: 1
+    dataLogPeriod: 10
+    ruleLogPeriod: 10
 
 
 # Serving Worker options
@@ -718,5 +718,5 @@ serving:
   # @param serving.logging.requestLogPeriod Interval of incoming inference query requests for logging serving statistics
   #
   logging:
-    dataLogPeriod: 1
+    dataLogPeriod: 10
     requestLogPeriod: 1
