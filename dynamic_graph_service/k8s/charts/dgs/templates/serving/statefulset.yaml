@@ -73,7 +73,7 @@ spec:
               mkdir -p {{ $.Values.serving.persistence.mountPath }}/sample_store
 
               mkdir -p {{ $.Values.serving.workdir }}/package
-              wget {{ $.Values.packageURL }}/{{ $.Values.packageName }} -q -P /tmp
+              wget {{ $.Values.packageRepoURL }}/{{ $.Values.packageName }} -q -P /tmp
               tar zxvf /tmp/{{ $.Values.packageName }} -C {{ $.Values.serving.workdir }}/package --strip-components 1
               rm -f /tmp/{{ $.Values.packageName }}
           volumeMounts:
