@@ -25,9 +25,12 @@ image:
   #
   pullSecrets: []
 
-# @param packageURL The file url of pre-built binary package
+# @param packageRepoURL The file repository url of pre-built binary packages
 #
-packageURL: "https://graphlearn.oss-cn-hangzhou.aliyuncs.com/package/dgs-built-1.0.0.tgz"
+packageRepoURL: "https://graphlearn.oss-cn-hangzhou.aliyuncs.com/package"
+
+# @param packageName The pre-built binary package name
+packageName: "dgs-built-1.0.0.tgz"
 
 # @param nameOverride String to partially override dgs.fullname
 #

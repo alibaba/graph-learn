@@ -73,9 +73,9 @@ spec:
               mkdir -p {{ $.Values.serving.persistence.mountPath }}/sample_store
 
               mkdir -p {{ $.Values.serving.workdir }}/package
-              wget {{ $.Values.packageURL }} -q -P /tmp
-              tar zxvf /tmp/dgs-built.tgz -C {{ $.Values.serving.workdir }}/package --strip-components 1
-              rm -f /tmp/dgs-built.tgz
+              wget {{ $.Values.packageURL }}/{{ $.Values.packageName }} -q -P /tmp
+              tar zxvf /tmp/{{ $.Values.packageName }} -C {{ $.Values.serving.workdir }}/package --strip-components 1
+              rm -f /tmp/{{ $.Values.packageName }}
           volumeMounts:
             - name: ephemeral
               mountPath: {{ $.Values.serving.workdir }}
