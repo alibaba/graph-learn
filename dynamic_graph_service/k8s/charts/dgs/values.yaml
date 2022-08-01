@@ -25,6 +25,13 @@ image:
   #
   pullSecrets: []
 
+# @param packageRepoURL The file repository url of pre-built binary packages
+#
+packageRepoURL: "https://graphlearn.oss-cn-hangzhou.aliyuncs.com/package"
+
+# @param packageName The pre-built binary package name
+packageName: "dgs-built-1.0.0.tgz"
+
 # @param nameOverride String to partially override dgs.fullname
 #
 nameOverride: ""
@@ -111,10 +118,6 @@ configPath: "/dgs_conf"
 # Set it with option "--set-file graphSchema=/path/to/schema/json/file"
 #
 graphSchema: ""
-
-# @param remoteFileRepoURL The url of remote file repository that contains service binary packages and datasets
-#
-remoteFileRepoURL: "https://graphlearn.oss-cn-hangzhou.aliyuncs.com"
 
 # Front-End options
 #

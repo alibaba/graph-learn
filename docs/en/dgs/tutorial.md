@@ -135,12 +135,18 @@ e.g. [bitnami kafka](https://github.com/bitnami/charts/tree/master/bitnami/kafka
 We provide a helm chart to deploy dgs, before this, make sure your k8s cluster has been created correctly and helm tools have been installed.
 Besides, dgs uses a k8s ingress to expose its service, make sure your k8s cluster contains a nginx controller.
 
+Get helm repo info first:
+```shell
+helm repo add dgs https://graphlearn.oss-cn-hangzhou.aliyuncs.com/charts/dgs/
+helm repo update
+```
+
 Install the chart with release name `dgs-u2i`:
 ```shell
 cd dynamic_graph_service
-helm install dgs-u2i k8s/charts/dgs \
+helm install dgs-u2i dgs/dgs \
     --set frontend.ingressHostName="dynamic-graph-service.info" \
-    --set-file graphSchema=conf/u2i/schema.u2i.json \
+    --set-file graphSchema=./conf/u2i/schema.u2i.json \
     --set kafka.dl2spl.brokers=[$your_kafka_cluster_ip:9092] \
     --set kafka.dl2spl.topic="record-batches" \
     --set kafka.dl2spl.partitions=4 \
