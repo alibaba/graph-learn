@@ -113,12 +113,6 @@ Status GrpcChannel::CallDagValues(const DagValuesRequestPb* req,
 }
 
 Status GrpcChannel::CallStop(const StopRequestPb* req, StatusResponsePb* res) {
-  // TODO(tao): do we need such a check ?
-  //
-  // if (stopped_.load()) {
-  //   return Status::OK();
-  // }
-  stopped_.store(true);
   if (broken_.load()) {
     return error::Unavailable("Channel is broken, please retry later");
   }
@@ -126,7 +120,11 @@ Status GrpcChannel::CallStop(const StopRequestPb* req, StatusResponsePb* res) {
   ::grpc::ClientContext ctx;
   SetContext(&ctx);
   ::grpc::Status s = stub_->HandleStop(&ctx, *req, res);
-  return Transmit(s);
+  Status rs = Transmit(s);
+  if (rs.ok()) {
+    stopped_.store(true);
+  }
+  return rs;
 }
 
 Status GrpcChannel::CallReport(const StateRequestPb* req,
