@@ -54,106 +54,106 @@ using graphlearn::io::IndexType;
 using graphlearn::io::NewDataHeldAttributeValue;
 using graphlearn::io::SideInfo;
 
-void init_table_accessors(std::shared_ptr<arrow::Table> const &table,
-                          std::set<std::string> const &attrs,
-                          std::vector<int> &i32_indexes,
-                          std::vector<int> &i64_indexes,
-                          std::vector<int> &f32_indexes,
-                          std::vector<int> &f64_indexes,
-                          std::vector<int> &s_indexes,
-                          std::vector<int> &ls_indexes,
-                          std::vector<const void*> &table_accessors);
+void init_table_accessors(const std::shared_ptr<arrow::Table>& table,
+                          const std::set<std::string>& attrs,
+                          std::vector<int>& i32_indexes,
+                          std::vector<int>& i64_indexes,
+                          std::vector<int>& f32_indexes,
+                          std::vector<int>& f64_indexes,
+                          std::vector<int>& s_indexes,
+                          std::vector<int>& ls_indexes,
+                          std::vector<const void*>& table_accessors);
 
 AttributeValue *arrow_line_to_attribute_value(
                           const int row_index,
-                          const std::vector<int> &i32_indexes,
-                          const std::vector<int> &i64_indexes,
-                          const std::vector<int> &f32_indexes,
-                          const std::vector<int> &f64_indexes,
-                          const std::vector<int> &s_indexes,
-                          const std::vector<int> &ls_indexes,
-                          const std::vector<const void*> &table_accessors);
+                          const std::vector<int>& i32_indexes,
+                          const std::vector<int>& i64_indexes,
+                          const std::vector<int>& f32_indexes,
+                          const std::vector<int>& f64_indexes,
+                          const std::vector<int>& s_indexes,
+                          const std::vector<int>& ls_indexes,
+                          const std::vector<const void*>& table_accessors);
 
-const IdArray get_all_src_ids(std::shared_ptr<gl_frag_t> const &frag,
+const IdArray get_all_src_ids(const std::shared_ptr<gl_frag_t>& frag,
                               const label_id_t edge_label);
 
-const IdArray get_all_dst_ids(std::shared_ptr<gl_frag_t> const &frag,
+const IdArray get_all_dst_ids(const std::shared_ptr<gl_frag_t>& frag,
                               const label_id_t edge_label);
 
-const IndexList *get_all_in_degree(std::shared_ptr<gl_frag_t> const &frag,
+const IndexList *get_all_in_degree(const std::shared_ptr<gl_frag_t>& frag,
                                    const label_id_t edge_label);
 
-const IndexList *get_all_out_degree(std::shared_ptr<gl_frag_t> const &frag,
+const IndexList *get_all_out_degree(const std::shared_ptr<gl_frag_t>& frag,
                                     const label_id_t edge_label);
 
 const Array<IdType>
-get_all_outgoing_neighbor_nodes(std::shared_ptr<gl_frag_t> const &frag,
+get_all_outgoing_neighbor_nodes(const std::shared_ptr<gl_frag_t>& frag,
                                 IdType src_id, const label_id_t edge_label);
 
 const Array<IdType>
-get_all_outgoing_neighbor_edges(std::shared_ptr<gl_frag_t> const &frag,
+get_all_outgoing_neighbor_edges(const std::shared_ptr<gl_frag_t>& frag,
                                 IdType src_id, const label_id_t edge_label);
 
 const Array<IdType>
-get_all_outgoing_neighbor_nodes(std::shared_ptr<gl_frag_t> const &frag,
-                                std::vector<IdType> const &edge_lists,
+get_all_outgoing_neighbor_nodes(const std::shared_ptr<gl_frag_t>& frag,
+                                std::vector<IdType> const& edge_lists,
                                 IdType src_id, const label_id_t edge_label,
-                                std::vector<std::pair<IdType, IdType>> const &edge_offsets_);
+                                const std::vector<std::pair<IdType, IdType>>& edge_offsets_);
 
 const Array<IdType>
-get_all_outgoing_neighbor_edges(std::shared_ptr<gl_frag_t> const &frag,
-                                std::vector<IdType> const &edge_lists,
+get_all_outgoing_neighbor_edges(const std::shared_ptr<gl_frag_t>& frag,
+                                const std::vector<IdType>& edge_lists,
                                 IdType src_id, const label_id_t edge_label,
-                                std::vector<std::pair<IdType, IdType>> const &edge_offsets_);
+                                const std::vector<std::pair<IdType, IdType>>& edge_offsets_);
 
-IdType get_edge_src_id(std::shared_ptr<gl_frag_t> const &frag,
+IdType get_edge_src_id(const std::shared_ptr<gl_frag_t>& frag,
                        label_id_t const edge_label,
-                       std::vector<IdType> const &src_ids, IdType edge_id);
+                       const std::vector<IdType>& src_ids, IdType edge_id);
 
-IdType get_edge_dst_id(std::shared_ptr<gl_frag_t> const &frag,
+IdType get_edge_dst_id(const std::shared_ptr<gl_frag_t>& frag,
                        label_id_t const edge_label,
-                       std::vector<IdType> const &dst_ids, IdType edge_id);
+                       const std::vector<IdType>& dst_ids, IdType edge_id);
 
-float get_edge_weight(std::shared_ptr<gl_frag_t> const &frag,
+float get_edge_weight(const std::shared_ptr<gl_frag_t>& frag,
                       label_id_t const edge_label, IdType edge_offset);
 
-int32_t get_edge_label(std::shared_ptr<gl_frag_t> const &frag,
+int32_t get_edge_label(const std::shared_ptr<gl_frag_t>& frag,
                        label_id_t const edge_label, IdType edge_offset);
 
-void init_src_dst_list(std::shared_ptr<gl_frag_t> const &frag,
+void init_src_dst_list(const std::shared_ptr<gl_frag_t>& frag,
                        label_id_t const edge_label,
                        label_id_t const src_node_label,
                        label_id_t const dst_node_label,
-                       std::vector<IdType> &src_lists,
-                       std::vector<IdType> &dst_lists,
-                       std::vector<IdType> &edge_lists,
-                       std::vector<std::pair<IdType, IdType>> &edge_offsets);
+                       std::vector<IdType>& src_lists,
+                       std::vector<IdType>& dst_lists,
+                       std::vector<IdType>& edge_lists,
+                       std::vector<std::pair<IdType, IdType>>& edge_offsets);
 
-SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
-                              std::set<std::string> const &attrs,
-                              std::string const &edge_label_name,
-                              std::string const &src_label_name,
-                              std::string const &dst_label_name,
+SideInfo *frag_edge_side_info(const std::shared_ptr<gl_frag_t>& frag,
+                              const std::set<std::string>& attrs,
+                              const std::string& edge_label_name,
+                              const std::string& src_label_name,
+                              const std::string& dst_label_name,
                               label_id_t const edge_label);
 
-SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
-                              std::set<std::string> const &attrs,
-                              std::string const &node_label_name,
+SideInfo *frag_node_side_info(const std::shared_ptr<gl_frag_t>& frag,
+                              const std::set<std::string>& attrs,
+                              const std::string& node_label_name,
                               label_id_t const node_label);
 
-int64_t find_index_of_name(std::shared_ptr<arrow::Schema> const &schema,
-                           std::string const &name);
+int64_t find_index_of_name(const std::shared_ptr<arrow::Schema>& schema,
+                           const std::string& name);
 
 class ArrowRefAttributeValue : public AttributeValue {
 public:
   ArrowRefAttributeValue(const int row_index,
-                          const std::vector<int> &i32_indexes,
-                          const std::vector<int> &i64_indexes,
-                          const std::vector<int> &f32_indexes,
-                          const std::vector<int> &f64_indexes,
-                          const std::vector<int> &s_indexes,
-                          const std::vector<int> &ls_indexes,
-                          const std::vector<const void*> &table_accessors):
+                          const std::vector<int>& i32_indexes,
+                          const std::vector<int>& i64_indexes,
+                          const std::vector<int>& f32_indexes,
+                          const std::vector<int>& f64_indexes,
+                          const std::vector<int>& s_indexes,
+                          const std::vector<int>& ls_indexes,
+                          const std::vector<const void*>& table_accessors):
 		row_index_(row_index),
 		i32_indexes_(i32_indexes),
 		i64_indexes_(i64_indexes),
@@ -238,13 +238,13 @@ public:
 
 private:
 	int row_index_;
-  const std::vector<int> &i32_indexes_;
-  const std::vector<int> &i64_indexes_;
-  const std::vector<int> &f32_indexes_;
-  const std::vector<int> &f64_indexes_;
-  const std::vector<int> &s_indexes_;
-  const std::vector<int> &ls_indexes_;
-  const std::vector<const void*> &table_accessors_;
+  const std::vector<int>& i32_indexes_;
+  const std::vector<int>& i64_indexes_;
+  const std::vector<int>& f32_indexes_;
+  const std::vector<int>& f64_indexes_;
+  const std::vector<int>& s_indexes_;
+  const std::vector<int>& ls_indexes_;
+  const std::vector<const void*>& table_accessors_;
 };
 
 } // namespace io

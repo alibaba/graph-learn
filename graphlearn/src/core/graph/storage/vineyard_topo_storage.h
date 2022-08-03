@@ -33,8 +33,8 @@ namespace io {
 class VineyardTopoStorage : public graphlearn::io::TopoStorage {
 public:
   explicit VineyardTopoStorage(std::string edge_label = "0",
-                               std::string const &decorated_edge_view = "",
-                               std::string const &use_attrs = "") {
+                               const std::string& decorated_edge_view = "",
+                               const std::string& use_attrs = "") {
     graph_ = new VineyardGraphStorage(edge_label, decorated_edge_view, use_attrs);
   }
 

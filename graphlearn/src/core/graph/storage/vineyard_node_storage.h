@@ -36,8 +36,8 @@ namespace io {
 class VineyardNodeStorage : public graphlearn::io::NodeStorage {
 public:
   explicit VineyardNodeStorage(std::string node_label = "0",
-                               std::string const &node_view = "",
-                               std::string const &use_attrs = "") {
+                               const std::string& node_view = "",
+                               const std::string& use_attrs = "") {
     std::cerr << "node_label = " << node_label << ", from "
               << GLOBAL_FLAG(VineyardGraphID);
     if (!node_view.empty()) {
@@ -55,7 +55,7 @@ public:
       throw std::runtime_error("Node: failed to find the graph");
     }
     // assume 1 worker per server
-    for (auto const &kv : fg->Fragments()) {
+    for (const auto& kv : fg->Fragments()) {
       if (fg->FragmentLocations().at(kv.first) == client_.instance_id()) {
         frag_ = client_.GetObject<gl_frag_t>(kv.second);
         break;
@@ -78,7 +78,7 @@ public:
       split_end = stoi(args[4]);
     }
 
-    auto const &schema = frag_->schema();
+    const auto& schema = frag_->schema();
     node_label_ = schema.GetVertexLabelId(node_label);
     if (node_label_ == -1) {
       if (!node_label.empty() && std::all_of(node_label.begin(), node_label.end(), ::isdigit)) {
@@ -91,7 +91,7 @@ public:
 
     auto vtable = frag_->vertex_data_table(node_label_);
     if (use_attrs.empty()) {
-      for (auto const &field: vtable->schema()->fields()) {
+      for (const auto& field: vtable->schema()->fields()) {
         attrs_.emplace(field->name());
       }
     } else {

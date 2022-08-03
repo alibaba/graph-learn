@@ -35,9 +35,10 @@ typedef std::unordered_map<IdType, IndexType> MAP;
 template <class T>
 class MultiArray {
 public:
-  MultiArray(const std::vector<const T*>& values, const std::vector<int32_t> sizes,
+  MultiArray(const std::vector<const T*>& values,
+             const std::vector<int32_t> sizes,
              int32_t element_size, int32_t element_offset=0,
-             T const value_offset=0)
+             const T value_offset=0)
       : values_(values),
         sizes_(sizes),
         element_size_(element_size),
@@ -79,13 +80,13 @@ private:
   std::vector<int32_t> offsets_;
   int32_t element_size_;
   int32_t element_offset_;
-  T const value_offset_ = 0;
+  const T value_offset_ = 0;
 };
 
 template <typename T>
 class RangeArray {
 public:
-  RangeArray(T const &begin, T const &end): begin_(begin), end_(end) {}
+  RangeArray(const T& begin, const T& end): begin_(begin), end_(end) {}
 
   virtual operator bool () const {
     return begin_ == end_;
@@ -100,8 +101,8 @@ public:
   }
 
 private:
-  T const begin_;
-  T const end_;
+  const T begin_;
+  const T end_;
 };
 
 template <class T>
@@ -110,7 +111,7 @@ public:
   Array() : value_(nullptr), mvalue_(nullptr), size_(0) {
   }
 
-  Array(std::shared_ptr<MultiArray<T>> const &mvalue)
+  Array(const std::shared_ptr<MultiArray<T>>& mvalue)
     : value_(nullptr), mvalue_(mvalue), size_(mvalue->Size()) {
   }
 
@@ -118,7 +119,7 @@ public:
     : value_(value), size_(size) {
   }
 
-  Array(T const &begin, T const &end) :
+  Array(const T& begin, const T& end) :
       value_(nullptr),
       mvalue_(nullptr),
       rangevalue_(std::make_shared<RangeArray<T>>(begin, end)),

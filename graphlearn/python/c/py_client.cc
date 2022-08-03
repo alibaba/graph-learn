@@ -120,7 +120,7 @@ void init_client_module(py::module& m) {
         py::arg("request"),
         py::arg("response"))
     .def("get_own_servers",
-         [](Client & self) {
+         [](Client& self) {
            return py::cast(self.GetOwnServers());
          });
 

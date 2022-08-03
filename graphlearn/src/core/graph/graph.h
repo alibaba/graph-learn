@@ -47,11 +47,11 @@ public:
 };
 
 Graph* CreateLocalGraph(const std::string& type,
-                        std::string const &view_type,
-                        std::string const &use_attrs);
+                        const std::string& view_type,
+                        const std::string& use_attrs);
 Graph* CreateRemoteGraph(const std::string& type,
-                         std::string const &view_type,
-                         std::string const &use_attrs);
+                         const std::string& view_type,
+                         const std::string& use_attrs);
 
 }  // namespace graphlearn
 

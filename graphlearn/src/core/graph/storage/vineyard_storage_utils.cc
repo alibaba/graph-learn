@@ -37,19 +37,19 @@ namespace io {
 
 #if defined(WITH_VINEYARD)
 
-void init_table_accessors(std::shared_ptr<arrow::Table> const &table,
-                          std::set<std::string> const &attrs,
-                          std::vector<int> &i32_indexes,
-                          std::vector<int> &i64_indexes,
-                          std::vector<int> &f32_indexes,
-                          std::vector<int> &f64_indexes,
-                          std::vector<int> &s_indexes,
-                          std::vector<int> &ls_indexes,
-                          std::vector<const void*> &table_accessors) {
+void init_table_accessors(const std::shared_ptr<arrow::Table>& table,
+                          const std::set<std::string>& attrs,
+                          std::vector<int>& i32_indexes,
+                          std::vector<int>& i64_indexes,
+                          std::vector<int>& f32_indexes,
+                          std::vector<int>& f64_indexes,
+                          std::vector<int>& s_indexes,
+                          std::vector<int>& ls_indexes,
+                          std::vector<const void*>& table_accessors) {
   if (table->num_rows() == 0 || table->num_columns() == 0) {
     return;
   }
-  auto const &fields = table->schema()->fields();
+  const auto& fields = table->schema()->fields();
   table_accessors.resize(fields.size(), nullptr);
   for (int idx = 0; idx < fields.size(); ++idx) {
     if (attrs.find(fields[idx]->name()) == attrs.end()) {
@@ -77,41 +77,41 @@ void init_table_accessors(std::shared_ptr<arrow::Table> const &table,
 
 AttributeValue *arrow_line_to_attribute_value(
                           const int row_index,
-                          const std::vector<int> &i32_indexes,
-                          const std::vector<int> &i64_indexes,
-                          const std::vector<int> &f32_indexes,
-                          const std::vector<int> &f64_indexes,
-                          const std::vector<int> &s_indexes,
-                          const std::vector<int> &ls_indexes,
-                          const std::vector<const void*> &table_accessors) {
+                          const std::vector<int>& i32_indexes,
+                          const std::vector<int>& i64_indexes,
+                          const std::vector<int>& f32_indexes,
+                          const std::vector<int>& f64_indexes,
+                          const std::vector<int>& s_indexes,
+                          const std::vector<int>& ls_indexes,
+                          const std::vector<const void*>& table_accessors) {
   auto attr = NewDataHeldAttributeValue();
-  for (auto const &idx: i32_indexes) {
+  for (const auto& idx: i32_indexes) {
     auto value = vineyard::property_graph_utils::ValueGetter<int32_t>::Value(
         table_accessors[idx], row_index);
     attr->Add(static_cast<int64_t>(value));
   }
-  for (auto const &idx: i64_indexes) {
+  for (const auto& idx: i64_indexes) {
     auto value = vineyard::property_graph_utils::ValueGetter<int64_t>::Value(
         table_accessors[idx], row_index);
     attr->Add(value);
   }
-  for (auto const &idx: f32_indexes) {
+  for (const auto& idx: f32_indexes) {
     auto value = vineyard::property_graph_utils::ValueGetter<float>::Value(
         table_accessors[idx], row_index);
     attr->Add(value);
   }
-  for (auto const &idx: f64_indexes) {
+  for (const auto& idx: f64_indexes) {
     auto value = vineyard::property_graph_utils::ValueGetter<double>::Value(
         table_accessors[idx], row_index);
     attr->Add(static_cast<float>(value));
   }
-  for (auto const &idx: s_indexes) {
+  for (const auto& idx: s_indexes) {
     auto value = std::string(
         reinterpret_cast<const arrow::StringArray*>(table_accessors[idx])->GetView(
             row_index));
     attr->Add(value);
   }
-  for (auto const &idx: ls_indexes) {
+  for (const auto& idx: ls_indexes) {
     auto value = vineyard::property_graph_utils::ValueGetter<std::string>::Value(
         table_accessors[idx], row_index);
     attr->Add(value);
@@ -119,7 +119,7 @@ AttributeValue *arrow_line_to_attribute_value(
   return attr;
 }
 
-const IndexList *get_all_in_degree(std::shared_ptr<gl_frag_t> const &frag,
+const IndexList *get_all_in_degree(const std::shared_ptr<gl_frag_t>& frag,
                                    const label_id_t edge_label) {
   int v_label_num = frag->vertex_label_num();
   auto degree_list = new IndexList();
@@ -135,7 +135,7 @@ const IndexList *get_all_in_degree(std::shared_ptr<gl_frag_t> const &frag,
   return degree_list;
 }
 
-const IndexList *get_all_out_degree(std::shared_ptr<gl_frag_t> const &frag,
+const IndexList *get_all_out_degree(const std::shared_ptr<gl_frag_t>& frag,
                                     const label_id_t edge_label) {
   int v_label_num = frag->vertex_label_num();
   int e_label_num = frag->edge_label_num();
@@ -153,7 +153,7 @@ const IndexList *get_all_out_degree(std::shared_ptr<gl_frag_t> const &frag,
 }
 
 const Array<IdType>
-get_all_outgoing_neighbor_nodes(std::shared_ptr<gl_frag_t> const &frag,
+get_all_outgoing_neighbor_nodes(const std::shared_ptr<gl_frag_t>& frag,
                                 IdType src_id, const label_id_t edge_label) {
   using nbr_unit_t = vineyard::property_graph_utils::NbrUnit<gl_frag_t::vid_t,
                                                              gl_frag_t::eid_t>;
@@ -174,7 +174,7 @@ get_all_outgoing_neighbor_nodes(std::shared_ptr<gl_frag_t> const &frag,
 }
 
 const Array<IdType>
-get_all_outgoing_neighbor_edges(std::shared_ptr<gl_frag_t> const &frag,
+get_all_outgoing_neighbor_edges(const std::shared_ptr<gl_frag_t>& frag,
                                 IdType src_id, const label_id_t edge_label) {
   using nbr_unit_t = vineyard::property_graph_utils::NbrUnit<gl_frag_t::vid_t,
                                                              gl_frag_t::eid_t>;
@@ -194,10 +194,10 @@ get_all_outgoing_neighbor_edges(std::shared_ptr<gl_frag_t> const &frag,
 }
 
 const Array<IdType>
-get_all_outgoing_neighbor_nodes(std::shared_ptr<gl_frag_t> const &frag,
-                                std::vector<IdType> const &dst_lists,
+get_all_outgoing_neighbor_nodes(const std::shared_ptr<gl_frag_t>& frag,
+                                const std::vector<IdType>& dst_lists,
                                 IdType src_id, const label_id_t edge_label,
-                                std::vector<std::pair<IdType, IdType>> const &edge_offsets_) {
+                                const std::vector<std::pair<IdType, IdType>>& edge_offsets_) {
   auto v = vertex_t{static_cast<uint64_t>(src_id)};
   if (!frag->IsInnerVertex(v)) {
     return Array<IdType>();
@@ -207,10 +207,10 @@ get_all_outgoing_neighbor_nodes(std::shared_ptr<gl_frag_t> const &frag,
 }
 
 const Array<IdType>
-get_all_outgoing_neighbor_edges(std::shared_ptr<gl_frag_t> const &frag,
-                                std::vector<IdType> const &edge_lists,
+get_all_outgoing_neighbor_edges(const std::shared_ptr<gl_frag_t>& frag,
+                                const std::vector<IdType>& edge_lists,
                                 IdType src_id, const label_id_t edge_label,
-                                std::vector<std::pair<IdType, IdType>> const &edge_offsets_) {
+                                const std::vector<std::pair<IdType, IdType>>& edge_offsets_) {
   auto v = vertex_t{static_cast<uint64_t>(src_id)};
   if (!frag->IsInnerVertex(v)) {
     return Array<IdType>();
@@ -219,9 +219,9 @@ get_all_outgoing_neighbor_edges(std::shared_ptr<gl_frag_t> const &frag,
   return IdArray(offset.first, offset.second);
 }
 
-IdType get_edge_src_id(std::shared_ptr<gl_frag_t> const &frag,
-                       label_id_t const edge_label,
-                       std::vector<IdType> const &src_ids, IdType edge_id) {
+IdType get_edge_src_id(const std::shared_ptr<gl_frag_t>& frag,
+                       const label_id_t edge_label,
+                       const std::vector<IdType>& src_ids, IdType edge_id) {
 #ifndef NDEBUG
   if (edge_id < src_ids.size()) {
     return src_ids[edge_id];
@@ -233,9 +233,9 @@ IdType get_edge_src_id(std::shared_ptr<gl_frag_t> const &frag,
 #endif
 }
 
-IdType get_edge_dst_id(std::shared_ptr<gl_frag_t> const &frag,
-                       label_id_t const edge_label,
-                       std::vector<IdType> const &dst_ids, IdType edge_id) {
+IdType get_edge_dst_id(const std::shared_ptr<gl_frag_t>& frag,
+                       const label_id_t edge_label,
+                       const std::vector<IdType>& dst_ids, IdType edge_id) {
 #ifndef NDEBUG
   if (edge_id < dst_ids.size()) {
     return dst_ids[edge_id];
@@ -247,38 +247,38 @@ IdType get_edge_dst_id(std::shared_ptr<gl_frag_t> const &frag,
 #endif
 }
 
-float get_edge_weight(std::shared_ptr<gl_frag_t> const &frag,
-                      label_id_t const edge_label, IdType edge_offset) {
+float get_edge_weight(const std::shared_ptr<gl_frag_t>& frag,
+                      const label_id_t edge_label, IdType edge_offset) {
   auto table = frag->edge_data_table(edge_label);
   int index = find_index_of_name(table->schema(), "weight");
   if (index == -1) {
     return 0.0;
   }
-  auto const &array = frag->edge_data_table(edge_label)->column(index)->chunk(0);
+  auto const& array = frag->edge_data_table(edge_label)->column(index)->chunk(0);
   return static_cast<float>(
       std::dynamic_pointer_cast<arrow::DoubleArray>(array)->GetView(edge_offset));
 }
 
-int32_t get_edge_label(std::shared_ptr<gl_frag_t> const &frag,
-                       label_id_t const edge_label, IdType edge_offset) {
+int32_t get_edge_label(const std::shared_ptr<gl_frag_t>& frag,
+                       const label_id_t edge_label, IdType edge_offset) {
   auto table = frag->edge_data_table(edge_label);
   int index = find_index_of_name(table->schema(), "label");
   if (index == -1) {
     return 0.0;
   }
-  auto const &array = frag->edge_data_table(edge_label)->column(index)->chunk(0);
+  const auto& array = frag->edge_data_table(edge_label)->column(index)->chunk(0);
   return static_cast<int32_t>(
       std::dynamic_pointer_cast<arrow::Int64Array>(array)->GetView(edge_offset));
 }
 
-void init_src_dst_list(std::shared_ptr<gl_frag_t> const &frag,
-                       label_id_t const edge_label,
-                       label_id_t const src_node_label,
-                       label_id_t const dst_node_label,
-                       std::vector<IdType> &src_lists,
-                       std::vector<IdType> &dst_lists,
-                       std::vector<IdType> &edge_lists,
-                       std::vector<std::pair<IdType, IdType>> &edge_offsets) {
+void init_src_dst_list(const std::shared_ptr<gl_frag_t>& frag,
+                       const label_id_t edge_label,
+                       const label_id_t src_node_label,
+                       const label_id_t dst_node_label,
+                       std::vector<IdType>& src_lists,
+                       std::vector<IdType>& dst_lists,
+                       std::vector<IdType>& edge_lists,
+                       std::vector<std::pair<IdType, IdType>>& edge_offsets) {
   auto id_range = frag->InnerVertices(src_node_label);
   for (auto id = id_range.begin(); id < id_range.end(); ++id) {
     auto oes = frag->GetOutgoingAdjList(*id, edge_label);
@@ -313,12 +313,12 @@ void init_src_dst_list(std::shared_ptr<gl_frag_t> const &frag,
   }
 }
 
-SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
-                              std::set<std::string> const &attrs,
-                              std::string const &edge_label_name,
-                              std::string const &src_label_name,
-                              std::string const &dst_label_name,
-                              label_id_t const edge_label) {
+SideInfo *frag_edge_side_info(const std::shared_ptr<gl_frag_t>& frag,
+                              const std::set<std::string>& attrs,
+                              const std::string& edge_label_name,
+                              const std::string& src_label_name,
+                              const std::string& dst_label_name,
+                              const label_id_t edge_label) {
   static std::map<vineyard::ObjectID,
                   std::map<std::string, std::shared_ptr<SideInfo>>>
       side_info_cache;
@@ -334,7 +334,7 @@ SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
   auto edge_table = frag->edge_data_table(edge_label);
   auto etable_schema = edge_table->schema();
   LOG(INFO) << "etable_schema: " << etable_schema->ToString();
-  auto const &fields = etable_schema->fields();
+  const auto& fields = etable_schema->fields();
   for (size_t idx = 0; idx < fields.size(); ++idx) {
     auto field = fields[idx];
     if (attrs.find(fields[idx]->name()) == attrs.end()) {
@@ -358,7 +358,7 @@ SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
     }
   }
   side_info->format = kDefault;
-  for (auto const &field : etable_schema->fields()) {
+  for (auto const& field : etable_schema->fields()) {
     if (field->name() == "label") {
       side_info->format |= kLabeled;
     } else if (field->name() == "weight") {
@@ -377,10 +377,10 @@ SideInfo *frag_edge_side_info(std::shared_ptr<gl_frag_t> const &frag,
   return side_info.get();
 }
 
-SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
-                              std::set<std::string> const &attrs,
-                              std::string const &node_label_name,
-                              label_id_t const node_label) {
+SideInfo *frag_node_side_info(const std::shared_ptr<gl_frag_t>& frag,
+                              const std::set<std::string>& attrs,
+                              const std::string& node_label_name,
+                              const label_id_t node_label) {
   static std::map<vineyard::ObjectID,
                   std::map<std::string, std::shared_ptr<SideInfo>>>
       side_info_cache;
@@ -397,7 +397,7 @@ SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
   // compute attribute numbers of i/f/s
   auto node_table = frag->vertex_data_table(node_label);
   auto vtable_schema = node_table->schema();
-  auto const &fields = vtable_schema->fields();
+  const auto& fields = vtable_schema->fields();
   for (size_t idx = 0; idx < fields.size(); ++idx) {
     auto field = fields[idx];
     if (attrs.find(fields[idx]->name()) == attrs.end()) {
@@ -434,8 +434,8 @@ SideInfo *frag_node_side_info(std::shared_ptr<gl_frag_t> const &frag,
   return side_info.get();
 }
 
-int64_t find_index_of_name(std::shared_ptr<arrow::Schema> const &schema,
-                           std::string const &name) {
+int64_t find_index_of_name(const std::shared_ptr<arrow::Schema>& schema,
+                           const std::string& name) {
   for (int64_t index = 0; index < schema->num_fields(); ++index) {
     if (schema->field(index)->name() == name) {
       return index;
@@ -445,12 +445,12 @@ int64_t find_index_of_name(std::shared_ptr<arrow::Schema> const &schema,
 }
 
 void ArrowRefAttributeValue::FillInts(Tensor *tensor) const {
-  for (auto const &idx: i32_indexes_) {
+  for (const auto& idx: i32_indexes_) {
     auto value = vineyard::property_graph_utils::ValueGetter<int32_t>::Value(
         table_accessors_[idx], row_index_);
     tensor->AddInt64(static_cast<int64_t>(value));
   }
-  for (auto const &idx: i64_indexes_) {
+  for (const auto& idx: i64_indexes_) {
     auto value = vineyard::property_graph_utils::ValueGetter<int64_t>::Value(
         table_accessors_[idx], row_index_);
     tensor->AddInt64(value);
@@ -458,12 +458,12 @@ void ArrowRefAttributeValue::FillInts(Tensor *tensor) const {
 }
 
 void ArrowRefAttributeValue::FillFloats(Tensor *tensor) const {
-  for (auto const &idx: f32_indexes_) {
+  for (const auto& idx: f32_indexes_) {
     auto value = vineyard::property_graph_utils::ValueGetter<float>::Value(
         table_accessors_[idx], row_index_);
     tensor->AddFloat(value);
   }
-  for (auto const &idx: f64_indexes_) {
+  for (const auto& idx: f64_indexes_) {
     auto value = vineyard::property_graph_utils::ValueGetter<double>::Value(
         table_accessors_[idx], row_index_);
     tensor->AddFloat(static_cast<float>(value));
@@ -471,13 +471,13 @@ void ArrowRefAttributeValue::FillFloats(Tensor *tensor) const {
 }
 
 void ArrowRefAttributeValue::FillStrings(Tensor *tensor) const {
-  for (auto const &idx: s_indexes_) {
+  for (const auto& idx: s_indexes_) {
     auto value = std::string(
         reinterpret_cast<const arrow::StringArray*>(table_accessors_[idx])->GetView(
             row_index_));
     tensor->AddString(value);
   }
-  for (auto const &idx: ls_indexes_) {
+  for (const auto& idx: ls_indexes_) {
     auto value = vineyard::property_graph_utils::ValueGetter<std::string>::Value(
         table_accessors_[idx], row_index_);
     tensor->AddString(value);
@@ -486,9 +486,9 @@ void ArrowRefAttributeValue::FillStrings(Tensor *tensor) const {
 
 #endif
 
-GraphStorage *NewVineyardGraphStorage(const std::string &edge_type,
-    const std::string &view_type,
-    const std::string &use_attrs) {
+GraphStorage *NewVineyardGraphStorage(const std::string& edge_type,
+    const std::string& view_type,
+    const std::string& use_attrs) {
 #if defined(WITH_VINEYARD)
   LOG(INFO) << "create vineyard graph storage";
 #if defined(VINEYARD_USE_OID)
@@ -500,9 +500,9 @@ GraphStorage *NewVineyardGraphStorage(const std::string &edge_type,
 #endif
 }
 
-NodeStorage *NewVineyardNodeStorage(const std::string &node_type,
-    const std::string &view_type,
-    const std::string &use_attrs) {
+NodeStorage *NewVineyardNodeStorage(const std::string& node_type,
+    const std::string& view_type,
+    const std::string& use_attrs) {
 #if defined(WITH_VINEYARD)
   LOG(INFO) << "create vineyard node storage";
 #if defined(VINEYARD_USE_OID)

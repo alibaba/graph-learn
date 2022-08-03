@@ -37,8 +37,8 @@ class VineyardEdgeStorage;
 class VineyardGraphStorage : public GraphStorage {
 public:
   explicit VineyardGraphStorage(std::string edge_label = "0",
-                                std::string const &decorated_edge_view = "",
-                                std::string const &use_attrs = "") {
+                                const std::string& decorated_edge_view = "",
+                                const std::string& use_attrs = "") {
     std::vector<std::string> edge_args;
     if (decorated_edge_view.size() > 0) {
       boost::algorithm::split(edge_args, decorated_edge_view, boost::is_any_of("|"));
@@ -66,7 +66,7 @@ public:
       throw std::runtime_error("Graph: failed to find the graph");
     }
     // assume 1 worker per server
-    for (auto const &kv : fg->Fragments()) {
+    for (const auto& kv : fg->Fragments()) {
       if (fg->FragmentLocations().at(kv.first) == client_.instance_id()) {
         frag_ = client_.GetObject<gl_frag_t>(kv.second);
         break;
@@ -89,7 +89,7 @@ public:
       split_end = stoi(args[4]);
     }
 
-    auto const &schema = frag_->schema();
+    const auto& schema = frag_->schema();
     edge_label_ = schema.GetEdgeLabelId(edge_label);
     if (edge_label_ == -1) {
       if (!edge_label.empty() && std::all_of(edge_label.begin(), edge_label.end(), ::isdigit)) {
@@ -100,7 +100,7 @@ public:
       }
     }
 
-    auto const &entry = schema.GetEntry(edge_label_, "EDGE");
+    const auto& entry = schema.GetEntry(edge_label_, "EDGE");
     std::string src_node_type = entry.relations[0].first, dst_node_type = entry.relations[0].second;
     if (edge_args.size() == 2) {
       src_node_type = edge_args[0];
@@ -130,7 +130,7 @@ public:
 
     auto etable = frag_->edge_data_table(edge_label_);
     if (use_attrs.empty()) {
-      for (auto const &field: etable->schema()->fields()) {
+      for (const auto& field: etable->schema()->fields()) {
         attrs_.emplace(field->name());
       }
     } else {

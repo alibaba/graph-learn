@@ -29,7 +29,7 @@ using namespace graphlearn::io; // NOLINT(build/namespaces)
 using GraphType = vineyard::ArrowFragment<vineyard_oid_t, vineyard_vid_t>;
 using LabelType = typename GraphType::label_id_t;
 
-std::string generate_path(const std::string &prefix, int part_num) {
+std::string generate_path(const std::string& prefix, int part_num) {
   if (part_num == 1) {
     return prefix;
   } else {
@@ -50,9 +50,9 @@ std::string generate_path(const std::string &prefix, int part_num) {
 #endif
 
 #if defined(WITH_VINEYARD)
-void test_vineyard_storage(vineyard::Client &client,
-                          std::vector<std::string> const &efiles,
-                          std::vector<std::string> const &vfiles,
+void test_vineyard_storage(vineyard::Client& client,
+                          const std::vector<std::string>& efiles,
+                          const std::vector<std::string>& vfiles,
                           int directed) {
   grape::CommSpec comm_spec;
   comm_spec.Init(MPI_COMM_WORLD);
