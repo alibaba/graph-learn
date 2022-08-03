@@ -114,7 +114,7 @@ public:
     auto it = map_.find(type);
     if (it == map_.end()) {
       std::vector<float> tmp_w(weights.begin(), weights.end());
-      auto ct = new ConditionTable(id_type, selected_cols, ids, tmp_w);  
+      auto ct = new ConditionTable(id_type, selected_cols, ids, tmp_w);
       map_[type] = ct;
       return ct;
     } else {
@@ -129,11 +129,20 @@ public:
      const SelectedColumns& selected_cols,
      const io::IdArray ids,
      const std::vector<T>& weights) {
-    std::vector<int64_t> tmp_ids(ids.Size());
-    for (size_t idx = 0; idx < ids.Size(); ++idx) {
-      tmp_ids[idx] = ids[idx];
+    ScopedLocker<std::mutex> _(&mtx_);
+    auto it = map_.find(type);
+    if (it == map_.end()) {
+      std::vector<int64_t> tmp_ids(ids.Size());
+      for (size_t idx = 0; idx < ids.Size(); ++idx) {
+        tmp_ids[idx] = ids[idx];
+      }
+      std::vector<float> tmp_w(weights.begin(), weights.end());
+      auto ct = new ConditionTable(id_type, selected_cols, tmp_ids, tmp_w);
+      map_[type] = ct;
+      return ct;
+    } else {
+      return it->second;
     }
-    return LookupOrCreate(type, id_type, selected_cols, tmp_ids, weights);
   }
 
   inline ConditionTable* LookupOrCreate(
@@ -159,15 +168,23 @@ public:
      const SelectedColumns& selected_cols,
      const io::IdArray ids,
      const io::Array<float> weights) {
-    std::vector<int64_t> tmp_ids(ids.Size());
-    for (size_t idx = 0; idx < ids.Size(); ++idx) {
-      tmp_ids[idx] = ids[idx];
+    ScopedLocker<std::mutex> _(&mtx_);
+    auto it = map_.find(type);
+    if (it == map_.end()) {
+      std::vector<int64_t> tmp_ids(ids.Size());
+      for (size_t idx = 0; idx < ids.Size(); ++idx) {
+        tmp_ids[idx] = ids[idx];
+      }
+      std::vector<float> tmp_w(weights.Size());
+      for (size_t idx = 0; idx < weights.Size(); ++idx) {
+        tmp_w[idx] = weights[idx];
+      }
+      auto ct = new ConditionTable(id_type, selected_cols, tmp_ids, tmp_w);
+      map_[type] = ct;
+      return ct;
+    } else {
+      return it->second;
     }
-    std::vector<float> tmp_w(weights.Size());
-    for (size_t idx = 0; idx < weights.Size(); ++idx) {
-      tmp_w[idx] = weights[idx];
-    }
-    return LookupOrCreate(type, id_type, selected_cols, tmp_ids, tmp_w);
   }
 
   inline ConditionTable* LookupOrCreate(
@@ -191,11 +208,19 @@ public:
      const std::string& id_type,
      const SelectedColumns& selected_cols,
      const io::IdArray ids) {
-    std::vector<int64_t> tmp_ids(ids.Size());
-    for (size_t idx = 0; idx < ids.Size(); ++idx) {
-      tmp_ids[idx] = ids[idx];
+    ScopedLocker<std::mutex> _(&mtx_);
+    auto it = map_.find(type);
+    if (it == map_.end()) {
+      std::vector<int64_t> tmp_ids(ids.Size());
+      for (size_t idx = 0; idx < ids.Size(); ++idx) {
+        tmp_ids[idx] = ids[idx];
+      }
+      auto ct = new ConditionTable(id_type, selected_cols, tmp_ids);
+      map_[type] = ct;
+      return ct;
+    } else {
+      return it->second;
     }
-    return LookupOrCreate(type, id_type, selected_cols, tmp_ids);
   }
 
 private:
