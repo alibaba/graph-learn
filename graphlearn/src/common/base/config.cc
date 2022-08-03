@@ -16,7 +16,6 @@ limitations under the License.
 #include "include/config.h"
 
 #include <algorithm>
-#include "common/base/log.h"
 
 namespace graphlearn {
 
@@ -75,7 +74,6 @@ type GetGlobalFlag##name() {                 \
 
 // Define the global flags
 DEFINE_INT32_GLOBAL_FLAG(DeployMode, 0)
-DEFINE_INT32_GLOBAL_FLAG(EnableActor, 0)
 DEFINE_INT32_GLOBAL_FLAG(ClientId, 0)
 DEFINE_INT32_GLOBAL_FLAG(ClientCount, 1)
 DEFINE_INT32_GLOBAL_FLAG(ServerId, 0)
@@ -105,14 +103,16 @@ DEFINE_STRING_GLOBAL_FLAG(ServerHosts, "")
 DEFINE_INT32_GLOBAL_FLAG(KnnMetric, 0)  // 0 is l2, 1 is inner product.
 DEFINE_INT32_GLOBAL_FLAG(NegativeSamplingRetryTimes, 5)
 DEFINE_INT32_GLOBAL_FLAG(IgnoreInvalid, 1) // 1 is True, 0 is False.
-DEFINE_INT32_GLOBAL_FLAG(LocalShardCount, 8)
 DEFINE_STRING_GLOBAL_FLAG(FieldDelimiter, "\t")
+// for Vineyard
 DEFINE_INT64_GLOBAL_FLAG(VineyardGraphID, 0)
 DEFINE_STRING_GLOBAL_FLAG(VineyardIPCSocket, "/var/run/vineyard.sock")
+// for hiactor engine
+DEFINE_INT32_GLOBAL_FLAG(EnableActor, 0)
+DEFINE_INT32_GLOBAL_FLAG(ActorLocalShardCount, 8)
 
 // Define the setters
 DEFINE_SET_INT32_GLOBAL_FLAG(DeployMode)
-DEFINE_SET_INT32_GLOBAL_FLAG(EnableActor)
 DEFINE_SET_INT32_GLOBAL_FLAG(ClientId)
 DEFINE_SET_INT32_GLOBAL_FLAG(ClientCount)
 DEFINE_SET_INT32_GLOBAL_FLAG(ServerId)
@@ -142,10 +142,13 @@ DEFINE_SET_STRING_GLOBAL_FLAG(ServerHosts)
 DEFINE_SET_INT32_GLOBAL_FLAG(KnnMetric)
 DEFINE_SET_INT32_GLOBAL_FLAG(NegativeSamplingRetryTimes)
 DEFINE_SET_INT32_GLOBAL_FLAG(IgnoreInvalid)
-DEFINE_SET_INT32_GLOBAL_FLAG(LocalShardCount)
 DEFINE_SET_STRING_GLOBAL_FLAG(FieldDelimiter)
+// for Vineyard
 DEFINE_SET_INT64_GLOBAL_FLAG(VineyardGraphID)
 DEFINE_SET_STRING_GLOBAL_FLAG(VineyardIPCSocket)
+// for hiactor engine
+DEFINE_SET_INT32_GLOBAL_FLAG(EnableActor)
+DEFINE_SET_INT32_GLOBAL_FLAG(ActorLocalShardCount)
 
 // Define the getters
 /// Only export flags that are needed by system.

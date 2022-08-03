@@ -16,8 +16,6 @@ limitations under the License.
 #include "common/rpc/notification.h"
 
 #include <atomic>
-#include <cstdint>
-#include <string>
 #include <unordered_map>
 #include <vector>
 #include "common/base/errors.h"
@@ -25,7 +23,6 @@ limitations under the License.
 #include "common/base/time_stamp.h"
 #include "common/threading/sync/lock.h"
 #include "common/threading/sync/waitable_event.h"
-#include "include/config.h"
 
 namespace graphlearn {
 

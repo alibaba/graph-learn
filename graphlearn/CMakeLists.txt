@@ -45,6 +45,11 @@ option (VINEYARD_USE_OID
   "Use OID when work with vineyard graphs"
   ON)
 
+# FIXME: change to OFF
+option (WITH_HIACTOR
+  "Enable hiactor engine"
+  ON)
+
 set (GL_CXX_DIALECT
   "c++11"
   CACHE
@@ -93,6 +98,28 @@ else ()
   set (glog_INSTALL_DIR ${THIRD_PARTY_DIR}/glog/build)
   list (APPEND CMAKE_PREFIX_PATH ${glog_INSTALL_DIR})
   find_package (glog CONFIG REQUIRED)
+endif ()
+
+## hiactor package
+if (APPLE)
+  # hiactor is not buildable on MacOS
+  set (WITH_HIACTOR OFF)
+endif ()
+set (Hiactor_INSTALL_DIR ${THIRD_PARTY_DIR}/hiactor/build)
+if (WITH_HIACTOR)
+  message("-- GraphLearn is built with hiactor engine.")
+  list (APPEND CMAKE_PREFIX_PATH ${Hiactor_INSTALL_DIR})
+  find_package (Hiactor CONFIG REQUIRED)
+
+  ## c-ares compatibility with grpc
+  if (c-ares_FOUND AND NOT (TARGET c-ares::cares))
+    add_library (c-ares::cares UNKNOWN IMPORTED)
+
+    set_target_properties (c-ares::cares
+      PROPERTIES
+        IMPORTED_LOCATION ${c-ares_LIBRARY}
+        INTERFACE_INCLUDE_DIRECTORIES ${c-ares_INCLUDE_DIRS})
+  endif ()
 endif ()
 
 ## protobuf and gRPC package
@@ -185,28 +212,37 @@ generate_grpc_files (grpc_codegen GL_GRPC_AUTOGEN_FILES)
 ## project files
 # common
 set (GL_COMMON_DIR ${GL_SRC_DIR}/common)
-file (GLOB_RECURSE GL_COMMON_FILES
-  ${GL_COMMON_DIR}/*.cc
-  ${GL_COMMON_DIR}/*.h)
+file (GLOB_RECURSE GL_COMMON_FILES ${GL_COMMON_DIR}/*.cc)
 # core
 set (GL_CORE_DIR ${GL_SRC_DIR}/core)
-file (GLOB_RECURSE GL_CORE_FILES
-  ${GL_CORE_DIR}/*.cc
-  ${GL_CORE_DIR}/*.h)
-# include
-set (GL_INCLUDE_DIR ${GL_SRC_DIR}/include)
-file (GLOB_RECURSE GL_INCLUDE_FILES
-  ${GL_INCLUDE_DIR}/*.h)
+file (GLOB_RECURSE GL_CORE_FILES ${GL_CORE_DIR}/*.cc)
 # platform
 set (GL_PLATFORM_DIR ${GL_SRC_DIR}/platform)
-file (GLOB_RECURSE GL_PLATFORM_FILES
-  ${GL_PLATFORM_DIR}/*.cc
-  ${GL_PLATFORM_DIR}/*.h)
+file (GLOB_RECURSE GL_PLATFORM_FILES ${GL_PLATFORM_DIR}/*.cc)
 # service
 set (GL_SERVICE_DIR ${GL_SRC_DIR}/service)
-file (GLOB_RECURSE GL_SERVICE_FILES
-  ${GL_SERVICE_DIR}/*.cc
-  ${GL_SERVICE_DIR}/*.h)
+file (GLOB_RECURSE GL_SERVICE_FILES ${GL_SERVICE_DIR}/*.cc)
+
+# actor
+if (WITH_HIACTOR)
+  set (GL_ACTOR_DIR ${GL_SRC_DIR}/actor)
+  # actor codegen
+  include (${Hiactor_INSTALL_DIR}/bin/hiactor_codegen/ActorAutoGen.cmake)
+  hiactor_codegen (actor_codegen GL_ACTOR_AUTOGEN_FILES
+    ACTOR_SOURCE_DIR ${GL_ACTOR_DIR}
+    HIACTOR_INCLUDE ${Hiactor_INSTALL_DIR}/include
+    SYSTEM_INCLUDE ""
+    USER_INCLUDE ${GL_SRC_DIR})
+
+  file (GLOB_RECURSE GL_ACTOR_SRC_FILES ${GL_ACTOR_DIR}/*.cc)
+  list (FILTER GL_ACTOR_SRC_FILES EXCLUDE REGEX ".*autogen\\.cc$")
+
+  set (GL_ACTOR_FILES
+    ${GL_ACTOR_SRC_FILES}
+    ${GL_ACTOR_AUTOGEN_FILES})
+else ()
+  set (GL_ACTOR_FILES)
+endif ()
 
 # contrib knn
 if (APPLE)
@@ -274,6 +310,13 @@ else ()
   set (GL_MODE_FLAGS -DNDEBUG -O2)
 endif ()
 
+## actor engine flag
+if (WITH_HIACTOR)
+  set (ACTOR_FLAG OPEN)
+else ()
+  set (ACTOR_FLAG CLOSE)
+endif ()
+
 ## knn flag
 if (KNN)
   set (KNN_FLAG OPEN)
@@ -298,13 +341,14 @@ endif()
 set (GL_CXX_FLAGS
   ${GL_MODE_FLAGS}
   -std=${GL_CXX_DIALECT}
+  -D${ACTOR_FLAG}_ACTOR_ENGINE
   -D${KNN_FLAG}_KNN
   -D${GPU_FLAG}_GPU
   -D${PROFILING_FLAG}_PROFILING
   -fPIC
   -fvisibility-inlines-hidden
   -pthread
-  # fixme: check format security
+  -Wno-deprecated-declarations
   -Wno-format-security)
 
 if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
@@ -314,17 +358,18 @@ if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
     -msse4.1)
 endif ()
 
-if (APPLE)
-  set (GL_CXX_FLAGS ${GL_CXX_FLAGS} -Wno-deprecated-declarations)
+if (WITH_HIACTOR)
+  set (GL_CXX_FLAGS ${GL_CXX_FLAGS}
+    -Wno-attributes)
 endif ()
 
 ## add library
 add_library (graphlearn_shared SHARED
   ${GL_COMMON_FILES}
   ${GL_CORE_FILES}
-  ${GL_INCLUDE_FILES}
   ${GL_PLATFORM_FILES}
   ${GL_SERVICE_FILES}
+  ${GL_ACTOR_FILES}
   ${GL_KNN_FILES}
   ${GL_GRPC_AUTOGEN_FILES})
 
@@ -343,6 +388,14 @@ target_link_libraries (graphlearn_shared
   PUBLIC
     glog::glog
     gRPC::grpc++)
+
+if (WITH_HIACTOR)
+  target_link_libraries(graphlearn_shared
+    PUBLIC
+      -Wl,--whole-archive
+      Hiactor::hiactor
+      -Wl,--no-whole-archive)
+endif ()
 
 if (KNN)
   add_dependencies (graphlearn_shared
@@ -422,7 +475,6 @@ if (TESTING)
   file (GLOB_RECURSE GL_TEST_FILES
     ${GL_COMMON_DIR}/*.cpp
     ${GL_CORE_DIR}/*.cpp
-    ${GL_INCLUDE_DIR}/*.cpp
     ${GL_PLATFORM_DIR}/*.cpp
     ${GL_SERVICE_DIR}/*.cpp)
   add_gl_tests (${GL_TEST_FILES})
@@ -449,13 +501,15 @@ execute_process (
   COMMAND /bin/sh -c "git rev-parse --abbrev-ref HEAD"
   OUTPUT_VARIABLE GIT_BRANCH
 )
-string (STRIP ${GIT_BRANCH} GIT_BRANCH)
+# FIXME: uncomment
+#string (STRIP ${GIT_BRANCH} GIT_BRANCH)
 
 execute_process (
   COMMAND /bin/sh -c "git rev-parse --short HEAD"
   OUTPUT_VARIABLE GIT_VERSION
 )
-string (STRIP ${GIT_VERSION} GIT_VERSION)
+# FIXME: uncomment
+#string (STRIP ${GIT_VERSION} GIT_VERSION)
 
 set (GL_PYTHON_LIB_DIR ${GL_PYTHON_DIR}/python/lib)
 add_custom_target (python)

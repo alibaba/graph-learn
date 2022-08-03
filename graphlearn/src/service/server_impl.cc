@@ -220,8 +220,8 @@ ServerImpl* NewActorServerImpl(int32_t server_id,
                                int32_t server_count,
                                const std::string& server_host,
                                const std::string& tracker) {
-  USER_LOG("Actor engine is disabled!");
-  return nullptr;
+  USER_LOG("Actor engine is disabled! Using default engine.");
+  return new DefaultServerImpl(server_id, server_count, server_host, tracker);
 }
 #endif
 
