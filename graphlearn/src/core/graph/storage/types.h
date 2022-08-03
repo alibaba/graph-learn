@@ -33,97 +33,17 @@ typedef std::vector<std::vector<IdType>> IdMatrix;
 typedef std::unordered_map<IdType, IndexType> MAP;
 
 template <class T>
-class MultiArray {
-public:
-  MultiArray(const std::vector<const T*>& values,
-             const std::vector<int32_t> sizes,
-             int32_t element_size, int32_t element_offset=0,
-             const T value_offset=0)
-      : values_(values),
-        sizes_(sizes),
-        element_size_(element_size),
-        element_offset_(element_offset),
-        value_offset_(value_offset) {
-    offsets_.emplace_back(0);
-    for (size_t i = 1; i <= sizes.size(); ++i) {
-      offsets_.emplace_back(offsets_[i-1] + sizes[i-1]);
-    }
-  }
-  MultiArray(MultiArray&& rhs) {
-    values_ = rhs.values_;
-    sizes_ = rhs.sizes_;
-    offsets_ = rhs.offsets_;
-    element_size_ = rhs.element_size_;
-    element_offset_ = rhs.element_offset_;
-    value_offset_ = rhs.value_offset_;
-  }
-  operator bool () const {
-    return *offsets_.rbegin() > 0;
-  }
-  T operator[] (int32_t i) const {
-    auto p = std::upper_bound(offsets_.begin(), offsets_.end(), i);
-    if (p == offsets_.end()) {
-      throw std::out_of_range("Index out of range: " + std::to_string(i));
-    }
-    int idx = p - offsets_.begin();
-    auto target = reinterpret_cast<const uint8_t *>(values_[idx-1])
-                + (element_size_ * (i-offsets_[idx-1]))
-                + element_offset_;
-    return *reinterpret_cast<const T *>(target) + value_offset_;
-  }
-  int32_t Size() const {
-    return *offsets_.rbegin();
-  }
-private:
-  std::vector<const T *> values_;
-  std::vector<int32_t> sizes_;
-  std::vector<int32_t> offsets_;
-  int32_t element_size_;
-  int32_t element_offset_;
-  const T value_offset_ = 0;
-};
-
-template <typename T>
-class RangeArray {
-public:
-  RangeArray(const T& begin, const T& end): begin_(begin), end_(end) {}
-
-  virtual operator bool () const {
-    return begin_ == end_;
-  }
-
-  virtual T operator[] (int32_t i) const {
-    return begin_ + i;
-  }
-
-  virtual int32_t Size() const {
-    return end_ - begin_;
-  }
-
-private:
-  const T begin_;
-  const T end_;
-};
-
-template <class T>
 class Array {
 public:
-  Array() : value_(nullptr), mvalue_(nullptr), size_(0) {
-  }
-
-  Array(const std::shared_ptr<MultiArray<T>>& mvalue)
-    : value_(nullptr), mvalue_(mvalue), size_(mvalue->Size()) {
+  Array() : value_(nullptr), size_(0) {
   }
 
   Array(const T* value, int32_t size)
     : value_(value), size_(size) {
   }
 
-  Array(const T& begin, const T& end) :
-      value_(nullptr),
-      mvalue_(nullptr),
-      rangevalue_(std::make_shared<RangeArray<T>>(begin, end)),
-      size_(end - begin) {
+  Array(const T* value, int32_t size, const std::shared_ptr<T> ownership)
+    : value_(value), size_(size), ownership_(ownership) {
   }
 
   explicit Array(const std::vector<T>& values)
@@ -132,37 +52,25 @@ public:
 
   Array(const Array& rhs) {
     value_ = rhs.value_;
-    mvalue_ = rhs.mvalue_;
-    rangevalue_ = rhs.rangevalue_;
     size_ = rhs.size_;
   }
 
   Array& operator=(const Array& rhs) {
     value_ = rhs.value_;
-    mvalue_ = rhs.mvalue_;
-    rangevalue_ = rhs.rangevalue_;
     size_ = rhs.size_;
     return *this;
   }
 
   Array(Array&& rhs) {
     value_ = rhs.value_;
-    mvalue_ = rhs.mvalue_;
-    rangevalue_ = rhs.rangevalue_;
     size_ = rhs.size_;
   }
 
-  operator bool () const {
-    return (value_ != nullptr || mvalue_ != nullptr || rangevalue_ != nullptr) && size_ != 0;
+  virtual operator bool () const {
+    return value_ != nullptr && size_ != 0;
   }
 
-  T operator[] (int32_t i) const {
-    if (mvalue_) {
-      return mvalue_->operator[](i);
-    }
-    if (rangevalue_) {
-      return rangevalue_->operator[](i);
-    }
+  virtual T operator[] (int32_t i) const {
     return value_[i];
   }
 
@@ -170,24 +78,21 @@ public:
     return this->operator[](i);
   }
 
-  int32_t Size() const {
+  virtual int32_t Size() const {
     return size_;
   }
 
-  const T *data() const {
-    if (mvalue_ == nullptr && rangevalue_ == nullptr) {
-      return value_;
-    } else {
-      throw std::runtime_error(
-        "Unable to get the raw data pointer of multi-array or range array");
-    }
+  virtual const T *data() const {
+    return value_;
   }
 
 private:
   const T* value_;
-  std::shared_ptr<MultiArray<T>> mvalue_;
-  std::shared_ptr<RangeArray<T>> rangevalue_;
   int32_t size_;
+
+  // the `ownership` pointer is to keep the underlying data alive until is array
+  // itself is not used anymore, without copying data around.
+  std::shared_ptr<T> ownership_;
 };
 
 typedef Array<IdType> IdArray;

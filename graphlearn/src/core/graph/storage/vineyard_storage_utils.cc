@@ -21,6 +21,7 @@ limitations under the License.
 
 #include <memory>
 #include <mutex>
+#include <numeric>
 #include <type_traits>
 
 #if defined(WITH_VINEYARD)
@@ -169,8 +170,19 @@ get_all_outgoing_neighbor_nodes(const std::shared_ptr<gl_frag_t>& frag,
   values.emplace_back(
       reinterpret_cast<const IdType *>(neighbor_list.begin_unit()));
   sizes.emplace_back(neighbor_list.Size());
-  return Array<IdType>(std::make_shared<MultiArray<IdType>>(
-      values, sizes, sizeof(nbr_unit_t), __builtin_offsetof(nbr_unit_t, vid), gid_value_offset));
+
+  std::shared_ptr<IdType> nodes(new IdType[neighbor_list.Size()],
+                                std::default_delete<IdType[]>());
+  IdType* node_ptr = nodes.get();
+  size_t index = 0;
+  for (auto iter = neighbor_list.begin_unit(); iter != neighbor_list.end_unit(); ++iter) {
+#if defined(VINEYARD_USE_OID)
+    node_ptr[index++] = frag->GetId(iter->get_neighbor());
+#else
+    node_ptr[index++] = iter->vid;
+#endif
+  }
+  return IdArray(nodes.get(), neighbor_list.Size(), nodes);
 }
 
 const Array<IdType>
@@ -183,14 +195,15 @@ get_all_outgoing_neighbor_edges(const std::shared_ptr<gl_frag_t>& frag,
   if (!frag->IsInnerVertex(v)) {
     return Array<IdType>();
   }
-  std::vector<const IdType *> values;
-  std::vector<int32_t> sizes;
   auto neighbor_list = frag->GetOutgoingAdjList(v, edge_label);
-  values.emplace_back(
-      reinterpret_cast<const IdType *>(neighbor_list.begin_unit()));
-  sizes.emplace_back(neighbor_list.Size());
-  return Array<IdType>(std::make_shared<MultiArray<IdType>>(
-      values, sizes, sizeof(nbr_unit_t), __builtin_offsetof(nbr_unit_t, eid)));
+  std::shared_ptr<IdType> edges(new IdType[neighbor_list.Size()],
+                                std::default_delete<IdType[]>());
+  IdType* edge_ptr = edges.get();
+  size_t index = 0;
+  for (auto iter = neighbor_list.begin_unit(); iter != neighbor_list.end_unit(); ++iter) {
+    edge_ptr[index++] = iter->eid;
+  }
+  return IdArray(edges.get(), neighbor_list.Size(), edges);
 }
 
 const Array<IdType>
@@ -216,7 +229,10 @@ get_all_outgoing_neighbor_edges(const std::shared_ptr<gl_frag_t>& frag,
     return Array<IdType>();
   }
   auto offset = edge_offsets_[frag->vertex_offset(v)];
-  return IdArray(offset.first, offset.second);
+  std::shared_ptr<IdType> edges(new IdType[offset.second - offset.first],
+                                std::default_delete<IdType[]>());
+  std::iota(edges.get(), edges.get() + (offset.second - offset.first), 0);
+  return IdArray(edges.get(), offset.second - offset.first, edges);
 }
 
 IdType get_edge_src_id(const std::shared_ptr<gl_frag_t>& frag,
