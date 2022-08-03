@@ -55,7 +55,7 @@ public:
 
   template<class T>
   AliasMethod* LookupOrCreate(const std::string& type,
-      const io::Array<float> weights) {
+      const io::Array<T> weights) {
     ScopedLocker<std::mutex> _(&mtx_);
     auto it = map_.find(type);
     if (it == map_.end()) {
@@ -84,6 +84,23 @@ public:
     } else {
       return it->second;
     }                          
+  }
+
+  inline AliasMethod* LookupOrCreate(const std::string& type,
+      const io::Array<float> weights) {
+    ScopedLocker<std::mutex> _(&mtx_);
+    auto it = map_.find(type);
+    if (it == map_.end()) {
+      std::vector<float> tmp_w(weights.Size());
+      for (size_t idx = 0; idx < weights.Size(); ++idx) {
+        tmp_w[idx] = weights[idx];
+      }
+      auto am = new AliasMethod(&tmp_w);
+      map_[type] = am;
+      return am;
+    } else {
+      return it->second;
+    }
   }
 
   inline AliasMethod* LookupOrCreate(const std::string& type, 
