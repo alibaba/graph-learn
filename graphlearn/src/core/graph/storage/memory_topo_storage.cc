@@ -90,19 +90,19 @@ public:
     }
   }
 
-  const IndexList* GetAllOutDegrees() const override {
+  const IndexArray GetAllOutDegrees() const override {
     if (IsDataDistributionEnabled()) {
       return statics_->GetAllOutDegrees();
     } else {
-      return nullptr;
+      return IndexArray{};
     }
   }
 
-  const IndexList* GetAllInDegrees() const override {
+  const IndexArray GetAllInDegrees() const override {
     if (IsDataDistributionEnabled()) {
       return statics_->GetAllInDegrees();
     } else {
-      return nullptr;
+      return IndexArray{};
     }
   }
 

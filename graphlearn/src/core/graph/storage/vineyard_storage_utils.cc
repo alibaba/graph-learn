@@ -120,37 +120,47 @@ AttributeValue *arrow_line_to_attribute_value(
   return attr;
 }
 
-const IndexList *get_all_in_degree(const std::shared_ptr<gl_frag_t>& frag,
+const IndexArray get_all_in_degree(const std::shared_ptr<gl_frag_t>& frag,
                                    const label_id_t edge_label) {
   int v_label_num = frag->vertex_label_num();
-  auto degree_list = new IndexList();
+  size_t total_size = 0;
+  for (int label_id = 0; label_id < v_label_num; ++label_id) {
+    auto id_range = frag->InnerVertices(label_id);
+    total_size += id_range.size();
+  }
+  std::shared_ptr<IndexType> degrees(new IndexType[total_size],
+                                 std::default_delete<IndexType[]>());
+  IndexType* degree_ptr = degrees.get();
+  size_t index = 0;
   for (int label_id = 0; label_id < v_label_num; ++label_id) {
     auto id_range = frag->InnerVertices(label_id);
     for (auto id = id_range.begin(); id < id_range.end(); ++id) {
-      auto degree = frag->GetLocalInDegree(*id, edge_label);
-      if (degree > 0) {
-        degree_list->emplace_back(degree);
-      }
+      degree_ptr[index++] = frag->GetLocalInDegree(*id, edge_label);
     }
   }
-  return degree_list;
+  return IndexArray(degrees.get(), total_size, degrees);
 }
 
-const IndexList *get_all_out_degree(const std::shared_ptr<gl_frag_t>& frag,
+const IndexArray get_all_out_degree(const std::shared_ptr<gl_frag_t>& frag,
                                     const label_id_t edge_label) {
   int v_label_num = frag->vertex_label_num();
   int e_label_num = frag->edge_label_num();
-  auto degree_list = new IndexList();
+  size_t total_size = 0;
+  for (int label_id = 0; label_id < v_label_num; ++label_id) {
+    auto id_range = frag->InnerVertices(label_id);
+    total_size += id_range.size();
+  }
+  std::shared_ptr<IndexType> degrees(new IndexType[total_size],
+                                 std::default_delete<IndexType[]>());
+  IndexType* degree_ptr = degrees.get();
+  size_t index = 0;
   for (int label_id = 0; label_id < v_label_num; ++label_id) {
     auto id_range = frag->InnerVertices(label_id);
     for (auto id = id_range.begin(); id < id_range.end(); ++id) {
-      auto degree = frag->GetLocalOutDegree(*id, edge_label);
-      if (degree > 0) {
-        degree_list->emplace_back(degree);
-      }
+      degree_ptr[index++] = frag->GetLocalOutDegree(*id, edge_label);
     }
   }
-  return degree_list;
+  return IndexArray(degrees.get(), total_size, degrees);
 }
 
 const Array<IdType>
@@ -163,13 +173,8 @@ get_all_outgoing_neighbor_nodes(const std::shared_ptr<gl_frag_t>& frag,
   if (!frag->IsInnerVertex(v)) {
     return Array<IdType>();
   }
-  std::vector<const IdType *> values;
-  std::vector<int32_t> sizes;
   auto neighbor_list = frag->GetOutgoingAdjList(v, edge_label);
   auto gid_value_offset = frag->GetInnerVertexGid(vertex_t{0});
-  values.emplace_back(
-      reinterpret_cast<const IdType *>(neighbor_list.begin_unit()));
-  sizes.emplace_back(neighbor_list.Size());
 
   std::shared_ptr<IdType> nodes(new IdType[neighbor_list.Size()],
                                 std::default_delete<IdType[]>());

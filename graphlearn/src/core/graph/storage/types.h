@@ -96,6 +96,7 @@ private:
 };
 
 typedef Array<IdType> IdArray;
+typedef Array<IndexType> IndexArray;
 
 class Attribute {
 public:

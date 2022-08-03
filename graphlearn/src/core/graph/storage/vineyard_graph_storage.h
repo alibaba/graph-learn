@@ -245,10 +245,10 @@ public:
     return frag_->GetLocalOutDegree(vertex_t{static_cast<uint64_t>(src_gid)},
                                     edge_label_);
   }
-  virtual const IndexList *GetAllInDegrees() const override {
+  virtual const IndexArray GetAllInDegrees() const override {
     return get_all_in_degree(frag_, edge_label_);
   }
-  virtual const IndexList *GetAllOutDegrees() const override {
+  virtual const IndexArray GetAllOutDegrees() const override {
     return get_all_out_degree(frag_, edge_label_);
   }
   virtual const IdArray GetAllSrcIds() const override {

@@ -83,7 +83,7 @@ private:
     if (strategy == "in_degree") {
       auto weights = storage->GetAllInDegrees();
       *ct = ct_factory->LookupOrCreate(type, id_type, selected_cols,
-                                       ids, *weights);
+                                       ids, weights);
       *am = am_factory->LookupOrCreate(type, weights);
     } else if (strategy == "node_weight"){
       auto weights = storage->GetNodeWeights();

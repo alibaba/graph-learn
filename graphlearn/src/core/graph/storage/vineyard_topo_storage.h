@@ -88,13 +88,13 @@ public:
 
   /// Get the out-degree values of all ids corresponding to GetAllSrcIds().
   /// For the above example, GetAllOutDegrees() --> {2, 2, 2}
-  virtual const IndexList *GetAllOutDegrees() const override {
+  virtual const IndexArray GetAllOutDegrees() const override {
     return graph_->GetAllOutDegrees();
   }
 
   /// Get the in-degree values of all ids corresponding to GetAllDstIds().
   /// For the above example, GetAllInDegrees() --> {2, 2, 1, 1}
-  virtual const IndexList *GetAllInDegrees() const override {
+  virtual const IndexArray GetAllInDegrees() const override {
     return graph_->GetAllInDegrees();
   }
 

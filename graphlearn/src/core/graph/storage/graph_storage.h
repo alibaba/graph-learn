@@ -49,8 +49,8 @@ public:
 
   virtual IndexType GetInDegree(IdType dst_id) const = 0;
   virtual IndexType GetOutDegree(IdType src_id) const = 0;
-  virtual const IndexList* GetAllInDegrees() const = 0;
-  virtual const IndexList* GetAllOutDegrees() const = 0;
+  virtual const IndexArray GetAllInDegrees() const = 0;
+  virtual const IndexArray GetAllOutDegrees() const = 0;
   virtual const IdArray GetAllSrcIds() const = 0;
   virtual const IdArray GetAllDstIds() const = 0;
 };

@@ -106,11 +106,11 @@ public:
     return topo_->GetOutDegree(src_id);
   }
 
-  const IndexList* GetAllInDegrees() const override {
+  const IndexArray GetAllInDegrees() const override {
     return topo_->GetAllInDegrees();
   }
 
-  const IndexList* GetAllOutDegrees() const override {
+  const IndexArray GetAllOutDegrees() const override {
     return topo_->GetAllOutDegrees();
   }
 

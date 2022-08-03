@@ -41,12 +41,12 @@ public:
     return IdArray(dst_id_list_.data(), dst_id_list_.size());
   }
 
-  const IndexList* GetAllOutDegrees() const {
-    return &out_degree_list_;
+  const IndexArray GetAllOutDegrees() const {
+    return IndexArray{out_degree_list_};
   }
 
-  const IndexList* GetAllInDegrees() const {
-    return &in_degree_list_;
+  const IndexArray GetAllInDegrees() const {
+    return IndexArray{in_degree_list_};
   }
 
   IndexType GetOutDegree(IdType src_id) const;

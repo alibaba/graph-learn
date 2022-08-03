@@ -51,11 +51,11 @@ const ::graphlearn::io::Array<float> StorageWrapper::GetNodeWeights() const {
   }
 }
 
-const ::graphlearn::io::IndexList* StorageWrapper::GetAllInDegrees() const {
+const ::graphlearn::io::IndexArray StorageWrapper::GetAllInDegrees() const {
   if (graph_storage_ != nullptr) {
     return graph_storage_->GetAllInDegrees();
   } else {
-    return nullptr;
+    return ::graphlearn::io::IndexArray{};
   }
 }
 

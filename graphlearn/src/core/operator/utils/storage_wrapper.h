@@ -32,7 +32,7 @@ public:
 
   const ::graphlearn::io::IdArray GetIds();
   const ::graphlearn::io::Array<float> GetNodeWeights() const;
-  const ::graphlearn::io::IndexList* GetAllInDegrees() const;
+  const ::graphlearn::io::IndexArray GetAllInDegrees() const;
   ::graphlearn::io::Array<int64_t> GetNeighbors(int64_t src_id) const;
   void Lock(); 
   void Unlock();

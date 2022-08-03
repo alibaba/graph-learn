@@ -214,10 +214,10 @@ protected:
       }
     }
 
-    const IndexList* out_degrees = storage->GetAllOutDegrees();
-    EXPECT_EQ(out_degrees->size(), src_id_count);
+    const IndexArray out_degrees = storage->GetAllOutDegrees();
+    EXPECT_EQ(out_degrees.Size(), src_id_count);
     for (IdType i = 0; i < src_id_count; ++i) {
-      EXPECT_EQ(out_degrees->at(i), 1 + dst_offset / src_id_count);
+      EXPECT_EQ(out_degrees.at(i), 1 + dst_offset / src_id_count);
     }
 
     const IdArray dst_ids = storage->GetAllDstIds();
@@ -227,10 +227,10 @@ protected:
       EXPECT_EQ(storage->GetInDegree(i), 1);
     }
 
-    const IndexList* in_degrees = storage->GetAllInDegrees();
-    EXPECT_EQ(in_degrees->size(), dst_id_count);
+    const IndexArray in_degrees = storage->GetAllInDegrees();
+    EXPECT_EQ(in_degrees.Size(), dst_id_count);
     for (IdType i = 0; i < dst_id_count; ++i) {
-      EXPECT_EQ(in_degrees->at(i), 1);
+      EXPECT_EQ(in_degrees.at(i), 1);
     }
   }
 

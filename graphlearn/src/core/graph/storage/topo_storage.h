@@ -63,11 +63,11 @@ public:
 
   /// Get the out-degree values of all ids corresponding to GetAllSrcIds().
   /// For the above example, GetAllOutDegrees() --> {2, 2, 2}
-  virtual const IndexList* GetAllOutDegrees() const = 0;
+  virtual const IndexArray GetAllOutDegrees() const = 0;
 
   /// Get the in-degree values of all ids corresponding to GetAllDstIds().
   /// For the above example, GetAllInDegrees() --> {2, 2, 1, 1}
-  virtual const IndexList* GetAllInDegrees() const = 0;
+  virtual const IndexArray GetAllInDegrees() const = 0;
 };
 
 TopoStorage* NewMemoryTopoStorage();

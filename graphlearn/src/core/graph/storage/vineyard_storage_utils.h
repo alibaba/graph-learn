@@ -49,8 +49,8 @@ using graphlearn::io::Attribute;
 using graphlearn::io::AttributeValue;
 using graphlearn::io::EdgeValue;
 using graphlearn::io::IdList;
-using graphlearn::io::IndexList;
 using graphlearn::io::IndexType;
+using graphlearn::io::IndexArray;
 using graphlearn::io::NewDataHeldAttributeValue;
 using graphlearn::io::SideInfo;
 
@@ -80,10 +80,10 @@ const IdArray get_all_src_ids(const std::shared_ptr<gl_frag_t>& frag,
 const IdArray get_all_dst_ids(const std::shared_ptr<gl_frag_t>& frag,
                               const label_id_t edge_label);
 
-const IndexList *get_all_in_degree(const std::shared_ptr<gl_frag_t>& frag,
+const IndexArray get_all_in_degree(const std::shared_ptr<gl_frag_t>& frag,
                                    const label_id_t edge_label);
 
-const IndexList *get_all_out_degree(const std::shared_ptr<gl_frag_t>& frag,
+const IndexArray get_all_out_degree(const std::shared_ptr<gl_frag_t>& frag,
                                     const label_id_t edge_label);
 
 const Array<IdType>
