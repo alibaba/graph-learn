@@ -120,16 +120,16 @@ public:
     }
   }
 
-  const IdList* GetIds() const override {
-    return &ids_;
+  const IdArray GetIds() const override {
+    return IdArray(ids_.data(), ids_.size());
   }
 
-  const std::vector<float>* GetWeights() const override {
-    return &weights_;
+  const Array<int32_t> GetLabels() const override {
+    return Array<int32_t>(labels_);
   }
 
-  const std::vector<int32_t>* GetLabels() const override {
-    return &labels_;
+  const Array<float> GetWeights() const override {
+    return Array<float>(weights_);
   }
 
   const std::vector<Attribute>* GetAttributes() const override {

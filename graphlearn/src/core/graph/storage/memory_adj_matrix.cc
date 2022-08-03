@@ -63,7 +63,7 @@ public:
     }
   }
 
-  IdType Size() const {
+  IdType Size() const override {
     return adj_nodes_.size();
   }
 
@@ -162,7 +162,7 @@ public:
     naive_adj_.reset();
   }
 
-  IdType Size() const {
+  IdType Size() const override {
     return offsets_.size() - 1;
   }
 

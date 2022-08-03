@@ -31,7 +31,7 @@ StorageWrapper::StorageWrapper(NodeFrom node_from, const std::string& type,
   }
 }
 
-const ::graphlearn::io::IdList* StorageWrapper::GetIds() {
+const ::graphlearn::io::IdArray StorageWrapper::GetIds() {
   if (node_from_ == NodeFrom::kNode) {
     return node_storage_->GetIds();
   } else {
@@ -43,19 +43,19 @@ const ::graphlearn::io::IdList* StorageWrapper::GetIds() {
   }
 }
 
-const std::vector<float>* StorageWrapper::GetNodeWeights() const {
+const ::graphlearn::io::Array<float> StorageWrapper::GetNodeWeights() const {
   if (node_storage_ != nullptr) {
     return node_storage_->GetWeights();
   } else {
-    return nullptr;
+    return ::graphlearn::io::Array<float>{nullptr, 0};
   }
 }
 
-const std::vector<int32_t>* StorageWrapper::GetAllInDegrees() const {
+const ::graphlearn::io::IndexArray StorageWrapper::GetAllInDegrees() const {
   if (graph_storage_ != nullptr) {
     return graph_storage_->GetAllInDegrees();
   } else {
-    return nullptr;
+    return ::graphlearn::io::IndexArray{};
   }
 }
 
@@ -63,7 +63,7 @@ const std::vector<int32_t>* StorageWrapper::GetAllInDegrees() const {
   if (graph_storage_ != nullptr) {
     return graph_storage_->GetNeighbors(src_id);
   } else {
-    return ::graphlearn::io::Array<int64_t>();
+    return ::graphlearn::io::Array<int64_t>{nullptr, 0};
   }
 }
 

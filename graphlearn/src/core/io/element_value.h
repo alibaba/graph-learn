@@ -22,6 +22,7 @@ limitations under the License.
 #include <vector>
 #include "common/io/value.h"
 #include "common/string/lite_string.h"
+#include "include/tensor.h"
 
 namespace graphlearn {
 namespace io {
@@ -72,6 +73,8 @@ struct SideInfo {
 
 class AttributeValue {
 public:
+  virtual ~AttributeValue() {}
+
   static AttributeValue* Default(const SideInfo* info);
 
   virtual void Clear() = 0;
@@ -90,10 +93,15 @@ public:
   virtual const float* GetFloats(int32_t* len) const = 0;
   virtual const std::string* GetStrings(int32_t* len) const = 0;
   virtual const LiteString* GetLiteStrings(int32_t* len) const = 0;
+
+  virtual void FillInts(Tensor* tensor) const;
+  virtual void FillFloats(Tensor* tensor) const;
+  virtual void FillStrings(Tensor* tensor) const;
 };
 
 AttributeValue* NewDataHeldAttributeValue();
 AttributeValue* NewDataRefAttributeValue();
+AttributeValue* NewDataArrowRefAttributeValue();
 
 struct EdgeValue {
   int64_t src_id;

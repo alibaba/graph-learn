@@ -45,7 +45,7 @@ bool BuildKnnIndex(io::NodeStorage* storage, const IndexOption& option) {
   }
 
   index->Train(n, vectors.data());
-  index->Add(n, vectors.data(), storage->GetIds()->data());
+  index->Add(n, vectors.data(), storage->GetIds().data());
 
   op::KnnIndexManager::Instance()->Add(storage->GetSideInfo()->type, index);
   return true;

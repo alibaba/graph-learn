@@ -49,6 +49,28 @@ AttributeValue* AttributeValue::Default(const SideInfo* info) {
   return attr;
 }
 
+void AttributeValue::FillInts(Tensor* tensor) const {
+  int i32_len = 0;
+  const int64_t *ints = GetInts(&i32_len);
+  for (size_t i = 0; i < i32_len; ++i) {
+    tensor->AddInt64(ints[i]);
+  }
+}
+void AttributeValue::FillFloats(Tensor* tensor) const {
+  int f32_len = 0;
+  const float *floats = GetFloats(&f32_len);
+  for (size_t i = 0; i < f32_len; ++i) {
+    tensor->AddFloat(floats[i]);
+  }
+}
+void AttributeValue::FillStrings(Tensor* tensor) const {
+  int s_len = 0;
+  const std::string *strings = GetStrings(&s_len);
+  for (size_t i = 0; i < s_len; ++i) {
+    tensor->AddString(strings[i]);
+  }
+}
+
 class DataHeldAttributeValue : public AttributeValue {
 public:
   DataHeldAttributeValue() = default;
@@ -56,6 +78,10 @@ public:
     i_attrs_ = right.i_attrs_;
     f_attrs_ = right.f_attrs_;
     s_attrs_ = right.s_attrs_;
+  }
+
+  ~DataHeldAttributeValue() override {
+    this->Clear();
   }
 
   void Clear() override {
@@ -155,6 +181,10 @@ class DataRefAttributeValue : public AttributeValue {
 public:
   DataRefAttributeValue()
     : i_attrs_(nullptr), i_len_(0), f_attrs_(nullptr), f_len_(0) {
+  }
+
+  ~DataRefAttributeValue() override {
+    this->Clear();
   }
 
   void Clear() override {

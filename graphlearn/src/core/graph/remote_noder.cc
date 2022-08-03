@@ -23,8 +23,10 @@ namespace graphlearn {
 
 class RemoteNoder : public Noder {
 public:
-  RemoteNoder() {
-    local_ = CreateLocalNoder();
+  RemoteNoder(const std::string& type,
+              const std::string& view_type,
+              const std::string& use_attrs) {
+    local_ = CreateLocalNoder(type, view_type, use_attrs);
   }
 
   virtual ~RemoteNoder() {
@@ -67,8 +69,10 @@ private:
   Noder* local_;
 };
 
-Noder* CreateRemoteNoder() {
-  return new RemoteNoder();
+Noder* CreateRemoteNoder(const std::string& type,
+                         const std::string& view_type,
+                         const std::string& use_attrs) {
+  return new RemoteNoder(type, view_type, use_attrs);
 }
 
 }  // namespace graphlearn

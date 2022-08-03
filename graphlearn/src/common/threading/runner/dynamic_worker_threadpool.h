@@ -49,9 +49,9 @@ public:
   int AddTask(Callback* callback) override;
   void WaitForIdle() override;
 
-  int GetQueueLength();
-  int GetThreadNum() const;
-  int GetBusyThreadNum() const;
+  int GetQueueLength() override;
+  int GetThreadNum() const override;
+  int GetBusyThreadNum() const override;
 
 protected:
   void SetIdleThresholdInMs(int ms);

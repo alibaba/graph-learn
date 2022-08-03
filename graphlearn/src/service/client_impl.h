@@ -35,6 +35,10 @@ public:
   virtual Status RunDag(const DagRequest* req) = 0;
   virtual Status GetDagValues(const GetDagValuesRequest* req,
                               GetDagValuesResponse* res) = 0;
+  virtual std::vector<int32_t> GetOwnServers() {
+    std::vector<int32_t> empty;
+    return empty;
+  }
 
 protected:
   ClientImpl() = default;

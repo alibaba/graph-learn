@@ -52,33 +52,40 @@ public:
     static AliasMethodFactory factory;
     return &factory;
   }
-  
+
   template<class T>
-  AliasMethod* LookupOrCreate(const std::string& type, 
-      const std::vector<T>* weights) {
+  AliasMethod* LookupOrCreate(const std::string& type,
+      const io::Array<T> weights) {
     ScopedLocker<std::mutex> _(&mtx_);
     auto it = map_.find(type);
     if (it == map_.end()) {
-      std::vector<float> tmp_w(weights->begin(), weights->end());
+      std::vector<float> tmp_w(weights.Size());
+      for (size_t idx = 0; idx < weights.Size(); ++idx) {
+        tmp_w[idx] = weights[idx];
+      }
       auto am = new AliasMethod(&tmp_w);
       map_[type] = am;
       return am;
     } else {
       return it->second;
-    }                          
+    }
   }
-
-  inline AliasMethod* LookupOrCreate(const std::string& type, 
-      const std::vector<float>* weights) {
+  
+  inline AliasMethod* LookupOrCreate(const std::string& type,
+      const io::Array<float> weights) {
     ScopedLocker<std::mutex> _(&mtx_);
     auto it = map_.find(type);
     if (it == map_.end()) {
-      auto am = new AliasMethod(weights);
+      std::vector<float> tmp_w(weights.Size());
+      for (size_t idx = 0; idx < weights.Size(); ++idx) {
+        tmp_w[idx] = weights[idx];
+      }
+      auto am = new AliasMethod(&tmp_w);
       map_[type] = am;
       return am;
     } else {
       return it->second;
-    }   
+    }
   }
 
   inline AliasMethod* LookupOrCreate(const std::string& type, 

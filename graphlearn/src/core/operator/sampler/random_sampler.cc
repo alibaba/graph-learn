@@ -48,7 +48,7 @@ public:
     for (int32_t i = 0; i < batch_size; ++i) {
       int64_t src_id = src_ids[i];
       auto neighbor_ids = storage->GetNeighbors(src_id);
-      if (!neighbor_ids || (filters && neighbor_ids.Size() == 1
+      if (neighbor_ids.Size() == 0 || (filters && neighbor_ids.Size() == 1
           && neighbor_ids[0] == filters[i])) {
         res->FillWith(GLOBAL_FLAG(DefaultNeighborId), -1);
       } else {

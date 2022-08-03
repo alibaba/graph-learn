@@ -22,6 +22,7 @@ namespace io {
 namespace {
   int32_t kCompressedMode = 1;
   int32_t kDataDistributionEnabled = 2;
+  int32_t kVineyardEnabled = 8;
 }  // anonymous namespace
 
 bool IsCompressedStorageEnabled() {
@@ -30,6 +31,10 @@ bool IsCompressedStorageEnabled() {
 
 bool IsDataDistributionEnabled() {
   return GLOBAL_FLAG(StorageMode) & kDataDistributionEnabled;
+}
+
+bool IsVineyardStorageEnabled() {
+  return GLOBAL_FLAG(StorageMode) == kVineyardEnabled;
 }
 
 }  // namespace io

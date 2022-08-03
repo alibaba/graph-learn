@@ -36,7 +36,7 @@ public:
   /// Do some re-organization after data fixed.
   virtual void Build() = 0;
 
-  /// Get the total edge count after data fixed.
+  /// Get the total node count after data fixed.
   virtual IdType Size() const = 0;
 
   /// A NODE is made up of [ id, attributes, weight, label ].
@@ -56,17 +56,21 @@ public:
   ///
   /// Get all the node ids, the count of which is the same with Size().
   /// These ids are distinct.
-  virtual const IdList* GetIds() const = 0;
+  virtual const IdArray GetIds() const = 0;
   /// Get all weights if existed, the count of which is the same with Size().
-  virtual const std::vector<float>* GetWeights() const = 0;
+  virtual const Array<float> GetWeights() const = 0;
   /// Get all labels if existed, the count of which is the same with Size().
-  virtual const std::vector<int32_t>* GetLabels() const = 0;
+  virtual const Array<int32_t> GetLabels() const = 0;
   /// Get all attributes if existed, the count of which is the same with Size().
   virtual const std::vector<Attribute>* GetAttributes() const = 0;
 };
 
 NodeStorage* NewMemoryNodeStorage();
 NodeStorage* NewCompressedMemoryNodeStorage();
+NodeStorage* NewVineyardNodeStorage(
+    const std::string& node_type,
+    const std::string& view_type,
+    const std::string& use_attrs);
 
 }  // namespace io
 }  // namespace graphlearn

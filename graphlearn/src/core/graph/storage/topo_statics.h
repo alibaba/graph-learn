@@ -33,20 +33,20 @@ public:
 
   void Add(IdType src_id, IdType dst_id);
 
-  const IdList* GetAllSrcIds() const {
-    return &src_id_list_;
+  const IdArray GetAllSrcIds() const {
+    return IdArray(src_id_list_.data(), src_id_list_.size());
   }
 
-  const IdList* GetAllDstIds() const {
-    return &dst_id_list_;
+  const IdArray GetAllDstIds() const {
+    return IdArray(dst_id_list_.data(), dst_id_list_.size());
   }
 
-  const IndexList* GetAllOutDegrees() const {
-    return &out_degree_list_;
+  const IndexArray GetAllOutDegrees() const {
+    return IndexArray{out_degree_list_};
   }
 
-  const IndexList* GetAllInDegrees() const {
-    return &in_degree_list_;
+  const IndexArray GetAllInDegrees() const {
+    return IndexArray{in_degree_list_};
   }
 
   IndexType GetOutDegree(IdType src_id) const;

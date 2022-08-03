@@ -16,6 +16,7 @@ limitations under the License.
 #ifndef GRAPHLEARN_SERVICE_DIST_GRPC_CHANNEL_H_
 #define GRAPHLEARN_SERVICE_DIST_GRPC_CHANNEL_H_
 
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <mutex>  // NOLINT [build/c++11]
@@ -34,6 +35,7 @@ public:
 
   void MarkBroken();
   bool IsBroken() const;
+  bool IsStopped() const;
   void Reset(const std::string& endpoint);
 
   Status CallMethod(const OpRequestPb* req, OpResponsePb* res);
@@ -49,7 +51,8 @@ private:
 
 private:
   std::mutex mtx_;
-  volatile bool broken_;
+  std::atomic_bool broken_;
+  std::atomic_bool stopped_;
   std::string endpoint_;
   std::shared_ptr<::grpc::Channel> channel_;
   std::unique_ptr<GraphLearn::Stub> stub_;

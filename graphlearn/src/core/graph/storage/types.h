@@ -42,8 +42,23 @@ public:
     : value_(value), size_(size) {
   }
 
+  Array(const T* value, int32_t size, const std::shared_ptr<T> ownership)
+    : value_(value), size_(size), ownership_(ownership) {
+  }
+
   explicit Array(const std::vector<T>& values)
     : value_(values.data()), size_(values.size()) {
+  }
+
+  Array(const Array& rhs) {
+    value_ = rhs.value_;
+    size_ = rhs.size_;
+  }
+
+  Array& operator=(const Array& rhs) {
+    value_ = rhs.value_;
+    size_ = rhs.size_;
+    return *this;
   }
 
   Array(Array&& rhs) {
@@ -51,24 +66,37 @@ public:
     size_ = rhs.size_;
   }
 
-  operator bool () const {
+  virtual operator bool () const {
     return value_ != nullptr && size_ != 0;
   }
 
-  T operator[] (int32_t i) const {
+  virtual T operator[] (int32_t i) const {
     return value_[i];
   }
 
-  int32_t Size() const {
+  T at(int32_t i) const {
+    return this->operator[](i);
+  }
+
+  virtual int32_t Size() const {
     return size_;
+  }
+
+  virtual const T *data() const {
+    return value_;
   }
 
 private:
   const T* value_;
   int32_t size_;
+
+  // the `ownership` pointer is to keep the underlying data alive until is array
+  // itself is not used anymore, without copying data around.
+  std::shared_ptr<T> ownership_;
 };
 
 typedef Array<IdType> IdArray;
+typedef Array<IndexType> IndexArray;
 
 class Attribute {
 public:

@@ -107,3 +107,9 @@ def set_neg_sampler_retry_times(times):
 
 def set_field_delimiter(delimiter="\t"):
   pywrap.set_field_delimiter(delimiter)
+
+def set_vineyard_graph_id(graph_id):
+  pywrap.set_vineyard_graph_id(graph_id)
+
+def set_vineyard_ipc_socket(ipc_socket):
+  pywrap.set_vineyard_ipc_socket(ipc_socket)
