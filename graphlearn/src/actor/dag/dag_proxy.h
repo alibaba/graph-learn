@@ -17,19 +17,17 @@ limitations under the License.
 #define GRAPHLEARN_ACTOR_DAG_DAG_PROXY_H_
 
 #include <queue>
-#include <string>
-#include <unordered_map>
 #include <vector>
-#include <utility>
 
-#include "actor/operator/base_op_actor_ref.h"
 #include "actor/params.h"
 #include "core/dag/dag.h"
 #include "core/dag/dag_edge.h"
 #include "core/dag/dag_node.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
+
+class BaseOperatorActor_ref;
 
 class EdgeProxy {
 public:
@@ -46,7 +44,7 @@ private:
 
 class NodeProxy {
 public:
-  NodeProxy() : node_(nullptr) {}
+  NodeProxy() : node_(nullptr), actor_id_(0) {}
   explicit NodeProxy(const DagNode* n, ActorIdType actor_id);
   NodeProxy(NodeProxy&& other) noexcept;
   ~NodeProxy();
@@ -71,7 +69,7 @@ public:
     return node_->Id() == 1;
   }
 
-  actor::BaseOperatorActorRef* OnShard(uint32_t shard_id) const {
+  BaseOperatorActor_ref* OnShard(uint32_t shard_id) const {
     return actor_refs_[shard_id];
   }
 
@@ -83,7 +81,7 @@ private:
   std::vector<EdgeProxy> upstreams_;
   ActorIdType actor_id_;
   /// Actor ref for each shard
-  std::vector<actor::BaseOperatorActorRef*> actor_refs_;
+  std::vector<BaseOperatorActor_ref*> actor_refs_;
 };
 
 class DagProxy {
@@ -111,8 +109,8 @@ private:
   void AddEdge(DagNodeIdType s, DagNodeIdType t);
 
 private:
-  int32_t dag_id_;
-  const std::unordered_map<DagNodeIdType, ActorIdType>* node_id_to_actor_id_;
+  int32_t dag_id_ = 0;
+  const std::unordered_map<DagNodeIdType, ActorIdType>* node_id_to_actor_id_ = nullptr;
   // Use adjacency matrix to store the DAG.
   // guid -> list of neighbors
   std::unordered_map<DagNodeIdType, std::vector<DagNodeIdType>> adj_;
@@ -129,7 +127,7 @@ private:
   friend class DagActor;
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_DAG_DAG_PROXY_H_

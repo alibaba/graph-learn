@@ -28,7 +28,7 @@ limitations under the License.
 #include "platform/env.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 using ActorIdType   = uint32_t;
 using DagNodeIdType = uint32_t;
@@ -73,7 +73,7 @@ struct OpActorParams : public ActorParams {
   }
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_PARAMS_H_

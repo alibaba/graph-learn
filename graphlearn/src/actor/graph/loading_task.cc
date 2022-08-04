@@ -15,15 +15,11 @@ limitations under the License.
 
 #include "actor/graph/loading_task.h"
 
-#include <atomic>
-#include <condition_variable> // NOLINT [build/c++11]
-#include <string>
-#include <utility>
 #include "common/base/errors.h"
 #include "common/base/log.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 NodeLoadingTask::NodeLoadingTask(io::NodeLoader* reader,
                                  unsigned id,
@@ -86,5 +82,5 @@ void EdgeLoadingTask::run() {
   }
 }
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn

@@ -19,7 +19,7 @@ limitations under the License.
 #include <semaphore.h>
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 class DataLoaderStatus {
   static DataLoaderStatus* Get() {
@@ -50,7 +50,7 @@ private:
   friend class ShardedGraphStore;
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_GRAPH_LOADER_STATUS_H_

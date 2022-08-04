@@ -16,40 +16,26 @@ limitations under the License.
 #ifndef GRAPHLEARN_ACTOR_OPERATOR_EDGE_LOOKUPER_ACT_H_
 #define GRAPHLEARN_ACTOR_OPERATOR_EDGE_LOOKUPER_ACT_H_
 
-#include <string>
-#include "actor/operator/stateless_base_op_actor.act.h"
+#include "actor/operator/base_op.act.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
-class ANNOTATION(actor:reference) EdgeLookuperActorRef
-    : public StatelessBaseOperatorActorRef {
+class ANNOTATION(actor:impl) EdgeLookuperActor : public BaseOperatorActor {
 public:
-  seastar::future<TensorMap> Process(TensorMap&& Tensor) override;
+  EdgeLookuperActor(hiactor::actor_base* exec_ctx, const hiactor::byte_t* addr);
+  ~EdgeLookuperActor() override;
 
-  // Constructor
-  ACTOR_ITFC_CTOR(EdgeLookuperActorRef);
-  // Destructor
-  ACTOR_ITFC_DTOR(EdgeLookuperActorRef);
-};
+  seastar::future<TensorMap>
+  ANNOTATION(actor:method) Process(TensorMap&& tensors) override;
 
-class ANNOTATION(actor:implement) EdgeLookuperActor
-    : public StatelessBaseOperatorActor {
-public:
-  seastar::future<TensorMap> Process(TensorMap&& tensors) override;
-
-  // Constructor
-  ACTOR_IMPL_CTOR(EdgeLookuperActor);
-  // Destructor
-  ACTOR_IMPL_DTOR(EdgeLookuperActor);
-  // Do work
-  ACTOR_DO_WORK() override;
+  ACTOR_DO_WORK()
 
 private:
   std::string edge_type_;
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_OPERATOR_EDGE_LOOKUPER_ACT_H_

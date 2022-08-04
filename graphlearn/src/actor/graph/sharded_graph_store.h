@@ -19,7 +19,9 @@ limitations under the License.
 #include <memory>
 #include <utility>
 #include <vector>
-#include "brane/core/alien_thread_pool.hh"
+
+#include "hiactor/core/alien_thread_pool.hh"
+
 #include "core/graph/graph_store.h"
 #include "core/io/edge_loader.h"
 #include "core/io/node_loader.h"
@@ -28,7 +30,7 @@ namespace graphlearn {
 
 class Env;
 
-namespace actor {
+namespace act {
 
 class ShardedGraphStore {
 public:
@@ -64,7 +66,7 @@ private:
       : node_loaders_(std::move(nls)),
         edge_loaders_(std::move(els)) {}
 
-    void operator()(brane::alien_thread_pool* tp);
+    void operator()(hiactor::alien_thread_pool* tp);
 
   private:
     std::vector<io::NodeLoader*> node_loaders_;
@@ -72,7 +74,7 @@ private:
   };
 
   using AlienTPUniquePtr = std::unique_ptr<
-    brane::alien_thread_pool, ATPDeleter>;
+      hiactor::alien_thread_pool, ATPDeleter>;
 
 private:
   int32_t                  local_shards_;
@@ -83,7 +85,7 @@ private:
   friend class ActorService;
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_GRAPH_SHARDED_GRAPH_STORE_H_

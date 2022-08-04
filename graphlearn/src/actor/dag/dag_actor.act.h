@@ -21,55 +21,36 @@ limitations under the License.
 #include <utility>
 #include <vector>
 
-#include "brane/actor/actor_implementation.hh"
-#include "brane/actor/reference_base.hh"
-#include "brane/util/common-utils.hh"
-#include "brane/util/data_type.hh"
+#include "hiactor/core/actor-template.hh"
+#include "hiactor/util/data_type.hh"
+
 #include "actor/dag/dag_proxy.h"
 #include "actor/tensor_map.h"
 #include "core/dag/tape.h"
 #include "platform/env.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
-class ANNOTATION(actor:reference) DagActorRef
-  : public brane::reference_base {
+class ANNOTATION(actor:impl) DagActor : public hiactor::actor {
 public:
-  seastar::future<brane::Void> RunOnce(TapeHolder &&holder);
+  DagActor(hiactor::actor_base* exec_ctx, const hiactor::byte_t* addr);
+  ~DagActor() override;
 
-  // Constructor
-  ACTOR_ITFC_CTOR(DagActorRef);
-  // Destructor
-  ACTOR_ITFC_DTOR(DagActorRef);
-};
+  seastar::future<hiactor::Void>
+  ANNOTATION(actor:method) RunOnce(TapeHolder&& holder);
 
-class ANNOTATION(actor:implement) DagActor
-  : public brane::stateful_actor {
-public:
-  seastar::future<brane::Void> RunOnce(TapeHolder &&holder);
-
-  // Constructor.
-  ACTOR_IMPL_CTOR(DagActor);
-  // Destructor
-  ACTOR_IMPL_DTOR(DagActor);
-  // Do work
-  ACTOR_DO_WORK() override;
+  ACTOR_DO_WORK()
 
 private:
-  ShardableTensorMap* BuildInput(
-      const NodeProxy* op,
-      Tape* tape);
+  ShardableTensorMap*
+  BuildInput(const NodeProxy* op, Tape* tape);
 
-  seastar::future<> RunInParallel(
-      const NodeProxy* op,
-      ShardableTensorMap* input,
-      Tape* tape);
+  seastar::future<>
+  RunInParallel(const NodeProxy* op, ShardableTensorMap* input, Tape* tape);
 
-  seastar::future<JoinableTensorMap*> ProcessInShard(
-      const NodeProxy* op,
-      int32_t shard_id,
-      ShardableTensorMap* req);
+  seastar::future<JoinableTensorMap*>
+  ProcessInShard(const NodeProxy* op, int32_t shard_id, ShardableTensorMap* req);
 
   bool IsStopping();
 
@@ -79,7 +60,7 @@ private:
   bool     stopping_;
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_DAG_DAG_ACTOR_ACT_H_

@@ -28,7 +28,7 @@ limitations under the License.
 #include "seastar/core/alien.hh"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 template <typename Value, typename Wrapper>
 class OutputHandle {
@@ -141,7 +141,7 @@ AlienSend(uint32_t id, UpdateEdgesRequestWrapper&& request) {
   cursor_id_ = (cursor_id_ + 1) % local_shard_num_;
 }
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_GRAPH_OUTPUT_HANDLE_H_

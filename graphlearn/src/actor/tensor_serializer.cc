@@ -19,7 +19,7 @@ limitations under the License.
 #include "service/tensor_impl.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 void TensorSerializer::dump_to(hiactor::serializable_queue& qu) {
   auto data_type = impl_->DType();
@@ -104,5 +104,5 @@ Tensor TensorSerializer::load_from(hiactor::serializable_queue &qu) {
   return tensor;
 }
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn

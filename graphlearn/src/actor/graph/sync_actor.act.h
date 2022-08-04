@@ -24,7 +24,7 @@ limitations under the License.
 #include "brane/util/data_type.hh"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 class ANNOTATION(actor:reference) SyncActorRef : public brane::reference_base {
 public:
@@ -51,7 +51,7 @@ private:
   std::vector<int32_t> control_actor_id_;
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_GRAPH_SYNC_ACTOR_ACT_H_

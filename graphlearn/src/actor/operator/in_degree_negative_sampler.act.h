@@ -16,40 +16,30 @@ limitations under the License.
 #ifndef GRAPHLEARN_ACTOR_OPERATOR_IN_DEGREE_NEGATIVE_SAMPLER_ACT_H_
 #define GRAPHLEARN_ACTOR_OPERATOR_IN_DEGREE_NEGATIVE_SAMPLER_ACT_H_
 
-#include <string>
-#include "actor/operator/stateless_base_op_actor.act.h"
+#include "actor/operator/base_op.act.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
-class ANNOTATION(actor:reference) InDegreeNegativeSamplerActorRef
-  : public StatelessBaseOperatorActorRef {
+class ANNOTATION(actor:impl) InDegreeNegativeSamplerActor
+    : public BaseOperatorActor {
 public:
-  seastar::future<TensorMap> Process(TensorMap&& Tensor) override;
+  InDegreeNegativeSamplerActor(hiactor::actor_base* exec_ctx,
+                               const hiactor::byte_t* addr);
+  ~InDegreeNegativeSamplerActor() override;
 
-  // Constructor
-  ACTOR_ITFC_CTOR(InDegreeNegativeSamplerActorRef);
-  // Destructor
-  ACTOR_ITFC_DTOR(InDegreeNegativeSamplerActorRef);
-};
+  seastar::future<TensorMap>
+  ANNOTATION(actor:method) Process(TensorMap&& tensors) override;
 
-class ANNOTATION(actor:implement) InDegreeNegativeSamplerActor
-  : public StatelessBaseOperatorActor {
-public:
-  seastar::future<TensorMap> Process(TensorMap&& tensors) override;
-  // Constructor
-  ACTOR_IMPL_CTOR(InDegreeNegativeSamplerActor);
-  // Destructor
-  ACTOR_IMPL_DTOR(InDegreeNegativeSamplerActor);
-  // Do work
-  ACTOR_DO_WORK() override;
+  ACTOR_DO_WORK()
+
 private:
   std::string edge_type_;
   std::string sampling_strategy_;
   int32_t neighbor_count_;
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_OPERATOR_IN_DEGREE_NEGATIVE_SAMPLER_ACT_H_

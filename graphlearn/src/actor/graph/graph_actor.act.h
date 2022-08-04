@@ -28,7 +28,7 @@ namespace graphlearn {
 
 class GraphStore;
 
-namespace actor {
+namespace act {
 
 class ANNOTATION(actor:reference) GraphActorRef
   : public brane::reference_base {
@@ -65,7 +65,7 @@ private:
   GraphStore* store_;
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_GRAPH_GRAPH_ACTOR_ACT_H_

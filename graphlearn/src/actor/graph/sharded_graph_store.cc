@@ -24,10 +24,10 @@ limitations under the License.
 #include "seastar/core/alien.hh"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 ShardedGraphStore::ShardedGraphStore()
-  : local_shards_(GLOBAL_FLAG(LocalShardCount)),
+  : local_shards_(GLOBAL_FLAG(ActorLocalShardCount)),
     env_(nullptr), alien_tp_(nullptr) {}
 
 ShardedGraphStore::~ShardedGraphStore() {
@@ -74,7 +74,7 @@ void ShardedGraphStore::InitAlienThread(
     const std::vector<io::NodeSource>& nodes) {
   int32_t batch_size = GLOBAL_FLAG(DataInitBatchSize);
   int32_t num_readers = std::max(GLOBAL_FLAG(InterThreadNum), 1);
-  auto* tp = new brane::alien_thread_pool(num_readers);
+  auto* tp = new hiactor::alien_thread_pool(num_readers);
 
   std::vector<io::NodeLoader*> node_loaders;
   std::vector<io::EdgeLoader*> edge_loaders;
@@ -82,16 +82,14 @@ void ShardedGraphStore::InitAlienThread(
   edge_loaders.reserve(num_readers);
 
   for (int32_t i = 0; i < num_readers; ++i) {
-    io::NodeLoader* node_reader =
-        new io::NodeLoader(nodes, env_, i, num_readers);
+    auto* node_reader = new io::NodeLoader(nodes, env_, i, num_readers);
     tp->add_task(new NodeLoadingTask(
         node_reader, i % local_shards_, batch_size));
     node_loaders.push_back(node_reader);
   }
 
   for (int32_t i = 0; i < num_readers; ++i) {
-    io::EdgeLoader* edge_reader =
-        new io::EdgeLoader(edges, env_, i, num_readers);
+    auto* edge_reader = new io::EdgeLoader(edges, env_, i, num_readers);
     tp->add_task(new EdgeLoadingTask(
         edge_reader, i % local_shards_, batch_size));
     edge_loaders.push_back(edge_reader);
@@ -102,7 +100,7 @@ void ShardedGraphStore::InitAlienThread(
 }
 
 void ShardedGraphStore::ATPDeleter::operator()(
-    brane::alien_thread_pool* tp) {
+    hiactor::alien_thread_pool* tp) {
   delete tp;
   for (auto &&nl : node_loaders_) {
     delete nl;
@@ -112,5 +110,5 @@ void ShardedGraphStore::ATPDeleter::operator()(
   }
 }
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn

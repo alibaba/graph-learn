@@ -17,16 +17,29 @@ limitations under the License.
 #define GRAPHLEARN_ACTOR_DAG_DAG_ACTOR_MANAGER_H_
 
 #include <unordered_map>
+
 #include "actor/params.h"
 #include "actor/utils.h"
 #include "core/dag/dag.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 class DagActorManager {
 public:
-  explicit DagActorManager(const Dag* dag, uint32_t concurrency = 8) {
+  static DagActorManager& GetInstance() {
+    static DagActorManager instance;
+    return instance;
+  }
+
+  ~DagActorManager() {
+    // clean up memory
+    for (auto& param : params_) {
+      delete param.second;
+    }
+  }
+
+  void Init(const Dag* dag, uint32_t concurrency = 8) {
     // create actor ids and actor params
     auto dag_id = dag->Id();
     // since we compute each op actor id use dag node id and dag id,
@@ -35,7 +48,7 @@ public:
     // as the actor ids which is different from op actors
     for (int32_t i = 0; i < concurrency; ++i) {
       dag_actor_ids_.push_back(
-        MakeActorGUID(dag_id, dag->Nodes().size() + 1 + i));
+          MakeActorGUID(dag_id, dag->Nodes().size() + 1 + i));
     }
 
     for (auto& node : dag->Nodes()) {
@@ -45,13 +58,6 @@ public:
     }
     for (auto dag_actor_id : dag_actor_ids_) {
       params_[dag_actor_id] = new DagActorParams(dag, &op_actor_ids_);
-    }
-  }
-
-  ~DagActorManager() {
-    // clean up memory
-    for (auto& param : params_) {
-      delete param.second;
     }
   }
 
@@ -68,12 +74,15 @@ public:
   }
 
 private:
+  DagActorManager() = default;
+
+private:
   NodeIdToActorId          op_actor_ids_;
   std::vector<ActorIdType> dag_actor_ids_;
   std::unordered_map<ActorIdType, ActorParams*> params_;
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_DAG_DAG_ACTOR_MANAGER_H_

@@ -17,7 +17,7 @@ limitations under the License.
 #define GRAPHLEARN_ACTOR_GRAPH_WRAPPER_PROTO_H_
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 #include <iostream>
 #include <streambuf>
@@ -71,7 +71,7 @@ public:
   ProtoData data;
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_GRAPH_WRAPPER_PROTO_H_

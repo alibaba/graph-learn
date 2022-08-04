@@ -33,7 +33,7 @@ limitations under the License.
 #include "platform/env.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 class DagActorRefManager;
 
@@ -55,7 +55,7 @@ std::unique_ptr<TapeDispatcher> NewTapeDispatcher(
   const std::vector<ActorIdType> *dag_actor_ids,
   const DagNode* root);
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif // GRAPHLEARN_ACTOR_RUNNER_TAPE_DISPATCHER_H_

@@ -23,7 +23,7 @@ limitations under the License.
 #include "actor/dag/dag_actor_manager.h"
 #include "actor/operator/batch_generator.h"
 #include "actor/operator/edge_getter.act.h"
-#include "actor/operator/node_getter_op.act.h"
+#include "actor/operator/node_getter.act.h"
 #include "actor/test/test_env.h"
 #include "common/base/log.h"
 #include "platform/protobuf.h"

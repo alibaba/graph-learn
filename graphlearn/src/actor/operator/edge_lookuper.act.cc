@@ -15,31 +15,26 @@ limitations under the License.
 
 #include "actor/operator/edge_lookuper.act.h"
 
-#include <utility>
-#include "actor/operator/op_ref_factory.h"
-#include "actor/params.h"
 #include "include/graph_request.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
-EdgeLookuperActor::EdgeLookuperActor(
-    brane::actor_base *exec_ctx,
-    const brane::byte_t *addr,
-    const void* params)
-    : StatelessBaseOperatorActor(exec_ctx, addr, "LookupEdges") {
-  auto *actor_params = reinterpret_cast<const OpActorParams*>(params);
-  auto &tm = actor_params->node->Params();
+EdgeLookuperActor::EdgeLookuperActor(hiactor::actor_base* exec_ctx,
+                                     const hiactor::byte_t* addr)
+    : BaseOperatorActor(exec_ctx, addr) {
+  set_max_concurrency(UINT32_MAX);  // stateless
+  SetOp("LookupEdges");
+  auto& tm = GetParams();
   edge_type_ = tm.at("et").GetString(0);
 }
 
-EdgeLookuperActor::~EdgeLookuperActor() {
-}
+EdgeLookuperActor::~EdgeLookuperActor() = default;
 
 seastar::future<TensorMap> EdgeLookuperActor::Process(
     TensorMap&& tensors) {
   LookupEdgesRequest request(edge_type_);
-  request.Set(std::move(tensors.tensors_));
+  request.Set(tensors.tensors_);
   LookupEdgesResponse response;
   impl_->Process(&request, &response);
 
@@ -47,7 +42,5 @@ seastar::future<TensorMap> EdgeLookuperActor::Process(
     std::move(response.tensors_));
 }
 
-OpRefRegistration<EdgeLookuperActorRef> _EdgeLookuperActorRef("LookupEdges");
-
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn

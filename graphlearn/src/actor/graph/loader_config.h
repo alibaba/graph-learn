@@ -22,7 +22,7 @@ limitations under the License.
 #include "include/config.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 struct LoaderConfig {
   // actor_id = 0 << 16 | index; index = {1..3}
@@ -31,7 +31,7 @@ struct LoaderConfig {
   static const uint32_t sync_actor_id    = 3;
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_GRAPH_LOADER_CONFIG_H_

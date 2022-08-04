@@ -16,40 +16,30 @@ limitations under the License.
 #ifndef GRAPHLEARN_ACTOR_OPERATOR_NODE_WEIGHT_NEGATIVE_SAMPLER_ACT_H_
 #define GRAPHLEARN_ACTOR_OPERATOR_NODE_WEIGHT_NEGATIVE_SAMPLER_ACT_H_
 
-#include <string>
-#include "actor/operator/stateless_base_op_actor.act.h"
+#include "actor/operator/base_op.act.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
-class ANNOTATION(actor:reference) NodeWeightNegativeSamplerActorRef
-  : public StatelessBaseOperatorActorRef {
+class ANNOTATION(actor:impl) NodeWeightNegativeSamplerActor
+    : public BaseOperatorActor {
 public:
-  seastar::future<TensorMap> Process(TensorMap&& Tensor) override;
+  NodeWeightNegativeSamplerActor(hiactor::actor_base* exec_ctx,
+                                 const hiactor::byte_t* addr);
+  ~NodeWeightNegativeSamplerActor() override;
 
-  // Constructor
-  ACTOR_ITFC_CTOR(NodeWeightNegativeSamplerActorRef);
-  // Destructor
-  ACTOR_ITFC_DTOR(NodeWeightNegativeSamplerActorRef);
-};
+  seastar::future<TensorMap>
+  ANNOTATION(actor:method) Process(TensorMap&& tensors) override;
 
-class ANNOTATION(actor:implement) NodeWeightNegativeSamplerActor
-  : public StatelessBaseOperatorActor {
-public:
-  seastar::future<TensorMap> Process(TensorMap&& tensors) override;
-  // Constructor
-  ACTOR_IMPL_CTOR(NodeWeightNegativeSamplerActor);
-  // Destructor
-  ACTOR_IMPL_DTOR(NodeWeightNegativeSamplerActor);
-  // Do work
-  ACTOR_DO_WORK() override;
+  ACTOR_DO_WORK()
+
 private:
   std::string edge_type_;
   std::string sampling_strategy_;
   int32_t neighbor_count_;
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_OPERATOR_NODE_WEIGHT_NEGATIVE_SAMPLER_ACT_H_

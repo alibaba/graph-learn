@@ -17,17 +17,18 @@ limitations under the License.
 #define GRAPHLEARN_ACTOR_OPERATOR_OP_REF_FACTORY_H_
 
 #include <functional>
-#include <string>
 #include <unordered_map>
-#include <utility>
-#include "actor/operator/base_op_actor_ref.h"
+
+#include "actor/generated/base_op_ref.act.autogen.h"
 #include "common/base/log.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
+
+class BaseOperatorActor_ref;
 
 using OpRefBuilder = std::function<
-  BaseOperatorActorRef*(int64_t, brane::scope_builder&)>;
+    BaseOperatorActor_ref*(int64_t, hiactor::scope_builder&)>;
 
 class OpRefFactory {
 public:
@@ -36,9 +37,9 @@ public:
     return inst;
   }
 
-  BaseOperatorActorRef* Create(const std::string& op_name,
-                               int64_t guid,
-                               brane::scope_builder* builder) {
+  BaseOperatorActor_ref* Create(const std::string& op_name,
+                                int64_t guid,
+                                hiactor::scope_builder* builder) {
     auto iter = map_.find(op_name);
     if (iter != map_.end()) {
       return (iter->second)(guid, *builder);
@@ -65,17 +66,17 @@ template <typename T>
 class OpRefRegistration {
 public:
   explicit OpRefRegistration(const std::string& op_name) noexcept {
-    static_assert(std::is_base_of<BaseOperatorActorRef, T>::value,
-      "T must be a derived class of BaseOperatorActorRef.");
+    static_assert(std::is_base_of<BaseOperatorActor_ref, T>::value,
+        "T must be a derived class of BaseOperatorActor_ref.");
     OpRefFactory::Get().Register(
       op_name,
-      [] (int64_t guid, brane::scope_builder& builder) {
+      [] (int64_t guid, hiactor::scope_builder& builder) {
         return builder.new_ref<T>(guid);
       });
   }
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_OPERATOR_OP_REF_FACTORY_H_

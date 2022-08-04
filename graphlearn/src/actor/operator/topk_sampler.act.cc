@@ -15,38 +15,33 @@ limitations under the License.
 
 #include "actor/operator/topk_sampler.act.h"
 
-#include <utility>
-#include "actor/operator/op_ref_factory.h"
-#include "actor/params.h"
 #include "include/sampling_request.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
-TopKSamplerActor::TopKSamplerActor(brane::actor_base *exec_ctx,
-    const brane::byte_t *addr, const void* params)
-    : StatelessBaseOperatorActor(exec_ctx, addr, "TopkSampler") {
-  auto *actor_params = reinterpret_cast<const OpActorParams*>(params);
-  auto &tm = actor_params->node->Params();
-
+TopKSamplerActor::TopKSamplerActor(hiactor::actor_base* exec_ctx,
+                                   const hiactor::byte_t* addr)
+    : BaseOperatorActor(exec_ctx, addr) {
+  set_max_concurrency(UINT32_MAX);  // stateless
+  SetOp("TopkSampler");
+  auto& tm = GetParams();
   edge_type_ = tm.at(kEdgeType).GetString(0);
   sampling_strategy_ = tm.at(kStrategy).GetString(0);
   neighbor_count_ = tm.at(kNeighborCount).GetInt32(0);
 }
 
-TopKSamplerActor::~TopKSamplerActor() {}
+TopKSamplerActor::~TopKSamplerActor() = default;
 
 seastar::future<TensorMap> TopKSamplerActor::Process(TensorMap&& tensors) {
   // create request
   SamplingRequest request(edge_type_, sampling_strategy_, neighbor_count_);
-  request.Set(std::move(tensors.tensors_));
+  request.Set(tensors.tensors_);
   SamplingResponse response;
   impl_->Process(&request, &response);
 
   return seastar::make_ready_future<TensorMap>(std::move(response.tensors_));
 }
 
-OpRefRegistration<TopKSamplerActorRef> _TopKSamplerActorRef("TopkSampler");
-
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn

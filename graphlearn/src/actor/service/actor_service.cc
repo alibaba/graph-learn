@@ -34,7 +34,7 @@ limitations under the License.
 #include "seastar/core/alien.hh"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 static sem_t ActorIsReadyFlag;
 
@@ -176,5 +176,5 @@ Status ActorService::Stop() {
   return Status::OK();
 }
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn

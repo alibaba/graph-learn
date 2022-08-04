@@ -21,7 +21,7 @@ limitations under the License.
 #include "include/tensor.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 class TensorSerializer : public Tensor {
 public:
@@ -32,7 +32,7 @@ public:
   static Tensor load_from(hiactor::serializable_queue& qu);
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_TENSOR_SERIALIZER_H_

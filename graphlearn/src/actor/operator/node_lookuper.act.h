@@ -16,40 +16,27 @@ limitations under the License.
 #ifndef GRAPHLEARN_ACTOR_OPERATOR_NODE_LOOKUPER_ACT_H_
 #define GRAPHLEARN_ACTOR_OPERATOR_NODE_LOOKUPER_ACT_H_
 
-#include <string>
-#include "actor/operator/stateless_base_op_actor.act.h"
+#include "actor/operator/base_op.act.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
-class ANNOTATION(actor:reference) NodeLookuperActorRef
-    : public StatelessBaseOperatorActorRef {
+class ANNOTATION(actor:impl) NodeLookuperActor : public BaseOperatorActor {
 public:
-  seastar::future<TensorMap> Process(TensorMap&& Tensor) override;
+  NodeLookuperActor(hiactor::actor_base* exec_ctx,
+                    const hiactor::byte_t* addr);
+  ~NodeLookuperActor() override;
 
-  // Constructor
-  ACTOR_ITFC_CTOR(NodeLookuperActorRef);
-  // Destructor
-  ACTOR_ITFC_DTOR(NodeLookuperActorRef);
-};
+  seastar::future<TensorMap>
+  ANNOTATION(actor:method) Process(TensorMap&& tensors) override;
 
-class ANNOTATION(actor:implement) NodeLookuperActor
-    : public StatelessBaseOperatorActor {
-public:
-  seastar::future<TensorMap> Process(TensorMap&& tensors) override;
-
-  // Constructor
-  ACTOR_IMPL_CTOR(NodeLookuperActor);
-  // Destructor
-  ACTOR_IMPL_DTOR(NodeLookuperActor);
-  // Do work
-  ACTOR_DO_WORK() override;
+  ACTOR_DO_WORK()
 
 private:
   std::string node_type_;
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_OPERATOR_NODE_LOOKUPER_ACT_H_

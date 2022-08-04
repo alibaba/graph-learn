@@ -18,7 +18,9 @@ limitations under the License.
 
 #include <memory>
 #include <vector>
-#include "brane/core/alien_thread_pool.hh"
+
+#include "hiactor/core/alien_thread_pool.hh"
+
 #include "actor/graph/output_handle.h"
 #include "actor/graph/wrapper_source.h"
 #include "common/io/value.h"
@@ -27,9 +29,9 @@ limitations under the License.
 #include "include/data_source.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
-class NodeLoadingTask : public brane::alien_task {
+class NodeLoadingTask : public hiactor::alien_task {
 public:
   NodeLoadingTask(io::NodeLoader* reader,
                   unsigned id,
@@ -53,7 +55,7 @@ private:
   SourceWrapper<io::NodeSource> source_wrapper_;
 };
 
-class EdgeLoadingTask : public brane::alien_task {
+class EdgeLoadingTask : public hiactor::alien_task {
 public:
   EdgeLoadingTask(io::EdgeLoader* reader,
                   unsigned id,
@@ -77,7 +79,7 @@ private:
   SourceWrapper<io::EdgeSource> source_wrapper_;
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_GRAPH_PARSING_TASK_H_

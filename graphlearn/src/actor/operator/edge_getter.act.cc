@@ -15,28 +15,26 @@ limitations under the License.
 
 #include "actor/operator/edge_getter.act.h"
 
-#include <utility>
-#include "actor/operator/op_ref_factory.h"
-#include "actor/params.h"
+#include "actor/dag/dag_actor_manager.h"
 #include "include/graph_request.h"
 #include "include/tensor.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
-EdgeGetterActor::EdgeGetterActor(
-    brane::actor_base *exec_ctx,
-    const brane::byte_t *addr,
-    const void* params)
-    : StatefulBaseOperatorActor(exec_ctx, addr, "GetEdges") {
-  auto *actor_params = reinterpret_cast<const OpActorParams*>(params);
-  auto &tm = actor_params->node->Params();
-
+EdgeGetterActor::EdgeGetterActor(hiactor::actor_base* exec_ctx,
+                                 const hiactor::byte_t* addr)
+    : BaseOperatorActor(exec_ctx, addr) {
+  set_max_concurrency(1);  // stateful
+  SetOp("GetEdges");
+  auto& mgr = DagActorManager::GetInstance();
+  const auto* actor_params = reinterpret_cast<const OpActorParams*>(
+      mgr.GetActorParams(actor_id()));
+  auto& tm = actor_params->node->Params();
   edge_type_ = tm.at(kEdgeType).GetString(0);
   strategy_ = tm.at(kStrategy).GetString(0);
   batch_size_ = tm.at(kBatchSize).GetInt32(0);
   epoch_ = tm.at(kEpoch).GetInt32(0);
-
   if (strategy_ == "random") {
     generator_ = new RandomEdgeBatchGenerator(edge_type_, batch_size_);
   } else {
@@ -45,12 +43,13 @@ EdgeGetterActor::EdgeGetterActor(
   }
 }
 
-EdgeGetterActor::~EdgeGetterActor() { delete generator_; }
+EdgeGetterActor::~EdgeGetterActor() {
+  delete generator_;
+}
 
-seastar::future<TensorMap> EdgeGetterActor::Process(
-    TensorMap&& tensors) {
+seastar::future<TensorMap> EdgeGetterActor::Process(TensorMap&& tensors) {
   bool found =
-    tensors.tensors_.find(DelegateFetchFlag) != tensors.tensors_.end();
+      tensors.tensors_.find(DelegateFetchFlag) != tensors.tensors_.end();
   if (__builtin_expect(found, false)) {
     return DelegateFetchData(std::move(tensors));
   }
@@ -61,8 +60,9 @@ seastar::future<TensorMap>
 EdgeGetterActor::DelegateFetchData(TensorMap&& tensors) {
   auto offset = tensors.tensors_[DelegateFetchFlag].GetInt64(0);
   auto length = tensors.tensors_[DelegateFetchFlag].GetInt64(1);
-  auto* edge_store = ShardedGraphStore::Get().OnShard(
-    brane::local_shard_id())->GetGraph(edge_type_)->GetLocalStorage();
+  auto* store = ShardedGraphStore::Get().OnShard(
+      static_cast<int32_t>(hiactor::local_shard_id()));
+  auto* edge_store = store->GetGraph(edge_type_)->GetLocalStorage();
 
   TensorMap tm;
   ADD_TENSOR(tm.tensors_, kEdgeIds, kInt64, length);
@@ -76,7 +76,5 @@ EdgeGetterActor::DelegateFetchData(TensorMap&& tensors) {
   return seastar::make_ready_future<TensorMap>(std::move(tm));
 }
 
-OpRefRegistration<EdgeGetterActorRef> _EdgeGetterActorRef("GetEdges");
-
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn

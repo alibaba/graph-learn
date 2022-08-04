@@ -25,7 +25,7 @@ limitations under the License.
 #include "brane/util/data_type.hh"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 class ANNOTATION(actor:reference) ControlActorRef
   : public brane::reference_base {
@@ -55,7 +55,7 @@ private:
   int received_eos_number_;
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_GRAPH_CONTROL_ACTOR_ACT_H_

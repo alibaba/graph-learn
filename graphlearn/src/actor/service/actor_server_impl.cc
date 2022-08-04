@@ -30,7 +30,7 @@ limitations under the License.
 #include "service/local/in_memory_service.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 class ActorService;
 
@@ -183,7 +183,7 @@ void ActorServerImpl::StopActorService() {
   }
 }
 
-}  // namespace actor
+}  // namespace act
 
 ServerImpl* NewActorServerImpl(int32_t server_id,
                                int32_t server_count,

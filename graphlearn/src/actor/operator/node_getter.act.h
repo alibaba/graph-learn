@@ -13,38 +13,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef GRAPHLEARN_ACTOR_OPERATOR_NODE_GETTER_OP_ACT_H_
-#define GRAPHLEARN_ACTOR_OPERATOR_NODE_GETTER_OP_ACT_H_
+#ifndef GRAPHLEARN_ACTOR_OPERATOR_NODE_GETTER_ACT_H_
+#define GRAPHLEARN_ACTOR_OPERATOR_NODE_GETTER_ACT_H_
 
-#include <string>
+#include "actor/operator/base_op.act.h"
 #include "actor/operator/batch_generator.h"
-#include "actor/operator/stateful_base_op_actor.act.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
-class ANNOTATION(actor:reference) NodeGetterActorRef
-  : public StatefulBaseOperatorActorRef {
+class ANNOTATION(actor:impl) NodeGetterActor : public BaseOperatorActor {
 public:
-  seastar::future<TensorMap> Process(TensorMap&& Tensor) override;
+  NodeGetterActor(hiactor::actor_base* exec_ctx, const hiactor::byte_t* addr);
+  ~NodeGetterActor() override;
 
-  // Constructor
-  ACTOR_ITFC_CTOR(NodeGetterActorRef);
-  // Destructor
-  ACTOR_ITFC_DTOR(NodeGetterActorRef);
-};
+  seastar::future<TensorMap>
+  ANNOTATION(actor:method) Process(TensorMap&& tensors) override;
 
-class ANNOTATION(actor:implement) NodeGetterActor 
-  : public StatefulBaseOperatorActor {
-public:
-  seastar::future<TensorMap> Process(TensorMap&& tensors) override;
-
-  // Constructor
-  ACTOR_IMPL_CTOR(NodeGetterActor);
-  // Destructor
-  ACTOR_IMPL_DTOR(NodeGetterActor);
-  // Do work
-  ACTOR_DO_WORK() override;
+  ACTOR_DO_WORK()
 
 private:
   seastar::future<TensorMap> DelegateFetchData(TensorMap&& tensors);
@@ -58,7 +44,7 @@ private:
   int32_t             epoch_;
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
-#endif  // GRAPHLEARN_ACTOR_OPERATOR_NODE_GETTER_OP_ACT_H_
+#endif  // GRAPHLEARN_ACTOR_OPERATOR_NODE_GETTER_ACT_H_

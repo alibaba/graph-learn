@@ -25,7 +25,7 @@ limitations under the License.
 #include "actor/params.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 struct ShardDataInfo {
   int64_t  data_size;
@@ -58,7 +58,7 @@ bool DataSizeLess(const ShardDataInfo& node1,
   return node1.shard_id < node2.shard_id;
 }
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_UTILS_H_

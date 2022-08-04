@@ -25,7 +25,7 @@ limitations under the License.
 #include "include/data_source.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 namespace {  // NOLINT [build/namespaces]
 
@@ -114,7 +114,7 @@ private:
 using NodeSourceWrapper = SourceWrapper<io::NodeSource>;
 using EdgeSourceWrapper = SourceWrapper<io::EdgeSource>;
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_GRAPH_WRAPPER_SOURCE_H_

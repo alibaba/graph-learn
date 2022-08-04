@@ -15,37 +15,34 @@ limitations under the License.
 
 #include "actor/operator/batch_generator.h"
 
-#include <algorithm>
-#include <functional>
-#include <random>
-#include <string>
-#include <utility>
-#include <vector>
+#include "seastar/core/when_all.hh"
+
 #include "actor/operator/op_ref_factory.h"
+#include "actor/generated/base_op_ref.act.autogen.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 // Remote Piece Batch Utils
 const char* DelegateFetchFlag = "DelegateFetch";
 
-inline std::vector<BatchLocation> GetRemotePieceLocations(
+std::vector<BatchLocation> GetRemotePieceLocations(
     const ShardDataInfoVecT& sorted_infos, unsigned batch_sz) {
   unsigned local_order = sorted_infos.size();
   for (unsigned i = 0; i < sorted_infos.size(); i++) {
-    if (sorted_infos[i].shard_id == brane::local_shard_id()) {
+    if (sorted_infos[i].shard_id == hiactor::local_shard_id()) {
       local_order = i;
     }
   }
   std::vector<BatchLocation> piece_locs;
   unsigned remaining = batch_sz;
   unsigned cursor = 0;
-  for (unsigned i = 0; i < sorted_infos.size(); i++) {
-    auto piece_len = sorted_infos[i].data_size % batch_sz;
-    auto offset = sorted_infos[i].data_size - piece_len;
+  for (auto& sorted_info : sorted_infos) {
+    auto piece_len = sorted_info.data_size % batch_sz;
+    auto offset = sorted_info.data_size - piece_len;
     if (remaining <= piece_len) {
       if (cursor == local_order) {
-        piece_locs.emplace_back(sorted_infos[i].shard_id, offset, remaining);
+        piece_locs.emplace_back(sorted_info.shard_id, offset, remaining);
       }
       piece_len -= remaining;
       offset += remaining;
@@ -57,7 +54,7 @@ inline std::vector<BatchLocation> GetRemotePieceLocations(
     }
     if (piece_len > 0) {
       if (cursor == local_order) {
-        piece_locs.emplace_back(sorted_infos[i].shard_id, offset, piece_len);
+        piece_locs.emplace_back(sorted_info.shard_id, offset, piece_len);
       }
       remaining -= piece_len;
     }
@@ -65,7 +62,7 @@ inline std::vector<BatchLocation> GetRemotePieceLocations(
   return piece_locs;
 }
 
-inline unsigned SizeofPieceBatch(const std::vector<BatchLocation>& locs) {
+unsigned SizeofPieceBatch(const std::vector<BatchLocation>& locs) {
   unsigned sz = 0;
   for (auto& loc : locs) {
     sz += loc.length;
@@ -73,26 +70,26 @@ inline unsigned SizeofPieceBatch(const std::vector<BatchLocation>& locs) {
   return sz;
 }
 
-inline std::vector<BaseOperatorActorRef*>
+std::vector<BaseOperatorActor_ref*>
 GenerateDelegateRefs(const OpActorParams* params) {
-  auto num_shards = brane::local_shard_count();
-  std::vector<actor::BaseOperatorActorRef*> actor_refs;
+  auto num_shards = hiactor::local_shard_count();
+  std::vector<BaseOperatorActor_ref*> actor_refs;
   if (params) {
     actor_refs.reserve(num_shards);
     std::string op_name = params->node->OpName();
     ActorIdType op_actor_id = params->self_actor_id;
     for (int32_t shard_id = 0; shard_id < num_shards; ++shard_id) {
-      brane::scope_builder builder = brane::scope_builder(
-        shard_id + brane::machine_info::sid_anchor());
-      actor_refs.push_back(actor::OpRefFactory::Get().Create(
+      auto builder = hiactor::scope_builder(
+          shard_id + hiactor::machine_info::sid_anchor());
+      actor_refs.push_back(OpRefFactory::Get().Create(
         op_name, op_actor_id, &builder));
     }
   }
   return actor_refs;
 }
 
-inline seastar::future<TensorMap> RemotePieceRequest(
-    const BatchLocation& loc, BaseOperatorActorRef* ref) {
+seastar::future<TensorMap> RemotePieceRequest(
+    const BatchLocation& loc, BaseOperatorActor_ref* ref) {
   TensorMap tm;
   ADD_TENSOR(tm.tensors_, DelegateFetchFlag, kInt64, 2);
   tm.tensors_[DelegateFetchFlag].AddInt64(loc.offset);
@@ -115,10 +112,10 @@ public:
     }
   }
 
-  inline seastar::future<> LoadPieceCache() {
+  seastar::future<> LoadPieceCache() {
     std::vector<seastar::future<TensorMap>> futs;
     for (auto &loc : loc_list_) {
-      if (loc.shard_id == brane::local_shard_id()) {
+      if (loc.shard_id == hiactor::local_shard_id()) {
         auto begin = local_id_array_ + loc.offset;
         piece_cache_.insert(piece_cache_.end(), begin, begin + loc.length);
       } else {
@@ -126,9 +123,9 @@ public:
       }
     }
     return seastar::when_all_succeed(futs.begin(), futs.end()).then(
-        [this] (std::vector<TensorMap> results) {
-      for (int i = 0; i < results.size(); ++i) {
-        for (auto &tn : results[i].tensors_) {
+        [this] (const std::vector<TensorMap>& results) {
+      for (auto& result : results) {
+        for (auto& tn : result.tensors_) {
           auto size = tn.second.Size();
           const int64_t* begin = tn.second.GetInt64();
           piece_cache_.insert(piece_cache_.end(), begin, begin + size);
@@ -139,24 +136,24 @@ public:
     });
   }
 
-  inline bool Cached() const {
+  bool Cached() const {
     return cached_;
   }
 
-  inline const io::IdType* Data() const {
+  const io::IdType* Data() const {
     return piece_cache_.data();
   }
 
-  inline unsigned Size() const {
+  unsigned Size() const {
     return piece_cache_.size();
   }
 
 private:
-  std::vector<BatchLocation>         loc_list_;
-  std::vector<BaseOperatorActorRef*> refs_;
-  const io::IdType*                  local_id_array_;
-  std::vector<io::IdType>            piece_cache_;
-  bool                               cached_;
+  std::vector<BatchLocation>          loc_list_;
+  std::vector<BaseOperatorActor_ref*> refs_;
+  const io::IdType*                   local_id_array_;
+  std::vector<io::IdType>             piece_cache_;
+  bool                                cached_;
 };
 
 struct RemoteEdgePieceCache {
@@ -178,10 +175,10 @@ public:
     }
   }
 
-  inline seastar::future<> LoadPieceCache() {
+  seastar::future<> LoadPieceCache() {
     std::vector<seastar::future<TensorMap>> futs;
     for (auto &loc : loc_list_) {
-      if (loc.shard_id == brane::local_shard_id()) {
+      if (loc.shard_id == hiactor::local_shard_id()) {
         for (io::IdType id = loc.offset; id < loc.offset + loc.length; id++) {
           edge_cache_.push_back(id);
           src_cache_.push_back(local_edge_store_->GetSrcId(id));
@@ -193,36 +190,36 @@ public:
     }
     return seastar::when_all_succeed(futs.begin(), futs.end()).then(
         [this] (std::vector<TensorMap> results) {
-      for (int i = 0; i < results.size(); ++i) {
-        CachePieceTensorMap(&results[i]);
+      for (auto& result : results) {
+        CachePieceTensorMap(&result);
       }
       cached_ = true;
       return seastar::make_ready_future<>();
     });
   }
 
-  inline bool Cached() const {
+  bool Cached() const {
     return cached_;
   }
 
-  inline const io::IdType* SrcData() const {
+  const io::IdType* SrcData() const {
     return src_cache_.data();
   }
 
-  inline const io::IdType* DstData() const {
+  const io::IdType* DstData() const {
     return dst_cache_.data();
   }
 
-  inline const io::IdType* EdgeData() const {
+  const io::IdType* EdgeData() const {
     return edge_cache_.data();
   }
 
-  inline unsigned Size() const {
+  unsigned Size() const {
     return edge_cache_.size();
   }
 
 private:
-  inline void CachePieceTensorMap(TensorMap* tm) {
+  void CachePieceTensorMap(TensorMap* tm) {
     auto* src_ptr = tm->tensors_[kSrcIds].GetInt64();
     auto src_len = tm->tensors_[kSrcIds].Size();
     src_cache_.insert(src_cache_.end(), src_ptr, src_ptr + src_len);
@@ -237,22 +234,23 @@ private:
   }
 
 private:
-  std::vector<BatchLocation>         loc_list_;
-  std::vector<BaseOperatorActorRef*> refs_;
-  io::GraphStorage*                  local_edge_store_;
-  std::vector<io::IdType>            src_cache_;
-  std::vector<io::IdType>            dst_cache_;
-  std::vector<io::IdType>            edge_cache_;
-  bool                               cached_;
+  std::vector<BatchLocation>          loc_list_;
+  std::vector<BaseOperatorActor_ref*> refs_;
+  io::GraphStorage*                   local_edge_store_;
+  std::vector<io::IdType>             src_cache_;
+  std::vector<io::IdType>             dst_cache_;
+  std::vector<io::IdType>             edge_cache_;
+  bool                                cached_;
 };
 
 // Node Batch Generator Basic Utils
 ShardDataInfoVecT
 NodeBatchGenerator::GetSortedDataInfos(const std::string& type) {
   ShardDataInfoVecT data_info_vec;
-  data_info_vec.reserve(brane::local_shard_count());
-  for (uint32_t i = 0; i < brane::local_shard_count(); ++i) {
-    auto noder = ShardedGraphStore::Get().OnShard(i)->GetNoder(type);
+  data_info_vec.reserve(hiactor::local_shard_count());
+  for (uint32_t i = 0; i < hiactor::local_shard_count(); ++i) {
+    auto noder = ShardedGraphStore::Get().OnShard(
+        static_cast<int32_t>(i))->GetNoder(type);
     auto shard_data_size = noder->GetLocalStorage()->Size();
     data_info_vec.emplace_back(shard_data_size, i);
   }
@@ -303,7 +301,7 @@ public:
   ~OrderedIterator() override = default;
 
   seastar::future<TensorMap> Next() override {
-    if (cursor_ < intact_size_ || !piece_.get() || piece_->Cached()) {
+    if (cursor_ < intact_size_ || !piece_ || piece_->Cached()) {
       return InCacheNext();
     }
     return piece_->LoadPieceCache().then([this] {
@@ -343,7 +341,7 @@ public:
   ~ShuffledIterator() override = default;
 
   seastar::future<TensorMap> Next() override {
-    if (!piece_.get() || piece_->Cached()) {
+    if (!piece_ || piece_->Cached()) {
       return InCacheShuffleNext();
     }
     return piece_->LoadPieceCache().then([this] {
@@ -393,10 +391,11 @@ TraverseNodeBatchGenerator::TraverseNodeBatchGenerator(
       const std::string& type, unsigned batch_sz,
       const OpActorParams* params, const std::string& strategy)
     : NodeBatchGenerator(), iter_(nullptr) {
-  auto* local_store = ShardedGraphStore::Get().
-    OnShard(brane::local_shard_id())->GetNoder(type)->GetLocalStorage();
+  auto* graph_store = ShardedGraphStore::Get().OnShard(
+      static_cast<int32_t>(hiactor::local_shard_id()));
+  auto* local_store = graph_store->GetNoder(type)->GetLocalStorage();
   unsigned local_data_size = local_store->Size();
-  const io::IdType* local_id_array = local_store->GetIds()->data();
+  const io::IdType* local_id_array = local_store->GetIds().data();
   auto local_intact_batch_num = local_data_size / batch_sz;
 
   auto sorted_data_infos = GetSortedDataInfos(type);
@@ -404,8 +403,8 @@ TraverseNodeBatchGenerator::TraverseNodeBatchGenerator(
   auto piece_batch_sz = SizeofPieceBatch(piece_locs);
   std::unique_ptr<RemoteNodePieceCache> piece_cache(nullptr);
   if (piece_batch_sz > 0) {
-    piece_cache.reset(new RemoteNodePieceCache(params, local_id_array,
-      std::move(piece_locs), piece_batch_sz));
+    piece_cache = std::make_unique<RemoteNodePieceCache>(
+        params, local_id_array, std::move(piece_locs), piece_batch_sz);
   }
   if (strategy == "by_order") {
     iter_ = new OrderedIterator(local_id_array, std::move(piece_cache),
@@ -429,11 +428,11 @@ RandomNodeBatchGenerator::RandomNodeBatchGenerator(
       const std::string& type, unsigned batch_size)
     : NodeBatchGenerator(), batch_size_(batch_size),
       rd_(), engine_(rd_()) {
-  auto noder = ShardedGraphStore::Get().OnShard(
-    brane::local_shard_id())->GetNoder(type);
-  ids_ = noder->GetLocalStorage()->GetIds();
-  data_size_ = noder->GetLocalStorage()->Size();
-  dist_ = std::uniform_int_distribution<int32_t>(0, data_size_ - 1);
+  auto* store = ShardedGraphStore::Get().OnShard(
+      static_cast<int32_t>(hiactor::local_shard_id()));
+  auto* local_store = store->GetNoder(type)->GetLocalStorage();
+  ids_ = local_store->GetIds();
+  dist_ = std::uniform_int_distribution<int32_t>(0, ids_.Size() - 1);
 }
 
 seastar::future<TensorMap> RandomNodeBatchGenerator::NextBatch() {
@@ -442,7 +441,7 @@ seastar::future<TensorMap> RandomNodeBatchGenerator::NextBatch() {
 
   for (unsigned i = 0; i < batch_size_; ++i) {
     int32_t rand = dist_(engine_);
-    tm.tensors_[kNodeIds].AddInt64((*ids_)[rand]);
+    tm.tensors_[kNodeIds].AddInt64(ids_[rand]);
   }
   return seastar::make_ready_future<TensorMap>(std::move(tm));
 }
@@ -451,9 +450,10 @@ seastar::future<TensorMap> RandomNodeBatchGenerator::NextBatch() {
 ShardDataInfoVecT
 EdgeBatchGenerator::GetSortedDataInfos(const std::string& type) {
   ShardDataInfoVecT data_info_vec;
-  data_info_vec.reserve(brane::local_shard_count());
-  for (uint32_t i = 0; i < brane::local_shard_count(); ++i) {
-    auto graph = ShardedGraphStore::Get().OnShard(i)->GetGraph(type);
+  data_info_vec.reserve(hiactor::local_shard_count());
+  for (uint32_t i = 0; i < hiactor::local_shard_count(); ++i) {
+    auto graph = ShardedGraphStore::Get().OnShard(
+        static_cast<int32_t>(i))->GetGraph(type);
     auto shard_data_size = graph->GetLocalStorage()->GetEdgeCount();
     data_info_vec.emplace_back(shard_data_size, i);
   }
@@ -512,7 +512,7 @@ public:
   ~OrderedIterator() override = default;
 
   seastar::future<TensorMap> Next() override {
-    if (cursor_ < intact_size_ || !piece_.get() || piece_->Cached()) {
+    if (cursor_ < intact_size_ || !piece_ || piece_->Cached()) {
       return InCacheNext();
     }
     return piece_->LoadPieceCache().then([this] {
@@ -554,7 +554,7 @@ public:
   ~ShuffledIterator() override = default;
 
   seastar::future<TensorMap> Next() override {
-    if (!piece_.get() || piece_->Cached()) {
+    if (!piece_ || piece_->Cached()) {
       return InCacheShuffleNext();
     }
     return piece_->LoadPieceCache().then([this] {
@@ -606,9 +606,10 @@ TraverseEdgeBatchGenerator::TraverseEdgeBatchGenerator(
       const std::string& type, unsigned batch_sz,
       const OpActorParams* params, const std::string& strategy)
     : EdgeBatchGenerator(), iter_(nullptr) {
-  io::GraphStorage* local_edge_storage = ShardedGraphStore::Get().
-    OnShard(brane::local_shard_id())->GetGraph(type)->GetLocalStorage();
-  unsigned local_data_size = local_edge_storage->GetEdgeCount();
+  auto* graph_store = ShardedGraphStore::Get().OnShard(
+      static_cast<int32_t>(hiactor::local_shard_id()));
+  auto* local_store = graph_store->GetGraph(type)->GetLocalStorage();
+  unsigned local_data_size = local_store->GetEdgeCount();
   auto local_intact_batch_num = local_data_size / batch_sz;
 
   auto sorted_data_infos = GetSortedDataInfos(type);
@@ -616,14 +617,14 @@ TraverseEdgeBatchGenerator::TraverseEdgeBatchGenerator(
   auto piece_batch_sz = SizeofPieceBatch(piece_locs);
   std::unique_ptr<RemoteEdgePieceCache> piece_cache(nullptr);
   if (piece_batch_sz > 0) {
-    piece_cache.reset(new RemoteEdgePieceCache(params, local_edge_storage,
-      std::move(piece_locs), piece_batch_sz));
+    piece_cache = std::make_unique<RemoteEdgePieceCache>(
+        params, local_store, std::move(piece_locs), piece_batch_sz);
   }
   if (strategy == "by_order") {
-    iter_ = new OrderedIterator(local_edge_storage, std::move(piece_cache),
+    iter_ = new OrderedIterator(local_store, std::move(piece_cache),
       batch_sz, local_intact_batch_num * batch_sz, piece_batch_sz);
   } else {
-    iter_ = new ShuffledIterator(local_edge_storage, std::move(piece_cache),
+    iter_ = new ShuffledIterator(local_store, std::move(piece_cache),
       batch_sz, local_intact_batch_num * batch_sz, piece_batch_sz);
   }
 }
@@ -641,8 +642,9 @@ RandomEdgeBatchGenerator::RandomEdgeBatchGenerator(
       const std::string& type, unsigned batch_size)
     : EdgeBatchGenerator(), batch_size_(batch_size),
       rd_(), engine_(rd_()) {
-  storage_ = ShardedGraphStore::Get().OnShard(
-    brane::local_shard_id())->GetGraph(type)->GetLocalStorage();
+  auto* graph_store = ShardedGraphStore::Get().OnShard(
+      static_cast<int32_t>(hiactor::local_shard_id()));
+  storage_ = graph_store->GetGraph(type)->GetLocalStorage();
   edge_count_ = storage_->GetEdgeCount();
   dist_  = std::uniform_int_distribution<::graphlearn::io::IdType>(
     0, edge_count_ - 1);
@@ -664,5 +666,5 @@ seastar::future<TensorMap> RandomEdgeBatchGenerator::NextBatch() {
   return seastar::make_ready_future<TensorMap>(std::move(tm));
 }
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn

@@ -14,17 +14,18 @@ limitations under the License.
 ==============================================================================*/
 
 #include "actor/dag/dag_proxy.h"
+
 #include "actor/operator/op_ref_factory.h"
 #include "actor/utils.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
-EdgeProxy::EdgeProxy(DagEdgePtr e) : edge_(e) {
+EdgeProxy::EdgeProxy(DagEdgePtr e) : edge_(std::move(e)) {
 }
 
-EdgeProxy::EdgeProxy(EdgeProxy&& other) {
-  edge_ = other.edge_;
+EdgeProxy::EdgeProxy(EdgeProxy&& other) noexcept
+    : edge_(std::move(other.edge_)) {
 }
 
 DagNodeIdType EdgeProxy::UpstreamGUID() const {
@@ -37,15 +38,15 @@ std::pair<std::string, std::string> EdgeProxy::Joint() const {
 
 NodeProxy::NodeProxy(const DagNode* n, ActorIdType actor_id)
     : node_(n), actor_id_(actor_id) {
-  for (auto edge : node_->InEdges()) {
+  for (const auto& edge : node_->InEdges()) {
     upstreams_.emplace_back(edge);
   }
-
-  InitActorRef(brane::global_shard_count());
+  InitActorRef(hiactor::global_shard_count());
 }
 
 NodeProxy::NodeProxy(NodeProxy&& other) noexcept
   : node_(other.node_),
+    actor_id_(other.actor_id_),
     upstreams_(std::move(other.upstreams_)),
     actor_refs_(std::move(other.actor_refs_)) {
 }
@@ -60,8 +61,8 @@ void NodeProxy::InitActorRef(uint32_t total_shards) {
   actor_refs_.resize(total_shards, nullptr);
   std::string op_name = node_->OpName();
   for (int32_t shard_id = 0; shard_id < total_shards; ++shard_id) {
-    brane::scope_builder builder = brane::scope_builder(shard_id);
-    actor_refs_[shard_id] = actor::OpRefFactory::Get().Create(
+    auto builder = hiactor::scope_builder(shard_id);
+    actor_refs_[shard_id] = OpRefFactory::Get().Create(
       op_name, actor_id_, &builder);
   }
 }
@@ -161,5 +162,5 @@ void DagProxy::AddEdge(DagNodeIdType s, DagNodeIdType t) {
   in_degree_[t]++;
 }
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn

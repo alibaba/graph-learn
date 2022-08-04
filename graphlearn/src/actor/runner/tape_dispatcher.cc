@@ -24,7 +24,7 @@ limitations under the License.
 #include "seastar/core/alien.hh"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 class DagActorRefManager {
 public:
@@ -213,5 +213,5 @@ std::unique_ptr<TapeDispatcher> NewTapeDispatcher(
   return dispatcher;
 }
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn

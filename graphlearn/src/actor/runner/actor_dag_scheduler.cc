@@ -30,7 +30,7 @@ limitations under the License.
 #include "seastar/core/alien.hh"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 struct RegisterMessage {
   const DagActorManager* dag_actor_manager;
@@ -150,7 +150,7 @@ void RunnerLoop(const Dag* dag, ActorDagScheduler *self,
   }
 }
 
-}  // namespace actor
+}  // namespace act
 
 DagScheduler* NewActorDagScheduler(Env* env) {
   return new actor::ActorDagScheduler(env);

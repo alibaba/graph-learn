@@ -14,11 +14,17 @@ limitations under the License.
 ==============================================================================*/
 
 #include "actor/dag/dag_actor.act.h"
+
+#include "seastar/core/loop.hh"
+
+#include "actor/dag/dag_actor_manager.h"
 #include "actor/utils.h"
 #include "common/base/log.h"
 
+#include "actor/generated/base_op_ref.act.autogen.h"
+
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 namespace {
 
@@ -36,11 +42,11 @@ ShardsPtr<ShardableTensorMap> PartitionInput(
 
 std::vector<int32_t> GetShardIds(
     const NodeProxy* op,
-    ShardsPtr<ShardableTensorMap> reqs) {
+    const ShardsPtr<ShardableTensorMap>& reqs) {
   std::vector<int32_t> shard_ids;
   if (op->IsSource()) {
     shard_ids.reserve(1);
-    shard_ids.push_back(brane::global_shard_id());
+    shard_ids.push_back(static_cast<int32_t>(hiactor::global_shard_id()));
   } else {
     shard_ids.reserve(reqs->Size());
     int32_t sid = 0;
@@ -55,27 +61,26 @@ std::vector<int32_t> GetShardIds(
 
 }  // anonymous namespace
 
-DagActor::DagActor(brane::actor_base *exec_ctx,
-                   const brane::byte_t *addr,
-                   const void* params)
-    : brane::stateful_actor(exec_ctx, addr),
+DagActor::DagActor(hiactor::actor_base* exec_ctx, const hiactor::byte_t* addr)
+    : hiactor::actor(exec_ctx, addr, false),
       env_(nullptr), stopping_(false) {
-  const auto* dag_params = reinterpret_cast<const DagActorParams*>(params);
+  auto& mgr = DagActorManager::GetInstance();
+  const auto* dag_params = reinterpret_cast<const DagActorParams*>(
+      mgr.GetActorParams(actor_id()));
   dag_proxy_ = DagProxy(dag_params);
 }
 
-DagActor::~DagActor() {
-}
+DagActor::~DagActor() = default;
 
-seastar::future<brane::Void> DagActor::RunOnce(TapeHolder&& holder) {
+seastar::future<hiactor::Void> DagActor::RunOnce(TapeHolder&& holder) {
   auto* tape = holder.tape;
   return seastar::do_until([this] { return IsStopping(); },
                            [this, tape] {
     // Get the dag node list that are ready to run.
     auto next = dag_proxy_.Next();
-    // Run all the ready nodes parallelly.
+    // Run all the ready nodes parallel.
     return seastar::parallel_for_each(next.begin(), next.end(),
-                                      [this, tape] (int64_t node_id) {
+        [this, tape] (int64_t node_id) {
       NodeProxy* cur_op = &(dag_proxy_.Node(node_id));
       ShardableTensorMap* req = BuildInput(cur_op, tape);
       if (__builtin_expect(req != nullptr, true)) {
@@ -89,7 +94,7 @@ seastar::future<brane::Void> DagActor::RunOnce(TapeHolder&& holder) {
   }).then([this, tape] () mutable {
     tape->SetReady();
     dag_proxy_.Reset();
-    return seastar::make_ready_future<brane::Void>();
+    return seastar::make_ready_future<hiactor::Void>();
   });
 }
 
@@ -98,7 +103,7 @@ ShardableTensorMap* DagActor::BuildInput(const NodeProxy* op, Tape* tape) {
   Tensor::Map inputs;
   for (auto &in_edge : op->Upstreams()) {
     NodeProxy& upstream_op = dag_proxy_.Node(in_edge.UpstreamGUID());
-    auto& tensors = tape->Retrieval(upstream_op.GUID());
+    auto& tensors = tape->Retrieval(static_cast<int32_t>(upstream_op.GUID()));
     auto joint = in_edge.Joint();
     if (tensors.find(joint.first) != tensors.end()) {
       inputs.emplace(joint.second, tensors.at(joint.first));
@@ -113,10 +118,10 @@ ShardableTensorMap* DagActor::BuildInput(const NodeProxy* op, Tape* tape) {
   return new ShardableTensorMap(std::move(inputs));
 }
 
-seastar::future<> DagActor::RunInParallel(
-    const NodeProxy* op,
-    ShardableTensorMap* input,
-    Tape* tape) {
+seastar::future<>
+DagActor::RunInParallel(const NodeProxy* op,
+                        ShardableTensorMap* input,
+                        Tape* tape) {
   ShardsPtr<ShardableTensorMap> shard_reqs = PartitionInput(op, input);
   std::vector<int32_t> shard_ids = GetShardIds(op, shard_reqs);
   ShardsPtr<JoinableTensorMap> shard_rets(
@@ -138,17 +143,17 @@ seastar::future<> DagActor::RunInParallel(
     JoinableTensorMap res;
     shard_rets->StickerPtr()->CopyFrom(*(shard_reqs->StickerPtr()));
     res.Stitch(shard_rets);
-    tape->Record(op->GUID(), std::move(res.tensors_));
+    tape->Record(static_cast<int32_t>(op->GUID()), std::move(res.tensors_));
     delete input;
     return seastar::make_ready_future<>();
   });
 }
 
-seastar::future<JoinableTensorMap*> DagActor::ProcessInShard(
-    const NodeProxy* op,
-    int32_t shard_id,
-    ShardableTensorMap* req) {
-  auto ref = op->OnShard(shard_id);
+seastar::future<JoinableTensorMap*>
+DagActor::ProcessInShard(const NodeProxy* op,
+                         int32_t shard_id,
+                         ShardableTensorMap* req) {
+  auto* ref = op->OnShard(shard_id);
   if (!ref) {
     LOG(ERROR) << "guidToActorRef for shard " << shard_id
                 << " of node " << op->GUID() << "is nullptr.";
@@ -157,7 +162,7 @@ seastar::future<JoinableTensorMap*> DagActor::ProcessInShard(
   }
 
   return ref->Process(TensorMap(std::move(req->tensors_))).then_wrapped(
-    [shard_id, this] (seastar::future<TensorMap> response) {
+    [this] (seastar::future<TensorMap> response) {
       JoinableTensorMap *res = nullptr;
       if (__builtin_expect(response.failed(), false)) {
         response.ignore_ready_future();
@@ -175,5 +180,5 @@ bool DagActor::IsStopping() {
   return !dag_proxy_.HasNext() || stopping_;
 }
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn

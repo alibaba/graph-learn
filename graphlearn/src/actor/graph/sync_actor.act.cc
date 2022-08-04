@@ -22,7 +22,7 @@ limitations under the License.
 #include "seastar/core/sleep.hh"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 SyncActor::SyncActor(brane::actor_base *exec_ctx,
                      const brane::byte_t *addr,
@@ -47,5 +47,5 @@ void SyncActor::ReceiveEOS(brane::Integer&& source_id) {
   }
 }
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn

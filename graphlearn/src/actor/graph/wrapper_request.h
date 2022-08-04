@@ -27,7 +27,7 @@ limitations under the License.
 #include "proto/service.pb.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 template <class T, class V>
 class RequestWrapper {
@@ -142,7 +142,7 @@ typedef std::shared_ptr<REQUEST(Edge)> UpdateEdgesPtr;
 
 #undef REQUEST
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_GRAPH_WRAPPER_REQUEST_H_

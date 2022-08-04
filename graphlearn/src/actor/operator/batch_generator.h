@@ -21,6 +21,7 @@ limitations under the License.
 #include <random>
 #include <string>
 #include <vector>
+
 #include "actor/graph/sharded_graph_store.h"
 #include "actor/tensor_map.h"
 #include "actor/utils.h"
@@ -28,7 +29,7 @@ limitations under the License.
 #include "core/graph/storage/types.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 extern const char* DelegateFetchFlag;
 
@@ -48,7 +49,7 @@ public:
   virtual seastar::future<TensorMap> NextBatch() = 0;
 
 protected:
-  ShardDataInfoVecT GetSortedDataInfos(const std::string& type);
+  static ShardDataInfoVecT GetSortedDataInfos(const std::string& type);
 };
 
 class TraverseNodeBatchGenerator : public NodeBatchGenerator {
@@ -70,13 +71,12 @@ private:
 class RandomNodeBatchGenerator : public NodeBatchGenerator {
 public:
   RandomNodeBatchGenerator(const std::string& type, unsigned batch_size);
-  ~RandomNodeBatchGenerator() override {}
+  ~RandomNodeBatchGenerator() override = default;
   seastar::future<TensorMap> NextBatch() override;
 
 private:
-  const io::IdList*  ids_;
+  io::IdArray        ids_;
   const unsigned     batch_size_;
-  unsigned           data_size_;
   std::random_device rd_;
   std::mt19937       engine_;
   std::uniform_int_distribution<int32_t> dist_;
@@ -89,7 +89,7 @@ public:
   virtual seastar::future<TensorMap> NextBatch() = 0;
 
 protected:
-  ShardDataInfoVecT GetSortedDataInfos(const std::string& type);
+  static ShardDataInfoVecT GetSortedDataInfos(const std::string& type);
 };
 
 class TraverseEdgeBatchGenerator : public EdgeBatchGenerator {
@@ -111,19 +111,19 @@ private:
 class RandomEdgeBatchGenerator : public EdgeBatchGenerator {
 public:
   RandomEdgeBatchGenerator(const std::string& type, unsigned batch_size);
-  ~RandomEdgeBatchGenerator() override {}
+  ~RandomEdgeBatchGenerator() override = default;
   seastar::future<TensorMap> NextBatch() override;
 
 private:
   const unsigned                  batch_size_;
-  ::graphlearn::io::GraphStorage* storage_;
+  ::graphlearn::io::GraphStorage* storage_{};
   ::graphlearn::io::IdType        edge_count_;
   std::random_device              rd_;
   std::mt19937                    engine_;
   std::uniform_int_distribution<::graphlearn::io::IdType> dist_;
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_OPERATOR_BATCH_GENERATOR_H_

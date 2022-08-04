@@ -13,27 +13,34 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "actor/operator/stateful_base_op_actor.act.h"
+#include "actor/operator/base_op.act.h"
 
+#include "actor/dag/dag_actor_manager.h"
 #include "actor/graph/sharded_graph_store.h"
 #include "core/operator/op_registry.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
-StatefulBaseOperatorActor::StatefulBaseOperatorActor(
-    brane::actor_base *exec_ctx,
-    const brane::byte_t *addr,
-    const void* arg)
-    : brane::stateful_actor(exec_ctx, addr) {
-  const char* op_name = reinterpret_cast<const char*>(arg);
+BaseOperatorActor::BaseOperatorActor(hiactor::actor_base* exec_ctx,
+                                     const hiactor::byte_t* addr)
+    : hiactor::actor(exec_ctx, addr), impl_(nullptr) {
+}
+
+BaseOperatorActor::~BaseOperatorActor() = default;
+
+void BaseOperatorActor::SetOp(const std::string& op_name) {
   impl_ = (*op::OpRegistry::OpRegistry::GetInstance()->Lookup(op_name))();
-  impl_->Set(ShardedGraphStore::Get().OnShard(brane::local_shard_id()));
+  impl_->Set(ShardedGraphStore::Get().OnShard(
+      static_cast<int32_t>(hiactor::local_shard_id())));
 }
 
-StatefulBaseOperatorActor::~StatefulBaseOperatorActor() {
+const Tensor::Map& BaseOperatorActor::GetParams() {
+  auto& mgr = DagActorManager::GetInstance();
+  const auto* actor_params = reinterpret_cast<const OpActorParams*>(
+      mgr.GetActorParams(actor_id()));
+  return actor_params->node->Params();
 }
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
-

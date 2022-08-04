@@ -28,7 +28,7 @@ limitations under the License.
 #include "core/partition/partitioner.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 struct TapeHolder {
   Tape* tape;
@@ -128,7 +128,7 @@ BasePartitioner<T>* GetPartitioner(const T* t) {
   return creator(GLOBAL_FLAG(PartitionMode));
 }
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_TENSOR_MAP_H_

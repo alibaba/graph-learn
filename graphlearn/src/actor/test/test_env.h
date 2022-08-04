@@ -24,7 +24,7 @@ limitations under the License.
 #include "include/server.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 class TestEnv {
 public:
@@ -278,7 +278,7 @@ void TestEnv::MakeNodeSource(io::NodeSource* source,
   }
 }
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_TEST_ENV_H_

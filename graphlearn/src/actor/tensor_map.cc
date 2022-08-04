@@ -18,7 +18,7 @@ limitations under the License.
 #include "actor/tensor_serializer.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 void TensorMap::dump_to(hiactor::serializable_queue& qu) {
   for (auto& it : tensors_) {
@@ -111,5 +111,5 @@ void JoinableTensorMap::Stitch(ShardsPtr<JoinableTensorMap> shards) {
   stitcher->Stitch(std::move(shards), this);
 }
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn

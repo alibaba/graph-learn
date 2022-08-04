@@ -22,7 +22,7 @@ limitations under the License.
 #include "include/status.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 class ActorService {
 public:
@@ -47,7 +47,7 @@ private:
   Coordinator* coord_;
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_SERVICE_ACTOR_SERVICE_H_

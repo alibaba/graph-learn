@@ -13,26 +13,37 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef GRAPHLEARN_ACTOR_OPERATOR_BASE_OP_ACTOR_REF_ACT_H_
-#define GRAPHLEARN_ACTOR_OPERATOR_BASE_OP_ACTOR_REF_ACT_H_
+#ifndef GRAPHLEARN_ACTOR_OPERATOR_BASE_OP_ACT_H_
+#define GRAPHLEARN_ACTOR_OPERATOR_BASE_OP_ACT_H_
 
-#include "brane/actor/actor_implementation.hh"
-#include "brane/actor/reference_base.hh"
-#include "brane/util/common-utils.hh"
+#include "hiactor/core/actor-template.hh"
+#include "hiactor/util/data_type.hh"
+
 #include "actor/tensor_map.h"
 #include "core/operator/operator.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
-class BaseOperatorActorRef : public brane::reference_base {
+class ANNOTATION(actor:impl) BaseOperatorActor : public hiactor::actor {
 public:
-  BaseOperatorActorRef() : brane::reference_base() {}
-  virtual ~BaseOperatorActorRef() {}
-  virtual seastar::future<TensorMap> Process(TensorMap&& tensor) = 0;
+  BaseOperatorActor(hiactor::actor_base* exec_ctx, const hiactor::byte_t* addr);
+  ~BaseOperatorActor() override;
+
+  virtual seastar::future<TensorMap>
+  ANNOTATION(actor:method) Process(TensorMap&& tensor) = 0;
+
+  ACTOR_DO_WORK()
+
+protected:
+  void SetOp(const std::string& op_name);
+  const Tensor::Map& GetParams();
+
+protected:
+  op::Operator* impl_;
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
-#endif  // GRAPHLEARN_ACTOR_OPERATOR_BASE_OP_ACTOR_REF_ACT_H_
+#endif  // GRAPHLEARN_ACTOR_OPERATOR_BASE_OP_ACT_H_

@@ -19,12 +19,12 @@ limitations under the License.
 #include "service/dist/coordinator.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
 int ActorCoordImpl::global_barrier(const std::string& barrier_guid) {
   Status s = coord_->Sync(barrier_guid);
   return s.code();
 }
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn

@@ -23,7 +23,7 @@ namespace graphlearn {
 
 class Coordinator;
 
-namespace actor {
+namespace act {
 
 class ActorCoordImpl : public brane::coordinator::impl {
 public:
@@ -41,7 +41,7 @@ private:
   int32_t      server_count_;
 };
 
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
 
 #endif  // GRAPHLEARN_ACTOR_SERVICE_ACTOR_COORD_H_

@@ -15,32 +15,25 @@ limitations under the License.
 
 #include "actor/operator/node_lookuper.act.h"
 
-#include <utility>
-#include "actor/params.h"
-#include "actor/operator/op_ref_factory.h"
 #include "include/graph_request.h"
 
 namespace graphlearn {
-namespace actor {
+namespace act {
 
-NodeLookuperActor::NodeLookuperActor(
-    brane::actor_base *exec_ctx,
-    const brane::byte_t *addr,
-    const void* params)
-    : StatelessBaseOperatorActor(exec_ctx, addr, "LookupNodes") {
-  auto *actor_params = reinterpret_cast<const OpActorParams*>(params);
-  auto &tm = actor_params->node->Params();
-
+NodeLookuperActor::NodeLookuperActor(hiactor::actor_base* exec_ctx,
+                                     const hiactor::byte_t* addr)
+    : BaseOperatorActor(exec_ctx, addr) {
+  set_max_concurrency(UINT32_MAX);  // stateless
+  SetOp("LookupNodes");
+  auto& tm = GetParams();
   node_type_ = tm.at("nt").GetString(0);
 }
 
-NodeLookuperActor::~NodeLookuperActor() {
-}
+NodeLookuperActor::~NodeLookuperActor() = default;
 
-seastar::future<TensorMap> NodeLookuperActor::Process(
-    TensorMap&& tensors) {
+seastar::future<TensorMap> NodeLookuperActor::Process(TensorMap&& tensors) {
   LookupNodesRequest request(node_type_);
-  request.Set(std::move(tensors.tensors_));
+  request.Set(tensors.tensors_);
   LookupNodesResponse response;
   impl_->Process(&request, &response);
 
@@ -48,7 +41,5 @@ seastar::future<TensorMap> NodeLookuperActor::Process(
     std::move(response.tensors_));
 }
 
-OpRefRegistration<NodeLookuperActorRef> _NodeLookuperActorRef("LookupNodes");
-
-}  // namespace actor
+}  // namespace act
 }  // namespace graphlearn
