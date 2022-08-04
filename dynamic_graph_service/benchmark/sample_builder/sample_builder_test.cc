@@ -93,7 +93,7 @@ void PrepareRecordBatches(std::string file_path,
     batch_builder.AddRecord(record_builder);
     if(batch_builder.RecordNum() == batch_size) {
       batch_builder.Finish();
-      inputs.emplace_back(io::RecordBatch(actor::BytesBuffer(
+      inputs.emplace_back(io::RecordBatch(act::BytesBuffer(
         reinterpret_cast<const char*>(batch_builder.BufPointer()),
         batch_builder.BufSize())));
       batch_builder.Clear();
@@ -101,7 +101,7 @@ void PrepareRecordBatches(std::string file_path,
   }
   if(batch_builder.RecordNum() > 0) {
     batch_builder.Finish();
-    inputs.emplace_back(io::RecordBatch(actor::BytesBuffer(
+    inputs.emplace_back(io::RecordBatch(act::BytesBuffer(
       reinterpret_cast<const char*>(batch_builder.BufPointer()),
       batch_builder.BufSize())));
     batch_builder.Clear();
