@@ -36,17 +36,17 @@ RecordBatchIngestor::RecordBatchIngestor(PartitionRouter* router,
                                          uint32_t poller_id)
     : partition_router_(router),
       poller_id_(poller_id),
-      gsid_anchor_(actor::GlobalShardIdAnchor()) {
+      gsid_anchor_(act::GlobalShardIdAnchor()) {
   hiactor::scope_builder builder(0);
-  actor_refs_.reserve(actor::LocalShardCount());
-  for (unsigned l_sid = 0; l_sid < actor::LocalShardCount(); ++l_sid) {
+  actor_refs_.reserve(act::LocalShardCount());
+  for (unsigned l_sid = 0; l_sid < act::LocalShardCount(); ++l_sid) {
     auto g_sid = gsid_anchor_ + l_sid;
     builder.set_shard(g_sid);
     actor_refs_.emplace_back(MakeSamplingActorInstRef(builder));
   }
 }
 
-std::future<size_t> RecordBatchIngestor::operator()(actor::BytesBuffer&& buf) {
+std::future<size_t> RecordBatchIngestor::operator()(act::BytesBuffer&& buf) {
   auto batch = io::RecordBatch{std::move(buf)};
   auto batch_view = batch.GetView();
   auto num_records = batch_view.RecordNum();
@@ -70,17 +70,17 @@ SampleBatchIngestor::SampleBatchIngestor(PartitionRouter* router,
       partitioner_(partitioner),
       partition_num_(partitioner->GetPartitionsNum()),
       poller_id_(poller_id),
-      gsid_anchor_(actor::GlobalShardIdAnchor()) {
+      gsid_anchor_(act::GlobalShardIdAnchor()) {
   hiactor::scope_builder builder(0, MakeServingGroupScope());
-  actor_refs_.reserve(actor::LocalShardCount());
-  for (unsigned l_sid = 0; l_sid < actor::LocalShardCount(); ++l_sid) {
+  actor_refs_.reserve(act::LocalShardCount());
+  for (unsigned l_sid = 0; l_sid < act::LocalShardCount(); ++l_sid) {
     auto g_sid = gsid_anchor_ + l_sid;
     builder.set_shard(g_sid);
     actor_refs_.emplace_back(MakeDataUpdateActorInstRef(builder));
   }
 }
 
-std::future<size_t> SampleBatchIngestor::operator()(actor::BytesBuffer&& buf) {
+std::future<size_t> SampleBatchIngestor::operator()(act::BytesBuffer&& buf) {
   std::vector<storage::KVPair> partition_records[partition_num_];
   auto updates = io::SampleUpdateBatch::Deserialize(std::move(buf));
   auto num_records = updates.size();
@@ -98,7 +98,7 @@ std::future<size_t> SampleBatchIngestor::operator()(actor::BytesBuffer&& buf) {
       *seastar::alien::internal::default_instance,
       shard_idx_,
       [this, batches = std::move(sample_batches), num_records] () mutable {
-    shard_idx_ = (shard_idx_ + 1) % actor::LocalShardCount();
+    shard_idx_ = (shard_idx_ + 1) % act::LocalShardCount();
     std::vector<seastar::future<>> futs;
     futs.reserve(batches.size());
     for (auto& batch : batches) {
@@ -235,7 +235,7 @@ void RecordPoller::IngestBatch(cppkafka::Message&& msg) {
 #ifdef DGS_BENCHMARK
   num_processed_bytes_ += size;
 #endif
-  auto buf = actor::BytesBuffer(
+  auto buf = act::BytesBuffer(
       data, size, seastar::make_object_deleter(std::move(msg)));
   auto fut = ingestor_(std::move(buf));
   pending_futures_.emplace_back(offset, std::move(fut));

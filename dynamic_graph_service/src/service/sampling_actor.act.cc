@@ -27,7 +27,7 @@ namespace dgs {
 
 SamplingActor::SamplingActor(hiactor::actor_base* exec_ctx,
                              const hiactor::byte_t* addr)
-  : hiactor::stateless_actor(exec_ctx, addr),
+  : hiactor::actor(exec_ctx, addr, true),
     subs_table_(nullptr),
     sample_store_(nullptr),
     sample_builder_(nullptr),
@@ -38,12 +38,12 @@ SamplingActor::SamplingActor(hiactor::actor_base* exec_ctx,
       Options::GetInstance().GetLoggingOptions().data_log_period),
     rule_log_period_(
       Options::GetInstance().GetLoggingOptions().rule_log_period),
-    local_shard_id_(actor::LocalShardId()) {
+    local_shard_id_(act::LocalShardId()) {
   LOG(INFO) << "data logging period is " << data_log_period_;
   LOG(INFO) << "rule logging period is " << rule_log_period_;
 }
 
-seastar::future<actor::Void>
+seastar::future<act::Void>
 SamplingActor::ExecuteAdminOperation(AdminRequest&& req) {
   switch (req.operation) {
     case AdminOperation::PAUSE: {
@@ -59,11 +59,11 @@ SamplingActor::ExecuteAdminOperation(AdminRequest&& req) {
       break;
     }
   }
-  return seastar::make_ready_future<actor::Void>();
+  return seastar::make_ready_future<act::Void>();
 }
 
 void SamplingActor::InitializeImpl(const AdminRequest& req) {
-  LOG(INFO) << "Initialize on global shard " << actor::GlobalShardId();
+  LOG(INFO) << "Initialize on global shard " << act::GlobalShardId();
   auto *param = dynamic_cast<SamplingInitPayload*>(req.payload.get());
   // Arm sample store.
   sample_store_ = param->sample_store();
@@ -126,11 +126,11 @@ void SamplingActor::InitializeImpl(const AdminRequest& req) {
       param->kafka_to_serving_wid_vec());
 }
 
-seastar::future<actor::Void>
+seastar::future<act::Void>
 SamplingActor::ApplyGraphUpdates(io::RecordBatch&& input_batch) {
   if (++num_graph_updates_ % data_log_period_ == 0) {
     LOG(INFO) << "Apply Graph Update on global shard "
-              << actor::GlobalShardId()
+              << act::GlobalShardId()
               << ": #processed_updates is "
               << num_graph_updates_
               << ", record_batch size is "
@@ -140,7 +140,7 @@ SamplingActor::ApplyGraphUpdates(io::RecordBatch&& input_batch) {
   // 1. Sampling records using SamplerBuilder.
   auto sampled_batch = sample_builder_->Sample(input_batch);
   if (sampled_batch.empty()) {
-    return seastar::make_ready_future<actor::Void>();
+    return seastar::make_ready_future<act::Void>();
   }
 
   std::vector<storage::SubsInfo> subs_infos;
@@ -159,7 +159,7 @@ SamplingActor::ApplyGraphUpdates(io::RecordBatch&& input_batch) {
   }
 
   if (subs_infos.empty()) {
-    return seastar::make_ready_future<actor::Void>();
+    return seastar::make_ready_future<act::Void>();
   }
 
   // 4. Collect subscription rules using query dependency info.
@@ -170,24 +170,24 @@ SamplingActor::ApplyGraphUpdates(io::RecordBatch&& input_batch) {
       sample_publisher_.Publish(sampled_batch, subs_infos),
       rule_buf_handle_.SendAll()
   ).then([] (auto) {
-    return seastar::make_ready_future<actor::Void>();
+    return seastar::make_ready_future<act::Void>();
   });
 }
 
-seastar::future<actor::Integer>
+seastar::future<act::Integer>
 SamplingActor::UpdateSubsRules(io::SubsRuleBatch &&rule_batch) {
   // Forward the rule_batch to the shard holding the corresponding partition
   assert(!rule_batch.rules.empty());
   auto pid = rule_buf_handle_.GetStorePartitionId(rule_batch.rules[0].pkey.vid);
   auto dst_gsid = rule_buf_handle_.GetGlobalShardId(pid);
-  if (actor::GlobalShardId() != dst_gsid) {
+  if (act::GlobalShardId() != dst_gsid) {
     return rule_buf_handle_.GetSamplingActorRef(dst_gsid)
         ->UpdateSubsRules(std::move(rule_batch));
   }
 
   if (++num_rule_updates_ % rule_log_period_ == 0) {
     LOG(INFO) << "Update Subscription Rule on global shard "
-              << actor::GlobalShardId()
+              << act::GlobalShardId()
               << ": #processed_updates is "
               << num_rule_updates_
               << ", rule_batch size is "
@@ -197,8 +197,8 @@ SamplingActor::UpdateSubsRules(io::SubsRuleBatch &&rule_batch) {
   std::vector<uint32_t> new_rule_ids;
   subs_table_->UpdateRules(rule_batch.rules, &new_rule_ids);
   if (new_rule_ids.empty()) {
-    return seastar::make_ready_future<actor::Integer>(
-            actor::Integer(static_cast<int32_t>(actor::GlobalShardId())));
+    return seastar::make_ready_future<act::Integer>(
+            act::Integer(static_cast<int32_t>(act::GlobalShardId())));
   }
 
   std::vector<storage::KVPair> sampled_batch;
@@ -228,8 +228,8 @@ SamplingActor::UpdateSubsRules(io::SubsRuleBatch &&rule_batch) {
       sample_publisher_.Publish(sampled_batch, subs_info_buf),
       rule_buf_handle_.SendAll()
   ).then([] (auto) {
-    return seastar::make_ready_future<actor::Integer>(
-        actor::Integer(static_cast<int>(actor::GlobalShardId())));
+    return seastar::make_ready_future<act::Integer>(
+        act::Integer(static_cast<int>(act::GlobalShardId())));
   });
 }
 
@@ -255,7 +255,7 @@ void SamplingActor::CollectDownstreamSubsRules(
 }
 
 SamplingActor::RuleBufferHandle::RuleBufferHandle()
-  : gshard_num_(actor::GlobalShardCount()),
+  : gshard_num_(act::GlobalShardCount()),
     partitioner_(std::move(Partitioner())) {
   // create actor references.
   actor_refs_.reserve(gshard_num_);
@@ -299,9 +299,8 @@ seastar::future<> SamplingActor::RuleBufferHandle::SendAll() {
   for (PartitionId pid = 0; pid < buffers_.size(); ++pid) {
     if (!buffers_[pid].rules.empty()) {
       auto sid = GetGlobalShardId(pid);
-      auto fut = actor_refs_[sid]->UpdateSubsRules(
-          std::move(buffers_[pid])).then(
-              [this, pid] (actor::Integer&& ret) {
+      auto fut = actor_refs_[sid]->UpdateSubsRules(std::move(buffers_[pid])
+      ).then([this, pid] (act::Integer&& ret) {
         ShardId dst_sid = *reinterpret_cast<ShardId*>(&ret.val);
         // Update the remote destination ShardId for the partition
         if (dst_sid != GetGlobalShardId(pid)) {

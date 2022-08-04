@@ -30,7 +30,7 @@ namespace io {
 class Record {
 public:
   Record() : buf_(), rep_(nullptr), view_(rep_) {}
-  explicit Record(actor::BytesBuffer&& buf);
+  explicit Record(act::BytesBuffer&& buf);
 
   Record(const Record&) = delete;
   Record& operator=(const Record&) = delete;
@@ -63,7 +63,7 @@ public:
   }
 
   /// Get the underlying temporary buffer.
-  const actor::BytesBuffer& Buffer() const {
+  const act::BytesBuffer& Buffer() const {
     return buf_;
   }
 
@@ -71,12 +71,12 @@ public:
   ///
   /// \remark After calling this method, the current record
   /// is no longer valid.
-  actor::BytesBuffer ReleaseBuffer() {
+  act::BytesBuffer ReleaseBuffer() {
     return std::move(buf_);
   }
 
 private:
-  actor::BytesBuffer buf_;
+  act::BytesBuffer   buf_;
   const RecordRep*   rep_;
   RecordView         view_;
 };
@@ -91,7 +91,7 @@ private:
 class RecordBatch {
 public:
   RecordBatch() : buf_(), rep_(nullptr) {}
-  explicit RecordBatch(actor::BytesBuffer&& buf);
+  explicit RecordBatch(act::BytesBuffer&& buf);
 
   RecordBatch(const RecordBatch&) = delete;
   RecordBatch& operator=(const RecordBatch&) = delete;
@@ -114,7 +114,7 @@ public:
   }
 
   /// Get the underlying buffer.
-  const actor::BytesBuffer& Buffer() const {
+  const act::BytesBuffer& Buffer() const {
     return buf_;
   }
 
@@ -122,20 +122,20 @@ public:
   ///
   /// \remark After calling this method, the current record
   /// batch is no longer valid
-  actor::BytesBuffer ReleaseBuffer() {
+  act::BytesBuffer ReleaseBuffer() {
     return std::move(buf_);
   }
 
   /// As each record batch polled from dataloader will be
   /// ingested locally, the \dump_to and \load_from methods
   /// are implemented with null.
-  void dump_to(actor::SerializableQueue& qu) {}  // NOLINT
-  static RecordBatch load_from(actor::SerializableQueue& qu) {  // NOLINT
+  void dump_to(act::SerializableQueue& qu) {}  // NOLINT
+  static RecordBatch load_from(act::SerializableQueue& qu) {  // NOLINT
     return RecordBatch{};
   }
 
 private:
-  actor::BytesBuffer    buf_;
+  act::BytesBuffer      buf_;
   const RecordBatchRep* rep_;
 };
 

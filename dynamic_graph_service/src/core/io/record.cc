@@ -18,7 +18,7 @@ limitations under the License.
 namespace dgs {
 namespace io {
 
-Record::Record(actor::BytesBuffer&& buf)
+Record::Record(act::BytesBuffer&& buf)
   : buf_(std::move(buf)), rep_(nullptr), view_(rep_) {
   if (buf_.get() != nullptr) {
     rep_ = flatbuffers::GetRoot<RecordRep>(buf_.get());
@@ -42,7 +42,7 @@ Record& Record::operator=(Record&& other) noexcept {
   return *this;
 }
 
-RecordBatch::RecordBatch(actor::BytesBuffer&& buf)
+RecordBatch::RecordBatch(act::BytesBuffer&& buf)
   : buf_(std::move(buf)), rep_(nullptr) {
   if (buf_.get() != nullptr) {
     rep_ = flatbuffers::GetRoot<RecordBatchRep>(buf_.get());

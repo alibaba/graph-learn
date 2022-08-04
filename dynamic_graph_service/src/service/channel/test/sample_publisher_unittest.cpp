@@ -59,7 +59,7 @@ public:
       record_builder.BuildAsVertexRecord(0, 0);
       const uint8_t* buf = record_builder.BufPointer();
       auto size = record_builder.BufSize();
-      actor::BytesBuffer tp(reinterpret_cast<const char*>(buf), size);
+      act::BytesBuffer tp(reinterpret_cast<const char*>(buf), size);
       io::Record record(std::move(tp));
 
       storage::Key key(0, 0, 0, 0);
@@ -93,7 +93,7 @@ public:
 
         auto data  = msg.get_payload().get_data();
         auto data_size = msg.get_payload().get_size();
-        auto buf = actor::BytesBuffer(
+        auto buf = act::BytesBuffer(
           const_cast<char*>(reinterpret_cast<const char*>(data)),
           data_size, seastar::make_object_deleter(std::move(msg)));
 

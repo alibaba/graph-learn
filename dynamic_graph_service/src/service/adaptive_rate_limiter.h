@@ -65,8 +65,8 @@ private:
   };
 
 private:
-  actor::CircularBuffer<uint64_t> latencies_;
-  actor::CircularBuffer<uint32_t> anchors_;
+  act::CircularBuffer<uint64_t>   latencies_;
+  act::CircularBuffer<uint32_t>   anchors_;
   sharded_lfq                     lat_pendings_;
   std::unique_ptr<std::thread>    worker_thread_;
   std::atomic<bool>               stopped_ = { true };

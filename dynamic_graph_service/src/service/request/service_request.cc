@@ -17,7 +17,7 @@ limitations under the License.
 
 namespace dgs {
 
-SyncMetaRequest::SyncMetaRequest(actor::BytesBuffer &&buf)
+SyncMetaRequest::SyncMetaRequest(act::BytesBuffer &&buf)
   : buf_(std::move(buf)),
     rep_(GetMutableSyncMetaRequestRep(buf_.get_write())) {
 }
@@ -28,7 +28,7 @@ SyncMetaRequest::SyncMetaRequest(SyncMetaRequest &&other)
   other.rep_ = nullptr;
 }
 
-StopServiceRequest::StopServiceRequest(actor::BytesBuffer &&buf)
+StopServiceRequest::StopServiceRequest(act::BytesBuffer &&buf)
   : buf_(std::move(buf)),
     rep_(GetMutableStopServiceRequestRep(buf_.get_write())) {
 }

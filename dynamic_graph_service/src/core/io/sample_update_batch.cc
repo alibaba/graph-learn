@@ -23,7 +23,7 @@ SampleUpdateBatch::SampleUpdateBatch(PartitionId store_pid,
   : store_pid_(store_pid), updates_(std::move(updates)) {
 }
 
-actor::BytesBuffer
+act::BytesBuffer
 SampleUpdateBatch::Serialize(const storage::KVPair* const* updates, uint32_t size) {
   uint32_t buf_size = 0;
   buf_size += sizeof(uint32_t);
@@ -33,7 +33,7 @@ SampleUpdateBatch::Serialize(const storage::KVPair* const* updates, uint32_t siz
   }
   // Copy the pid and #records into the buffer, followed by the size
   // and data of each record.
-  actor::BytesBuffer buffer(buf_size);
+  act::BytesBuffer buffer(buf_size);
   auto offset = buffer.get_write();
   // write record number
   std::memcpy(offset, &size, sizeof(uint32_t));
@@ -53,7 +53,7 @@ SampleUpdateBatch::Serialize(const storage::KVPair* const* updates, uint32_t siz
 }
 
 std::vector<storage::KVPair>
-SampleUpdateBatch::Deserialize(actor::BytesBuffer&& buf) {
+SampleUpdateBatch::Deserialize(act::BytesBuffer&& buf) {
   auto updates_num = *reinterpret_cast<const uint32_t*>(buf.get());
   std::vector<storage::KVPair> output;
   output.reserve(updates_num);
@@ -64,7 +64,7 @@ SampleUpdateBatch::Deserialize(actor::BytesBuffer&& buf) {
     offset += sizeof(storage::Key);
     uint32_t update_size = *reinterpret_cast<const uint32_t*>(offset);
     offset += sizeof(uint32_t);
-    actor::BytesBuffer update_buf = buf.share(offset - buf.get(), update_size);
+    act::BytesBuffer update_buf = buf.share(offset - buf.get(), update_size);
     offset += update_size;
     output.emplace_back(key, Record({std::move(update_buf)}));
   }

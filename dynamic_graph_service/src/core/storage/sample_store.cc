@@ -190,7 +190,7 @@ bool SampleStore::GetVertex(const Key& key, io::Record* record) const {
   if (s.ok()) {
     auto *data = const_cast<char*>(value.data());
     auto size = value.size();
-    auto buf = actor::BytesBuffer(data, size,
+    auto buf = act::BytesBuffer(data, size,
         seastar::make_object_deleter(std::move(value)));
     *record = io::Record{std::move(buf)};
   }
@@ -207,7 +207,7 @@ bool SampleStore::GetEdge(const Key& key, io::Record* record) const {
   if (s.ok()) {
     auto *data = const_cast<char*>(value.data());
     auto size = value.size();
-    auto buf = actor::BytesBuffer(data, size,
+    auto buf = act::BytesBuffer(data, size,
         seastar::make_object_deleter(std::move(value)));
     *record = io::Record{std::move(buf)};
   }
@@ -225,7 +225,7 @@ bool SampleStore::GetVerticesByPrefix(const Key::Prefix& prefix_key,
 
   while (iter->Valid()) {
     auto val_slice = iter->value();
-    // auto buf = actor::BytesBuffer(val_slice.data(), val_slice.size());
+    // auto buf = act::BytesBuffer(val_slice.data(), val_slice.size());
     io::Record record({val_slice.data(), val_slice.size()});
     records->emplace_back(Key::FromSlice({iter->key().data(),
                           iter->key().size()}),

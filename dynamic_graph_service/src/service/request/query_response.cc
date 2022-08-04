@@ -43,7 +43,7 @@ void QueryResponseBuilder::Clear() {
   entry_rep_.clear();
 }
 
-QueryResponse::QueryResponse(actor::BytesBuffer&& buf)
+QueryResponse::QueryResponse(act::BytesBuffer&& buf)
   : buf_(std::move(buf)), rep_(nullptr) {
   if (buf_.get() != nullptr) {
     rep_ = flatbuffers::GetRoot<QueryResponseRep>(buf_.get());
@@ -64,11 +64,11 @@ QueryResponse& QueryResponse::operator=(QueryResponse&& other) noexcept {
   return *this;
 }
 
-void QueryResponse::dump_to(actor::SerializableQueue& qu) {
+void QueryResponse::dump_to(act::SerializableQueue& qu) {
   qu.push(std::move(buf_));
 }
 
-QueryResponse QueryResponse::load_from(actor::SerializableQueue& qu) {
+QueryResponse QueryResponse::load_from(act::SerializableQueue& qu) {
   return QueryResponse(qu.pop());
 }
 

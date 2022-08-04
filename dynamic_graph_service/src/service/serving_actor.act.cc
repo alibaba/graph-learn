@@ -22,11 +22,11 @@ namespace dgs {
 
 ServingActor::ServingActor(hiactor::actor_base* exec_ctx,
                            const hiactor::byte_t* addr)
-  : hiactor::stateful_actor(exec_ctx, addr),
+  : hiactor::actor(exec_ctx, addr, false),
     sample_store_(nullptr) {
 }
 
-seastar::future<actor::Void> ServingActor::ExecuteAdminOperation(
+seastar::future<act::Void> ServingActor::ExecuteAdminOperation(
     AdminRequest&& req) {
   switch (req.operation) {
     case AdminOperation::PAUSE: {
@@ -42,11 +42,11 @@ seastar::future<actor::Void> ServingActor::ExecuteAdminOperation(
       break;
     }
   }
-  return seastar::make_ready_future<actor::Void>();
+  return seastar::make_ready_future<act::Void>();
 }
 
 void ServingActor::InitializeImpl(const AdminRequest& req) {
-  LOG(INFO) << "Install Query on global shard " << actor::GlobalShardId();
+  LOG(INFO) << "Install Query on global shard " << act::GlobalShardId();
   auto *param = dynamic_cast<ServingInitPayload*>(req.payload.get());
   // Arm sample store.
   sample_store_ = param->sample_store();

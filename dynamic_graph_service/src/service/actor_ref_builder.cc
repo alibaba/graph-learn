@@ -19,22 +19,22 @@ namespace dgs {
 
 SamplingActor_ref
 MakeSamplingActorInstRef(hiactor::scope_builder& builder) {
-  return builder.build_ref<SamplingActor_ref>(actor::kSamplingActorInstId);
+  return builder.build_ref<SamplingActor_ref>(act::kSamplingActorInstId);
 }
 
 SamplingActor_ref*
 MakeSamplingActorInstRefPtr(hiactor::scope_builder& builder) {
-  return builder.new_ref<SamplingActor_ref>(actor::kSamplingActorInstId);
+  return builder.new_ref<SamplingActor_ref>(act::kSamplingActorInstId);
 }
 
 DataUpdateActor_ref
 MakeDataUpdateActorInstRef(hiactor::scope_builder& builder) {
-  return builder.build_ref<DataUpdateActor_ref>(actor::kDataUpdateActorInstId);
+  return builder.build_ref<DataUpdateActor_ref>(act::kDataUpdateActorInstId);
 }
 
 ServingActor_ref
 MakeServingActorInstRef(hiactor::scope_builder& builder) {
-  return builder.build_ref<ServingActor_ref>(actor::kServingActorInstId);
+  return builder.build_ref<ServingActor_ref>(act::kServingActorInstId);
 }
 
 }  // namespace dgs

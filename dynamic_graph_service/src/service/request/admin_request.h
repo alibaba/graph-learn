@@ -36,8 +36,8 @@ struct AdminRequest {
     : operation(op), payload(pld) {}
 
   // dump_to/load_from function should never be called.
-  void dump_to(actor::SerializableQueue& qu) {}  // NOLINT
-  static AdminRequest load_from(actor::SerializableQueue& qu) {  // NOLINT
+  void dump_to(act::SerializableQueue& qu) {}  // NOLINT
+  static AdminRequest load_from(act::SerializableQueue& qu) {  // NOLINT
     return AdminRequest{AdminOperation::PAUSE, {nullptr}};
   }
 
@@ -48,7 +48,7 @@ public:
 
 struct SamplingInitPayload : public AdminRequest::Payload {
   explicit SamplingInitPayload(
-      actor::BytesBuffer&& buf,
+      act::BytesBuffer&& buf,
       storage::SampleStore* sample_store,
       storage::SampleBuilder* sample_builder,
       storage::SubscriptionTable* subs_table,
@@ -116,7 +116,7 @@ struct SamplingInitPayload : public AdminRequest::Payload {
   }
 
 private:
-  actor::BytesBuffer              buf_;
+  act::BytesBuffer                buf_;
   InstallQueryRequestRep*         rep_;
   storage::SampleStore*           sample_store_;
   storage::SampleBuilder*         sample_builder_;
@@ -130,7 +130,7 @@ private:
 
 struct ServingInitPayload : public AdminRequest::Payload {
   explicit ServingInitPayload(
-      actor::BytesBuffer&& buf,
+      act::BytesBuffer&& buf,
       storage::SampleStore* sample_store)
     : AdminRequest::Payload(), buf_(std::move(buf)),
       rep_(GetMutableInstallQueryRequestRep(buf_.get_write())),
@@ -156,7 +156,7 @@ struct ServingInitPayload : public AdminRequest::Payload {
   }
 
 private:
-  actor::BytesBuffer      buf_;
+  act::BytesBuffer        buf_;
   InstallQueryRequestRep* rep_;
   storage::SampleStore*   sample_store_;
 };

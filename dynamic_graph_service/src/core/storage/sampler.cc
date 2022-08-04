@@ -45,15 +45,15 @@ bool VertexSampler::Sample(const io::VertexRecordView& sample,
   }
 }
 
-actor::BytesBuffer VertexSampler::Dump() {
+act::BytesBuffer VertexSampler::Dump() {
   size_t size = sizeof(Entry) * samples_.size();
-  actor::BytesBuffer buffer(size);
+  act::BytesBuffer buffer(size);
   auto data = buffer.get_write();
   std::memcpy(data, &samples_[0], size);
   return std::move(buffer);
 }
 
-void VertexSampler::Load(const actor::BytesBuffer& buffer) {
+void VertexSampler::Load(const act::BytesBuffer& buffer) {
   auto data = buffer.get();
   size_t entry_num = buffer.size() / sizeof(Entry);
   assert(samples_.size() == 0);

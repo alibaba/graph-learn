@@ -26,7 +26,7 @@ namespace dgs {
 
 class InstallQueryRequest {
 public:
-  explicit InstallQueryRequest(actor::BytesBuffer&& buf,
+  explicit InstallQueryRequest(act::BytesBuffer&& buf,
                                bool is_chief = false);
   InstallQueryRequest(const InstallQueryRequest&) = delete;
   InstallQueryRequest(InstallQueryRequest&& other);
@@ -49,25 +49,25 @@ public:
     return static_cast<bool>(is_chief_);
   }
 
-  actor::BytesBuffer CloneBuffer() const {
+  act::BytesBuffer CloneBuffer() const {
     return buf_.clone();
   }
 
-  void dump_to(actor::SerializableQueue& qu);  // NOLINT
-  static InstallQueryRequest load_from(actor::SerializableQueue& qu);  // NOLINT
+  void dump_to(act::SerializableQueue& qu);  // NOLINT
+  static InstallQueryRequest load_from(act::SerializableQueue& qu);  // NOLINT
 
 private:
   // flag `is_chief_` type is uint8_t instead of bool due to
   // sizeof(bool) is implementation defined, which may cause
   // platform incompatibility issues.
   const uint8_t          is_chief_;
-  actor::BytesBuffer     buf_;
+  act::BytesBuffer       buf_;
   InstallQueryRequestRep *rep_;
 };
 
 class UnInstallQueryRequest {
 public:
-  explicit UnInstallQueryRequest(actor::BytesBuffer &&buf,
+  explicit UnInstallQueryRequest(act::BytesBuffer &&buf,
                                  bool is_chief = false);
   UnInstallQueryRequest(const UnInstallQueryRequest&) = delete;
   UnInstallQueryRequest(UnInstallQueryRequest&& other);
@@ -82,19 +82,19 @@ public:
     return static_cast<bool>(is_chief_);
   }
 
-  actor::BytesBuffer CloneBuffer() const {
+  act::BytesBuffer CloneBuffer() const {
     return buf_.clone();
   }
 
-  void dump_to(actor::SerializableQueue& qu);  // NOLINT
-  static UnInstallQueryRequest load_from(actor::SerializableQueue& qu);  // NOLINT
+  void dump_to(act::SerializableQueue& qu);  // NOLINT
+  static UnInstallQueryRequest load_from(act::SerializableQueue& qu);  // NOLINT
 
 private:
   // flag `is_chief_` type is uint8_t instead of bool due to
   // sizeof(bool) is implementation defined, which may cause
   // platform incompatibility issues.
   const uint8_t            is_chief_;
-  actor::BytesBuffer       buf_;
+  act::BytesBuffer         buf_;
   UnInstallQueryRequestRep *rep_;
 };
 
@@ -115,8 +115,8 @@ public:
     return vid_;
   }
 
-  void dump_to(actor::SerializableQueue& qu);  // NOLINT
-  static RunQueryRequest load_from(actor::SerializableQueue& qu);  // NOLINT
+  void dump_to(act::SerializableQueue& qu);  // NOLINT
+  static RunQueryRequest load_from(act::SerializableQueue& qu);  // NOLINT
 
 private:
   QueryId  qid_;

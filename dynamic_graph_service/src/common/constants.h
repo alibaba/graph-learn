@@ -22,14 +22,14 @@ namespace dgs {
 
 static constexpr uint32_t kFrontierResolutionInHour = 1;
 
-namespace actor {
+namespace act {
 
 static constexpr uint32_t kSamplingActorInstId = 0;
 
 static constexpr uint32_t kDataUpdateActorInstId = 0;
 static constexpr uint32_t kServingActorInstId = 1;
 
-}  // namespace actor
+}  // namespace act
 
 }  // namespace dgs
 

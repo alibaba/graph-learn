@@ -72,7 +72,7 @@ InstallQueryRequest BasicTestHelper::MakeInstallQueryRequest() {
   auto* ptr = reinterpret_cast<char*>(parser.builder_.GetBufferPointer());
 //  auto *rep = GetInstallQueryRequestRep(ptr);
   auto size = parser.builder_.GetSize();
-  auto buf = actor::BytesBuffer(ptr, size);
+  auto buf = act::BytesBuffer(ptr, size);
   return InstallQueryRequest(std::move(buf), true);
 }
 
@@ -192,7 +192,7 @@ void SamplingTestHelper::Initialize() {
   sampling_act_refs_.reserve(num_local_shards_);
   hiactor::scope_builder spl_builder;
   for (unsigned i = 0; i < num_local_shards_; i++) {
-    auto g_sid = actor::GlobalShardIdAnchor() + i;
+    auto g_sid = act::GlobalShardIdAnchor() + i;
     spl_builder.set_shard(g_sid);
     sampling_act_refs_.emplace_back(MakeSamplingActorInstRef(spl_builder));
   }
@@ -266,7 +266,7 @@ io::RecordBatch SamplingTestHelper::MakeRecordBatch(PartitionId pid,
   auto *ptr = const_cast<char*>(reinterpret_cast<
       const char*>(batch_builder.BufPointer()));
   auto size = batch_builder.BufSize();
-  auto buf = actor::BytesBuffer(
+  auto buf = act::BytesBuffer(
       ptr, size, seastar::make_object_deleter(std::move(batch_builder)));
 
   return io::RecordBatch(std::move(buf));
@@ -335,7 +335,7 @@ void ServingTestHelper::Initialize() {
   data_update_act_refs_.reserve(num_local_shards_);
   hiactor::scope_builder srv_builder(0, MakeServingGroupScope());
   for (unsigned i = 0; i < num_local_shards_; i++) {
-    auto g_sid = actor::GlobalShardIdAnchor() + i;
+    auto g_sid = act::GlobalShardIdAnchor() + i;
     srv_builder.set_shard(g_sid);
     serving_act_refs_.emplace_back(MakeServingActorInstRef(srv_builder));
     data_update_act_refs_.emplace_back(MakeDataUpdateActorInstRef(srv_builder));
@@ -422,7 +422,7 @@ void ServingTestHelper::SendRunQuery(VertexId vid) {
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
     res = curl_easy_perform(curl);
     EXPECT_TRUE(res == 0);
-    actor::BytesBuffer ret(readBuffer.size());
+    act::BytesBuffer ret(readBuffer.size());
     auto data = ret.get_write();
     std::memcpy(data, readBuffer.data(), readBuffer.size());
     curl_easy_cleanup(curl);

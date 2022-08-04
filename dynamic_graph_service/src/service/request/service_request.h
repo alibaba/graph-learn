@@ -25,7 +25,7 @@ namespace dgs {
 
 class SyncMetaRequest {
 public:
-  explicit SyncMetaRequest(actor::BytesBuffer &&buf);
+  explicit SyncMetaRequest(act::BytesBuffer &&buf);
   SyncMetaRequest(const SyncMetaRequest&) = delete;
   SyncMetaRequest(SyncMetaRequest &&other);
 
@@ -36,26 +36,26 @@ public:
     return rep_->meta();
   }
 
-  actor::BytesBuffer CloneBuffer() const {
+  act::BytesBuffer CloneBuffer() const {
     return buf_.clone();
   }
 
-  void dump_to(actor::SerializableQueue &qu) {  // NOLINT
+  void dump_to(act::SerializableQueue &qu) {  // NOLINT
     qu.push(std::move(buf_));
   }
 
-  static SyncMetaRequest load_from(actor::SerializableQueue &qu) {  // NOLINT
+  static SyncMetaRequest load_from(act::SerializableQueue &qu) {  // NOLINT
     return SyncMetaRequest(qu.pop());
   }
 
 private:
-  actor::BytesBuffer  buf_;
+  act::BytesBuffer    buf_;
   SyncMetaRequestRep* rep_;
 };
 
 class StopServiceRequest {
 public:
-  explicit StopServiceRequest(actor::BytesBuffer &&buf);
+  explicit StopServiceRequest(act::BytesBuffer &&buf);
   StopServiceRequest(const StopServiceRequest&) = delete;
   StopServiceRequest(StopServiceRequest &&other);
 
@@ -65,20 +65,20 @@ public:
     return rep_->force();
   }
 
-  actor::BytesBuffer CloneBuffer() const {
+  act::BytesBuffer CloneBuffer() const {
     return buf_.clone();
   }
 
-  void dump_to(actor::SerializableQueue &qu) {  // NOLINT
+  void dump_to(act::SerializableQueue &qu) {  // NOLINT
     qu.push(std::move(buf_));
   }
 
-  static StopServiceRequest load_from(actor::SerializableQueue &qu) {  // NOLINT
+  static StopServiceRequest load_from(act::SerializableQueue &qu) {  // NOLINT
     return StopServiceRequest(qu.pop());
   }
 
 private:
-  actor::BytesBuffer    buf_;
+  act::BytesBuffer      buf_;
   StopServiceRequestRep *rep_;
 };
 

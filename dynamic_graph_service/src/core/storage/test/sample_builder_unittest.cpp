@@ -70,7 +70,7 @@ public:
       record_builder.BuildAsVertexRecord(vtype, vid);
       const uint8_t* buf = record_builder.BufPointer();
       auto size = record_builder.BufSize();
-      actor::BytesBuffer tp(reinterpret_cast<const char*>(buf), size);
+      act::BytesBuffer tp(reinterpret_cast<const char*>(buf), size);
       io::Record record(std::move(tp));
       // accepted = builder.SampleVertex(record.GetView().AsVertexRecord(), index);
       // EXPECT_TRUE(accepted == expected_accept[i]);
@@ -93,7 +93,7 @@ public:
       record_builder.BuildAsEdgeRecord(etype, src_vtype, dst_vtype, src_id, dst_id);
       const uint8_t* buf = record_builder.BufPointer();
       auto size = record_builder.BufSize();
-      actor::BytesBuffer tp(reinterpret_cast<const char*>(buf), size);
+      act::BytesBuffer tp(reinterpret_cast<const char*>(buf), size);
       io::Record record(std::move(tp));
       std::unordered_map<OperatorId, uint32_t> output;
       // accepted = builder.SampleEdge(record.GetView().AsEdgeRecord(), output);
@@ -125,7 +125,7 @@ public:
     record_builder.BuildAsVertexRecord(vtype, vid);
     const uint8_t* buf = record_builder.BufPointer();
     auto size = record_builder.BufSize();
-    actor::BytesBuffer tp(reinterpret_cast<const char*>(buf), size);
+    act::BytesBuffer tp(reinterpret_cast<const char*>(buf), size);
     io::Record record(std::move(tp));
     // accepted = builder_copy.SampleVertex(record.GetView().AsVertexRecord(), index);
     // EXPECT_TRUE(accepted);
@@ -140,7 +140,7 @@ public:
     record_builder.BuildAsEdgeRecord(etype, src_vtype, dst_vtype, src_id, dst_id);
     const uint8_t* buf_copy = record_builder.BufPointer();
     auto size_copy = record_builder.BufSize();
-    actor::BytesBuffer tp_copy(reinterpret_cast<const char*>(buf_copy), size_copy);
+    act::BytesBuffer tp_copy(reinterpret_cast<const char*>(buf_copy), size_copy);
     io::Record record_copy(std::move(tp_copy));
     std::unordered_map<OperatorId, uint32_t> output_copy;
     // accepted = builder_copy.SampleEdge(record_copy.GetView().AsEdgeRecord(), output_copy);

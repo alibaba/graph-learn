@@ -17,7 +17,7 @@ limitations under the License.
 
 namespace dgs {
 
-InstallQueryRequest::InstallQueryRequest(actor::BytesBuffer&& buf,
+InstallQueryRequest::InstallQueryRequest(act::BytesBuffer&& buf,
                                          bool is_chief)
   : buf_(std::move(buf)),
     rep_(GetMutableInstallQueryRequestRep(buf_.get_write())),
@@ -31,22 +31,22 @@ InstallQueryRequest::InstallQueryRequest(InstallQueryRequest&& other)
     other.rep_ = nullptr;
 }
 
-void InstallQueryRequest::dump_to(actor::SerializableQueue& qu) {
-  auto flag_buffer = actor::BytesBuffer(
+void InstallQueryRequest::dump_to(act::SerializableQueue& qu) {
+  auto flag_buffer = act::BytesBuffer(
     reinterpret_cast<const char*>(&is_chief_), sizeof(uint8_t));
   qu.push(std::move(flag_buffer));
   qu.push(std::move(buf_));
 }
 
 InstallQueryRequest
-InstallQueryRequest::load_from(actor::SerializableQueue& qu) {
+InstallQueryRequest::load_from(act::SerializableQueue& qu) {
   auto flag_buffer = qu.pop();
   auto flag = *reinterpret_cast<const uint8_t*>(flag_buffer.get());
   return InstallQueryRequest{qu.pop(), static_cast<bool>(flag)};
 }
 
 
-UnInstallQueryRequest::UnInstallQueryRequest(actor::BytesBuffer&& buf,
+UnInstallQueryRequest::UnInstallQueryRequest(act::BytesBuffer&& buf,
                                              bool is_chief)
   : buf_(std::move(buf)),
     rep_(GetMutableUnInstallQueryRequestRep(buf_.get_write())),
@@ -61,15 +61,15 @@ UnInstallQueryRequest::UnInstallQueryRequest(UnInstallQueryRequest&& other)
 }
 
 
-void UnInstallQueryRequest::dump_to(actor::SerializableQueue& qu) {
-  auto flag_buffer = actor::BytesBuffer(
+void UnInstallQueryRequest::dump_to(act::SerializableQueue& qu) {
+  auto flag_buffer = act::BytesBuffer(
     reinterpret_cast<const char*>(&is_chief_), sizeof(uint8_t));
   qu.push(std::move(flag_buffer));
   qu.push(std::move(buf_));
 }
 
 UnInstallQueryRequest
-UnInstallQueryRequest::load_from(actor::SerializableQueue& qu) {
+UnInstallQueryRequest::load_from(act::SerializableQueue& qu) {
   auto flag_buffer = qu.pop();
   auto flag = *reinterpret_cast<const uint8_t*>(flag_buffer.get());
   return UnInstallQueryRequest{qu.pop(), static_cast<bool>(flag)};
@@ -83,10 +83,10 @@ RunQueryRequest::RunQueryRequest(QueryId qid, VertexId vid)
   : qid_(qid), vid_(vid) {
 }
 
-void RunQueryRequest::dump_to(actor::SerializableQueue& qu) {
+void RunQueryRequest::dump_to(act::SerializableQueue& qu) {
 }
 
-RunQueryRequest RunQueryRequest::load_from(actor::SerializableQueue& qu) {
+RunQueryRequest RunQueryRequest::load_from(act::SerializableQueue& qu) {
   return RunQueryRequest{};
 }
 

@@ -34,7 +34,7 @@ AdaptiveRateLimiter::AdaptiveRateLimiter(RecordPollingManager* kp_manager,
 AdaptiveRateLimiter::~AdaptiveRateLimiter() {}
 
 void AdaptiveRateLimiter::Start() {
-  lat_pendings_.init(actor::LocalShardCount());
+  lat_pendings_.init(act::LocalShardCount());
 
   stopped_.store(false, std::memory_order_relaxed);
   worker_thread_ = std::make_unique<std::thread>(

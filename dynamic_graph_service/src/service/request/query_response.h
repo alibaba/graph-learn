@@ -51,7 +51,7 @@ private:
 class QueryResponse {
 public:
   QueryResponse() : rep_(nullptr), buf_() {}
-  explicit QueryResponse(actor::BytesBuffer&& buf);
+  explicit QueryResponse(act::BytesBuffer&& buf);
   ~QueryResponse() = default;
 
   QueryResponse(const QueryResponse&) = delete;
@@ -64,19 +64,19 @@ public:
   const char* data() const { return buf_.get(); }
   size_t size() const { return buf_.size(); }
 
-  actor::BytesBuffer Release() {
+  act::BytesBuffer Release() {
     return std::move(buf_);
   }
 
   QueryResponse Share() { return QueryResponse{buf_.share()}; }
   QueryResponse Clone() const { return QueryResponse{buf_.clone()}; }
 
-  void dump_to(actor::SerializableQueue &qu);  // NOLINT
-  static QueryResponse load_from(actor::SerializableQueue &qu);  // NOLINT
+  void dump_to(act::SerializableQueue &qu);  // NOLINT
+  static QueryResponse load_from(act::SerializableQueue &qu);  // NOLINT
 
 private:
   const QueryResponseRep* rep_;
-  actor::BytesBuffer      buf_;
+  act::BytesBuffer        buf_;
 };
 
 }  // namespace dgs

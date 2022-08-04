@@ -46,8 +46,8 @@ public:
 
   bool Sample(const io::EdgeRecordView& sample, uint32_t& index) override;
 
-  actor::BytesBuffer Dump() override;
-  void Load(const actor::BytesBuffer& buffer) override;
+  act::BytesBuffer Dump() override;
+  void Load(const act::BytesBuffer& buffer) override;
 
 private:
   AttributeType       timestamp_type_;

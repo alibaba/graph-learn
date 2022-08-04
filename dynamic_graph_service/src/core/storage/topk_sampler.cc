@@ -40,15 +40,15 @@ bool TopKSampler::Sample(const io::EdgeRecordView& sample, uint32_t& index) {
   }
 }
 
-actor::BytesBuffer TopKSampler::Dump() {
+act::BytesBuffer TopKSampler::Dump() {
   size_t size = sizeof(Entry) * samples_.size();
-  actor::BytesBuffer buffer(size);
+  act::BytesBuffer buffer(size);
   auto data = buffer.get_write();
   std::memcpy(data, &samples_[0], size);
   return std::move(buffer);
 }
 
-void TopKSampler::Load(const actor::BytesBuffer& buffer) {
+void TopKSampler::Load(const act::BytesBuffer& buffer) {
   auto data = buffer.get();
   size_t entry_num = buffer.size() / sizeof(Entry);
   assert(samples_.size() == 0);

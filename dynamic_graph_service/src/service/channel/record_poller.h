@@ -36,7 +36,7 @@ namespace dgs {
 class RecordBatchIngestor {
 public:
   RecordBatchIngestor(PartitionRouter* router, uint32_t poller_id);
-  std::future<size_t> operator()(actor::BytesBuffer&& buf);
+  std::future<size_t> operator()(act::BytesBuffer&& buf);
 
 private:
   std::vector<SamplingActor_ref> actor_refs_;
@@ -50,7 +50,7 @@ public:
   SampleBatchIngestor(PartitionRouter* router,
                       Partitioner* partitioner,
                       uint32_t poller_id);
-  std::future<size_t> operator()(actor::BytesBuffer&& buf);
+  std::future<size_t> operator()(act::BytesBuffer&& buf);
 
 private:
   std::vector<DataUpdateActor_ref> actor_refs_;
@@ -127,7 +127,7 @@ private:
   std::atomic<bool>     concur_mutated_{false};
   // -1 mean no ingested data.
   std::atomic<int64_t> ingested_offset_;
-  std::function<std::future<size_t>(actor::BytesBuffer&&)> ingestor_;
+  std::function<std::future<size_t>(act::BytesBuffer&&)>   ingestor_;
   std::unique_ptr<cppkafka::Consumer>                      consumer_;
   std::deque<IngestFuture> pending_futures_;
 

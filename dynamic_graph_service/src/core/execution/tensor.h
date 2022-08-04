@@ -25,11 +25,11 @@ namespace execution {
 struct Tensor {
   // Tensor is a shareble batch of ids for
   // input and output stream between DagNodes.
-  actor::IdColumnBatch ids;
+  act::IdColumnBatch ids;
 
   explicit Tensor(size_t size) : ids(size) {}
 
-  explicit Tensor(actor::IdColumnBatch&& input)
+  explicit Tensor(act::IdColumnBatch&& input)
     : ids(std::move(input)) {
   }
 

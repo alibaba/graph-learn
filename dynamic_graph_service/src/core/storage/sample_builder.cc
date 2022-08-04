@@ -170,7 +170,7 @@ void SampleBuilder::SampleVertex(
       auto *data = const_cast<char*>(reinterpret_cast<
           const char*>(builder.BufPointer()));
       auto size = builder.BufSize();
-      auto buf = actor::BytesBuffer(data, size,
+      auto buf = act::BytesBuffer(data, size,
           seastar::make_object_deleter(std::move(builder)));
 
       output->push_back({key, io::Record{std::move(buf)}});
@@ -198,7 +198,7 @@ void SampleBuilder::SampleEdge(
         auto *data = const_cast<char*>(reinterpret_cast<
             const char*>(builder.BufPointer()));
         auto size = builder.BufSize();
-        auto buf = actor::BytesBuffer(data, size,
+        auto buf = act::BytesBuffer(data, size,
             seastar::make_object_deleter(std::move(builder)));
 
         output->push_back({key, io::Record{std::move(buf)}});
@@ -271,7 +271,7 @@ void SampleBuilder::Load(std::ifstream& file) {
       uint64_t value_size;
       file.read(reinterpret_cast<char*>(&prefix_key), sizeof(Key::Prefix));
       file.read(reinterpret_cast<char*>(&value_size), sizeof(uint64_t));
-      actor::BytesBuffer value_buf(value_size);
+      act::BytesBuffer value_buf(value_size);
       file.read(value_buf.get_write(), value_size);
 
       auto capacity = vop_table_[prefix_key.op_id];
@@ -291,7 +291,7 @@ void SampleBuilder::Load(std::ifstream& file) {
       uint64_t value_size;
       file.read(reinterpret_cast<char*>(&prefix_key), sizeof(Key::Prefix));
       file.read(reinterpret_cast<char*>(&value_size), sizeof(uint64_t));
-      actor::BytesBuffer value_buf(value_size);
+      act::BytesBuffer value_buf(value_size);
       file.read(value_buf.get_write(), value_size);
 
       auto op_info = eop_table_[prefix_key.op_id];
