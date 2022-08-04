@@ -59,7 +59,7 @@ TEST(QueryReponse, PutGet) {
 
   auto *data1 = const_cast<char*>(reinterpret_cast<const char*>(builder1.BufPointer()));
   auto size1 = builder1.BufSize();
-  auto buf1 = actor::BytesBuffer(data1, size1, seastar::make_object_deleter(std::move(builder1)));
+  auto buf1 = act::BytesBuffer(data1, size1, seastar::make_object_deleter(std::move(builder1)));
   records.emplace_back(std::move(buf1));
 
   io::RecordBuilder builder2;
@@ -69,7 +69,7 @@ TEST(QueryReponse, PutGet) {
   builder2.BuildAsVertexRecord(1, 11);
   auto *data2 = const_cast<char*>(reinterpret_cast<const char*>(builder2.BufPointer()));
   auto size2 = builder2.BufSize();
-  auto buf2 = actor::BytesBuffer(data2, size2, seastar::make_object_deleter(std::move(builder2)));
+  auto buf2 = act::BytesBuffer(data2, size2, seastar::make_object_deleter(std::move(builder2)));
   records.emplace_back(std::move(buf2));
 
   res_builder.Put(0, 11, records);
@@ -78,11 +78,11 @@ TEST(QueryReponse, PutGet) {
   auto* data = const_cast<char*>(
       reinterpret_cast<const char*>(res_builder.BufPointer()));
   auto size = res_builder.BufSize();
-  auto buf = actor::BytesBuffer(data, size,
+  auto buf = act::BytesBuffer(data, size,
       seastar::make_object_deleter(std::move(res_builder)));
   QueryResponse response(std::move(buf));
 
-  actor::SerializableQueue qu;
+  act::SerializableQueue qu;
   response.dump_to(qu);
 
   auto res = QueryResponse::load_from(qu);

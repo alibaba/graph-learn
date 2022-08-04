@@ -50,7 +50,7 @@ public:
       record_builder.BuildAsVertexRecord(test_vtype_, 0);
       const uint8_t* buf = record_builder.BufPointer();
       auto size = record_builder.BufSize();
-      actor::BytesBuffer tp(reinterpret_cast<const char*>(buf), size);
+      act::BytesBuffer tp(reinterpret_cast<const char*>(buf), size);
       io::Record record(std::move(tp));
       std::vector<storage::KVPair> pairs;
       pairs.emplace_back(key, std::move(record));
@@ -63,7 +63,7 @@ public:
 
       return actor_ref.ExecuteAdminOperation(AdminRequest(AdminOperation::INIT, payload)).then(
         [actor_ref, batch=std::move(batch), this] (auto) mutable {
-          return actor_ref.Update(std::move(batch)).then([this] (actor::Void ret) {
+          return actor_ref.Update(std::move(batch)).then([this] (act::Void ret) {
             storage::Key key(test_vtype_, 0, 0, 0);
             io::Record record;
             EXPECT_TRUE(store_->GetVertex(key, &record));

@@ -34,8 +34,8 @@ public:
   virtual bool Sample(const RecordType& sample,
                       uint32_t& index) = 0;  // NOLINT
 
-  virtual actor::BytesBuffer Dump() = 0;
-  virtual void Load(const actor::BytesBuffer& slice) = 0;
+  virtual act::BytesBuffer Dump() = 0;
+  virtual void Load(const act::BytesBuffer& slice) = 0;
 };
 
 class VertexSampler : public Sampler<io::VertexRecordView> {
@@ -64,8 +64,8 @@ public:
 
   bool Sample(const io::VertexRecordView& sample, uint32_t& index) override;
 
-  actor::BytesBuffer Dump() override;
-  void Load(const actor::BytesBuffer& buffer) override;
+  act::BytesBuffer Dump() override;
+  void Load(const act::BytesBuffer& buffer) override;
 
 private:
   AttributeType       timestamp_type_;

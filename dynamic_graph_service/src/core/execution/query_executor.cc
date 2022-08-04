@@ -49,7 +49,7 @@ QueryExecutor::Execute(VertexId req_id, const storage::SampleStore* store) {
     auto* data = const_cast<char*>(
         reinterpret_cast<const char*>(res_builder_.BufPointer()));
     auto size = res_builder_.BufSize();
-    auto buf = actor::BytesBuffer(data, size,
+    auto buf = act::BytesBuffer(data, size,
         seastar::make_object_deleter(std::move(res_builder_)));
     QueryResponse res(std::move(buf));
     return std::move(res);

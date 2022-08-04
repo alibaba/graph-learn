@@ -27,15 +27,15 @@ limitations under the License.
 namespace dgs {
 
 class ANNOTATION(actor:impl) DataUpdateActor
-  : public hiactor::stateless_actor {
+  : public hiactor::actor {
 public:
   DataUpdateActor(hiactor::actor_base* exec_ctx, const hiactor::byte_t* addr);
   ~DataUpdateActor() override = default;
 
-  seastar::future<actor::Void> ANNOTATION(actor:method)
+  seastar::future<act::Void> ANNOTATION(actor:method)
   Update(io::SampleUpdateBatch&& batch);
 
-  seastar::future<actor::Void> ANNOTATION(actor:method)
+  seastar::future<act::Void> ANNOTATION(actor:method)
   ExecuteAdminOperation(AdminRequest&& req);
 
   // Do work

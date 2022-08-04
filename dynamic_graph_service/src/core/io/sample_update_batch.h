@@ -34,12 +34,12 @@ public:
   SampleUpdateBatch& operator=(SampleUpdateBatch&&) noexcept = default;
 
   /// Serialize updates without store partition info
-  static actor::BytesBuffer
+  static act::BytesBuffer
   Serialize(const storage::KVPair* const* updates, uint32_t size);
 
   /// Deserialize updates from buffer without store partition info
   static std::vector<storage::KVPair>
-  Deserialize(actor::BytesBuffer&& buf);
+  Deserialize(act::BytesBuffer&& buf);
 
   /// Get the destination store partition id of this batch
   PartitionId GetStorePartitionId() const {
@@ -57,8 +57,8 @@ public:
   /// As each SampleUpdateBatch polled from kafka will be
   /// ingested locally, the \dump_to and \load_from methods
   /// are implemented with null.
-  void dump_to(actor::SerializableQueue& qu) {}  // NOLINT
-  static SampleUpdateBatch load_from(actor::SerializableQueue& qu) {  // NOLINT
+  void dump_to(act::SerializableQueue& qu) {}  // NOLINT
+  static SampleUpdateBatch load_from(act::SerializableQueue& qu) {  // NOLINT
     return SampleUpdateBatch{};
   }
 

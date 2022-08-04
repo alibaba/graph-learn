@@ -27,7 +27,7 @@ limitations under the License.
 namespace dgs {
 
 class ANNOTATION(actor:impl) ServingActor
-  : public hiactor::stateful_actor {
+  : public hiactor::actor {
 public:
   ServingActor(hiactor::actor_base* exec_ctx, const hiactor::byte_t* addr);
   ~ServingActor() override = default;
@@ -35,7 +35,7 @@ public:
   seastar::future<QueryResponse> ANNOTATION(actor:method)
   RunQuery(RunQueryRequest&& req);
 
-  seastar::future<actor::Void> ANNOTATION(actor:method)
+  seastar::future<act::Void> ANNOTATION(actor:method)
   ExecuteAdminOperation(AdminRequest&& req);
 
   // Do work

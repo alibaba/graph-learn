@@ -32,16 +32,16 @@ class RunQueryHandler : public seastar::httpd::handler_base {
 public:
   RunQueryHandler(hiactor::scope_builder& builder,  // NOLINT
                   AdaptiveRateLimiter* rate_limiter)
-    : local_shard_id_(actor::LocalShardId()), num_processed_requests_(0),
+    : local_shard_id_(act::LocalShardId()), num_processed_requests_(0),
       logging_period_(
         Options::GetInstance().GetLoggingOptions().request_log_period),
       available_request_units_(
         Options::GetInstance().GetEventHandlerOptions().max_local_requests),
       nls_cursor_(0), non_local_shard_ids_(), rate_limiter_(rate_limiter) {
-    non_local_shard_ids_.reserve(actor::LocalShardCount() - 1);
-    actor_refs_.reserve(actor::LocalShardCount());
-    for (unsigned i = 0; i < actor::LocalShardCount(); i++) {
-      auto g_sid = actor::GlobalShardIdAnchor() + i;
+    non_local_shard_ids_.reserve(act::LocalShardCount() - 1);
+    actor_refs_.reserve(act::LocalShardCount());
+    for (unsigned i = 0; i < act::LocalShardCount(); i++) {
+      auto g_sid = act::GlobalShardIdAnchor() + i;
       builder.set_shard(g_sid);
       actor_refs_.emplace_back(MakeServingActorInstRef(builder));
       if (i != local_shard_id_) {
@@ -138,7 +138,7 @@ seastar::future<> EventHandler::Stop() {
 
 seastar::future<> EventHandler::SetRoutes() {
   return server_.set_routes([this] (seastar::httpd::routes& r) {
-    auto g_sid = actor::GlobalShardIdAnchor();
+    auto g_sid = act::GlobalShardIdAnchor();
     hiactor::scope_builder builder = hiactor::scope_builder(
       g_sid, MakeServingGroupScope());
     auto serving_ref = MakeServingActorInstRef(builder);

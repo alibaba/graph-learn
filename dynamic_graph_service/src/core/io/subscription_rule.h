@@ -58,8 +58,8 @@ struct SubsRuleBatch {
   SubsRuleBatch(SubsRuleBatch&& other) = default;
   SubsRuleBatch& operator=(SubsRuleBatch&& other) = default;
 
-  void dump_to(actor::SerializableQueue &qu) {  // NOLINT
-    actor::BytesBuffer buf(sizeof(uint32_t) + rules.size() * sizeof(SubsRule));
+  void dump_to(act::SerializableQueue &qu) {  // NOLINT
+    act::BytesBuffer buf(sizeof(uint32_t) + rules.size() * sizeof(SubsRule));
     auto *ptr = buf.get_write();
     uint32_t size = rules.size();
     std::memcpy(ptr, &size, sizeof(uint32_t));
@@ -68,7 +68,7 @@ struct SubsRuleBatch {
     qu.push(std::move(buf));
   }
 
-  static SubsRuleBatch load_from(actor::SerializableQueue &qu) {  // NOLINT
+  static SubsRuleBatch load_from(act::SerializableQueue &qu) {  // NOLINT
     auto buf = qu.pop();
     auto *ptr = buf.get_write();
     uint32_t size = *reinterpret_cast<uint32_t*>(ptr);

@@ -26,9 +26,9 @@ struct PartitionInfo {
   PartitionInfo() = default;
   ~PartitionInfo() = default;
 
-  void dump_to(actor::SerializableQueue &qu) {}  // NOLINT
+  void dump_to(act::SerializableQueue &qu) {}  // NOLINT
 
-  static PartitionInfo load_from(actor::SerializableQueue &qu) {  // NOLINT
+  static PartitionInfo load_from(act::SerializableQueue &qu) {  // NOLINT
     return PartitionInfo();
   }
 

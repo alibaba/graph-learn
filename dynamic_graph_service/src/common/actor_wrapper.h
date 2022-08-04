@@ -19,6 +19,7 @@ limitations under the License.
 #include "hiactor/core/column_batch.hh"
 #include "hiactor/core/dynamic-queue.hh"
 #include "hiactor/core/promise_manager.hh"
+#include "hiactor/core/reference_base.hh"
 #include "hiactor/core/shard-config.hh"
 #include "hiactor/net/serializable_queue.hh"
 #include "hiactor/util/data_type.hh"
@@ -31,7 +32,7 @@ limitations under the License.
 #include "common/typedefs.h"
 
 namespace dgs {
-namespace actor {
+namespace act {
 
 using Void = hiactor::Void;
 using Bool = hiactor::Boolean;
@@ -75,7 +76,7 @@ inline uint32_t GetWorkerShardIdAnchor(WorkerId wid) {
 static_assert(kDataUpdateActorInstId < kServingActorInstId,
     "The data update actor id should be smaller than serving actor");
 
-}  // namespace actor
+}  // namespace act
 }  // namespace dgs
 
 #endif  // DGS_COMMON_ACTOR_WRAPPER_H_

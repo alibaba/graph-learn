@@ -22,13 +22,13 @@ namespace dgs {
 
 DataUpdateActor::DataUpdateActor(hiactor::actor_base* exec_ctx,
                                  const hiactor::byte_t* addr)
-  : hiactor::stateless_actor(exec_ctx, addr),
+  : hiactor::actor(exec_ctx, addr, true),
     sample_store_(nullptr),
     num_graph_updates_(0),
     data_log_period_(Options::GetInstance().GetLoggingOptions().data_log_period) {
 }
 
-seastar::future<actor::Void>
+seastar::future<act::Void>
 DataUpdateActor::Update(io::SampleUpdateBatch&& batch) {
   auto updates = batch.ReleaseUpdates();
   for (auto& update : updates) {
@@ -43,17 +43,17 @@ DataUpdateActor::Update(io::SampleUpdateBatch&& batch) {
 
   if (num_graph_updates_++ % data_log_period_ == 0) {
     LOG(INFO) << "Apply Graph Update on global shard "
-              << actor::GlobalShardId()
+              << act::GlobalShardId()
               << ": #processed_updates is "
               << num_graph_updates_
               << ", sample update batch size is "
               << updates.size();
   }
 
-  return seastar::make_ready_future<actor::Void>();
+  return seastar::make_ready_future<act::Void>();
 }
 
-seastar::future<actor::Void>
+seastar::future<act::Void>
 DataUpdateActor::ExecuteAdminOperation(AdminRequest&& req) {
   switch (req.operation) {
     case AdminOperation::PAUSE: {
@@ -63,13 +63,13 @@ DataUpdateActor::ExecuteAdminOperation(AdminRequest&& req) {
       // TODO(@goldenleaves)
     }
     case AdminOperation::INIT: {
-      LOG(INFO) << "Initialize on global shard " << actor::GlobalShardId();
+      LOG(INFO) << "Initialize on global shard " << act::GlobalShardId();
       auto *param = dynamic_cast<ServingInitPayload*>(req.payload.get());
       // Arm sample store.
       sample_store_ = param->sample_store();
     }
   }
-  return seastar::make_ready_future<actor::Void>();
+  return seastar::make_ready_future<act::Void>();
 }
 
 }  // namespace dgs

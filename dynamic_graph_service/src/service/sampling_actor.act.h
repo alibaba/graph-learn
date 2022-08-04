@@ -29,18 +29,18 @@ namespace dgs {
 class SamplingActor_ref;
 
 class ANNOTATION(actor:impl) SamplingActor
-    : public hiactor::stateless_actor {
+    : public hiactor::actor {
 public:
   SamplingActor(hiactor::actor_base* exec_ctx, const hiactor::byte_t* addr);
   ~SamplingActor() override = default;
 
-  seastar::future<actor::Void> ANNOTATION(actor:method)
+  seastar::future<act::Void> ANNOTATION(actor:method)
   ApplyGraphUpdates(io::RecordBatch&& batch);
 
-  seastar::future<actor::Integer> ANNOTATION(actor:method)
+  seastar::future<act::Integer> ANNOTATION(actor:method)
   UpdateSubsRules(io::SubsRuleBatch&& batch);
 
-  seastar::future<actor::Void> ANNOTATION(actor:method)
+  seastar::future<act::Void> ANNOTATION(actor:method)
   ExecuteAdminOperation(AdminRequest&& req);
 
   // Do work

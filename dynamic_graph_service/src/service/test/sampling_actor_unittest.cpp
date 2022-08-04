@@ -78,7 +78,7 @@ protected:
 
       auto data  = msg.get_payload().get_data();
       auto data_size = msg.get_payload().get_size();
-      auto buf = actor::BytesBuffer(
+      auto buf = act::BytesBuffer(
         const_cast<char*>(reinterpret_cast<const char*>(data)),
         data_size, seastar::make_object_deleter(std::move(msg)));
 
@@ -120,7 +120,7 @@ TEST_F(SamplingActorModuleTest, RunAll) {
         boost::irange(0u, num_v), [num_v, num_p, this] (uint32_t i) {
       VertexId vid = i;
       auto pid = i % num_p;
-      auto shard_id = pid % actor::GlobalShardCount();
+      auto shard_id = pid % act::GlobalShardCount();
       return helper_.GetSamplingActorRef(shard_id).ApplyGraphUpdates(
           SamplingTestHelper::MakeRecordBatch(pid, vid, num_v)).discard_result();
     }).then([] {

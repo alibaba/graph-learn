@@ -38,13 +38,13 @@ class kafka_produce_exception : public std::exception {
 };
 
 struct ProducingCallbackUnit {
-  std::shared_ptr<actor::VoidPromiseManager> pr_manager;
+  std::shared_ptr<act::VoidPromiseManager> pr_manager;
   uint32_t pr_id;
   uint32_t lshard_id;
   uint32_t retry_times;
 
   ProducingCallbackUnit(
-    const std::shared_ptr<actor::VoidPromiseManager>& pr_manager,
+    const std::shared_ptr<act::VoidPromiseManager>& pr_manager,
     uint32_t pr_id, uint32_t lshard_id, uint32_t retry_times);
   ~ProducingCallbackUnit() = default;
 };
@@ -129,7 +129,7 @@ private:
   uint32_t      retry_times_ = 0;
   std::vector<WorkerSampleUpdates>           worker_records_;
   std::vector<WorkerKafkaRouter>             worker_kafka_routers_;
-  std::shared_ptr<actor::VoidPromiseManager> pr_manager_;
+  std::shared_ptr<act::VoidPromiseManager>   pr_manager_;
   std::shared_ptr<cppkafka::Producer>        kafka_producer_;
 };
 

@@ -27,7 +27,7 @@ limitations under the License.
 namespace dgs {
 
 ProducingCallbackUnit::ProducingCallbackUnit(
-    const std::shared_ptr<actor::VoidPromiseManager>& pr_manager,
+    const std::shared_ptr<act::VoidPromiseManager>& pr_manager,
     uint32_t pr_id, uint32_t lshard_id, uint32_t retry_times)
   : pr_manager(pr_manager), pr_id(pr_id),
     lshard_id(lshard_id), retry_times(retry_times) {
@@ -101,9 +101,9 @@ SamplePublisher::SamplePublisher() {
   kafka_topic_ = opts.kafka_topic;
   kafka_partition_num_ = opts.kafka_partition_num;
   retry_times_ = opts.max_produce_retry_times;
-  pr_manager_ = std::make_shared<actor::VoidPromiseManager>(1024);
+  pr_manager_ = std::make_shared<act::VoidPromiseManager>(1024);
   auto* producer_pool = KafkaProducerPool::GetInstance();
-  auto producer_idx = actor::LocalShardId() % producer_pool->Size();
+  auto producer_idx = act::LocalShardId() % producer_pool->Size();
   kafka_producer_ = producer_pool->GetProducer(producer_idx);
 }
 
@@ -182,7 +182,7 @@ uint32_t SamplePublisher::ProduceWorkerUpdates(
   // Get promise and set callback unit
   auto pr_id = pr_manager_->acquire_pr();
   builder.user_data(new ProducingCallbackUnit(
-      pr_manager_, pr_id, actor::LocalShardId(), retry_times_));
+      pr_manager_, pr_id, act::LocalShardId(), retry_times_));
   // Produce
   kafka_producer_->produce(builder);
   return pr_id;

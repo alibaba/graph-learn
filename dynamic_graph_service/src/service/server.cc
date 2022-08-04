@@ -25,18 +25,18 @@ limitations under the License.
 
 namespace dgs {
 
-actor::BytesBuffer MakeInstallQueryBuf(const std::string& query_plan);
+act::BytesBuffer MakeInstallQueryBuf(const std::string& query_plan);
 
 template <typename Ref, typename... Scopes>
 void BuildActorRefs(std::vector<Ref>& refs,  // NOLINT
     std::function<Ref(hiactor::scope_builder&)> create_func,
     Scopes... scopes) {  // NOLINT
-  uint32_t local_shard_num = actor::LocalShardCount();
+  uint32_t local_shard_num = act::LocalShardCount();
   refs.reserve(local_shard_num);
   hiactor::scope_builder builder(0, scopes...);
 
   for (unsigned i = 0; i < local_shard_num; i++) {
-    auto g_sid = actor::GlobalShardIdAnchor() + i;
+    auto g_sid = act::GlobalShardIdAnchor() + i;
     builder.set_shard(g_sid);
     refs.emplace_back(create_func(builder));
   }
@@ -181,7 +181,7 @@ void SamplingServer::Init(const InitInfo& init_info) {
   auto fut = seastar::alien::submit_to(
       *seastar::alien::internal::default_instance, 0,
       [this, payload] () mutable {
-    uint32_t count = actor::LocalShardCount();
+    uint32_t count = act::LocalShardCount();
     return seastar::parallel_for_each(boost::irange(0u, count),
         [this, payload] (uint32_t i) {
       return sampling_refs_[i].ExecuteAdminOperation(
@@ -228,7 +228,7 @@ void ServingServer::Init(const InitInfo& init_info) {
   auto fut = seastar::alien::submit_to(
       *seastar::alien::internal::default_instance, 0,
       [this, payload] () mutable {
-    uint32_t count = actor::LocalShardCount();
+    uint32_t count = act::LocalShardCount();
     return seastar::parallel_for_each(boost::irange(0u, count),
         [this, payload] (uint32_t i) {
       return seastar::when_all(
@@ -350,7 +350,7 @@ Server::InitInfo::InitInfo(
     downstream_partition_info(std::move(ds_partition_info)) {
 }
 
-actor::BytesBuffer MakeInstallQueryBuf(const std::string& query_plan) {
+act::BytesBuffer MakeInstallQueryBuf(const std::string& query_plan) {
   auto& opts = Options::GetInstance();
   std::string schema_str;
   std::string schema_file = opts.GetFbsFileDir() + "/install_query_req.fbs";
