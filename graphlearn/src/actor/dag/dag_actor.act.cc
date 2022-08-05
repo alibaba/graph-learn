@@ -21,7 +21,7 @@ limitations under the License.
 #include "actor/utils.h"
 #include "common/base/log.h"
 
-#include "actor/generated/base_op_ref.act.autogen.h"
+#include "actor/generated/operator/base_op_ref.act.autogen.h"
 
 namespace graphlearn {
 namespace act {

@@ -20,7 +20,7 @@ limitations under the License.
 #include "core/graph/graph_store.h"
 #include "include/config.h"
 
-#include "actor/generated/control_actor_ref.act.autogen.h"
+#include "actor/generated/graph/control_actor_ref.act.autogen.h"
 
 namespace graphlearn {
 namespace act {

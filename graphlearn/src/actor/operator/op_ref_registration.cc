@@ -15,24 +15,24 @@ limitations under the License.
 
 #include "actor/operator/op_ref_factory.h"
 
-#include "actor/generated/edge_getter_ref.act.autogen.h"
-#include "actor/generated/edge_lookuper_ref.act.autogen.h"
-#include "actor/generated/edge_weight_sampler_ref.act.autogen.h"
-#include "actor/generated/full_sampler_ref.act.autogen.h"
-#include "actor/generated/in_degree_negative_sampler_ref.act.autogen.h"
-#include "actor/generated/in_degree_sampler_ref.act.autogen.h"
-#include "actor/generated/node_getter_ref.act.autogen.h"
-#include "actor/generated/node_lookuper_ref.act.autogen.h"
-#include "actor/generated/node_weight_negative_sampler_ref.act.autogen.h"
-#include "actor/generated/random_negative_sampler_ref.act.autogen.h"
-#include "actor/generated/random_sampler_ref.act.autogen.h"
-#include "actor/generated/random_without_replacement_sampler_ref.act.autogen.h"
-#include "actor/generated/soft_in_degree_negative_sampler_ref.act.autogen.h"
-#include "actor/generated/topk_sampler_ref.act.autogen.h"
+#include "actor/generated/operator/edge_getter_ref.act.autogen.h"
+#include "actor/generated/operator/edge_lookuper_ref.act.autogen.h"
+#include "actor/generated/operator/edge_weight_sampler_ref.act.autogen.h"
+#include "actor/generated/operator/full_sampler_ref.act.autogen.h"
+#include "actor/generated/operator/in_degree_negative_sampler_ref.act.autogen.h"
+#include "actor/generated/operator/in_degree_sampler_ref.act.autogen.h"
+#include "actor/generated/operator/node_getter_ref.act.autogen.h"
+#include "actor/generated/operator/node_lookuper_ref.act.autogen.h"
+#include "actor/generated/operator/node_weight_negative_sampler_ref.act.autogen.h"
+#include "actor/generated/operator/random_negative_sampler_ref.act.autogen.h"
+#include "actor/generated/operator/random_sampler_ref.act.autogen.h"
+#include "actor/generated/operator/random_without_replacement_sampler_ref.act.autogen.h"
+#include "actor/generated/operator/soft_in_degree_negative_sampler_ref.act.autogen.h"
+#include "actor/generated/operator/topk_sampler_ref.act.autogen.h"
 
 namespace graphlearn {
 namespace act {
-namespace ref_registration {
+namespace op_ref_registration {
 
 OpRefRegistration<EdgeGetterActor_ref> _edge_getter_("GetEdges");
 OpRefRegistration<EdgeLookuperActor_ref> _edge_lookuper_("LookupEdges");
@@ -49,7 +49,7 @@ OpRefRegistration<RandomWithoutReplacementSamplerActor_ref> _random_without_repl
 OpRefRegistration<SoftInDegreeNegativeSamplerActor_ref> _soft_in_degree_negative_sampler_("SoftInDegreeNegativeSampler");
 OpRefRegistration<TopKSamplerActor_ref> _topK_sampler_("TopkSampler");
 
-}  // namespace ref_registration
+}  // namespace op_ref_registration
 }  // namespace act
 }  // namespace graphlearn
 

@@ -18,7 +18,7 @@ limitations under the License.
 #include "actor/graph/loader_config.h"
 #include "actor/graph/loader_status.h"
 
-#include "actor/generated/sync_actor_ref.act.autogen.h"
+#include "actor/generated/graph/sync_actor_ref.act.autogen.h"
 
 namespace graphlearn {
 namespace act {

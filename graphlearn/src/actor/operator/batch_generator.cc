@@ -18,7 +18,7 @@ limitations under the License.
 #include "seastar/core/when_all.hh"
 
 #include "actor/operator/op_ref_factory.h"
-#include "actor/generated/base_op_ref.act.autogen.h"
+#include "actor/generated/operator/base_op_ref.act.autogen.h"
 
 namespace graphlearn {
 namespace act {
