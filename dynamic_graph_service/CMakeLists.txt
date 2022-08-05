@@ -59,10 +59,8 @@ find_package (Hiactor CONFIG REQUIRED)
 ## hiactor codegen
 include (${Hiactor_INSTALL_DIR}/bin/hiactor_codegen/ActorAutoGen.cmake)
 hiactor_codegen (hiactor_codegen DGS_HIACTOR_AUTOGEN_FILES
-  ACTOR_SOURCE_DIR ${DGS_SRC_DIR}/service
-  HIACTOR_INCLUDE ${Hiactor_INSTALL_DIR}/include
-  SYSTEM_INCLUDE ""
-  USER_INCLUDE ${DGS_SRC_DIR})
+  SOURCE_DIR ${DGS_SRC_DIR}/service
+  INCLUDE_PATHS ${Hiactor_INSTALL_DIR}/include,${DGS_SRC_DIR})
 
 ## cppkafka package
 set (CppKafka_INSTALL_DIR ${THIRD_PARTY_DIR}/cppkafka/build)

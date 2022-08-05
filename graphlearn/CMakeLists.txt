@@ -229,10 +229,8 @@ if (WITH_HIACTOR)
   # actor codegen
   include (${Hiactor_INSTALL_DIR}/bin/hiactor_codegen/ActorAutoGen.cmake)
   hiactor_codegen (actor_codegen GL_ACTOR_AUTOGEN_FILES
-    ACTOR_SOURCE_DIR ${GL_ACTOR_DIR}
-    HIACTOR_INCLUDE ${Hiactor_INSTALL_DIR}/include
-    SYSTEM_INCLUDE ""
-    USER_INCLUDE ${GL_SRC_DIR})
+    SOURCE_DIR ${GL_ACTOR_DIR}
+    INCLUDE_PATHS ${Hiactor_INSTALL_DIR}/include,${GL_SRC_DIR})
 
   file (GLOB_RECURSE GL_ACTOR_SRC_FILES ${GL_ACTOR_DIR}/*.cc)
   list (FILTER GL_ACTOR_SRC_FILES EXCLUDE REGEX ".*autogen\\.cc$")
