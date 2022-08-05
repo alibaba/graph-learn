@@ -18,9 +18,6 @@ limitations under the License.
 
 #include <cstdint>
 
-#include "brane/core/shard-config.hh"
-#include "include/config.h"
-
 namespace graphlearn {
 namespace act {
 

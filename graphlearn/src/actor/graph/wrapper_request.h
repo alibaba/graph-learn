@@ -17,14 +17,14 @@ limitations under the License.
 #define GRAPHLEARN_ACTOR_GRAPH_WRAPPER_REQUEST_H_
 
 #include <memory>
-#include <string>
-#include <utility>
 
-#include "brane/actor/actor_message.hh"
+#include "hiactor/net/serializable_queue.hh"
+
 #include "core/io/element_value.h"
 #include "include/config.h"
 #include "include/graph_request.h"
-#include "proto/service.pb.h"
+
+#include "generated/proto/request.pb.h"
 
 namespace graphlearn {
 namespace act {
@@ -63,12 +63,8 @@ public:
 
   void Set(const io::SideInfo& side_info) {
     // FIXME: move to constructor.
-    if (side_info_) {
-      delete side_info_;
-    }
-    if (impl_) {
-      delete impl_;
-    }
+    delete side_info_;
+    delete impl_;
     side_info_ = new io::SideInfo();
     side_info_->CopyFrom(side_info);
     impl_ = new T(side_info_, GLOBAL_FLAG(DataInitBatchSize));
@@ -101,7 +97,7 @@ public:
               << pb.DebugString() << std::endl;
   }
 
-  void dump_to(brane::serializable_queue& qu) {  // NOLINT [runtime/references]
+  void dump_to(hiactor::serializable_queue& qu) {  // NOLINT [runtime/references]
     OpRequestPb pb;
     impl_->SerializeTo(&pb);
 
@@ -114,7 +110,7 @@ public:
   }
 
   static RequestWrapper<T, V>
-  load_from(brane::serializable_queue& qu) {  // NOLINT [runtime/references]
+  load_from(hiactor::serializable_queue& qu) {  // NOLINT [runtime/references]
     auto buf = qu.pop();
     char *ptr = buf.get_write();
     MemBuf sbuf(ptr, ptr + buf.size());
@@ -132,15 +128,11 @@ private:
   io::SideInfo* side_info_;
 };
 
-#define REQUEST(Type) RequestWrapper<Update##Type##sRequest, io::Type##Value>
+using UpdateNodesRequestWrapper = RequestWrapper<UpdateNodesRequest, io::NodeValue>;
+using UpdateEdgesRequestWrapper = RequestWrapper<UpdateEdgesRequest, io::EdgeValue>;
 
-using UpdateNodesRequestWrapper = REQUEST(Node);
-using UpdateEdgesRequestWrapper = REQUEST(Edge);
-
-typedef std::shared_ptr<REQUEST(Node)> UpdateNodesPtr;
-typedef std::shared_ptr<REQUEST(Edge)> UpdateEdgesPtr;
-
-#undef REQUEST
+using UpdateNodesPtr = std::shared_ptr<UpdateNodesRequestWrapper>;
+using UpdateEdgesPtr = std::shared_ptr<UpdateEdgesRequestWrapper>;
 
 }  // namespace act
 }  // namespace graphlearn

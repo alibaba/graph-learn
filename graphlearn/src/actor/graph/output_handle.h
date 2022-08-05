@@ -16,16 +16,16 @@ limitations under the License.
 #ifndef GRAPHLEARN_ACTOR_GRAPH_OUTPUT_HANDLE_H_
 #define GRAPHLEARN_ACTOR_GRAPH_OUTPUT_HANDLE_H_
 
-#include <cstdint>
 #include <functional>
 #include <memory>
 #include <vector>
 
-#include "actor/graph/graph_actor.act.h"
+#include "seastar/core/alien.hh"
 
 #include "actor/graph/loader_config.h"
 #include "actor/utils.h"
-#include "seastar/core/alien.hh"
+
+#include "actor/generated/graph_actor_ref.act.autogen.h"
 
 namespace graphlearn {
 namespace act {
@@ -33,7 +33,7 @@ namespace act {
 template <typename Value, typename Wrapper>
 class OutputHandle {
 public:
-  OutputHandle(unsigned init_id);
+  explicit OutputHandle(unsigned init_id);
 
   void Push(Value &value, const io::SideInfo& side_info);
   void FlushAll();
@@ -56,7 +56,7 @@ private:
   const uint32_t       batch_size_;
   unsigned             local_shard_num_;
   unsigned             cursor_id_;
-  std::vector<std::shared_ptr<GraphActorRef>> refs_;
+  std::vector<std::shared_ptr<GraphActor_ref>> refs_;
 };
 
 using NodeOutputHandle = OutputHandle<io::NodeValue, UpdateNodesRequestWrapper>;
@@ -66,16 +66,16 @@ template <typename Value, typename Wrapper>
 inline
 OutputHandle<Value, Wrapper>::OutputHandle(unsigned init_id)
     : batch_size_(GLOBAL_FLAG(DataInitBatchSize)),
-      local_shard_num_(brane::local_shard_count()),
+      local_shard_num_(hiactor::local_shard_count()),
       cursor_id_(init_id) {
-  refs_.reserve(brane::global_shard_count());
-  buffers_.resize(brane::global_shard_count());
+  refs_.reserve(hiactor::global_shard_count());
+  buffers_.resize(hiactor::global_shard_count());
 
   auto fut = seastar::alien::submit_to(0, [this] {
-    for (uint32_t i = 0; i < brane::global_shard_count(); ++i) {
-      auto builder = brane::scope_builder(i);
+    for (uint32_t i = 0; i < hiactor::global_shard_count(); ++i) {
+      auto builder = hiactor::scope_builder(i);
       refs_.emplace_back(builder.new_ref<
-        GraphActorRef>(LoaderConfig::graph_actor_id));
+        GraphActor_ref>(LoaderConfig::graph_actor_id));
     }
     return seastar::make_ready_future<>();
   });
@@ -114,7 +114,7 @@ template <typename Value, typename Wrapper>
 inline
 void OutputHandle<Value, Wrapper>::NotifyFinished() {
   FlushAll();
-  for (uint32_t i = 0; i < brane::global_shard_count(); ++i) {
+  for (uint32_t i = 0; i < hiactor::global_shard_count(); ++i) {
     seastar::alien::run_on(i % local_shard_num_, [ref = refs_[i]] {
       ref->ReceiveEOS();
     });

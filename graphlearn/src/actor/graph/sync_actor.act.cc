@@ -15,32 +15,29 @@ limitations under the License.
 
 #include "actor/graph/sync_actor.act.h"
 
-#include <utility>
 #include "actor/graph/loader_config.h"
-#include "actor/graph/control_actor.act.h"
 #include "include/config.h"
-#include "seastar/core/sleep.hh"
+
+#include "actor/generated/control_actor_ref.act.autogen.h"
 
 namespace graphlearn {
 namespace act {
 
-SyncActor::SyncActor(brane::actor_base *exec_ctx,
-                     const brane::byte_t *addr,
-                     const void*)
-    : stateful_actor(exec_ctx, addr),
+SyncActor::SyncActor(hiactor::actor_base* exec_ctx,
+                     const hiactor::byte_t* addr)
+    : hiactor::actor(exec_ctx, addr, false /* stateful */),
       received_eos_number_(0) {
   control_actor_id_.reserve(GLOBAL_FLAG(ServerCount));
 }
 
-SyncActor::~SyncActor() {
-}
+SyncActor::~SyncActor() = default;
 
-void SyncActor::ReceiveEOS(brane::Integer&& source_id) {
+void SyncActor::ReceiveEOS(hiactor::Integer&& source_id) {
   control_actor_id_.push_back(source_id.val);
   if (++received_eos_number_ == GLOBAL_FLAG(ServerCount)) {
     for (size_t i = 0; i < control_actor_id_.size(); ++i) {
-      auto builder = brane::scope_builder(control_actor_id_[i]);
-      auto actor_ref = builder.build_ref<ControlActorRef>(
+      auto builder = hiactor::scope_builder(control_actor_id_[i]);
+      auto actor_ref = builder.build_ref<ControlActor_ref>(
         LoaderConfig::control_actor_id);
       actor_ref.StopActor();
     }

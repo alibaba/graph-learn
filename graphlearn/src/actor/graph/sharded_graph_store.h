@@ -17,7 +17,6 @@ limitations under the License.
 #define GRAPHLEARN_ACTOR_GRAPH_SHARDED_GRAPH_STORE_H_
 
 #include <memory>
-#include <utility>
 #include <vector>
 
 #include "hiactor/core/alien_thread_pool.hh"

@@ -16,10 +16,8 @@ limitations under the License.
 #ifndef GRAPHLEARN_ACTOR_GRAPH_WRAPPER_SOURCE_H_
 #define GRAPHLEARN_ACTOR_GRAPH_WRAPPER_SOURCE_H_
 
-#include <string>
-#include <utility>
-#include <vector>
-#include "brane/net/serializable_queue.hh"
+#include "hiactor/net/serializable_queue.hh"
+
 #include "common/io/value.h"
 #include "core/io/parser.h"
 #include "include/data_source.h"
@@ -57,13 +55,13 @@ public:
     }
   }
 
-  SourceWrapper(SourceWrapper&& rhs) {
+  SourceWrapper(SourceWrapper&& rhs) noexcept {
     impl_ = rhs.impl_;
     rhs.impl_ = nullptr;
     info_.CopyFrom(rhs.info_);
   }
 
-  SourceWrapper& operator=(SourceWrapper&& rhs) {
+  SourceWrapper& operator=(SourceWrapper&& rhs) noexcept {
     if (this != &rhs) {
       impl_ = rhs.impl_;
       rhs.impl_ = nullptr;
@@ -97,12 +95,12 @@ public:
   }
 
   // Just need the interface to compile pass
-  void dump_to(brane::serializable_queue &su) {  // NOLINT [runtime/references]
+  void dump_to(hiactor::serializable_queue &su) {  // NOLINT [runtime/references]
   }
 
   // Just need the interface to compile pass
   static SourceWrapper<T>
-  load_from(brane::serializable_queue& su) {  // NOLINT [runtime/references]
+  load_from(hiactor::serializable_queue& su) {  // NOLINT [runtime/references]
     return SourceWrapper<T>();
   }
 

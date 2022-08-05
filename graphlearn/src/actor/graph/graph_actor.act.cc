@@ -15,26 +15,27 @@ limitations under the License.
 
 #include "actor/graph/graph_actor.act.h"
 
-#include <utility>
 #include "actor/graph/loader_config.h"
 #include "actor/graph/sharded_graph_store.h"
 #include "core/graph/graph_store.h"
 #include "include/config.h"
 
+#include "actor/generated/control_actor_ref.act.autogen.h"
+
 namespace graphlearn {
 namespace act {
 
-GraphActor::GraphActor(brane::actor_base *exec_ctx,
-                       const brane::byte_t *addr,
-                       const void*)
-    : stateful_actor(exec_ctx, addr), received_eos_number_(0) {
-  data_parser_num_ = GLOBAL_FLAG(ServerCount) * 2 *
-    std::max(GLOBAL_FLAG(InterThreadNum), 1);
-  store_ = ShardedGraphStore::Get().OnShard(brane::local_shard_id());
+GraphActor::GraphActor(hiactor::actor_base* exec_ctx,
+                       const hiactor::byte_t* addr)
+    : hiactor::actor(exec_ctx, addr, false /* stateful */),
+      received_eos_number_(0) {
+  data_parser_num_ =
+      GLOBAL_FLAG(ServerCount) * 2 * std::max(GLOBAL_FLAG(InterThreadNum), 1);
+  store_ = ShardedGraphStore::Get().OnShard(
+      static_cast<int32_t>(hiactor::local_shard_id()));
 }
 
-GraphActor::~GraphActor() {
-}
+GraphActor::~GraphActor() = default;
 
 void GraphActor::UpdateNodes(UpdateNodesRequestWrapper&& request) {
   nodes_num_ += request.Size();
@@ -52,8 +53,8 @@ void GraphActor::UpdateEdges(UpdateEdgesRequestWrapper&& request) {
 
 void GraphActor::ReceiveEOS() {
   if (++received_eos_number_ == data_parser_num_) {
-    auto builder = brane::scope_builder(brane::machine_info::sid_anchor());
-    auto ctrl_ref = builder.build_ref<ControlActorRef>(
+    auto builder = hiactor::scope_builder(hiactor::machine_info::sid_anchor());
+    auto ctrl_ref = builder.build_ref<ControlActor_ref>(
       LoaderConfig::control_actor_id);
     ctrl_ref.ReceiveEOS();
   }

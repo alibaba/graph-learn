@@ -16,40 +16,21 @@ limitations under the License.
 #ifndef GRAPHLEARN_ACTOR_GRAPH_CONTROL_ACTOR_ACT_H_
 #define GRAPHLEARN_ACTOR_GRAPH_CONTROL_ACTOR_ACT_H_
 
-#include <cstdint>
-#include <memory>
-
-#include "brane/actor/actor_implementation.hh"
-#include "brane/actor/reference_base.hh"
-#include "brane/util/common-utils.hh"
-#include "brane/util/data_type.hh"
+#include "hiactor/core/actor-template.hh"
+#include "hiactor/util/data_type.hh"
 
 namespace graphlearn {
 namespace act {
 
-class ANNOTATION(actor:reference) ControlActorRef
-  : public brane::reference_base {
+class ANNOTATION(actor:impl) ControlActor : public hiactor::actor {
 public:
-  void ReceiveEOS();
-  void StopActor();
-  // Constructor.
-  ACTOR_ITFC_CTOR(ControlActorRef);
-  // Destructor
-  ACTOR_ITFC_DTOR(ControlActorRef);
-};
+  ControlActor(hiactor::actor_base* exec_ctx, const hiactor::byte_t* addr);
+  ~ControlActor() override;
 
-class ANNOTATION(actor:implement) ControlActor
-  : public brane::stateful_actor {
-public:
-  void ReceiveEOS();
-  void StopActor();
+  void ANNOTATION(actor:method) ReceiveEOS();
+  void ANNOTATION(actor:method) StopActor();
 
-  // Constructor.
-  ACTOR_IMPL_CTOR(ControlActor);
-  // Destructor.
-  ACTOR_IMPL_DTOR(ControlActor);
-  // Do work
-  ACTOR_DO_WORK() override;
+  ACTOR_DO_WORK()
 
 private:
   int received_eos_number_;

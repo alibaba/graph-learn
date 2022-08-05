@@ -21,9 +21,8 @@ namespace act {
 
 #include <iostream>
 #include <streambuf>
-#include <string>
-#include <utility>
-#include "brane/actor/actor_message.hh"
+
+#include "hiactor/net/serializable_queue.hh"
 #include "seastar/core/deleter.hh"
 #include "seastar/core/temporary_buffer.hh"
 
@@ -48,7 +47,7 @@ public:
 
   PbWrapper(const PbWrapper &other) = delete;
 
-  void dump_to(brane::serializable_queue &qu) {  // NOLINT [runtime/references]
+  void dump_to(hiactor::serializable_queue &qu) {  // NOLINT [runtime/references]
     std::string bytes;
     data.SerializeToString(&bytes);
     char* bytes_ptr = const_cast<char*>(bytes.data());
@@ -58,7 +57,7 @@ public:
   }
 
   static PbWrapper
-  load_from(brane::serializable_queue& qu) {  // NOLINT [runtime/references]
+  load_from(hiactor::serializable_queue& qu) {  // NOLINT [runtime/references]
     auto buf = qu.pop();
     char *ptr = buf.get_write();
     membuf sbuf(ptr, ptr + buf.size());

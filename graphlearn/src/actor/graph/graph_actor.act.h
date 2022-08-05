@@ -16,12 +16,9 @@ limitations under the License.
 #ifndef GRAPHLEARN_ACTOR_GRAPH_GRAPH_ACTOR_ACT_H_
 #define GRAPHLEARN_ACTOR_GRAPH_GRAPH_ACTOR_ACT_H_
 
-#include <cstdint>
-#include "brane/actor/actor_implementation.hh"
-#include "brane/actor/reference_base.hh"
-#include "brane/util/common-utils.hh"
-#include "brane/util/data_type.hh"
-#include "actor/graph/control_actor.act.h"
+#include "hiactor/core/actor-template.hh"
+#include "hiactor/util/data_type.hh"
+
 #include "actor/graph/wrapper_request.h"
 
 namespace graphlearn {
@@ -30,32 +27,16 @@ class GraphStore;
 
 namespace act {
 
-class ANNOTATION(actor:reference) GraphActorRef
-  : public brane::reference_base {
+class ANNOTATION(actor:impl) GraphActor : public hiactor::actor {
 public:
-  void UpdateNodes(UpdateNodesRequestWrapper&& request);
-  void UpdateEdges(UpdateEdgesRequestWrapper&& request);
-  void ReceiveEOS();
+  GraphActor(hiactor::actor_base* exec_ctx, const hiactor::byte_t* addr);
+  ~GraphActor() override;
 
-  // Constructor.
-  ACTOR_ITFC_CTOR(GraphActorRef);
-  // Destructor
-  ACTOR_ITFC_DTOR(GraphActorRef);
-};
+  void ANNOTATION(actor:method) UpdateNodes(UpdateNodesRequestWrapper&& request);
+  void ANNOTATION(actor:method) UpdateEdges(UpdateEdgesRequestWrapper&& request);
+  void ANNOTATION(actor:method) ReceiveEOS();
 
-class ANNOTATION(actor:implement) GraphActor
-  : public brane::stateful_actor {
-public:
-  void UpdateNodes(UpdateNodesRequestWrapper&& request);
-  void UpdateEdges(UpdateEdgesRequestWrapper&& request);
-  void ReceiveEOS();
-
-  // Constructor.
-  ACTOR_IMPL_CTOR(GraphActor);
-  // Destructor.
-  ACTOR_IMPL_DTOR(GraphActor);
-  // Do work
-  ACTOR_DO_WORK() override;
+  ACTOR_DO_WORK()
 
 private:
   int         received_eos_number_;

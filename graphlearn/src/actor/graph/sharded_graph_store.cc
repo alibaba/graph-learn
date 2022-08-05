@@ -18,10 +18,8 @@ limitations under the License.
 #include "actor/graph/loader_status.h"
 #include "actor/graph/loading_task.h"
 #include "common/base/errors.h"
-#include "core/io/slice_reader.h"
 #include "include/config.h"
 #include "platform/env.h"
-#include "seastar/core/alien.hh"
 
 namespace graphlearn {
 namespace act {

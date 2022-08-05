@@ -27,7 +27,7 @@ class DataLoaderStatus {
     return &inst;
   }
 
-  DataLoaderStatus() {
+  DataLoaderStatus() : finished_() {
     sem_init(&finished_, 0, 0);
   }
 

@@ -92,7 +92,6 @@ private:
   bool shardable_;
   std::string partition_key_;
 
-// fixme: actor
 public:
   Tensor::Map tensors_;
 };
@@ -108,7 +107,7 @@ public:
   bool IsSparse() const { return is_sparse_; }
 
   void Swap(JoinableTensorMap& right);
-  // fixme: actor, pass by value?
+
   void Stitch(ShardsPtr<JoinableTensorMap> shards);
 
 private:

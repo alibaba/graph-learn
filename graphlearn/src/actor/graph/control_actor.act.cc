@@ -15,39 +15,35 @@ limitations under the License.
 
 #include "actor/graph/control_actor.act.h"
 
-#include <utility>
 #include "actor/graph/loader_config.h"
 #include "actor/graph/loader_status.h"
-#include "actor/graph/sync_actor.act.h"
-#include "include/config.h"
-#include "seastar/core/sleep.hh"
+
+#include "actor/generated/sync_actor_ref.act.autogen.h"
 
 namespace graphlearn {
 namespace act {
 
-ControlActor::ControlActor(brane::actor_base *exec_ctx,
-                           const brane::byte_t *addr,
-                           const void*)
-    : stateful_actor(exec_ctx, addr),
+ControlActor::ControlActor(hiactor::actor_base* exec_ctx,
+                           const hiactor::byte_t* addr)
+    : hiactor::actor(exec_ctx, addr, false /* stateful */),
       received_eos_number_(0) {
 }
 
-ControlActor::~ControlActor() {
-}
+ControlActor::~ControlActor() = default;
 
 void ControlActor::ReceiveEOS() {
-  if (++received_eos_number_ == brane::local_shard_count()) {
+  if (++received_eos_number_ == hiactor::local_shard_count()) {
     // global shard 0 is the location of SyncActor.
-    auto builder = brane::scope_builder(0);
-    auto actor_ref = builder.build_ref<SyncActorRef>(
-      LoaderConfig::sync_actor_id);
-    actor_ref.ReceiveEOS(brane::Integer(brane::global_shard_id()));
+    auto builder = hiactor::scope_builder(0);
+    auto actor_ref = builder.build_ref<SyncActor_ref>(
+        LoaderConfig::sync_actor_id);
+    actor_ref.ReceiveEOS(hiactor::Integer(hiactor::global_shard_id()));
   }
 }
 
 void ControlActor::StopActor() {
   DataLoaderStatus::Get()->NotifyFinished();
-  // TODO(xiaoming.qxm): kill other loader actors.
+  // TODO(@goldenleaves): kill other loader actors.
 }
 
 }  // namespace act

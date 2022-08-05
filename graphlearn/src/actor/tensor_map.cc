@@ -80,7 +80,6 @@ void ShardableTensorMap::DisableShard() {
   shardable_ = false;
 }
 
-// fixme: actor
 ShardableTensorMap* ShardableTensorMap::Clone() const {
   return new ShardableTensorMap;
 }

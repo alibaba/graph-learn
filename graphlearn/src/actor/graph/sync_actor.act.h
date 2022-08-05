@@ -16,36 +16,21 @@ limitations under the License.
 #ifndef GRAPHLEARN_ACTOR_GRAPH_SYNC_ACTOR_ACT_H_
 #define GRAPHLEARN_ACTOR_GRAPH_SYNC_ACTOR_ACT_H_
 
-#include <cstdint>
-#include <vector>
-#include "brane/actor/actor_implementation.hh"
-#include "brane/actor/reference_base.hh"
-#include "brane/util/common-utils.hh"
-#include "brane/util/data_type.hh"
+#include "hiactor/core/actor-template.hh"
+#include "hiactor/util/data_type.hh"
 
 namespace graphlearn {
 namespace act {
 
-class ANNOTATION(actor:reference) SyncActorRef : public brane::reference_base {
+class ANNOTATION(actor:impl) SyncActor : public hiactor::actor {
 public:
-  void ReceiveEOS(brane::Integer&& val);
+  SyncActor(hiactor::actor_base* exec_ctx, const hiactor::byte_t* addr);
+  ~SyncActor() override;
 
-  // Constructor.
-  ACTOR_ITFC_CTOR(SyncActorRef);
-  // Destructor
-  ACTOR_ITFC_DTOR(SyncActorRef);
-};
+  void ANNOTATION(actor:method) ReceiveEOS(hiactor::Integer&& val);
 
-class ANNOTATION(actor:implement) SyncActor : public brane::stateful_actor {
-public:
-  void ReceiveEOS(brane::Integer&& val);
+  ACTOR_DO_WORK()
 
-  // Constructor.
-  ACTOR_IMPL_CTOR(SyncActor);
-  // Destructor.
-  ACTOR_IMPL_DTOR(SyncActor);
-  // Do work
-  ACTOR_DO_WORK() override;
 private:
   int received_eos_number_;
   std::vector<int32_t> control_actor_id_;

@@ -338,6 +338,10 @@ else()
   set (PROFILING_FLAG CLOSE)
 endif()
 
+if (WITH_HIACTOR)
+  set (GL_CXX_DIALECT "gnu++17")
+endif()
+
 set (GL_CXX_FLAGS
   ${GL_MODE_FLAGS}
   -std=${GL_CXX_DIALECT}
@@ -375,6 +379,13 @@ add_library (graphlearn_shared SHARED
 
 add_dependencies (graphlearn_shared
   grpc_codegen)
+
+if (WITH_HIACTOR)
+  add_dependencies (actor_codegen
+    grpc_codegen)
+  add_dependencies (graphlearn_shared
+    actor_codegen)
+endif ()
 
 target_compile_options (graphlearn_shared
   PRIVATE ${GL_CXX_FLAGS})
