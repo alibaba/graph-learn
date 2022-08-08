@@ -16,8 +16,7 @@ limitations under the License.
 #ifndef GRAPHLEARN_ACTOR_SERVICE_ACTOR_COORD_H_
 #define GRAPHLEARN_ACTOR_SERVICE_ACTOR_COORD_H_
 
-#include <string>
-#include "brane/core/coordinator.hh"
+#include "hiactor/core/coordinator.hh"
 
 namespace graphlearn {
 
@@ -25,10 +24,10 @@ class Coordinator;
 
 namespace act {
 
-class ActorCoordImpl : public brane::coordinator::impl {
+class ActorCoordImpl : public hiactor::coordinator::impl {
 public:
   ActorCoordImpl(Coordinator* coord, int32_t server_id, int32_t server_count)
-      : brane::coordinator::impl(), coord_(coord),
+      : hiactor::coordinator::impl(), coord_(coord),
         server_id_(server_id), server_count_(server_count) {}
 
   ~ActorCoordImpl() override = default;

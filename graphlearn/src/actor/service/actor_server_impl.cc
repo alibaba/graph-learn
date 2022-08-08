@@ -15,10 +15,6 @@ limitations under the License.
 
 #include "service/server_impl.h"
 
-#include <unistd.h>
-#include <cstdlib>
-#include <memory>
-#include <vector>
 #include "actor/graph/sharded_graph_store.h"
 #include "actor/service/actor_service.h"
 #include "common/base/log.h"
@@ -47,6 +43,15 @@ public:
             const std::vector<io::NodeSource>& nodes) override;
   void Stop() override;
 
+  void StopSampling() override  {
+    // TODO(@Seventeen17)： impl this
+  }
+
+  const Counts& GetStats() const override {
+    // FIXME(@Seventeen17)： impl this
+    return act::ShardedGraphStore::Get().GetStatistics().GetCounts();
+  }
+
 private:
   void RegisterActorService();
   void InitActorService();
@@ -56,7 +61,7 @@ private:
 private:
   Env*                 env_;
   Executor*            executor_;
-  actor::ActorService* actor_service_;
+  act::ActorService*   actor_service_;
 };
 
 ActorServerImpl::ActorServerImpl(int32_t server_id,
@@ -68,7 +73,7 @@ ActorServerImpl::ActorServerImpl(int32_t server_id,
       executor_(nullptr),
       actor_service_(nullptr) {
   env_ = Env::Default();
-  actor::ShardedGraphStore::Get().Init(env_);
+  act::ShardedGraphStore::Get().Init(env_);
   executor_ = new Executor(env_, nullptr);
 }
 
@@ -90,7 +95,7 @@ void ActorServerImpl::Start() {
 
 void ActorServerImpl::Init(const std::vector<io::EdgeSource>& edges,
                            const std::vector<io::NodeSource>& nodes) {
-  Status s = actor::ShardedGraphStore::Get().Load(edges, nodes);
+  Status s = act::ShardedGraphStore::Get().Load(edges, nodes);
   if (!s.ok()) {
     USER_LOG("Server load data failed and exit now.");
     USER_LOG(s.ToString());
@@ -102,13 +107,23 @@ void ActorServerImpl::Init(const std::vector<io::EdgeSource>& edges,
   LOG(INFO) << "Data initialized.";
   USER_LOG("Data initialized.");
 
-  s = actor::ShardedGraphStore::Get().Build();
+  s = act::ShardedGraphStore::Get().Build();
   if (!s.ok()) {
     USER_LOG("Server build data failed and exit now.");
     USER_LOG(s.ToString());
     LOG(FATAL) << "Server build data failed: " << s.ToString();
     ::exit(-1);
   }
+
+  // FIXME(@Seventeen17) : check BuildStatistics() here
+  s = act::ShardedGraphStore::Get().BuildStatistics();
+  if (!s.ok()) {
+    USER_LOG("Server build statistics failed and exit now.");
+    USER_LOG(s.ToString());
+    LOG(FATAL) << "Server build statistics failed: " << s.ToString();
+    ::exit(-1);
+  }
+
   BuildBasicService();
   BuildActorService();
   LOG(INFO) << "Data is ready for serving.";
@@ -127,7 +142,7 @@ void ActorServerImpl::RegisterActorService() {
     return;
   }
 
-  actor_service_ = new actor::ActorService(
+  actor_service_ = new act::ActorService(
     server_id_, server_count_, coordinator_);
   Status s = actor_service_->Start();
   if (!s.ok()) {
@@ -189,7 +204,7 @@ ServerImpl* NewActorServerImpl(int32_t server_id,
                                int32_t server_count,
                                const std::string& server_host,
                                const std::string& tracker) {
-  return new actor::ActorServerImpl(
+  return new act::ActorServerImpl(
     server_id, server_count, server_host, tracker);
 }
 

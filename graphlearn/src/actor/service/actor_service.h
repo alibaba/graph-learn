@@ -16,7 +16,9 @@ limitations under the License.
 #ifndef GRAPHLEARN_ACTOR_SERVICE_ACTOR_SERVICE_H_
 #define GRAPHLEARN_ACTOR_SERVICE_ACTOR_SERVICE_H_
 
-#include <thread>  // NOLINT [build/c++11]
+#include <memory>
+#include <thread>
+
 #include "service/dist/naming_engine.h"
 #include "service/dist/coordinator.h"
 #include "include/status.h"

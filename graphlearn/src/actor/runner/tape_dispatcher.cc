@@ -15,32 +15,28 @@ limitations under the License.
 
 #include "actor/runner/tape_dispatcher.h"
 
-#include <algorithm>
-#include "actor/params.h"
-#include "actor/graph/sharded_graph_store.h"
-#include "actor/utils.h"
-#include "actor/tensor_map.h"
-#include "common/base/log.h"
 #include "seastar/core/alien.hh"
+
+#include "actor/graph/sharded_graph_store.h"
+#include "actor/params.h"
+#include "actor/tensor_map.h"
+#include "actor/utils.h"
+#include "common/base/log.h"
+
+#include "actor/generated/dag/dag_actor_ref.act.autogen.h"
 
 namespace graphlearn {
 namespace act {
 
 class DagActorRefManager {
 public:
-  DagActorRefManager(const std::vector<ActorIdType> *dag_actor_ids,
+  DagActorRefManager(const std::vector<ActorIdType>* dag_actor_ids,
                      const ShardIdType global_shard_id)
       : size_(dag_actor_ids->size()), cursor_(0) {
-    auto fut = seastar::alien::submit_to(
-          global_shard_id % brane::local_shard_count(),
-          [this, dag_actor_ids, global_shard_id] {
-      brane::scope_builder builder{global_shard_id};
-      for (auto id : *dag_actor_ids) {
-        refs_.push_back(builder.new_ref<DagActorRef>(id));
-      }
-      return seastar::make_ready_future<>();
-    });
-    fut.wait();
+    hiactor::scope_builder builder(global_shard_id);
+    for (auto id : *dag_actor_ids) {
+      refs_.push_back(builder.new_ref<DagActor_ref>(id));
+    }
   }
 
   ~DagActorRefManager() {
@@ -49,28 +45,31 @@ public:
     }
   }
 
-  DagActorRef* GetRef() {
+  DagActor_ref* GetRef() {
     auto ref = refs_[cursor_];
     cursor_ = (cursor_ + 1) % size_;
     return ref;
   }
 
 private:
-  std::vector<DagActorRef*> refs_;
-  uint32_t cursor_;
   const uint32_t size_;
+  uint32_t cursor_;
+  std::vector<DagActor_ref*> refs_;
 };
 
 class RoundRobinTapeDispatcher : public TapeDispatcher {
 public:
-  RoundRobinTapeDispatcher(const std::vector<ActorIdType> *dag_actor_ids)
+  explicit RoundRobinTapeDispatcher(const std::vector<ActorIdType>* dag_actor_ids)
     : TapeDispatcher(dag_actor_ids), cur_shard_id_(0) {}
   
   ~RoundRobinTapeDispatcher() override = default;
 
   void Dispatch(Tape *tape) override {
     auto runner_ref = dag_runner_refs_[cur_shard_id_]->GetRef();
-    seastar::alien::run_on(cur_shard_id_, [runner_ref, tape] {
+    seastar::alien::run_on(
+        *seastar::alien::internal::default_instance,
+        cur_shard_id_,
+        [runner_ref, tape] {
       runner_ref->RunOnce(TapeHolder(tape));
     });
 
@@ -83,7 +82,7 @@ private:
 
 class OrderedTapeDispatcher : public TapeDispatcher {
 public:
-  OrderedTapeDispatcher(const std::vector<ActorIdType> *dag_actor_ids,
+  OrderedTapeDispatcher(const std::vector<ActorIdType>* dag_actor_ids,
                         const DagNode* root);
   ~OrderedTapeDispatcher() override = default;
   void Dispatch(Tape *tape) override;
@@ -101,8 +100,8 @@ private:
   std::vector<uint32_t> batch_to_shard_;
 };
 
-TapeDispatcher::TapeDispatcher(const std::vector<ActorIdType> *dag_actor_ids)
-    : local_shards_(brane::local_shard_count()) {
+TapeDispatcher::TapeDispatcher(const std::vector<ActorIdType>* dag_actor_ids)
+    : local_shards_(hiactor::local_shard_count()) {
   BuildRefs(dag_actor_ids);
 }
 
@@ -112,20 +111,19 @@ TapeDispatcher::~TapeDispatcher() {
   }
 }
 
-void TapeDispatcher::BuildRefs(const std::vector<ActorIdType> *dag_actor_ids) {
+void TapeDispatcher::BuildRefs(const std::vector<ActorIdType>* dag_actor_ids) {
   dag_runner_refs_.reserve(local_shards_);
   for (uint32_t i = 0; i < local_shards_; ++i) {
-    ShardIdType global_shard_id = i + brane::machine_info::sid_anchor();
+    ShardIdType global_shard_id = i + hiactor::machine_info::sid_anchor();
     dag_runner_refs_.push_back(
       new DagActorRefManager(dag_actor_ids, global_shard_id));
   }
 }
 
 OrderedTapeDispatcher::OrderedTapeDispatcher(
-      const std::vector<ActorIdType> *dag_actor_ids,
+      const std::vector<ActorIdType>* dag_actor_ids,
       const DagNode* root)
-    : TapeDispatcher(dag_actor_ids),
-      total_batches_(0), cur_idx_(0) {
+    : TapeDispatcher(dag_actor_ids), total_batches_(0), cur_idx_(0) {
   MapBatchIdToShardId(root);
 }
 
@@ -181,7 +179,8 @@ int64_t OrderedTapeDispatcher::GetShardDataInfo(
   if (root->OpName() == "GetNodes") {
     std::string type = root->Params().at(kNodeType).GetString(0);
     for (uint32_t i = 0; i < local_shards_; ++i) {
-      auto noder = ShardedGraphStore::Get().OnShard(i)->GetNoder(type);
+      auto noder = ShardedGraphStore::Get().OnShard(
+          static_cast<int32_t>(i))->GetNoder(type);
       auto total_size_on_shard = noder->GetLocalStorage()->Size();
       total_size += total_size_on_shard;
       info_vec->emplace_back(total_size_on_shard, i);
@@ -190,7 +189,8 @@ int64_t OrderedTapeDispatcher::GetShardDataInfo(
     // FIXME: verify getting edge data
     std::string type = root->Params().at(kEdgeType).GetString(0);
     for (uint32_t i = 0; i < local_shards_; ++i) {
-      auto edger = ShardedGraphStore::Get().OnShard(i)->GetGraph(type);
+      auto edger = ShardedGraphStore::Get().OnShard(
+          static_cast<int32_t>(i))->GetGraph(type);
       auto total_size_on_shard = edger->GetLocalStorage()->GetEdgeCount();
       total_size += total_size_on_shard;
       info_vec->emplace_back(total_size_on_shard, i);
@@ -202,7 +202,7 @@ int64_t OrderedTapeDispatcher::GetShardDataInfo(
 }
 
 std::unique_ptr<TapeDispatcher> NewTapeDispatcher(
-    const std::vector<ActorIdType> *dag_actor_ids,
+    const std::vector<ActorIdType>* dag_actor_ids,
     const DagNode* root) {
   std::unique_ptr<TapeDispatcher> dispatcher{nullptr};
   if (root->Params().at(kStrategy).GetString(0) == "random") {

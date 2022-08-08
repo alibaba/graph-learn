@@ -49,6 +49,15 @@ public:
 
   Status Build();
 
+  Status BuildStatistics() {
+    // TODO(@Seventeen17)： impl this
+    return Status::OK();
+  }
+  const GraphStatistics& GetStatistics() const {
+    // TODO(@Seventeen17)： impl this
+    return stats_;
+  }
+
 private:
   ShardedGraphStore();
   ~ShardedGraphStore();
@@ -80,6 +89,7 @@ private:
   Env*                     env_;
   std::vector<GraphStore*> store_group_;
   AlienTPUniquePtr         alien_tp_;
+  GraphStatistics          stats_;
 
   friend class ActorService;
 };

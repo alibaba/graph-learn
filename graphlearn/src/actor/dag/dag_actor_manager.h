@@ -32,6 +32,9 @@ public:
     return instance;
   }
 
+  DagActorManager(const DagActorManager&) = delete;
+  DagActorManager(DagActorManager&&) = delete;
+
   ~DagActorManager() {
     // clean up memory
     for (auto& param : params_) {
@@ -39,46 +42,60 @@ public:
     }
   }
 
-  void Init(const Dag* dag, uint32_t concurrency = 8) {
+  DagActorManager& operator=(const DagActorManager&) = delete;
+  DagActorManager& operator=(DagActorManager&&) = delete;
+
+  void AddDag(const Dag* dag, uint32_t concurrency = 8) {
     // create actor ids and actor params
     auto dag_id = dag->Id();
+    dag_actor_infos_[dag_id] = DagActorInfo{};
+    auto& info = dag_actor_infos_[dag_id];
+
     // since we compute each op actor id use dag node id and dag id,
     // and dag node id is monotonically increasing from 1
     // for dag actor, we use dag nodes (size + 1, size + 1 + concurrency)
     // as the actor ids which is different from op actors
     for (int32_t i = 0; i < concurrency; ++i) {
-      dag_actor_ids_.push_back(
+      info.dag_actor_ids.push_back(
           MakeActorGUID(dag_id, dag->Nodes().size() + 1 + i));
     }
 
     for (auto& node : dag->Nodes()) {
-      ActorIdType actor_id = MakeActorGUID(dag_id, node->Id());
-      op_actor_ids_[node->Id()] = actor_id;
-      params_[actor_id] = new OpActorParams(node, actor_id);
+      ActorIdType op_actor_id = MakeActorGUID(dag_id, node->Id());
+      info.op_actor_ids[node->Id()] = op_actor_id;
+      if (params_.count(op_actor_id) > 0) {
+        delete params_[op_actor_id];
+      }
+      params_[op_actor_id] = new OpActorParams(node, op_actor_id);
     }
-    for (auto dag_actor_id : dag_actor_ids_) {
-      params_[dag_actor_id] = new DagActorParams(dag, &op_actor_ids_);
+
+    for (auto dag_actor_id : info.dag_actor_ids) {
+      if (params_.count(dag_actor_id) > 0) {
+        delete params_[dag_actor_id];
+      }
+      params_[dag_actor_id] = new DagActorParams(dag, &info.op_actor_ids);
     }
   }
 
-  const std::vector<ActorIdType>* GetDagActorIds() const {
-    return &dag_actor_ids_;
+  const std::vector<ActorIdType>* GetDagActorIds(int32_t dag_id) const {
+    return &dag_actor_infos_.at(dag_id).dag_actor_ids;
   }
 
   const ActorParams* GetActorParams(ActorIdType actor_id) const {
     return params_.at(actor_id);
   }
 
-  const NodeIdToActorId* GetOpActorIds() const {
-    return &op_actor_ids_;
-  }
-
 private:
   DagActorManager() = default;
 
 private:
-  NodeIdToActorId          op_actor_ids_;
-  std::vector<ActorIdType> dag_actor_ids_;
+  struct DagActorInfo {
+    std::vector<ActorIdType> dag_actor_ids;
+    NodeIdToActorId          op_actor_ids;
+    DagActorInfo() = default;
+  };
+
+  std::unordered_map<int32_t, DagActorInfo>     dag_actor_infos_;
   std::unordered_map<ActorIdType, ActorParams*> params_;
 };
 

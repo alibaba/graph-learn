@@ -16,16 +16,6 @@ limitations under the License.
 #ifndef GRAPHLEARN_ACTOR_RUNNER_TAPE_DISPATCHER_H_
 #define GRAPHLEARN_ACTOR_RUNNER_TAPE_DISPATCHER_H_
 
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
-
-#include "brane/actor/actor_implementation.hh"
-#include "brane/actor/reference_base.hh"
-#include "brane/util/common-utils.hh"
-#include "brane/util/data_type.hh"
-#include "actor/dag/dag_actor.act.h"
 #include "actor/dag/dag_proxy.h"
 #include "actor/params.h"
 #include "actor/utils.h"
@@ -39,12 +29,12 @@ class DagActorRefManager;
 
 class TapeDispatcher {
 public:
-  TapeDispatcher(const std::vector<ActorIdType> *dag_actor_ids);
+  explicit TapeDispatcher(const std::vector<ActorIdType>* dag_actor_ids);
   virtual ~TapeDispatcher();
   virtual void Dispatch(Tape *tape) = 0;
 
 private:
-  void BuildRefs(const std::vector<ActorIdType> *dag_actor_ids);
+  void BuildRefs(const std::vector<ActorIdType>* dag_actor_ids);
 
 protected:
   const uint32_t                   local_shards_;

@@ -6,7 +6,6 @@ install_prefix=${script_dir}/build
 cores=$(cat < /proc/cpuinfo | grep -c "processor")
 
 cd "${code_src}" && git submodule update --init && \
-sudo apt-get update -y && \
 sudo ./seastar/seastar/install-dependencies.sh && \
 mkdir -p build && cd build && \
 cmake -DCMAKE_CXX_FLAGS="-fPIC" \

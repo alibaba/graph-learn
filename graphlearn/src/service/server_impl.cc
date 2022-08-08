@@ -220,7 +220,7 @@ ServerImpl* NewActorServerImpl(int32_t server_id,
                                int32_t server_count,
                                const std::string& server_host,
                                const std::string& tracker) {
-  USER_LOG("Actor engine is disabled! Using default engine.");
+  USER_LOG("Hiactor is disabled! Using default server engine.");
   return new DefaultServerImpl(server_id, server_count, server_host, tracker);
 }
 #endif

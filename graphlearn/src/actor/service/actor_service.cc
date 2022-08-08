@@ -17,21 +17,16 @@ limitations under the License.
 
 #include <semaphore.h>
 #include <fstream>
-#include <memory>
-#include <string>
-#include <vector>
-#include "brane/actor/actor-system.hh"
-#include "brane/core/root_actor_group.hh"
-#include "brane/core/shard-config.hh"
-#include "brane/core/coordinator.hh"
-#include "actor/graph/loader_config.h"
+
+#include "hiactor/core/actor-app.hh"
+#include "seastar/core/alien.hh"
+
 #include "actor/graph/sharded_graph_store.h"
 #include "actor/service/actor_coord.h"
 #include "common/base/host.h"
 #include "common/base/macros.h"
 #include "include/config.h"
 #include "platform/env.h"
-#include "seastar/core/alien.hh"
 
 namespace graphlearn {
 namespace act {
@@ -44,13 +39,13 @@ void LaunchActorSystem(int32_t server_id,
   char prog_name[] = "graph_store_app";
   char docker_opt[] = "--thread-affinity=0";
   char cores[16], mach_id[16], server_list[32];
-  snprintf(cores, sizeof(cores), "-c%d", GLOBAL_FLAG(LocalShardCount));
+  snprintf(cores, sizeof(cores), "-c%d", GLOBAL_FLAG(ActorLocalShardCount));
   snprintf(mach_id, sizeof(mach_id), "--machine-id=%d", server_id);
   snprintf(server_list, sizeof(server_list),
     "--worker-node-list=s-%d.list", server_id);
 
   // FIXME: find the best value.
-  unsigned best_p2p_conn_count = GLOBAL_FLAG(LocalShardCount) / 2;
+  unsigned best_p2p_conn_count = GLOBAL_FLAG(ActorLocalShardCount) / 2;
   char p2p_conn_count[64];
   snprintf(p2p_conn_count, sizeof(p2p_conn_count),
     "--p2p-connection-count=%d", best_p2p_conn_count);
@@ -61,7 +56,7 @@ void LaunchActorSystem(int32_t server_id,
 
   seastar::app_template::config conf;
   conf.auto_handle_sigint_sigterm = false;
-  brane::actor_system sys{std::move(conf)};
+  hiactor::actor_app sys{std::move(conf)};
   sys.run(argc, argv, [] {
     sem_post(&ActorIsReadyFlag);
     return seastar::make_ready_future<>();
@@ -107,15 +102,15 @@ Status ActorService::Start() {
   if (distributed_mode) {
     /// If sync with rpc, ActorCoordImpl use RpcCoordinator to sync state.
     /// Else, when sync with file system, record sync message for actor.
-    brane::coordinator::get().set_impl(
-      std::unique_ptr<brane::coordinator::impl>(
-      new ActorCoordImpl(coord_, server_id_, server_count_)));
+    hiactor::coordinator::get().set_impl(
+        std::unique_ptr<hiactor::coordinator::impl>(
+            new ActorCoordImpl(coord_, server_id_, server_count_)));
 
     if (GLOBAL_FLAG(TrackerMode) == kFileSystem) {
       std::unique_ptr<NamingEngine> engine(new FSNamingEngine("actor"));
       engine->SetCapacity(server_count_);
 
-      std::string content = std::to_string(GLOBAL_FLAG(LocalShardCount))
+      std::string content = std::to_string(GLOBAL_FLAG(ActorLocalShardCount))
           + " " + GetLocalEndpoint(GetAvailablePort());
 
       s = engine->Update(server_id_, content);
@@ -167,12 +162,12 @@ Status ActorService::Stop() {
 
   if (server_id_ == 0) {
     seastar::alien::run_on(0, [] {
-      brane::actor_engine().exit(true);
+      hiactor::actor_engine().exit(true);
     });
   }
   actor_system_.join();
 
-  actor::ShardedGraphStore::Get().Finalize();
+  act::ShardedGraphStore::Get().Finalize();
   return Status::OK();
 }
 

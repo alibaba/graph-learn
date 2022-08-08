@@ -15,7 +15,6 @@ limitations under the License.
 
 #include "actor/service/actor_coord.h"
 
-#include <string>
 #include "service/dist/coordinator.h"
 
 namespace graphlearn {
