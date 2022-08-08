@@ -43,6 +43,7 @@ class KafkaOffsetsFetcher(object):
     # pause this consumer as we never poll messages.
     self._consumer_client.assign([])
     self._consumer_client.pause()
+    pass
 
   def query_current_offsets(self):
     end_offsets = self._consumer_client.end_offsets(self._topic_partitions)

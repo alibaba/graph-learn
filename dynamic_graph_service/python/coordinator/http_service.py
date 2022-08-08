@@ -39,12 +39,11 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
     content_length = int(self.headers['Content-Length'])
     content = self.rfile.read(content_length)
     if url_parsed.path == "/admin/init":
-      qid = [None]
       json_str = content.decode("utf-8")
       try:
         # TODO(@goldenleaves): check schema json.
         json.loads(json_str)
-        res = self.__class__.meta.register(qid, json_str)
+        res = self.__class__.meta.register(json_str)
         if res:
           self.__class__.grpc_server.init_query(json_str)
         self.send_response(200)
@@ -92,7 +91,7 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
     if url_parsed.path == "/admin/schema":
       self.send_response(200)
       self.end_headers()
-      self.wfile.write(bytes(self.schema, "utf-8"))
+      self.wfile.write(self.schema)
     elif url_parsed.path == "/admin/init-info/dataloader":
       dl_init_info = {
         "downstream": self.dl_ds_info,
@@ -116,6 +115,18 @@ class CoordinatorHttpHandler(BaseHTTPRequestHandler):
       self.send_response(res_code)
       self.end_headers()
       self.wfile.write(response.getvalue())
+    elif url_parsed.path == "/admin/query":
+      params = dict(parse_qsl(url_parsed.query))
+      query = self.__class__.meta.get()
+      if query is not None:
+        self.send_response(200)
+        self.end_headers()
+        print(query)
+        self.wfile.write(bytes(query, "utf-8"))
+      else:
+        self.send_response(400)
+        self.end_headers()
+        self.wfile.write(b'Query has not been registered.\n')
     else:
       self.send_response(400)
       self.end_headers()

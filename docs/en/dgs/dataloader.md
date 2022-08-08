@@ -176,5 +176,8 @@ after all dataloader instances have set the barrier.
 
 Users can also check barrier status on their gsl-clients:
 ```java
-    TODO(@Seventeen17): add the java example code here
+// public interface Graph
+Status checkBarrier(String name) throws UserException;
+
+// if Status.ok(), then the given barrier is READY.
 ```

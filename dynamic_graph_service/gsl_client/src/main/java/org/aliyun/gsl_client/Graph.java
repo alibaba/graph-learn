@@ -78,4 +78,19 @@ public interface Graph {
    * @throws UserException
    */
   Value run(Query query) throws UserException;
+
+  /**
+   * Check barrier set by DataLoader.
+   * @param name: barrier name
+   * @return ErrorCode.OK if barrier reaches READY state,
+   * else return ErrorCode.NOT_READY_ERROR.
+   */
+  Status checkBarrier(String name) throws UserException;
+
+  /**
+   * Get registered query.
+   * @return Query
+   * @throws UserException
+   */
+  Query getQuery() throws UserException;
 }

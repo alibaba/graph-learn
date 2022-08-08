@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.aliyun.dgs.VertexRecordRep;
+import org.aliyun.dgs.AttributeRecordRep;
+import org.aliyun.dgs.AttributeValueTypeRep;
+
 
 
 public class EgoGraph {
@@ -15,6 +18,7 @@ public class EgoGraph {
   private ArrayList<ArrayList<Long>> vids;  // src_vid, hop0_vids, hop1_vids
   private HashMap<Integer, HashMap<Long, VertexRecordRep>> vfeats;  // opid->{vid->features}
 
+  private HashMap<Short, Integer> attrdims;  // attrTypeId -> attrDim
 
   public EgoGraph(ArrayList<Integer> vtypes,
                   ArrayList<Integer> vops,
@@ -29,6 +33,7 @@ public class EgoGraph {
       vids.add(new ArrayList<Long>(hops.get(i)));
     }
     vfeats = new HashMap<>(vtypes.size());
+    attrdims = new HashMap<>();
   }
 
   public void addVids(int opid, long vid) {
@@ -44,6 +49,27 @@ public class EgoGraph {
       HashMap<Long, VertexRecordRep> feats = new HashMap<Long, VertexRecordRep>();
       feats.put(vid, attrs);
       vfeats.put(opid, feats);
+
+      attrs.attributesLength();
+      for ( int idx = 0; idx < attrs.attributesLength(); ++idx) {
+        org.aliyun.dgs.AttributeRecordRep aRep = attrs.attributes(idx);
+        short attrTypeId = aRep.attrType();
+        if (!attrdims.containsKey(attrTypeId)) {
+          int length = aRep.valueBytesLength();
+          int dim = 1;
+          switch (aRep.valueType()) {
+            case AttributeValueTypeRep.INT32_LIST: dim = length / 4;
+            break;
+            case AttributeValueTypeRep.INT64_LIST: dim = length / 8;
+            break;
+            case AttributeValueTypeRep.FLOAT32_LIST: dim = length / 4;
+            break;
+            case AttributeValueTypeRep.FLOAT64_LIST: dim = length / 8;
+            break;
+          }
+          attrdims.put(attrTypeId, dim);
+        }
+      }
     }
   }
 
@@ -64,11 +90,19 @@ public class EgoGraph {
     return vids.get(idx);
   }
 
-  public ByteBuffer getVfeat(int idx, long vid, int featIdx) {
+  public ByteBuffer getVfeat(int idx, long vid, int featKey) {
     int opId = vops.get(idx);
     HashMap<Long, VertexRecordRep> feats = vfeats.get(opId);
     VertexRecordRep feat = feats.get(vid);
-    ByteBuffer bb = feat.attributes(featIdx).valueBytesAsByteBuffer();
+    AttributeRecordRep attrRecord = feat.attributesByKey((short)featKey);
+    ByteBuffer bb = attrRecord.valueBytesAsByteBuffer();
     return bb;
+  }
+
+  public int getAttrDim(int attrType, int defaultDim) {
+    if (attrdims.containsKey((short)attrType)) {
+      return attrdims.get((short)attrType);
+    }
+    return defaultDim;
   }
 }

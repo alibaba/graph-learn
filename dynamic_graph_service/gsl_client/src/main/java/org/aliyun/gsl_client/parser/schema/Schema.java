@@ -21,14 +21,14 @@ public class Schema {
 
     public AttrDef getAttrDef(String attrName) throws UserException {
         if (!this.nameToAttrDef.containsKey(attrName)) {
-            throw new UserException(ErrorCode.PAESE_ERROR, "Missing definition of attr name: " + attrName);
+            throw new UserException(ErrorCode.PARSE_ERROR, "Missing definition of attr name: " + attrName);
         }
         return this.nameToAttrDef.get(attrName);
     }
 
     public AttrDef getAttrDef(int attrTypeId) throws UserException {
         if (!this.idToAttrDef.containsKey(attrTypeId)) {
-            throw new UserException(ErrorCode.PAESE_ERROR, "Missing definition of attr type: " + attrTypeId);
+            throw new UserException(ErrorCode.PARSE_ERROR, "Missing definition of attr type: " + attrTypeId);
         }
         return this.idToAttrDef.get(attrTypeId);
     }
@@ -39,14 +39,14 @@ public class Schema {
 
     public TypeDef getTypeDef(String typeName) throws UserException {
         if (!this.nameToTypeDef.containsKey(typeName)) {
-            throw new UserException(ErrorCode.PAESE_ERROR, "Missing definition of type name: " + typeName);
+            throw new UserException(ErrorCode.PARSE_ERROR, "Missing definition of type name: " + typeName);
         }
         return this.nameToTypeDef.get(typeName);
     }
 
     public TypeDef getTypeDef(int typeId) throws UserException {
         if (!this.idToTypeDef.containsKey(typeId)) {
-            throw new UserException(ErrorCode.PAESE_ERROR, "Missing definition of type: " + typeId);
+            throw new UserException(ErrorCode.PARSE_ERROR, "Missing definition of type: " + typeId);
         }
         return this.idToTypeDef.get(typeId);
     }
@@ -57,14 +57,14 @@ public class Schema {
 
     public EdgeRelation getRelation(String edgeName) throws UserException {
         if (!this.edgeNameToRelation.containsKey(edgeName)) {
-            throw new UserException(ErrorCode.PAESE_ERROR, "Missing relation of edge name: " + edgeName);
+            throw new UserException(ErrorCode.PARSE_ERROR, "Missing relation of edge name: " + edgeName);
         }
         return this.edgeNameToRelation.get(edgeName);
     }
 
     public EdgeRelation getRelation(int edgeTypeId) throws UserException {
         if (!this.edgeIdToRelation.containsKey(edgeTypeId)) {
-            throw new UserException(ErrorCode.PAESE_ERROR, "Missing relation of edge type: " + edgeTypeId);
+            throw new UserException(ErrorCode.PARSE_ERROR, "Missing relation of edge type: " + edgeTypeId);
         }
         return this.edgeIdToRelation.get(edgeTypeId);
     }

@@ -2,6 +2,7 @@
 
 here=$(dirname "$(realpath "$0")")
 fbs_bin_dir="${here}"/../../third_party/flatbuffers/build/bin
+
 fbs_cpp_file_dir="${here}"/../fbs
 fbs_java_file_dir="${here}"/fbs
 fbs_gen_dir="${here}"/src/main/java

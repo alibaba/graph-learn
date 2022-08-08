@@ -44,5 +44,11 @@ class Module(object):
   def __call__(self, *args, **kwargs):
     return self.forward(*args, **kwargs)
 
+  def __str__(self):
+    txt = "Module args:\n"
+    for k, v in self.__dict__.items():
+      txt += "{} : {}\n".format(k, v)
+    return txt
+
   def forward(self, *args, **kwargs):
     raise NotImplementedError

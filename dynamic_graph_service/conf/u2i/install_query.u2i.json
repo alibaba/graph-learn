@@ -23,26 +23,6 @@
       },
       {
         "id": 1,
-        "kind": "EDGE_SAMPLER",
-        "type": "EDGE",
-        "links": [
-          { "node": 3, "src_output": 1, "dst_input": 0},
-          { "node": 4, "src_output": 1, "dst_input": 0}
-        ],
-        "params": [
-          {"key": "vtype", "value": 0},
-          {"key": "etype", "value": 2},
-          {"key": "fanout", "value": 5},
-          {"key": "strategy", "value": 0}
-        ],
-        "filter": {
-          "weighted": true,
-          "labeled": false,
-          "attributed": false
-        }
-      },
-      {
-        "id": 2,
         "kind": "VERTEX_SAMPLER",
         "type": "VERTEX",
         "links": [],
@@ -57,11 +37,46 @@
         }
       },
       {
-        "id": 3,
+        "id": 2,
         "kind": "EDGE_SAMPLER",
         "type": "EDGE",
         "links": [
+          { "node": 3, "src_output": 1, "dst_input": 0},
           { "node": 4, "src_output": 1, "dst_input": 0}
+        ],
+        "params": [
+          {"key": "vtype", "value": 0},
+          {"key": "etype", "value": 2},
+          {"key": "fanout", "value": 10},
+          {"key": "strategy", "value": 0}
+        ],
+        "filter": {
+          "weighted": true,
+          "labeled": false,
+          "attributed": false
+        }
+      },
+      {
+        "id": 3,
+        "kind": "VERTEX_SAMPLER",
+        "type": "VERTEX",
+        "links": [],
+        "params": [
+          {"key": "vtype", "value": 1},
+          {"key": "versions", "value": 1}
+        ],
+        "filter": {
+          "weighted": false,
+          "labeled": false,
+          "attributed": true
+        }
+      },
+      {
+        "id": 4,
+        "kind": "EDGE_SAMPLER",
+        "type": "EDGE",
+        "links": [
+          { "node": 3, "src_output": 1, "dst_input": 0}
         ],
         "params": [
           {"key": "vtype", "value": 1},
@@ -73,21 +88,6 @@
           "weighted": true,
           "labeled": false,
           "attributed": false
-        }
-      },
-      {
-        "id": 4,
-        "kind": "VERTEX_SAMPLER",
-        "type": "VERTEX",
-        "links": [],
-        "params": [
-          {"key": "vtype", "value": 1},
-          {"key": "versions", "value": 1}
-        ],
-        "filter": {
-          "weighted": false,
-          "labeled": false,
-          "attributed": true
         }
       }
     ]

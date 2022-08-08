@@ -1,0 +1,50 @@
+{
+  "attr_defs": [
+    {
+      "type": 0,
+      "name": "weight",
+      "value_type": "FLOAT32"
+    },
+    {
+      "type": 1,
+      "name": "emb",
+      "value_type": "FLOAT32_LIST"
+    }
+  ],
+  "vertex_defs": [
+    {
+      "vtype": 0,
+      "name": "user",
+      "attr_types": [1]
+    },
+    {
+      "vtype": 1,
+      "name": "item",
+      "attr_types": [1]
+    }
+  ],
+  "edge_defs": [
+    {
+      "etype": 2,
+      "name": "u2i",
+      "attr_types": [0]
+    },
+    {
+      "etype": 3,
+      "name": "i2i",
+      "attr_types": [0]
+    }
+  ],
+  "edge_relation_defs": [
+    {
+      "etype": 2,
+      "src_vtype": 0,
+      "dst_vtype": 1
+    },
+    {
+      "etype": 3,
+      "src_vtype": 1,
+      "dst_vtype": 1
+    }
+  ]
+}

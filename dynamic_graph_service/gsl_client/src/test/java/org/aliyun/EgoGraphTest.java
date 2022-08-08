@@ -1,22 +1,28 @@
 package org.aliyun;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Vector;
-
 import org.aliyun.gsl_client.DataSource;
 import org.aliyun.gsl_client.Graph;
 import org.aliyun.gsl_client.Query;
 import org.aliyun.gsl_client.Value;
 import org.aliyun.gsl_client.ValueBuilder;
 import org.aliyun.gsl_client.exception.UserException;
+import org.aliyun.gsl_client.parser.Plan;
 import org.aliyun.gsl_client.parser.PlanNode;
 import org.aliyun.gsl_client.parser.schema.Schema;
 import org.aliyun.gsl_client.predict.EgoGraph;
-import org.aliyun.gsl_client.predict.TFPredictClient;
-import org.aliyun.gsl_client.status.ErrorCode;
-import org.aliyun.gsl_client.status.Status;
 
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Vector;
 
 class MockDataSource extends DataSource {
   Vector<Long> vids = new Vector<>();
@@ -45,16 +51,26 @@ class MockDataSource extends DataSource {
   }
 }
 
-class EgoGraphGenerator {
-  private Query query;
-  private Schema schema;
-
-  EgoGraphGenerator(Query query, Schema schema) {
-    this.query = query;
-    this.schema = schema;
+public class EgoGraphTest extends TestCase {
+  public EgoGraphTest(String testName) {
+    super(testName);
   }
 
-  public EgoGraph mock() throws UserException {
+  public static Test suite() {
+    return new TestSuite(EgoGraphTest.class);
+  }
+
+  public void testGetEgoGraph() throws UserException, IOException {
+    int iters = 5;
+    DataSource source = new MockDataSource(iters);
+    // Start coordinator first.
+
+    Plan plan = Plan.parseFrom("../../conf/u2i/install_query.u2i.json");
+    Query query = new Query(plan);
+
+    query.feed(source);;
+    Schema schema = Schema.parseFrom("../../conf/u2i/schema.u2i.json");
+
     ValueBuilder builder = new ValueBuilder(query, 1 + 1 + 10 + 10 + 50, schema, 0L, 10);
 
     ArrayList<PlanNode> nodes = query.getPlan().getEgoGraphNodes();
@@ -78,6 +94,16 @@ class EgoGraphGenerator {
       }
     }
 
+    ArrayList<Integer> expectedVtypes = new ArrayList<Integer>(Arrays.asList(0, 1, 1));
+    ArrayList<Integer> expectedVops = new ArrayList<Integer>(Arrays.asList(1, 3, 3));
+    ArrayList<Integer> expectedHops = new ArrayList<Integer>(Arrays.asList(1, 10, 5));
+    ArrayList<Integer> expectedEops = new ArrayList<Integer>(Arrays.asList(0, 2, 4));
+
+    assertEquals(expectedVtypes, vtypes);
+    assertEquals(expectedVops, vops);
+    assertEquals(expectedHops, hops);
+    assertEquals(expectedEops, eops);
+
     builder.addVopRes(vops.get(0), (short)vtypes.get(0).intValue(), 0L, 1);
     builder.addEopRes(eops.get(1), (short)2, (short)0, (short)1, 0L, 10);
     for (int i = 0; i < 10; ++i) {
@@ -92,61 +118,10 @@ class EgoGraphGenerator {
     Value val = builder.finish();
     EgoGraph egoGraph = new EgoGraph(vtypes, vops, hops, eops);
     egoGraph = val.feedEgoGraph(egoGraph);
-    return egoGraph;
-  }
-}
 
-public class App
-{
-  public static void main( String[] args ) {
-    String server = args[0];
-    String modelName = args[1];
-    Graph g = Graph.connect(server);
-
-
-    int iters = 5;
-    DataSource source = new MockDataSource(iters);
-
-    try {
-      Schema schema = g.getSchema();
-
-      Query query = g.V("user").feed(source).properties(1).alias("seed")
-          .outV("u2i").sample(10).by("topk_by_timestamp").properties(1).alias("hop1")
-          .outV("i2i").sample(5).by("topk_by_timestamp").properties(1).alias("hop2")
-          .values();
-      Status s = g.install(query);
-
-      // Uncomment me on other clients.
-      // Query query = g.getQuery();
-      // query.feed(source);
-      // Status s = new Status(ErrorCode.OK);
-
-      System.out.println("Query Installation Ready: " + query.getPlan().toJson().toString());
-
-      if (s.ok()) {
-        // Note: Make sure that DataLoader has set barrier("u2i_finished")
-        while (!g.checkBarrier("u2i_finished").ok()) {
-          Thread.sleep(1000);
-          System.out.println("Barrier u2i_finished is not ready...");
-        }
-
-        TFPredictClient client = new TFPredictClient(schema, "localhost", 9000);
-        for (int i = 0; i < iters; ++i) {
-          // Get Sampled EgoGraph from Service
-          Value content = g.run(query);
-          EgoGraph egoGraph = content.getEgoGraph();
-
-          // Uncomment me when mock sampled data.
-          // EgoGraphGenerator gen = new EgoGraphGenerator(query, schema);
-          // EgoGraph egoGraph = gen.mock();
-          ArrayList<Integer> phs = new ArrayList<Integer>(Arrays.asList(0, 3, 4));
-          client.predict(modelName, 1, egoGraph, phs);
-        }
-      } else {
-        System.out.println("Install Query failed, error code:" + s.getCode());
-      }
-    } catch (Exception e) {
-        e.printStackTrace();
+    ByteBuffer bb = egoGraph.getVfeat(1, 0, 2);
+    while (bb.hasRemaining()) {
+      System.out.println(bb.getFloat());
     }
   }
 }

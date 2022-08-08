@@ -1,4 +1,5 @@
 package org.aliyun;
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -8,12 +9,14 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import org.aliyun.gsl_client.Decoder;
 import org.aliyun.gsl_client.Query;
 import org.aliyun.gsl_client.Value;
 import org.aliyun.gsl_client.ValueBuilder;
 import org.aliyun.gsl_client.exception.UserException;
 import org.aliyun.gsl_client.parser.Plan;
+import org.aliyun.gsl_client.parser.schema.DataType;
+import org.aliyun.gsl_client.parser.schema.Schema;
+import org.aliyun.gsl_client.parser.schema.Schema.Builder;
 import org.aliyun.gsl_client.predict.EgoGraph;
 import org.aliyun.gsl_client.predict.EgoTensor;
 
@@ -22,15 +25,14 @@ public class ConvertTensorTest extends TestCase {
   private ArrayList<Integer> vops = new ArrayList<Integer>(Arrays.asList(2, 4, 4));
   private ArrayList<Integer> hops = new ArrayList<Integer>(Arrays.asList(1, 10, 5));
   private ArrayList<Integer> eops = new ArrayList<Integer>(Arrays.asList(0, 1, 3));
+  private Schema schema;
 
   /*
    * Test results:
-   * Convert Samples with 100 Float feats Time taken: 0.038 millseconds
-   * Convert Samples with 1K Float feats Time taken: 0.179 millsecond
-   * Convert Samples with 1 String(100Byte) feats Time taken: 0.029 millseconds
-   * Convert Samples with 10 String(10 * 100Byte) feats Time taken: 2.536 millseconds
+   * Convert Samples with 100 Float feats Time taken: 0.097 millseconds
+   * Convert Samples with 1K Float feats Time taken: 0.131 millsecond
    */
-  public ConvertTensorTest(String testName) {
+  public ConvertTensorTest(String testName) throws UserException, IOException {
     super(testName);
   }
 
@@ -38,11 +40,12 @@ public class ConvertTensorTest extends TestCase {
     return new TestSuite(ConvertTensorTest.class);
   }
 
-  private Value generatedValue(Decoder d) {
+  private Value generatedValue(int dim) throws UserException {
     long inputVid = 0L;
     Plan plan = new Plan();
     Query query = new Query(plan);
-    ValueBuilder builder = new ValueBuilder(query, 1 + 1 + 10 + 10 + 50, d, 0L);
+    ValueBuilder builder = new ValueBuilder(query, 1 + 1 + 10 + 10 + 50, schema, 0L, dim);
+
     builder.addVopRes(2, (short)0, inputVid, 1);
     builder.addEopRes(1, (short)2, (short)0, (short)1, inputVid, 10);
     for (int i = 0; i < 10; ++i) {
@@ -58,24 +61,24 @@ public class ConvertTensorTest extends TestCase {
     return val;
   }
 
-  private Duration convert(Decoder decoder) {
+  private Duration convert(int dim, int iters) throws UserException {
     Plan plan = new Plan();
-    for (int i = 0; i < 1000; ++i) {
-      Value val = generatedValue(decoder);
+    for (int i = 0; i < iters; ++i) {
+      Value val = generatedValue(dim);
 
       EgoGraph g = val.getEgoGraph(vtypes, vops, hops, eops);
-      EgoTensor t = new EgoTensor(g, decoder);
+      EgoTensor t = new EgoTensor(g, schema);
     }
 
     Instant startT = Instant.now();
     Instant endT = Instant.now();
-    Duration total = Duration.between(startT, endT);;
+    Duration total = Duration.between(startT, endT);
 
-    for (int i = 0; i < 1000; ++i) {
-      Value val = generatedValue(decoder);
+    for (int i = 0; i < iters; ++i) {
+      Value val = generatedValue(dim);
       Instant start = Instant.now();
       EgoGraph g = val.getEgoGraph(vtypes, vops, hops, eops);
-      EgoTensor t = new EgoTensor(g, decoder);
+      EgoTensor t = new EgoTensor(g, schema);
       Instant end = Instant.now();
       Duration timeElapsed = Duration.between(start, end);
       total = total.plus(timeElapsed);
@@ -83,59 +86,33 @@ public class ConvertTensorTest extends TestCase {
     return total;
   }
 
-  public void testConvert1kFloat() throws UserException {
-    Decoder decoder = new Decoder();
-    decoder.addFeatDesc(0,
-                        new ArrayList<String>(Arrays.asList("float")),
-                        new ArrayList<Integer>(Arrays.asList(1000)));
-    decoder.addFeatDesc(1,
-                        new ArrayList<String>(Arrays.asList("float")),
-                        new ArrayList<Integer>(Arrays.asList(1000)));
-
-    Duration total = convert(decoder);
+  public void testConvert1kFloat() throws UserException, IOException {
+    this.schema = Schema.parseFrom("../conf/ut/schema.ut.json");
+    Duration total = convert(1000, 1000);
     System.out.printf("Convert 1K Float Time taken: %.3f millseconds\n", total.toMillis() / 1000f);
   }
 
-  public void testConvert100Float() throws UserException {
-    Decoder decoder = new Decoder();
-    decoder.addFeatDesc(0,
-                        new ArrayList<String>(Arrays.asList("float")),
-                        new ArrayList<Integer>(Arrays.asList(100)));
-    decoder.addFeatDesc(1,
-                        new ArrayList<String>(Arrays.asList("float")),
-                        new ArrayList<Integer>(Arrays.asList(100)));
-
-    Duration total = convert(decoder);
+  public void testConvert100Float() throws UserException, IOException {
+    this.schema = Schema.parseFrom("../conf/ut/schema.ut.json");
+    Duration total = convert(100, 1000);
     System.out.printf("Convert 100 Float Time taken: %.3f millseconds\n", total.toMillis() / 1000f);
   }
 
-  public void testConvertString() throws UserException {
-    // 1 string feat with 100 bytes.
-    Decoder decoder = new Decoder();
-    decoder.addFeatDesc(0,
-                        new ArrayList<String>(Arrays.asList("string")),
-                        new ArrayList<Integer>(Arrays.asList(100)));
-    decoder.addFeatDesc(1,
-                        new ArrayList<String>(Arrays.asList("string")),
-                        new ArrayList<Integer>(Arrays.asList(100)));
-
-    Duration total = convert(decoder);
+  public void testConvertString() throws UserException, IOException {
+    this.schema = Schema.parseFrom("../conf/ut/schema.ut.json");
+    Builder builder = Schema.newBuilder(schema);
+    builder.removeAttribute("emb");
+    builder.addAttribute("raw", DataType.STRING);
+    Duration total = convert(1, 1000);
     System.out.printf("Convert 1 String Time taken: %.3f millseconds\n", total.toMillis() / 1000f);
   }
 
-  public void testConvert10String() throws UserException {
-    // 10 string feat, each string feat with 100 bytes.
-    Decoder decoder = new Decoder();
-    ArrayList<String> featTypes = new ArrayList<>();
-    ArrayList<Integer> featDims = new ArrayList<>();
-    for (int i = 0; i < 100; ++i) {
-      featTypes.add("string");
-      featDims.add(100);
-    }
-    decoder.addFeatDesc((short)0, featTypes, featDims);
-    decoder.addFeatDesc((short)1, featTypes, featDims);
-
-    Duration total = convert(decoder);
+  public void testConvert10String() throws UserException, IOException {
+    this.schema = Schema.parseFrom("../conf/ut/schema.ut.json");
+    Builder builder = Schema.newBuilder(schema);
+    builder.removeAttribute("emb");
+    builder.addAttribute("raw", DataType.STRING);
+    Duration total = convert(10, 1000);
     System.out.printf("Convert 10 String Time taken: %.3f millseconds\n", total.toMillis() / 1000f);
   }
 }

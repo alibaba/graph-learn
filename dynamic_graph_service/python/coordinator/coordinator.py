@@ -64,24 +64,17 @@ from state_manager import SamplingStateManager, ServingStateManager
 
 class Meta(object):
   def __init__(self):
-    self._registerd_queries = {}
-    self._lock = threading.Lock()
-    self._qid = -1
+    self._registerd_query = None
 
-  def _inc_qid(self):
-    with self._lock:
-      self._qid += 1
-    return self._qid
-
-  def register(self, query_id, query):
-    for k, v in self._registerd_queries.items():
-      if v == query:
-        logging.info("Query {} has been registered.".format(k))
-        query_id[0] = k
-        return False
-    query_id[0] = self._inc_qid()
-    self._registerd_queries[query_id[0]] = query
+  def register(self, query):
+    if self._registerd_query == query:
+      logging.info("Query has been registered.")
+      return False
+    self._registerd_query = query
     return True
+
+  def get(self):
+    return self._registerd_query
 
 
 class Coordinator(object):

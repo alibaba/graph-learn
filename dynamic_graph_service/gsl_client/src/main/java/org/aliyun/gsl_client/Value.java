@@ -14,6 +14,7 @@ import org.aliyun.dgs.RecordUnionRep;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Vector;
 
 /**
  * Value contains the input of query and a byte buffer contains the
@@ -80,8 +81,8 @@ public class Value {
    * @param query(Query), the executed query.
    * @return EgoGraph
    */
-  public EgoGraph getEgoGraph(String srcVtype) throws UserException{
-    ArrayList<PlanNode> nodes = query.getPlan().getEgoGraphNodes(srcVtype);
+  public EgoGraph getEgoGraph() throws UserException{
+    ArrayList<PlanNode> nodes = query.getPlan().getEgoGraphNodes();
     ArrayList<Integer> vtypes = new ArrayList<Integer>();
     ArrayList<Integer> vops = new ArrayList<Integer>();
     ArrayList<Integer> hops = new ArrayList<Integer>();
@@ -90,9 +91,12 @@ public class Value {
       if (node.getKind().equals("EDGE_SAMPLER")) {
         eops.add(node.getId());
         hops.add(node.getParam("fanout"));
-      } else {
+      } else if (node.getKind().equals("VERTEX_SAMPLER")){
         vtypes.add(node.getParam("vtype"));
         vops.add(node.getId());
+      } else {
+        eops.add(node.getId());
+        hops.add(1);  // Fanout=1 for source node.
       }
     }
     EgoGraph egoGraph = new EgoGraph(vtypes, vops, hops, eops);
@@ -107,7 +111,7 @@ public class Value {
     return feedEgoGraph(egoGraph);
   }
 
-  private EgoGraph feedEgoGraph(EgoGraph egoGraph) {
+  public EgoGraph feedEgoGraph(EgoGraph egoGraph) {
     egoGraph.addVids(0, input);
     for (int i = 0; i < size(); ++i) {
       EntryRep entry = rep.results(i);
