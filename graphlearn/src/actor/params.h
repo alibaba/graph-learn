@@ -46,7 +46,9 @@ struct TapeActorConfig {
   TapeActorConfig(TapeStorePtr st, Env* e) : env(e), store(std::move(st)) {}
 
   void dump_to(hiactor::serializable_queue& qu) {}
-  static TapeActorConfig load_from(hiactor::serializable_queue &qu) {}
+  static TapeActorConfig load_from(hiactor::serializable_queue &qu) {
+    return {};
+  }
 };
 
 struct ActorParams {
