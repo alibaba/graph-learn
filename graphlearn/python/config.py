@@ -20,9 +20,6 @@ import functools
 from graphlearn import pywrap_graphlearn as pywrap
 
 
-def set_enable_actor(flag):
-  pywrap.set_enable_actor(flag)
-
 def set_default_neighbor_id(nbr_id):
   pywrap.set_default_neighbor_id(nbr_id)
 
@@ -98,9 +95,9 @@ def set_ignore_invalid(value):
 def enable_actor():
   pywrap.set_enable_actor(1)
 
-def set_local_shard_count(count):
+def set_actor_local_shard_count(count):
   assert isinstance(count, int) and count > 0
-  pywrap.set_local_shard_count(count)
+  pywrap.set_actor_local_shard_count(count)
 
 def set_neg_sampler_retry_times(times):
   pywrap.set_neg_sampler_retry_times(times)
