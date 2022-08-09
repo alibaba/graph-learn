@@ -131,7 +131,10 @@ void OrderedTapeDispatcher::Dispatch(Tape* tape) {
   if (cur_idx_ < total_batches_) {
     uint32_t local_shard_id = batch_to_shard_[cur_idx_++];
     auto runner_ref = dag_runner_refs_[local_shard_id]->GetRef();
-    seastar::alien::run_on(local_shard_id, [runner_ref, tape] {
+    seastar::alien::run_on(
+        *seastar::alien::internal::default_instance,
+        local_shard_id,
+        [runner_ref, tape] {
       runner_ref->RunOnce(TapeHolder(tape));
     });
   } else {

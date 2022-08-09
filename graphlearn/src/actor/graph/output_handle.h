@@ -71,7 +71,8 @@ OutputHandle<Value, Wrapper>::OutputHandle(unsigned init_id)
   refs_.reserve(hiactor::global_shard_count());
   buffers_.resize(hiactor::global_shard_count());
 
-  auto fut = seastar::alien::submit_to(0, [this] {
+  auto fut = seastar::alien::submit_to(
+      *seastar::alien::internal::default_instance, 0, [this] {
     for (uint32_t i = 0; i < hiactor::global_shard_count(); ++i) {
       auto builder = hiactor::scope_builder(i);
       refs_.emplace_back(builder.new_ref<
@@ -85,7 +86,8 @@ OutputHandle<Value, Wrapper>::OutputHandle(unsigned init_id)
 
 template <typename Value, typename Wrapper>
 inline
-void OutputHandle<Value, Wrapper>::Push(Value &value,
+void OutputHandle<Value, Wrapper>::Push(
+    Value &value,
     const io::SideInfo& side_info) {
   int32_t shard_id = HashPartition(value);
   auto &request = buffers_[shard_id];
@@ -115,8 +117,11 @@ inline
 void OutputHandle<Value, Wrapper>::NotifyFinished() {
   FlushAll();
   for (uint32_t i = 0; i < hiactor::global_shard_count(); ++i) {
-    seastar::alien::run_on(i % local_shard_num_, [ref = refs_[i]] {
-      ref->ReceiveEOS();
+    seastar::alien::run_on(
+        *seastar::alien::internal::default_instance,
+        i % local_shard_num_,
+        [this, i] {
+      refs_[i]->ReceiveEOS();
     });
   }
 }
@@ -124,9 +129,11 @@ void OutputHandle<Value, Wrapper>::NotifyFinished() {
 template <typename Value, typename Wrapper>
 inline void OutputHandle<Value, Wrapper>::
 AlienSend(uint32_t id, UpdateNodesRequestWrapper&& request) {
-  seastar::alien::run_on(cursor_id_, [this, ref = refs_[id],
-      request = std::move(request)] () mutable {
-    ref->UpdateNodes(std::move(request));
+  seastar::alien::run_on(
+      *seastar::alien::internal::default_instance,
+      cursor_id_,
+      [this, id, request = std::move(request)] () mutable {
+    refs_[id]->UpdateNodes(std::move(request));
   });
   cursor_id_ = (cursor_id_ + 1) % local_shard_num_;
 }
@@ -134,9 +141,11 @@ AlienSend(uint32_t id, UpdateNodesRequestWrapper&& request) {
 template <typename Value, typename Wrapper>
 inline void OutputHandle<Value, Wrapper>::
 AlienSend(uint32_t id, UpdateEdgesRequestWrapper&& request) {
-  seastar::alien::run_on(cursor_id_, [this, ref = refs_[id],
-      request = std::move(request)] () mutable {
-    ref->UpdateEdges(std::move(request));
+  seastar::alien::run_on(
+      *seastar::alien::internal::default_instance,
+      cursor_id_,
+      [this, id, request = std::move(request)] () mutable {
+    refs_[id]->UpdateEdges(std::move(request));
   });
   cursor_id_ = (cursor_id_ + 1) % local_shard_num_;
 }

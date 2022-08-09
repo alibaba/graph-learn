@@ -161,8 +161,9 @@ Status ActorService::Stop() {
   Env::Default()->SetStopping();
 
   if (server_id_ == 0) {
-    seastar::alien::run_on(0, [] {
-      hiactor::actor_engine().exit(true);
+    seastar::alien::run_on(
+        *seastar::alien::internal::default_instance, 0, [] {
+      hiactor::actor_engine().exit();
     });
   }
   actor_system_.join();
