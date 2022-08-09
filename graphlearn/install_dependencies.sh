@@ -2,10 +2,27 @@
 #
 # A script to install dependencies and third parties for graphlearn.
 
-set -e
+set -eo pipefail
 
 gl_root_dir=$(dirname "$(realpath "$0")")
 third_party_dir=${gl_root_dir}/../third_party
+
+build_hiactor=false
+
+for i in "$@"; do
+  case $i in
+    --build-hiactor)
+      build_hiactor=true
+      shift # past argument with no value
+      ;;
+    --*)
+      echo "Unknown option $i"
+      exit 1
+      ;;
+    *)
+      ;;
+  esac
+done
 
 # os-release may be missing in container environment by default.
 if [ -f "/etc/os-release" ]; then
@@ -34,6 +51,17 @@ else
 fi
 
 ## installing submodules
+
+# hiactor
+if [ "${build_hiactor}" = true ] ; then
+  echo "-- installing hiactor ..."
+  if [ ! -f "${third_party_dir}/hiactor/build/include/hiactor/core/actor-template.hh" ]; then
+    pushd "${third_party_dir}/hiactor"
+    git submodule update --init hiactor
+    /bin/bash build.sh
+    popd
+  fi
+fi
 
 # glog
 echo "-- installing glog ..."

@@ -19,6 +19,7 @@ limitations under the License.
 #include <cstdint>
 #include <fstream>
 #include <string>
+
 #include "core/io/element_value.h"
 #include "include/config.h"
 #include "include/server.h"
@@ -36,14 +37,14 @@ public:
     kInvalidDelimeter = 4
   };
 public:
-  TestEnv(const uint32_t load_batch_size = 10240,
-          const uint32_t num_shards = 4,
-          const uint32_t common_num = 40,
-          const uint32_t remaining_factor = 5,
-          const uint32_t edge_num = 1000,
-          const uint32_t node_int_attr_num = 1,
-          const uint32_t node_float_attr_num = 0,
-          const DatasetCode code = DatasetCode::kValid);
+  explicit TestEnv(uint32_t load_batch_size = 10240,
+                   uint32_t num_shards = 4,
+                   uint32_t common_num = 40,
+                   uint32_t remaining_factor = 5,
+                   uint32_t edge_num = 1000,
+                   uint32_t node_int_attr_num = 1,
+                   uint32_t node_float_attr_num = 0,
+                   DatasetCode code = DatasetCode::kValid);
 
   void Initialize();
   void Finalize();
@@ -82,14 +83,14 @@ private:
   const char* u2i_edge_file_ = "user_to_item_weighted_edge_file";
 };
 
-TestEnv::TestEnv(const uint32_t load_batch_size,
-                 const uint32_t num_shards,
-                 const uint32_t common_num,
-                 const uint32_t remaining_factor,
-                 const uint32_t edge_num,
-                 const uint32_t node_int_attr_num,
-                 const uint32_t node_float_attr_num,
-                 const DatasetCode code)
+TestEnv::TestEnv(uint32_t load_batch_size,
+                 uint32_t num_shards,
+                 uint32_t common_num,
+                 uint32_t remaining_factor,
+                 uint32_t edge_num,
+                 uint32_t node_int_attr_num,
+                 uint32_t node_float_attr_num,
+                 DatasetCode code)
   : load_batch_size_(load_batch_size),
     num_shards_(num_shards),
     common_num_(common_num),
@@ -104,7 +105,7 @@ void TestEnv::Initialize() {
   SetGlobalFlagEnableActor(1);
   SetGlobalFlagDeployMode(kLocal);
   SetGlobalFlagTrackerMode(kFileSystem);
-  SetGlobalFlagLocalShardCount(num_shards_);
+  SetGlobalFlagActorLocalShardCount(num_shards_);
   SetGlobalFlagDataInitBatchSize(load_batch_size_);
 
   SetGlobalFlagTracker(tracker_dir_);

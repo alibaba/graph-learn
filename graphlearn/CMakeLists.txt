@@ -45,10 +45,9 @@ option (VINEYARD_USE_OID
   "Use OID when work with vineyard graphs"
   ON)
 
-# FIXME: change to OFF
 option (WITH_HIACTOR
   "Enable hiactor engine"
-  ON)
+  OFF)
 
 set (GL_CXX_DIALECT
   "c++11"
@@ -399,7 +398,7 @@ target_link_libraries (graphlearn_shared
     gRPC::grpc++)
 
 if (WITH_HIACTOR)
-  target_link_libraries(graphlearn_shared
+  target_link_libraries (graphlearn_shared
     PUBLIC
       -Wl,--whole-archive
       Hiactor::hiactor
@@ -494,6 +493,12 @@ if (TESTING)
     add_gl_tests (${KNN_TEST_FILES})
   endif ()
 
+  if (WITH_HIACTOR)
+    file (GLOB_RECURSE ACTOR_TEST_FILES
+      ${GL_ACTOR_DIR}/*.cpp)
+    add_gl_tests (${ACTOR_TEST_FILES})
+  endif ()
+
   if (WITH_VINEYARD)
     target_compile_options(vineyard_storage_unittest PRIVATE "-std=c++14")
   endif ()
@@ -510,15 +515,13 @@ execute_process (
   COMMAND /bin/sh -c "git rev-parse --abbrev-ref HEAD"
   OUTPUT_VARIABLE GIT_BRANCH
 )
-# FIXME: uncomment
-#string (STRIP ${GIT_BRANCH} GIT_BRANCH)
+string (STRIP ${GIT_BRANCH} GIT_BRANCH)
 
 execute_process (
   COMMAND /bin/sh -c "git rev-parse --short HEAD"
   OUTPUT_VARIABLE GIT_VERSION
 )
-# FIXME: uncomment
-#string (STRIP ${GIT_VERSION} GIT_VERSION)
+string (STRIP ${GIT_VERSION} GIT_VERSION)
 
 set (GL_PYTHON_LIB_DIR ${GL_PYTHON_DIR}/python/lib)
 add_custom_target (python)

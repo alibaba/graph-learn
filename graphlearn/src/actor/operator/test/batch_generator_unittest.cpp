@@ -13,26 +13,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include <google/protobuf/text_format.h>
-#include "brane/actor/actor_client.hh"
-#include "brane/actor/actor_message.hh"
-#include "brane/actor/actor_param_store.hh"
-#include "brane/core/coordinator.hh"
-#include "brane/core/shard-config.hh"
-#include "brane/util/data_type.hh"
+#include "gtest/gtest.h"
+#include "google/protobuf/text_format.h"
+#include "seastar/core/alien.hh"
+#include "seastar/core/when_all.hh"
+
+#include "actor/test/test_env.h"
 #include "actor/dag/dag_actor_manager.h"
 #include "actor/operator/batch_generator.h"
 #include "actor/operator/edge_getter.act.h"
-#include "actor/operator/node_getter.act.h"
-#include "actor/test/test_env.h"
-#include "common/base/log.h"
 #include "platform/protobuf.h"
-#include "proto/dag.pb.h"
-#include "gtest/gtest.h"
-#include "seastar/core/alien.hh"
+
+#include "actor/generated/operator/edge_getter_ref.act.autogen.h"
+#include "actor/generated/operator/node_getter_ref.act.autogen.h"
+#include "generated/proto/dag.pb.h"
 
 using namespace graphlearn;  // NOLINT [build/namespaces]
-using namespace graphlearn::actor;  // NOLINT [build/namespaces]
+using namespace graphlearn::act;  // NOLINT [build/namespaces]
 
 const char* template_dag_content =
   "nodes {{ \n"
@@ -140,55 +137,34 @@ inline bool operator<(const edge_record& lhs, const edge_record& rhs) {
 
 class BatchGeneratorUnitTest : public ::testing::Test {
 public:
-  struct RegisterMessage {
-    const DagActorManager* dag_actor_manager;
-
-    RegisterMessage() = default;
-    explicit RegisterMessage(const DagActorManager* manager)
-      : dag_actor_manager(manager) {}
-
-    // Currently, reister message only passed within the same machine.
-    void
-    dump_to(brane::serializable_queue &qu) {}  // NOLINT [runtime/references]
-
-    static RegisterMessage
-    load_from(brane::serializable_queue &qu) { // NOLINT [runtime/references]
-      return RegisterMessage();
-    }
-  };
-
-public:
   BatchGeneratorUnitTest() = default;
-  ~BatchGeneratorUnitTest() = default;
+  ~BatchGeneratorUnitTest() override = default;
 
 protected:
-  void SetUp() override {
-  }
+  void SetUp() override {}
 
-  void TearDown() override {
-    delete dag_manager_;
-  }
+  void TearDown() override {}
 
   void NodeTestImplFunc(TestEnv* env, const char* strategy) {
     // Init
     env->Initialize();
-    SetTestDagManagerAndParams(strategy);
-    RegisterDag();
+    RegisterDag(strategy);
 
     // Prepare checking datas
     ShardDataInfoVecT infos;
     auto data_size = GetSortedInfosOfNodes(&infos);
     auto intact_batch_num = GetIntactBatchNum(infos);
     auto batch_to_shard = GetBatchIdToShardMap(infos, data_size);
-    auto expect = GetExpectNodeDataArray(infos, batch_to_shard,
-      intact_batch_num, data_size);
+    auto expect = GetExpectNodeDataArray(
+        infos, batch_to_shard, intact_batch_num, data_size);
     EXPECT_EQ(expect.size(), data_size);
 
     // Run 3 epoches and test
     auto refs = CreateNodeGetterRefs();
     for (uint32_t i = 0; i < 3; i++) {
-      auto fut = seastar::alien::submit_to(0,
-          [this, strategy, data_size, &batch_to_shard, &expect, &refs] () mutable {
+      auto fut = seastar::alien::submit_to(
+          *seastar::alien::internal::default_instance, 0,
+          [strategy, data_size, &batch_to_shard, &expect, &refs] () mutable {
         return FetchAllNodeBatch(refs, batch_to_shard, data_size).then(
             [strategy, data_size, &expect] (std::vector<io::IdType> results) {
           EXPECT_EQ(results.size(), data_size);
@@ -213,8 +189,7 @@ protected:
   void EdgeTestImplFunc(TestEnv* env, const char* strategy) {
     // Init
     env->Initialize();
-    SetTestDagManagerAndParams(strategy);
-    RegisterDag();
+    RegisterDag(strategy);
 
     // Prepare checking datas
     ShardDataInfoVecT infos;
@@ -228,8 +203,9 @@ protected:
     // Run 3 epoches and test
     auto refs = CreateEdgeGetterRefs();
     for (uint32_t i = 0; i < 3; i++) {
-      auto fut = seastar::alien::submit_to(0,
-          [this, strategy, data_size, &batch_to_shard, &expect, &refs] () mutable {
+      auto fut = seastar::alien::submit_to(
+          *seastar::alien::internal::default_instance, 0,
+          [strategy, data_size, &batch_to_shard, &expect, &refs] () mutable {
         return FetchAllEdgeBatch(refs, batch_to_shard, data_size).then(
             [strategy, data_size, &expect] (std::vector<edge_record> results) {
           EXPECT_EQ(results.size(), data_size);
@@ -252,69 +228,45 @@ protected:
   }
 
 private:
-  void SetTestDagManagerAndParams(const char* strategy) {
+  void RegisterDag(const char* strategy) {
     std::string dag_content =
       fmt::format(template_dag_content, strategy);
     DagDef def;
     PB_NAMESPACE::TextFormat::ParseFromString(dag_content, &def);
     Dag* dag = new Dag(def);
     dag_id_ = dag->Id();
-    dag_manager_ = new DagActorManager(dag);
+    auto& dag_manager = DagActorManager::GetInstance();
+    dag_manager.Clear();
+    dag_manager.AddDag(dag);
     delete dag;
   }
 
-  void RegisterDag() {
-    brane::actor_param_store::get().set_register_func(
-      [] (brane::actor_message *msg, brane::actor_param_store::param_map &map) {
-        auto* manager = reinterpret_cast<brane::actor_message_with_payload<
-          RegisterMessage>*>(msg)->data.dag_actor_manager;
-        for (auto& op_actor_id : *(manager->GetOpActorIds())) {
-          map.insert(op_actor_id.second,
-                     manager->GetActorParams(op_actor_id.second));
-        }
-      });
-    seastar::alien::submit_to(0, [this] () mutable {
-      return seastar::parallel_for_each(boost::irange(0u,
-          brane::local_shard_count()), [this] (uint32_t i) mutable {
-        brane::address shard_addr(i + brane::machine_info::sid_anchor());
-        return brane::actor_client::request<brane::Boolean, RegisterMessage>(
-          shard_addr, 0, RegisterMessage(dag_manager_),
-          brane::message_type::REGISTER).discard_result();
-      }).then([] {
-        return brane::coordinator::get().global_barrier(
-          "REGISTER_DAG_FOR_BATCH_GENERATOR_UNIT_TEST", false);
-      });
-    });
-  }
-
-  std::vector<BaseOperatorActorRef*> CreateNodeGetterRefs() {
-    std::vector<BaseOperatorActorRef*> refs;
-    refs.reserve(brane::local_shard_count());
-    for (uint32_t i = 0; i < brane::local_shard_count(); ++i) {
-      brane::scope_builder builder = brane::scope_builder(
-        i + brane::machine_info::sid_anchor());
-      refs.push_back(builder.new_ref<NodeGetterActorRef>(
-        MakeActorGUID(dag_id_, node_getter_dag_id)));
+  std::vector<BaseOperatorActor_ref*> CreateNodeGetterRefs() const {
+    std::vector<BaseOperatorActor_ref*> refs;
+    refs.reserve(hiactor::local_shard_count());
+    for (uint32_t i = 0; i < hiactor::local_shard_count(); ++i) {
+      hiactor::scope_builder builder(i + hiactor::machine_info::sid_anchor());
+      refs.push_back(builder.new_ref<NodeGetterActor_ref>(
+          MakeActorGUID(dag_id_, node_getter_dag_id)));
     }
     return refs;
   }
 
-  std::vector<BaseOperatorActorRef*> CreateEdgeGetterRefs() {
-    std::vector<BaseOperatorActorRef*> refs;
-    refs.reserve(brane::local_shard_count());
-    for (uint32_t i = 0; i < brane::local_shard_count(); ++i) {
-      brane::scope_builder builder = brane::scope_builder(
-        i + brane::machine_info::sid_anchor());
-      refs.push_back(builder.new_ref<EdgeGetterActorRef>(
-        MakeActorGUID(dag_id_, edge_getter_dag_id)));
+  std::vector<BaseOperatorActor_ref*> CreateEdgeGetterRefs() const {
+    std::vector<BaseOperatorActor_ref*> refs;
+    refs.reserve(hiactor::local_shard_count());
+    for (uint32_t i = 0; i < hiactor::local_shard_count(); ++i) {
+      hiactor::scope_builder builder(i + hiactor::machine_info::sid_anchor());
+      refs.push_back(builder.new_ref<EdgeGetterActor_ref>(
+          MakeActorGUID(dag_id_, edge_getter_dag_id)));
     }
     return refs;
   }
 
-  int64_t GetSortedInfosOfNodes(ShardDataInfoVecT* data_info_vec) {
-    data_info_vec->reserve(brane::local_shard_count());
+  static int64_t GetSortedInfosOfNodes(ShardDataInfoVecT* data_info_vec) {
+    data_info_vec->reserve(hiactor::local_shard_count());
     int64_t total_size = 0;
-    for (uint32_t i = 0; i < brane::local_shard_count(); ++i) {
+    for (int32_t i = 0; i < hiactor::local_shard_count(); ++i) {
       auto noder = ShardedGraphStore::Get().OnShard(i)->GetNoder("user");
       auto shard_data_size = noder->GetLocalStorage()->Size();
       total_size += shard_data_size;
@@ -324,10 +276,10 @@ private:
     return total_size;
   }
 
-  int64_t GetSortedInfosOfEdges(ShardDataInfoVecT* data_info_vec) {
-    data_info_vec->reserve(brane::local_shard_count());
+  static int64_t GetSortedInfosOfEdges(ShardDataInfoVecT* data_info_vec) {
+    data_info_vec->reserve(hiactor::local_shard_count());
     int64_t total_size = 0;
-    for (uint32_t i = 0; i < brane::local_shard_count(); ++i) {
+    for (int32_t i = 0; i < hiactor::local_shard_count(); ++i) {
       auto graph = ShardedGraphStore::Get().OnShard(i)->GetGraph("click");
       auto shard_data_size = graph->GetLocalStorage()->GetEdgeCount();
       total_size += shard_data_size;
@@ -339,7 +291,7 @@ private:
 
   std::vector<uint32_t>
   GetBatchIdToShardMap(const ShardDataInfoVecT& sorted_infos,
-      int64_t total_data_size) {
+                       int64_t total_data_size) const {
     auto total_batches = total_data_size / batch_size_ +
                          (total_data_size % batch_size_ ? 1 : 0);
     std::vector<uint32_t> batch_to_shard;
@@ -347,7 +299,7 @@ private:
 
     uint32_t batch_id = 0;
     uint32_t offset = 0;
-    auto local_shards = brane::local_shard_count();
+    auto local_shards = hiactor::local_shard_count();
     for (uint32_t i = 0; i < local_shards; i++) {
       auto shard_total_batch_num = sorted_infos[i].data_size / batch_size_;
       for (auto j = offset; j < shard_total_batch_num; j++) {
@@ -363,23 +315,24 @@ private:
     return batch_to_shard;
   }
 
-  unsigned GetIntactBatchNum(const ShardDataInfoVecT& sorted_infos) {
+  unsigned GetIntactBatchNum(const ShardDataInfoVecT& sorted_infos) const {
     unsigned intact_batch_num = 0;
-    for (uint32_t i = 0; i < sorted_infos.size(); ++i) {
-      intact_batch_num += sorted_infos[i].data_size / batch_size_;
+    for (auto& sorted_info : sorted_infos) {
+      intact_batch_num += sorted_info.data_size / batch_size_;
     }
     return intact_batch_num;
   }
 
   std::vector<io::IdType>
   GetExpectNodeDataArray(const ShardDataInfoVecT& sorted_infos,
-      const std::vector<uint32_t>& batch_to_shard,
-      unsigned intact_batch_num, int64_t total_data_size) {
-    auto local_shards = brane::local_shard_count();
+                         const std::vector<uint32_t>& batch_to_shard,
+                         unsigned intact_batch_num,
+                         int64_t total_data_size) const {
+    auto local_shards = hiactor::local_shard_count();
     std::vector<const io::IdType*> id_arrays;
-    for (uint32_t i = 0; i < local_shards; i++) {
+    for (int32_t i = 0; i < local_shards; i++) {
       auto noder = ShardedGraphStore::Get().OnShard(i)->GetNoder("user");
-      id_arrays.push_back(noder->GetLocalStorage()->GetIds()->data());
+      id_arrays.push_back(noder->GetLocalStorage()->GetIds().data());
     }
     std::vector<unsigned> offsets;
     offsets.resize(local_shards, 0);
@@ -405,11 +358,12 @@ private:
 
   std::vector<edge_record>
   GetExpectEdgeDataArray(const ShardDataInfoVecT& sorted_infos,
-      const std::vector<uint32_t>& batch_to_shard,
-      unsigned intact_batch_num, int64_t total_data_size) {
-    auto local_shards = brane::local_shard_count();
+                         const std::vector<uint32_t>& batch_to_shard,
+                         unsigned intact_batch_num,
+                         int64_t total_data_size) const {
+    auto local_shards = hiactor::local_shard_count();
     std::vector<io::GraphStorage*> edge_stores;
-    for (uint32_t i = 0; i < local_shards; i++) {
+    for (int32_t i = 0; i < local_shards; i++) {
       auto graph = ShardedGraphStore::Get().OnShard(i)->GetGraph("click");
       edge_stores.push_back(graph->GetLocalStorage());
     }
@@ -439,23 +393,21 @@ private:
     return expect_datas;
   }
 
-  seastar::future<std::vector<io::IdType>>
-  FetchAllNodeBatch(const std::vector<BaseOperatorActorRef*>& op_refs,
-      const std::vector<uint32_t>& batch_to_shard, int64_t total_data_size) {
+  static seastar::future<std::vector<io::IdType>>
+  FetchAllNodeBatch(const std::vector<BaseOperatorActor_ref*>& op_refs,
+                    const std::vector<uint32_t>& batch_to_shard,
+                    int64_t total_data_size) {
     std::vector<seastar::future<TensorMap>> futs;
     futs.reserve(batch_to_shard.size());
-    for (uint32_t i = 0; i < batch_to_shard.size(); i++) {
-      TensorMap tm;
-      auto dest_shard = batch_to_shard[i];
-      futs.emplace_back(op_refs[dest_shard]->Process(std::move(tm)));
+    for (auto dest_shard : batch_to_shard) {
+      futs.emplace_back(op_refs[dest_shard]->Process(TensorMap{}));
     }
     return seastar::when_all(futs.begin(), futs.end()).then(
-        [this, total_data_size]
-        (std::vector<seastar::future<TensorMap>> results) {
+        [total_data_size] (std::vector<seastar::future<TensorMap>> results) {
       std::vector<io::IdType> data;
       data.reserve(total_data_size);
-      for (int i = 0; i < results.size(); ++i) {
-        auto res_tm = results[i].get0();
+      for (auto& result : results) {
+        auto res_tm = result.get0();
         for (auto &tn : res_tm.tensors_) {
           auto size = tn.second.Size();
           const int64_t* begin = tn.second.GetInt64();
@@ -463,27 +415,25 @@ private:
         }
       }
       return seastar::make_ready_future<std::vector<io::IdType>>(
-        std::move(data));
+          std::move(data));
     });
   }
 
-  seastar::future<std::vector<edge_record>>
-  FetchAllEdgeBatch(const std::vector<BaseOperatorActorRef*>& op_refs,
-      const std::vector<uint32_t>& batch_to_shard, int64_t total_data_size) {
+  static seastar::future<std::vector<edge_record>>
+  FetchAllEdgeBatch(const std::vector<BaseOperatorActor_ref*>& op_refs,
+                    const std::vector<uint32_t>& batch_to_shard,
+                    int64_t total_data_size) {
     std::vector<seastar::future<TensorMap>> futs;
     futs.reserve(batch_to_shard.size());
-    for (uint32_t i = 0; i < batch_to_shard.size(); i++) {
-      TensorMap tm;
-      auto dest_shard = batch_to_shard[i];
-      futs.emplace_back(op_refs[dest_shard]->Process(std::move(tm)));
+    for (auto dest_shard : batch_to_shard) {
+      futs.emplace_back(op_refs[dest_shard]->Process(TensorMap{}));
     }
     return seastar::when_all(futs.begin(), futs.end()).then(
-        [this, total_data_size]
-        (std::vector<seastar::future<TensorMap>> results) {
+        [total_data_size] (std::vector<seastar::future<TensorMap>> results) {
       std::vector<edge_record> data;
       data.reserve(total_data_size);
-      for (int i = 0; i < results.size(); ++i) {
-        auto res_tm = results[i].get0();
+      for (auto& result : results) {
+        auto res_tm = result.get0();
         auto edge_len = res_tm.tensors_[kEdgeIds].Size();
         auto* edge_ptr = res_tm.tensors_[kEdgeIds].GetInt64();
         auto* src_ptr = res_tm.tensors_[kSrcIds].GetInt64();
@@ -493,13 +443,12 @@ private:
         }
       }
       return seastar::make_ready_future<std::vector<edge_record>>(
-        std::move(data));
+          std::move(data));
     });
   }
 
 private:
-  int32_t          dag_id_;
-  DagActorManager* dag_manager_;
+  int32_t          dag_id_ = 0;
   const unsigned   batch_size_ = 8;
 };
 

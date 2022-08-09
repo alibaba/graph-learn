@@ -13,17 +13,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "actor/test/test_env.h"
-
-#include <google/protobuf/text_format.h>
 #include "gtest/gtest.h"
-#include "common/base/log.h"
+#include "google/protobuf/text_format.h"
+
+#include "actor/test/test_env.h"
 #include "core/dag/tape.h"
 #include "core/runner/dag_scheduler.h"
 #include "include/config.h"
 #include "platform/env.h"
 #include "platform/protobuf.h"
-#include "proto/dag.pb.h"
+
+#include "generated/proto/dag.pb.h"
 
 using namespace graphlearn;  // NOLINT [build/namespaces]
 
@@ -42,7 +42,7 @@ protected:
   }
 
 protected:
-  actor::TestEnv env_;
+  act::TestEnv env_;
 };
 
 TEST_F(ActorDagSchedulerTest, GetNodes) {

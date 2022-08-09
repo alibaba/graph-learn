@@ -77,6 +77,11 @@ public:
     }
   }
 
+  void Clear() {
+    dag_actor_infos_.clear();
+    params_.clear();
+  }
+
   const std::vector<ActorIdType>* GetDagActorIds(int32_t dag_id) const {
     return &dag_actor_infos_.at(dag_id).dag_actor_ids;
   }

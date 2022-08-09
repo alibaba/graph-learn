@@ -11,6 +11,7 @@ on:
       - 'third_party/hadoop/**'
       - 'third_party/pybind11/**'
       - 'graphlearn/**'
+      - '!graphlearn/src/actor'
       - '!graphlearn/examples/**'
       - '!graphlearn/**.md'
   pull_request:
@@ -23,6 +24,7 @@ on:
       - 'third_party/hadoop/**'
       - 'third_party/pybind11/**'
       - 'graphlearn/**'
+      - '!graphlearn/src/actor'
       - '!graphlearn/examples/**'
       - '!graphlearn/**.md'
 

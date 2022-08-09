@@ -15,11 +15,12 @@ limitations under the License.
 
 #include <algorithm>
 
-#include "brane/core/shard-config.hh"
+#include "gtest/gtest.h"
+#include "hiactor/core/shard-config.hh"
+
 #include "actor/graph/sharded_graph_store.h"
 #include "actor/test/test_env.h"
 #include "actor/utils.h"
-#include "gtest/gtest.h"
 
 using namespace graphlearn;  // NOLINT [build/namespaces]
 
@@ -38,7 +39,7 @@ protected:
     env_.Finalize();
   }
 
-  NeighborsMap LoadEdgeData(const char* fname) {
+  static NeighborsMap LoadEdgeData(const char* fname) {
     NeighborsMap neighbors;
     std::ifstream in(fname);
     std::stringstream ss;
@@ -58,22 +59,23 @@ protected:
   }
 
 private:
-  actor::TestEnv env_;
+  act::TestEnv env_;
 };
 
 TEST_F(ActorTest, NodeCorrectness) {
-  auto &sgs = actor::ShardedGraphStore::Get();
-  auto num_shards = brane::local_shard_count();
+  auto &sgs = act::ShardedGraphStore::Get();
+  auto num_shards = hiactor::local_shard_count();
   for (uint32_t i = 0; i < num_shards; ++i) {
     for (auto type : {"user", "item"}) {
-      auto noder = sgs.OnShard(i)->GetNoder(type);
+      auto noder = sgs.OnShard(static_cast<int32_t>(i))->GetNoder(type);
       EXPECT_TRUE(noder != nullptr);
       auto data_size = noder->GetLocalStorage()->Size();
       EXPECT_EQ(40 + 5 * (i + 1), data_size);
-      auto ids = *(noder->GetLocalStorage()->GetIds());
-      std::sort(ids.begin(), ids.end());
+      auto ids = noder->GetLocalStorage()->GetIds();
+      io::IdList id_list{ids.data(), ids.data() + ids.Size()};
+      std::sort(id_list.begin(), id_list.end());
       uint32_t counter = i;
-      for (auto &id : ids) {
+      for (auto id : id_list) {
         EXPECT_EQ(counter, id);
         counter += num_shards;
       }
@@ -82,24 +84,21 @@ TEST_F(ActorTest, NodeCorrectness) {
 }
 
 TEST_F(ActorTest, EdgeCorrectness) {
-  auto &sgs = actor::ShardedGraphStore::Get();
-  auto num_shards = brane::local_shard_count();
+  auto &sgs = act::ShardedGraphStore::Get();
+  auto num_shards = hiactor::local_shard_count();
   for (uint32_t i = 0; i < num_shards; ++i) {
     for (auto pair : {
           std::make_pair("click", "user_to_item_weighted_edge_file"),
           std::make_pair("similar", "item_to_item_weighted_edge_file")
         }) {
-      auto graph = sgs.OnShard(i)->GetGraph(pair.first)->GetLocalStorage();
-      auto neibors_map = LoadEdgeData(pair.second);
+      auto graph = sgs.OnShard(static_cast<int32_t>(i))->
+          GetGraph(pair.first)->GetLocalStorage();
+      auto nbr_map = LoadEdgeData(pair.second);
       auto src_ids = graph->GetAllSrcIds();
-      for (auto &src_id : *src_ids) {
-        auto tmp = graph->GetNeighbors(src_id);
-        std::vector<int64_t> neighbors;
-        neighbors.reserve(tmp.Size());
-        for (int32_t nid = 0; nid < tmp.Size(); ++nid) {
-          neighbors.push_back(tmp[nid]);
-        }
-        auto expect_neighbors = neibors_map.find(src_id)->second;
+      for (int32_t j = 0; j < src_ids.Size(); j++) {
+        auto tmp = graph->GetNeighbors(src_ids[j]);
+        io::IdList neighbors{tmp.data(), tmp.data() + tmp.Size()};
+        auto expect_neighbors = nbr_map.find(src_ids[j])->second;
         std::sort(neighbors.begin(), neighbors.end());
         std::sort(expect_neighbors.begin(), expect_neighbors.end());
         EXPECT_EQ(expect_neighbors, neighbors);
