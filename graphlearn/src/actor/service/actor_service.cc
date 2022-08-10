@@ -169,6 +169,8 @@ Status ActorService::Stop() {
   });
   actor_system_.join();
 
+  default_alien = nullptr;
+
   act::ShardedGraphStore::Get().Finalize();
   return Status::OK();
 }

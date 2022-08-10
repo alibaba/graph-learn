@@ -38,7 +38,7 @@ public:
   };
 public:
   explicit TestEnv(uint32_t load_batch_size = 10240,
-                   uint32_t num_shards = 4,
+                   uint32_t num_shards = 2,
                    uint32_t common_num = 40,
                    uint32_t remaining_factor = 5,
                    uint32_t edge_num = 1000,

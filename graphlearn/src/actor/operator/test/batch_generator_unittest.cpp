@@ -166,7 +166,7 @@ protected:
       auto fut = seastar::alien::submit_to(
           *default_alien,
           0,
-          [this, &strategy, data_size, &batch_to_shard, &expect, &refs] () mutable {
+          [&strategy, data_size, &batch_to_shard, &expect, &refs] () mutable {
         return FetchAllNodeBatch(refs, batch_to_shard, data_size).then(
             [&strategy, data_size, &expect] (std::vector<io::IdType> results) {
           EXPECT_EQ(results.size(), data_size);
@@ -208,7 +208,7 @@ protected:
       auto fut = seastar::alien::submit_to(
           *default_alien,
           0,
-          [this, &strategy, data_size, &batch_to_shard, &expect, &refs] () mutable {
+          [&strategy, data_size, &batch_to_shard, &expect, &refs] () mutable {
         return FetchAllEdgeBatch(refs, batch_to_shard, data_size).then(
             [&strategy, data_size, &expect] (std::vector<edge_record> results) {
           EXPECT_EQ(results.size(), data_size);
@@ -396,7 +396,7 @@ private:
     return expect_datas;
   }
 
-  seastar::future<std::vector<io::IdType>>
+  static seastar::future<std::vector<io::IdType>>
   FetchAllNodeBatch(const std::vector<BaseOperatorActor_ref*>& op_refs,
                     const std::vector<uint32_t>& batch_to_shard,
                     int64_t total_data_size) {
@@ -422,7 +422,7 @@ private:
     });
   }
 
-  seastar::future<std::vector<edge_record>>
+  static seastar::future<std::vector<edge_record>>
   FetchAllEdgeBatch(const std::vector<BaseOperatorActor_ref*>& op_refs,
                     const std::vector<uint32_t>& batch_to_shard,
                     int64_t total_data_size) {
@@ -457,82 +457,82 @@ private:
 
 // Node batch generator unit tests
 TEST_F(BatchGeneratorUnitTest, Node_Ordered_SkewedWithPieceBatch) {
-  TestEnv env(10240, 4, 40, 5, 100, 1, 0, TestEnv::DatasetCode::kValid);
+  TestEnv env(10240, 2, 40, 5, 100, 1, 0, TestEnv::DatasetCode::kValid);
   NodeTestImplFunc(&env, "by_order");
 }
 
 TEST_F(BatchGeneratorUnitTest, Node_Ordered_SkewedWithoutPieceBatch) {
-  TestEnv env(10240, 4, 40, 8, 100, 1, 0, TestEnv::DatasetCode::kValid);
+  TestEnv env(10240, 2, 40, 8, 100, 1, 0, TestEnv::DatasetCode::kValid);
   NodeTestImplFunc(&env, "by_order");
 }
 
 TEST_F(BatchGeneratorUnitTest, Node_Ordered_BalancedWithPieceBatch) {
-  TestEnv env(10240, 4, 45, 0, 100, 1, 0, TestEnv::DatasetCode::kValid);
+  TestEnv env(10240, 2, 45, 0, 100, 1, 0, TestEnv::DatasetCode::kValid);
   NodeTestImplFunc(&env, "by_order");
 }
 
 TEST_F(BatchGeneratorUnitTest, Node_Ordered_BalancedWithoutPieceBatch) {
-  TestEnv env(10240, 4, 48, 0, 100, 1, 0, TestEnv::DatasetCode::kValid);
+  TestEnv env(10240, 2, 48, 0, 100, 1, 0, TestEnv::DatasetCode::kValid);
   NodeTestImplFunc(&env, "by_order");
 }
 
 TEST_F(BatchGeneratorUnitTest, Node_Ordered_BatchCrossShard) {
-  TestEnv env(10240, 4, 2, 1, 10, 1, 0, TestEnv::DatasetCode::kValid);
+  TestEnv env(10240, 2, 2, 2, 10, 1, 0, TestEnv::DatasetCode::kValid);
   NodeTestImplFunc(&env, "by_order");
 }
 
 TEST_F(BatchGeneratorUnitTest, Node_Shuffled_SkewedWithPieceBatch) {
-  TestEnv env(10240, 4, 40, 5, 100, 1, 0, TestEnv::DatasetCode::kValid);
+  TestEnv env(10240, 2, 40, 5, 100, 1, 0, TestEnv::DatasetCode::kValid);
   NodeTestImplFunc(&env, "shuffled");
 }
 
 TEST_F(BatchGeneratorUnitTest, Node_Shuffled_SkewedWithoutPieceBatch) {
-  TestEnv env(10240, 4, 40, 8, 100, 1, 0, TestEnv::DatasetCode::kValid);
+  TestEnv env(10240, 2, 40, 8, 100, 1, 0, TestEnv::DatasetCode::kValid);
   NodeTestImplFunc(&env, "shuffled");
 }
 
 TEST_F(BatchGeneratorUnitTest, Node_Shuffled_BalancedWithPieceBatch) {
-  TestEnv env(10240, 4, 45, 0, 100, 1, 0, TestEnv::DatasetCode::kValid);
+  TestEnv env(10240, 2, 45, 0, 100, 1, 0, TestEnv::DatasetCode::kValid);
   NodeTestImplFunc(&env, "shuffled");
 }
 
 TEST_F(BatchGeneratorUnitTest, Node_Shuffled_BalancedWithoutPieceBatch) {
-  TestEnv env(10240, 4, 48, 0, 100, 1, 0, TestEnv::DatasetCode::kValid);
+  TestEnv env(10240, 2, 48, 0, 100, 1, 0, TestEnv::DatasetCode::kValid);
   NodeTestImplFunc(&env, "shuffled");
 }
 
 TEST_F(BatchGeneratorUnitTest, Node_Shuffled_BatchCrossShard) {
-  TestEnv env(10240, 4, 2, 1, 10, 1, 0, TestEnv::DatasetCode::kValid);
+  TestEnv env(10240, 2, 2, 2, 10, 1, 0, TestEnv::DatasetCode::kValid);
   NodeTestImplFunc(&env, "shuffled");
 }
 
 // Edge batch generator unit tests
 TEST_F(BatchGeneratorUnitTest, Edge_Ordered_WithoutPieceBatch) {
-  TestEnv env(10240, 4, 100, 0, 1000, 1, 0, TestEnv::DatasetCode::kValid);
+  TestEnv env(10240, 2, 100, 0, 1000, 1, 0, TestEnv::DatasetCode::kValid);
   EdgeTestImplFunc(&env, "by_order");
 }
 
 TEST_F(BatchGeneratorUnitTest, Edge_Ordered_WithPieceBatch) {
-  TestEnv env(10240, 4, 105, 0, 1000, 1, 0, TestEnv::DatasetCode::kValid);
+  TestEnv env(10240, 2, 105, 0, 1000, 1, 0, TestEnv::DatasetCode::kValid);
   EdgeTestImplFunc(&env, "by_order");
 }
 
 TEST_F(BatchGeneratorUnitTest, Edge_Ordered_BatchCrossShard) {
-  TestEnv env(10240, 4, 3, 0, 12, 1, 0, TestEnv::DatasetCode::kValid);
+  TestEnv env(10240, 2, 3, 0, 12, 1, 0, TestEnv::DatasetCode::kValid);
   EdgeTestImplFunc(&env, "by_order");
 }
 
 TEST_F(BatchGeneratorUnitTest, Edge_Shuffled_WithoutPieceBatch) {
-  TestEnv env(10240, 4, 100, 0, 1000, 1, 0, TestEnv::DatasetCode::kValid);
+  TestEnv env(10240, 2, 100, 0, 1000, 1, 0, TestEnv::DatasetCode::kValid);
   EdgeTestImplFunc(&env, "shuffled");
 }
 
 TEST_F(BatchGeneratorUnitTest, Edge_Shuffled_WithPieceBatch) {
-  TestEnv env(10240, 4, 105, 0, 1000, 1, 0, TestEnv::DatasetCode::kValid);
+  TestEnv env(10240, 2, 105, 0, 1000, 1, 0, TestEnv::DatasetCode::kValid);
   EdgeTestImplFunc(&env, "shuffled");
 }
 
 TEST_F(BatchGeneratorUnitTest, Edge_Shuffled_BatchCrossShard) {
-  TestEnv env(10240, 4, 3, 0, 12, 1, 0, TestEnv::DatasetCode::kValid);
+  TestEnv env(10240, 2, 3, 0, 12, 1, 0, TestEnv::DatasetCode::kValid);
   EdgeTestImplFunc(&env, "shuffled");
 }

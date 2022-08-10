@@ -19,7 +19,6 @@ limitations under the License.
 #include "google/protobuf/text_format.h"
 
 #include "actor/test/test_env.h"
-#include "actor/service/actor_alien.h"
 #include "core/dag/tape.h"
 #include "core/runner/dag_scheduler.h"
 #include "include/config.h"
@@ -38,11 +37,6 @@ public:
 protected:
   void SetUp() override {
     env_.Initialize();
-    if (act::default_alien) {
-      std::cout << "[has default]\n";
-    } else {
-      std::cout << "[miss default]\n";
-    }
   }
 
   void TearDown() override {
