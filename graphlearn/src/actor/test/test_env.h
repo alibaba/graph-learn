@@ -102,6 +102,8 @@ TestEnv::TestEnv(uint32_t load_batch_size,
 }
 
 void TestEnv::Initialize() {
+  SetGlobalFlagInterThreadNum(1);
+  SetGlobalFlagIntraThreadNum(1);
   SetGlobalFlagEnableActor(1);
   SetGlobalFlagDeployMode(kLocal);
   SetGlobalFlagTrackerMode(kFileSystem);

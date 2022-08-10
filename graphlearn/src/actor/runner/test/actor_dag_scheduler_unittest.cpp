@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include <thread>
+
 #include "gtest/gtest.h"
 #include "google/protobuf/text_format.h"
 
@@ -104,6 +106,7 @@ TEST_F(ActorDagSchedulerTest, GetNodes) {
   Tape* tape = nullptr;
 
   for (int32_t idx = 0; idx < 10; ++idx) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     tape = store->WaitAndPop(GLOBAL_FLAG(ClientId));
     EXPECT_EQ(tape->Id(), idx);
     EXPECT_EQ(tape->Epoch(), 0);
@@ -111,8 +114,10 @@ TEST_F(ActorDagSchedulerTest, GetNodes) {
     EXPECT_EQ(tape->Size(), 2);
     auto& record = tape->Retrieval(1);
     EXPECT_EQ(record.at("nid").Size(), 20);
+    delete tape;
   }
 
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
   tape = store->WaitAndPop(GLOBAL_FLAG(ClientId));
   EXPECT_EQ(tape->Id(), 10);
   EXPECT_EQ(tape->Epoch(), 0);
@@ -120,13 +125,17 @@ TEST_F(ActorDagSchedulerTest, GetNodes) {
   EXPECT_EQ(tape->Size(), 2);
   auto& record1 = tape->Retrieval(1);
   EXPECT_EQ(record1.at("nid").Size(), 10);
+  delete tape;
 
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
   tape = store->WaitAndPop(GLOBAL_FLAG(ClientId));
   EXPECT_EQ(tape->Id(), 11);
   EXPECT_EQ(tape->Epoch(), 0);
   EXPECT_TRUE(tape->IsFaked());
+  delete tape;
 
   for (int32_t idx = 12; idx < 22; ++idx) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     tape = store->WaitAndPop(GLOBAL_FLAG(ClientId));
     EXPECT_EQ(tape->Id(), idx);
     EXPECT_EQ(tape->Epoch(), 1);
@@ -134,8 +143,10 @@ TEST_F(ActorDagSchedulerTest, GetNodes) {
     EXPECT_EQ(tape->Size(), 2);
     auto& record = tape->Retrieval(1);
     EXPECT_EQ(record.at("nid").Size(), 20);
+    delete tape;
   }
 
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
   tape = store->WaitAndPop(GLOBAL_FLAG(ClientId));
   EXPECT_EQ(tape->Id(), 22);
   EXPECT_EQ(tape->Epoch(), 1);
@@ -143,11 +154,12 @@ TEST_F(ActorDagSchedulerTest, GetNodes) {
   EXPECT_EQ(tape->Size(), 2);
   auto& record2 = tape->Retrieval(1);
   EXPECT_EQ(record2.at("nid").Size(), 10);
+  delete tape;
 
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
   tape = store->WaitAndPop(GLOBAL_FLAG(ClientId));
   EXPECT_EQ(tape->Id(), 23);
   EXPECT_EQ(tape->Epoch(), 1);
   EXPECT_TRUE(tape->IsFaked());
-
   delete tape;
 }

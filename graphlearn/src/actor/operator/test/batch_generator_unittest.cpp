@@ -145,7 +145,7 @@ protected:
 
   void TearDown() override {}
 
-  void NodeTestImplFunc(TestEnv* env, const char* strategy) {
+  void NodeTestImplFunc(TestEnv* env, const std::string& strategy) {
     // Init
     env->Initialize();
     RegisterDag(strategy);
@@ -164,11 +164,11 @@ protected:
     for (uint32_t i = 0; i < 3; i++) {
       auto fut = seastar::alien::submit_to(
           *seastar::alien::internal::default_instance, 0,
-          [strategy, data_size, &batch_to_shard, &expect, &refs] () mutable {
+          [&strategy, data_size, &batch_to_shard, &expect, &refs] () mutable {
         return FetchAllNodeBatch(refs, batch_to_shard, data_size).then(
-            [strategy, data_size, &expect] (std::vector<io::IdType> results) {
+            [&strategy, data_size, &expect] (std::vector<io::IdType> results) {
           EXPECT_EQ(results.size(), data_size);
-          if (std::string{strategy} == "shuffled") {
+          if (strategy == "shuffled") {
             std::sort(expect.begin(), expect.end(), std::less<io::IdType>{});
             std::sort(results.begin(), results.end(), std::less<io::IdType>{});
           }
@@ -186,7 +186,7 @@ protected:
     env->Finalize();
   }
 
-  void EdgeTestImplFunc(TestEnv* env, const char* strategy) {
+  void EdgeTestImplFunc(TestEnv* env, const std::string& strategy) {
     // Init
     env->Initialize();
     RegisterDag(strategy);
@@ -205,11 +205,11 @@ protected:
     for (uint32_t i = 0; i < 3; i++) {
       auto fut = seastar::alien::submit_to(
           *seastar::alien::internal::default_instance, 0,
-          [strategy, data_size, &batch_to_shard, &expect, &refs] () mutable {
+          [&strategy, data_size, &batch_to_shard, &expect, &refs] () mutable {
         return FetchAllEdgeBatch(refs, batch_to_shard, data_size).then(
-            [strategy, data_size, &expect] (std::vector<edge_record> results) {
+            [&strategy, data_size, &expect] (std::vector<edge_record> results) {
           EXPECT_EQ(results.size(), data_size);
-          if (std::string{strategy} == "shuffled") {
+          if (strategy == "shuffled") {
             std::sort(expect.begin(), expect.end(), std::less<edge_record>{});
             std::sort(results.begin(), results.end(), std::less<edge_record>{});
           }
@@ -228,7 +228,7 @@ protected:
   }
 
 private:
-  void RegisterDag(const char* strategy) {
+  void RegisterDag(const std::string& strategy) {
     std::string dag_content =
       fmt::format(template_dag_content, strategy);
     DagDef def;

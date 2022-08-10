@@ -25,8 +25,8 @@ namespace graphlearn {
 namespace act {
 
 ShardedGraphStore::ShardedGraphStore()
-  : local_shards_(GLOBAL_FLAG(ActorLocalShardCount)),
-    env_(nullptr), alien_tp_(nullptr) {}
+  : local_shards_(1), env_(nullptr), alien_tp_(nullptr) {
+}
 
 ShardedGraphStore::~ShardedGraphStore() {
   for (auto store : store_group_) {
@@ -36,6 +36,7 @@ ShardedGraphStore::~ShardedGraphStore() {
 
 void ShardedGraphStore::Init(Env* env) {
   env_ = env;
+  local_shards_ = GLOBAL_FLAG(ActorLocalShardCount);
   store_group_.reserve(local_shards_);
   for (int32_t i = 0; i < local_shards_; ++i) {
     store_group_.push_back(new GraphStore(env_));
@@ -100,10 +101,10 @@ void ShardedGraphStore::InitAlienThread(
 void ShardedGraphStore::ATPDeleter::operator()(
     hiactor::alien_thread_pool* tp) {
   delete tp;
-  for (auto &&nl : node_loaders_) {
+  for (auto* nl : node_loaders_) {
     delete nl;
   }
-  for (auto &&el : edge_loaders_) {
+  for (auto* el : edge_loaders_) {
     delete el;
   }
 }

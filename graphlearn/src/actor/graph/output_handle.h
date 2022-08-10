@@ -68,20 +68,13 @@ OutputHandle<Value, Wrapper>::OutputHandle(unsigned init_id)
     : batch_size_(GLOBAL_FLAG(DataInitBatchSize)),
       local_shard_num_(hiactor::local_shard_count()),
       cursor_id_(init_id) {
-  refs_.reserve(hiactor::global_shard_count());
   buffers_.resize(hiactor::global_shard_count());
-
-  auto fut = seastar::alien::submit_to(
-      *seastar::alien::internal::default_instance, 0, [this] {
-    for (uint32_t i = 0; i < hiactor::global_shard_count(); ++i) {
-      auto builder = hiactor::scope_builder(i);
-      refs_.emplace_back(builder.new_ref<
-        GraphActor_ref>(LoaderConfig::graph_actor_id));
-    }
-    return seastar::make_ready_future<>();
-  });
-
-  fut.wait();
+  refs_.reserve(hiactor::global_shard_count());
+  for (uint32_t i = 0; i < hiactor::global_shard_count(); ++i) {
+    auto builder = hiactor::scope_builder(i);
+    refs_.emplace_back(builder.new_ref<
+      GraphActor_ref>(LoaderConfig::graph_actor_id));
+  }
 }
 
 template <typename Value, typename Wrapper>
@@ -120,8 +113,8 @@ void OutputHandle<Value, Wrapper>::NotifyFinished() {
     seastar::alien::run_on(
         *seastar::alien::internal::default_instance,
         i % local_shard_num_,
-        [this, i] {
-      refs_[i]->ReceiveEOS();
+        [this, ref = refs_[i]] {
+      ref->ReceiveEOS();
     });
   }
 }
@@ -132,8 +125,8 @@ AlienSend(uint32_t id, UpdateNodesRequestWrapper&& request) {
   seastar::alien::run_on(
       *seastar::alien::internal::default_instance,
       cursor_id_,
-      [this, id, request = std::move(request)] () mutable {
-    refs_[id]->UpdateNodes(std::move(request));
+      [this, ref = refs_[id], request = std::move(request)] () mutable {
+    ref->UpdateNodes(std::move(request));
   });
   cursor_id_ = (cursor_id_ + 1) % local_shard_num_;
 }
@@ -144,8 +137,8 @@ AlienSend(uint32_t id, UpdateEdgesRequestWrapper&& request) {
   seastar::alien::run_on(
       *seastar::alien::internal::default_instance,
       cursor_id_,
-      [this, id, request = std::move(request)] () mutable {
-    refs_[id]->UpdateEdges(std::move(request));
+      [this, ref = refs_[id], request = std::move(request)] () mutable {
+    ref->UpdateEdges(std::move(request));
   });
   cursor_id_ = (cursor_id_ + 1) % local_shard_num_;
 }

@@ -61,6 +61,10 @@ void ActorSystem::LaunchWorker(ActorSystem* self) {
               << "num_local_shards is " << self->num_local_shards_;
   }
 
+  // Only one hiactor instance should be maintained.
+  // Make sure the default alien instance properly set.
+  seastar::alien::internal::default_instance = nullptr;
+
   seastar::app_template::config conf;
   conf.auto_handle_sigint_sigterm = false;
   hiactor::actor_app sys{std::move(conf)};
@@ -93,7 +97,8 @@ ActorSystem::ActorSystem(WorkerType worker_type,
 
 ActorSystem::~ActorSystem() {
   if (main_thread_) {
-    seastar::alien::run_on(0, [] {
+    seastar::alien::run_on(
+        *seastar::alien::internal::default_instance, 0, [] {
       hiactor::actor_engine().exit();
     });
     main_thread_->join();

@@ -54,6 +54,10 @@ void LaunchActorSystem(int32_t server_id,
   char* argv[] = {prog_name, cores, docker_opt,
     server_list, mach_id, p2p_conn_count};
 
+  // Only one hiactor instance should be maintained.
+  // Make sure the default alien instance properly set.
+  seastar::alien::internal::default_instance = nullptr;
+
   seastar::app_template::config conf;
   conf.auto_handle_sigint_sigterm = false;
   hiactor::actor_app sys{std::move(conf)};
@@ -69,18 +73,18 @@ ActorService::ActorService(int32_t server_id,
     : server_id_(server_id),
       server_count_(server_count),
       coord_(coord) {
-  sem_init(&ActorIsReadyFlag, 0, 0);
 }
 
-ActorService::~ActorService() {
-  sem_destroy(&ActorIsReadyFlag);
-}
+ActorService::~ActorService() {}
 
 Status ActorService::StartActorSystem(bool distributed_mode) {
+  sem_init(&ActorIsReadyFlag, 0, 0);
   actor_system_ = std::thread(LaunchActorSystem,
-                              server_id_, server_count_,
+                              server_id_,
+                              server_count_,
                               distributed_mode);
   sem_wait(&ActorIsReadyFlag);
+  sem_destroy(&ActorIsReadyFlag);
   return Status::OK();
 }
 
@@ -160,12 +164,10 @@ Status ActorService::Stop() {
 
   Env::Default()->SetStopping();
 
-  if (server_id_ == 0) {
-    seastar::alien::run_on(
-        *seastar::alien::internal::default_instance, 0, [] {
-      hiactor::actor_engine().exit();
-    });
-  }
+  seastar::alien::run_on(
+      *seastar::alien::internal::default_instance, 0, [] {
+    hiactor::actor_engine().exit(true);
+  });
   actor_system_.join();
 
   act::ShardedGraphStore::Get().Finalize();
