@@ -22,6 +22,7 @@ limitations under the License.
 #include "seastar/core/alien.hh"
 
 #include "actor/graph/sharded_graph_store.h"
+#include "actor/service/actor_alien.h"
 #include "actor/service/actor_coord.h"
 #include "common/base/host.h"
 #include "common/base/macros.h"
@@ -33,7 +34,7 @@ namespace act {
 
 static sem_t ActorIsReadyFlag;
 
-seastar::alien::instance* main_ins = nullptr;
+seastar::alien::instance* default_alien = nullptr;
 
 void LaunchActorSystem(int32_t server_id,
                        int32_t server_count,
@@ -56,14 +57,10 @@ void LaunchActorSystem(int32_t server_id,
   char* argv[] = {prog_name, cores, docker_opt,
     server_list, mach_id, p2p_conn_count};
 
-  // Only one hiactor instance should be maintained.
-  // Make sure the default alien instance properly set.
-  seastar::alien::internal::default_instance = nullptr;
-
   seastar::app_template::config conf;
   conf.auto_handle_sigint_sigterm = false;
   hiactor::actor_app sys{std::move(conf)};
-  main_ins = &sys.alien();
+  default_alien = &sys.alien();
   sys.run(argc, argv, [] {
     sem_post(&ActorIsReadyFlag);
     return seastar::make_ready_future<>();
@@ -167,8 +164,7 @@ Status ActorService::Stop() {
 
   Env::Default()->SetStopping();
 
-  seastar::alien::run_on(
-      *seastar::alien::internal::default_instance, 0, [] {
+  seastar::alien::run_on(*default_alien, 0, [] {
     hiactor::actor_engine().exit(true);
   });
   actor_system_.join();

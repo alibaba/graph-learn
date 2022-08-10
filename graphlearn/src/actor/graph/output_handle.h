@@ -23,6 +23,7 @@ limitations under the License.
 #include "seastar/core/alien.hh"
 
 #include "actor/graph/loader_config.h"
+#include "actor/service/actor_alien.h"
 #include "actor/utils.h"
 
 #include "actor/generated/graph/graph_actor_ref.act.autogen.h"
@@ -111,7 +112,7 @@ void OutputHandle<Value, Wrapper>::NotifyFinished() {
   FlushAll();
   for (uint32_t i = 0; i < hiactor::global_shard_count(); ++i) {
     seastar::alien::run_on(
-        *seastar::alien::internal::default_instance,
+        *default_alien,
         i % local_shard_num_,
         [this, ref = refs_[i]] {
       ref->ReceiveEOS();
@@ -123,7 +124,7 @@ template <typename Value, typename Wrapper>
 inline void OutputHandle<Value, Wrapper>::
 AlienSend(uint32_t id, UpdateNodesRequestWrapper&& request) {
   seastar::alien::run_on(
-      *seastar::alien::internal::default_instance,
+      *default_alien,
       cursor_id_,
       [this, ref = refs_[id], request = std::move(request)] () mutable {
     ref->UpdateNodes(std::move(request));
@@ -135,7 +136,7 @@ template <typename Value, typename Wrapper>
 inline void OutputHandle<Value, Wrapper>::
 AlienSend(uint32_t id, UpdateEdgesRequestWrapper&& request) {
   seastar::alien::run_on(
-      *seastar::alien::internal::default_instance,
+      *default_alien,
       cursor_id_,
       [this, ref = refs_[id], request = std::move(request)] () mutable {
     ref->UpdateEdges(std::move(request));

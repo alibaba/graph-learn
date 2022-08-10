@@ -22,6 +22,7 @@ limitations under the License.
 #include "actor/dag/dag_actor_manager.h"
 #include "actor/operator/batch_generator.h"
 #include "actor/operator/edge_getter.act.h"
+#include "actor/service/actor_alien.h"
 #include "platform/protobuf.h"
 
 #include "actor/generated/operator/edge_getter_ref.act.autogen.h"
@@ -163,7 +164,8 @@ protected:
     auto refs = CreateNodeGetterRefs();
     for (uint32_t i = 0; i < 3; i++) {
       auto fut = seastar::alien::submit_to(
-          *seastar::alien::internal::default_instance, 0,
+          *default_alien,
+          0,
           [this, &strategy, data_size, &batch_to_shard, &expect, &refs] () mutable {
         return FetchAllNodeBatch(refs, batch_to_shard, data_size).then(
             [&strategy, data_size, &expect] (std::vector<io::IdType> results) {
@@ -204,7 +206,8 @@ protected:
     auto refs = CreateEdgeGetterRefs();
     for (uint32_t i = 0; i < 3; i++) {
       auto fut = seastar::alien::submit_to(
-          *seastar::alien::internal::default_instance, 0,
+          *default_alien,
+          0,
           [this, &strategy, data_size, &batch_to_shard, &expect, &refs] () mutable {
         return FetchAllEdgeBatch(refs, batch_to_shard, data_size).then(
             [&strategy, data_size, &expect] (std::vector<edge_record> results) {

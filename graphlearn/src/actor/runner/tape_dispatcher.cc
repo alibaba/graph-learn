@@ -18,6 +18,7 @@ limitations under the License.
 #include "seastar/core/alien.hh"
 
 #include "actor/graph/sharded_graph_store.h"
+#include "actor/service/actor_alien.h"
 #include "actor/params.h"
 #include "actor/tensor_map.h"
 #include "actor/utils.h"
@@ -67,7 +68,7 @@ public:
   void Dispatch(Tape *tape) override {
     auto runner_ref = dag_runner_refs_[cur_shard_id_]->GetRef();
     seastar::alien::run_on(
-        *seastar::alien::internal::default_instance,
+        *default_alien,
         cur_shard_id_,
         [runner_ref, tape] {
       runner_ref->RunOnce(TapeHolder(tape));
@@ -132,7 +133,7 @@ void OrderedTapeDispatcher::Dispatch(Tape* tape) {
     uint32_t local_shard_id = batch_to_shard_[cur_idx_++];
     auto runner_ref = dag_runner_refs_[local_shard_id]->GetRef();
     seastar::alien::run_on(
-        *seastar::alien::internal::default_instance,
+        *default_alien,
         local_shard_id,
         [runner_ref, tape] {
       runner_ref->RunOnce(TapeHolder(tape));

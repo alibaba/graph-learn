@@ -16,38 +16,12 @@ limitations under the License.
 #ifndef GRAPHLEARN_ACTOR_SERVICE_ACTOR_SERVICE_H_
 #define GRAPHLEARN_ACTOR_SERVICE_ACTOR_SERVICE_H_
 
-#include <memory>
-#include <thread>
-
-#include "service/dist/naming_engine.h"
-#include "service/dist/coordinator.h"
-#include "include/status.h"
+#include "seastar/core/alien.hh"
 
 namespace graphlearn {
 namespace act {
 
-class ActorService {
-public:
-  ActorService(int32_t server_id,
-               int32_t server_count,
-               Coordinator* coord);
-  ~ActorService();
-
-  Status Start();
-  Status Init();
-  Status Build();
-  Status Stop();
-
-private:
-  Status StartActorSystem(bool distributed_mode);
-  void WriteServerConfigToTmpFile(std::unique_ptr<NamingEngine>&& engine);
-
-private:
-  std::thread  actor_system_;
-  int32_t      server_id_;
-  int32_t      server_count_;
-  Coordinator* coord_;
-};
+extern seastar::alien::instance* default_alien;
 
 }  // namespace act
 }  // namespace graphlearn

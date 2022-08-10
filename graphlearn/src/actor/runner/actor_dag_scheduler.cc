@@ -21,6 +21,7 @@ limitations under the License.
 
 #include "actor/dag/dag_actor_manager.h"
 #include "actor/runner/tape_dispatcher.h"
+#include "actor/service/actor_alien.h"
 #include "common/base/log.h"
 #include "core/dag/tape.h"
 
@@ -46,7 +47,7 @@ public:
 
   void Run(const Dag* dag) override {
     auto fut = seastar::alien::submit_to(
-        *seastar::alien::internal::default_instance, 0, [dag, this] () mutable {
+        *default_alien, 0, [dag, this] () mutable {
       return RegisterDAG(dag);
     });
     fut.wait();
