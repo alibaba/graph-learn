@@ -105,7 +105,7 @@ TEST_F(ActorDagSchedulerTest, GetNodes) {
   TapeStorePtr store = GetTapeStore(dag->Id());
   Tape* tape = nullptr;
 
-  for (int32_t idx = 0; idx < 10; ++idx) {
+  for (int32_t idx = 0; idx < 4; ++idx) {
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     tape = store->WaitAndPop(GLOBAL_FLAG(ClientId));
     EXPECT_EQ(tape->Id(), idx);
@@ -119,22 +119,22 @@ TEST_F(ActorDagSchedulerTest, GetNodes) {
 
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
   tape = store->WaitAndPop(GLOBAL_FLAG(ClientId));
-  EXPECT_EQ(tape->Id(), 10);
+  EXPECT_EQ(tape->Id(), 4);
   EXPECT_EQ(tape->Epoch(), 0);
   EXPECT_TRUE(tape->IsReady());
   EXPECT_EQ(tape->Size(), 2);
   auto& record1 = tape->Retrieval(1);
-  EXPECT_EQ(record1.at("nid").Size(), 10);
+  EXPECT_EQ(record1.at("nid").Size(), 15);
   delete tape;
 
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
   tape = store->WaitAndPop(GLOBAL_FLAG(ClientId));
-  EXPECT_EQ(tape->Id(), 11);
+  EXPECT_EQ(tape->Id(), 5);
   EXPECT_EQ(tape->Epoch(), 0);
   EXPECT_TRUE(tape->IsFaked());
   delete tape;
 
-  for (int32_t idx = 12; idx < 22; ++idx) {
+  for (int32_t idx = 6; idx < 10; ++idx) {
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     tape = store->WaitAndPop(GLOBAL_FLAG(ClientId));
     EXPECT_EQ(tape->Id(), idx);
@@ -148,17 +148,17 @@ TEST_F(ActorDagSchedulerTest, GetNodes) {
 
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
   tape = store->WaitAndPop(GLOBAL_FLAG(ClientId));
-  EXPECT_EQ(tape->Id(), 22);
+  EXPECT_EQ(tape->Id(), 10);
   EXPECT_EQ(tape->Epoch(), 1);
   EXPECT_TRUE(tape->IsReady());
   EXPECT_EQ(tape->Size(), 2);
   auto& record2 = tape->Retrieval(1);
-  EXPECT_EQ(record2.at("nid").Size(), 10);
+  EXPECT_EQ(record2.at("nid").Size(), 15);
   delete tape;
 
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
   tape = store->WaitAndPop(GLOBAL_FLAG(ClientId));
-  EXPECT_EQ(tape->Id(), 23);
+  EXPECT_EQ(tape->Id(), 11);
   EXPECT_EQ(tape->Epoch(), 1);
   EXPECT_TRUE(tape->IsFaked());
   delete tape;

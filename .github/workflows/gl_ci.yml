@@ -78,7 +78,7 @@ jobs:
         cmake -DDEBUG=ON -DGL_PYTHON_BIN=python ..
         export BUILD_CONCURRENCY=$(cat < /proc/cpuinfo | grep -c "processor")
         make -j${BUILD_CONCURRENCY}
-        make python -j4
+        make python -j${BUILD_CONCURRENCY}
 
     - name: Cpp test
       working-directory: ${{github.workspace}}/graphlearn
