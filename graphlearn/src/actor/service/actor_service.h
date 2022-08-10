@@ -19,6 +19,8 @@ limitations under the License.
 #include <memory>
 #include <thread>
 
+#include "seastar/core/alien.hh"
+
 #include "service/dist/naming_engine.h"
 #include "service/dist/coordinator.h"
 #include "include/status.h"
@@ -48,6 +50,8 @@ private:
   int32_t      server_count_;
   Coordinator* coord_;
 };
+
+extern seastar::alien::instance* main_ins;
 
 }  // namespace act
 }  // namespace graphlearn

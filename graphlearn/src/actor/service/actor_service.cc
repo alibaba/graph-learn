@@ -33,6 +33,8 @@ namespace act {
 
 static sem_t ActorIsReadyFlag;
 
+seastar::alien::instance* main_ins = nullptr;
+
 void LaunchActorSystem(int32_t server_id,
                        int32_t server_count,
                        bool distributed_mode) {
@@ -61,6 +63,7 @@ void LaunchActorSystem(int32_t server_id,
   seastar::app_template::config conf;
   conf.auto_handle_sigint_sigterm = false;
   hiactor::actor_app sys{std::move(conf)};
+  main_ins = &sys.alien();
   sys.run(argc, argv, [] {
     sem_post(&ActorIsReadyFlag);
     return seastar::make_ready_future<>();
