@@ -164,7 +164,7 @@ protected:
     for (uint32_t i = 0; i < 3; i++) {
       auto fut = seastar::alien::submit_to(
           *seastar::alien::internal::default_instance, 0,
-          [&strategy, data_size, &batch_to_shard, &expect, &refs] () mutable {
+          [this, &strategy, data_size, &batch_to_shard, &expect, &refs] () mutable {
         return FetchAllNodeBatch(refs, batch_to_shard, data_size).then(
             [&strategy, data_size, &expect] (std::vector<io::IdType> results) {
           EXPECT_EQ(results.size(), data_size);
@@ -205,7 +205,7 @@ protected:
     for (uint32_t i = 0; i < 3; i++) {
       auto fut = seastar::alien::submit_to(
           *seastar::alien::internal::default_instance, 0,
-          [&strategy, data_size, &batch_to_shard, &expect, &refs] () mutable {
+          [this, &strategy, data_size, &batch_to_shard, &expect, &refs] () mutable {
         return FetchAllEdgeBatch(refs, batch_to_shard, data_size).then(
             [&strategy, data_size, &expect] (std::vector<edge_record> results) {
           EXPECT_EQ(results.size(), data_size);
@@ -393,7 +393,7 @@ private:
     return expect_datas;
   }
 
-  static seastar::future<std::vector<io::IdType>>
+  seastar::future<std::vector<io::IdType>>
   FetchAllNodeBatch(const std::vector<BaseOperatorActor_ref*>& op_refs,
                     const std::vector<uint32_t>& batch_to_shard,
                     int64_t total_data_size) {
@@ -419,7 +419,7 @@ private:
     });
   }
 
-  static seastar::future<std::vector<edge_record>>
+  seastar::future<std::vector<edge_record>>
   FetchAllEdgeBatch(const std::vector<BaseOperatorActor_ref*>& op_refs,
                     const std::vector<uint32_t>& batch_to_shard,
                     int64_t total_data_size) {
