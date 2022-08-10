@@ -1,0 +1,81 @@
+name: GraphLearn-Actor CI
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/gl_actor_ci.yml'
+      - 'third_party/hiactor/**'
+      - 'third_party/glog/**'
+      - 'third_party/googletest/**'
+      - 'third_party/grpc/**'
+      - 'third_party/hadoop/**'
+      - 'third_party/pybind11/**'
+      - 'graphlearn/**'
+      - '!graphlearn/examples/**'
+      - '!graphlearn/**.md'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/gl_actor_ci.yml'
+      - 'third_party/hiactor/**'
+      - 'third_party/glog/**'
+      - 'third_party/googletest/**'
+      - 'third_party/grpc/**'
+      - 'third_party/hadoop/**'
+      - 'third_party/pybind11/**'
+      - 'graphlearn/**'
+      - '!graphlearn/examples/**'
+      - '!graphlearn/**.md'
+
+
+jobs:
+  build-gl-actor:
+    runs-on: ${{ matrix.os }}
+    if: ${{ github.repository == 'alibaba/graph-learn' }}
+    strategy:
+      matrix:
+        include:
+          - { os: ubuntu-20.04, python-version: 3.7, python-abis: "cp37-cp37m" }
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Download third-party built package
+        working-directory: ${{github.workspace}}/third_party
+        run: |
+          wget -q https://graphlearn.oss-cn-hangzhou.aliyuncs.com/package/gl_actor_third_party_built.tgz
+          tar zxvf gl_actor_third_party_built.tgz
+
+      - name: Install Dependencies
+        working-directory: ${{github.workspace}}/graphlearn
+        run: |
+          sudo apt-get -y update
+          sudo ./install_dependencies.sh
+          python -m pip install --upgrade pip setuptools wheel
+          pip install numpy
+
+      - name: Build
+        working-directory: ${{github.workspace}}/graphlearn
+        run: |
+          mkdir build
+          cd build
+          cmake -DDEBUG=ON -DWITH_HIACTOR=ON -DGL_PYTHON_BIN=python ..
+          export BUILD_CONCURRENCY=$(cat < /proc/cpuinfo | grep -c "processor")
+          make -j${BUILD_CONCURRENCY}
+          make python -j${BUILD_CONCURRENCY}
+
+      - name: Cpp test
+        working-directory: ${{github.workspace}}/graphlearn
+        run: |
+          ./test_cpp_actor_ut.sh
+
+      - name: Python package&test.
+        working-directory: ${{github.workspace}}/graphlearn
+        run: |
+          pip install dist/*.whl
+          echo "todo: add gl-actor python tests"

@@ -109,7 +109,7 @@ DEFINE_INT64_GLOBAL_FLAG(VineyardGraphID, 0)
 DEFINE_STRING_GLOBAL_FLAG(VineyardIPCSocket, "/var/run/vineyard.sock")
 // for hiactor engine
 DEFINE_INT32_GLOBAL_FLAG(EnableActor, 0)
-DEFINE_INT32_GLOBAL_FLAG(ActorLocalShardCount, 4)
+DEFINE_INT32_GLOBAL_FLAG(ActorLocalShardCount, 2)
 
 // Define the setters
 DEFINE_SET_INT32_GLOBAL_FLAG(DeployMode)
