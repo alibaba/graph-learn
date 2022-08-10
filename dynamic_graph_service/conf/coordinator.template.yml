@@ -1,4 +1,4 @@
-schema-file: "../../conf/u2i/schema.u2i.json"
+schema-file: "../../conf/schema.template.json"
 
 meta-dir: "./coordinator_meta"
 

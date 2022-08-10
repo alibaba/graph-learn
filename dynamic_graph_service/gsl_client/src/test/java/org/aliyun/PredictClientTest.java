@@ -50,10 +50,10 @@ public class PredictClientTest extends TestCase {
   public void testPredict() throws UserException, IOException{
     schema = Schema.parseFrom("../conf/ut/schema.ut.json");
     int dim = 10;
-    TFPredictClient client = new TFPredictClient(schema, "localhost", 9004);
+    TFPredictClient client = new TFPredictClient(schema, "localhost", 9000);
     Value content = generatedValue(dim);
     EgoGraph egoGraph = content.getEgoGraph(vtypes, vops, hops, eops);
     ArrayList<Integer> phs = new ArrayList<Integer>(Arrays.asList(0, 3, 4));
-    client.predict("egosagebi3", 1, egoGraph, phs);
+    client.predict("egomodel", 1, egoGraph, phs);
   }
 }
