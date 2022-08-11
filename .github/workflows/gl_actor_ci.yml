@@ -55,7 +55,7 @@ jobs:
         working-directory: ${{github.workspace}}/graphlearn
         run: |
           sudo apt-get -y update
-          sudo ./install_dependencies.sh
+          sudo ./install_dependencies.sh --build-hiactor
           python -m pip install --upgrade pip setuptools wheel
           pip install numpy
 

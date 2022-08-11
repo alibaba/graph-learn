@@ -42,6 +42,31 @@ debian_packages=(
   zlib1g-dev
 )
 
+if [ "${build_hiactor}" = true ] ; then
+  debian_packages=(
+    "${debian_packages[@]}"
+    # hiactor dependencies
+    ragel
+    libhwloc-dev
+    libnuma-dev
+    libpciaccess-dev
+    libcrypto++-dev
+    libboost-all-dev
+    libxml2-dev
+    xfslibs-dev
+    libgnutls28-dev
+    liblz4-dev
+    libsctp-dev
+    systemtap-sdt-dev
+    libtool
+    libyaml-cpp-dev
+    stow
+    libfmt-dev
+    diffutils
+    valgrind
+  )
+fi
+
 # installing dgs system dependencies
 if [ "$ID" = "ubuntu" ] || [ "$ID" = "debian" ]; then
   sudo apt-get -y install "${debian_packages[@]}"
