@@ -14,15 +14,15 @@ import os
 import sys
 
 os.system("mkdir -p apis/apis/apis/")
-os.system("javadoc -d apis/apis/apis/ -sourcepath ../../dynamic_graph_service/gsl_client/src/main/java/ -classpath ../../dynamic_graph_service/gsl_client/src/main/java/ org.aliyun.gsl_client")
-
-
+os.system("javadoc -d apis/apis/apis/ -sourcepath ../dynamic_graph_service/gsl_client/src/main/java/ -classpath ../dynamic_graph_service/gsl_client/src/main/java/ org.aliyun.gsl_client")
 
 # -- Project information -----------------------------------------------------
 
 project = 'GraphLearn'
 copyright = '2022, Alibaba-inc PAI'
 author = 'Alibaba-inc PAI'
+
+root_doc = "index_" + str(os.environ.get("READTHEDOCS_LANGUAGE"))
 
 # The full version, including alpha/beta/rc tags
 release = '2.0.0'

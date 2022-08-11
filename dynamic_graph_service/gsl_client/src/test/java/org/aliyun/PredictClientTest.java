@@ -48,7 +48,7 @@ public class PredictClientTest extends TestCase {
   }
 
   public void testPredict() throws UserException, IOException{
-    schema = Schema.parseFrom("../conf/ut/schema.ut.json");
+    schema = Schema.parseFrom("../conf/u2i/schema.u2i.json");
     int dim = 10;
     TFPredictClient client = new TFPredictClient(schema, "localhost", 9000);
     Value content = generatedValue(dim);

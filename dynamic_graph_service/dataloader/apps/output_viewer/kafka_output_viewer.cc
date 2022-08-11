@@ -24,7 +24,7 @@ limitations under the License.
 
 namespace bpo = boost::program_options;
 
-std::string schema_json_file = "../../../conf/schema.template.json";
+std::string schema_json_file = "../../../conf/ut/schema.ut.json";
 
 std::string GetVertexTypeName(dgs::dataloader::VertexType vtype) {
   auto& schema = dgs::dataloader::Schema::Get();

@@ -36,7 +36,7 @@ helm install my-release dgs/dgs \
 ```
 
 The graph schema must be specified from a json string or file by parameter `graphSchema`.
-A [template](https://github.com/alibaba/graph-learn/blob/master/dynamic_graph_service/conf/schema.template.json)
+An [example](https://github.com/alibaba/graph-learn/blob/master/dynamic_graph_service/conf/u2i/schema.u2i.json)
 schema file can be followed to write your customized graph schema.
 
 The info of `dl2spl` and `spl2srv`  of your pre-deployed kafka cluster should be configured when you install the chart,

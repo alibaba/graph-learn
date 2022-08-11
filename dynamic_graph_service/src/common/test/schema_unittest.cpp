@@ -24,7 +24,7 @@ TEST(Schema, Construct) {
   InitGoogleLogging();
 
   auto& schema = Schema::GetInstance();
-  bool ok = schema.Init("../../conf/schema.template.json",
+  bool ok = schema.Init("../../conf/ut/schema.ut.json",
                         "../../fbs/schema.fbs",
                         {"../../fbs/"});
   EXPECT_TRUE(ok);

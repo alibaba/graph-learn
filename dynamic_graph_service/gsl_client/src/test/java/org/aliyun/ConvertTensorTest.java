@@ -87,30 +87,36 @@ public class ConvertTensorTest extends TestCase {
   }
 
   public void testConvert1kFloat() throws UserException, IOException {
-    this.schema = Schema.parseFrom("../conf/ut/schema.ut.json");
+    this.schema = Schema.parseFrom("../conf/u2i/schema.u2i.json");
+    Builder builder = Schema.newBuilder(schema);
+    builder.removeAttribute("timestamp");
     Duration total = convert(1000, 1000);
     System.out.printf("Convert 1K Float Time taken: %.3f millseconds\n", total.toMillis() / 1000f);
   }
 
   public void testConvert100Float() throws UserException, IOException {
-    this.schema = Schema.parseFrom("../conf/ut/schema.ut.json");
+    this.schema = Schema.parseFrom("../conf/u2i/schema.u2i.json");
+    Builder builder = Schema.newBuilder(schema);
+    builder.removeAttribute("timestamp");
     Duration total = convert(100, 1000);
     System.out.printf("Convert 100 Float Time taken: %.3f millseconds\n", total.toMillis() / 1000f);
   }
 
   public void testConvertString() throws UserException, IOException {
-    this.schema = Schema.parseFrom("../conf/ut/schema.ut.json");
+    this.schema = Schema.parseFrom("../conf/u2i/schema.u2i.json");
     Builder builder = Schema.newBuilder(schema);
-    builder.removeAttribute("emb");
+    builder.removeAttribute("feature");
+    builder.removeAttribute("timestamp");
     builder.addAttribute("raw", DataType.STRING);
     Duration total = convert(1, 1000);
     System.out.printf("Convert 1 String Time taken: %.3f millseconds\n", total.toMillis() / 1000f);
   }
 
   public void testConvert10String() throws UserException, IOException {
-    this.schema = Schema.parseFrom("../conf/ut/schema.ut.json");
+    this.schema = Schema.parseFrom("../conf/u2i/schema.u2i.json");
     Builder builder = Schema.newBuilder(schema);
-    builder.removeAttribute("emb");
+    builder.removeAttribute("feature");
+    builder.removeAttribute("timestamp");
     builder.addAttribute("raw", DataType.STRING);
     Duration total = convert(10, 1000);
     System.out.printf("Convert 10 String Time taken: %.3f millseconds\n", total.toMillis() / 1000f);

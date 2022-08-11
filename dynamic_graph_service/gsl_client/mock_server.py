@@ -62,7 +62,7 @@ class MockHttpHandler(BaseHTTPRequestHandler):
     elif (path[0] == "/admin/schema/"):
       self.send_response(200)
       self.end_headers()
-      with open("../conf/schema.template.json", "rb") as f:
+      with open("../conf/ut/schema.ut.json", "rb") as f:
         try:
           self.wfile.write(f.read())
           return

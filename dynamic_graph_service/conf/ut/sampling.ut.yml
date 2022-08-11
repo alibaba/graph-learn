@@ -1,7 +1,7 @@
 worker-type: "Sampling"
 
 fbs-file-dir: "../../fbs"
-schema-file: "../../conf/schema.template.json"
+schema-file: "../../conf/ut/schema.ut.json"
 
 rdb-env:
   high-prio-bg-threads-num: 1

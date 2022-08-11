@@ -31,7 +31,7 @@ TEST(QueryPlan, Construct) {
     "../../fbs/query_plan.fbs", false, &schemafile);
   EXPECT_TRUE(ok);
   ok = flatbuffers::LoadFile(
-    "../../conf/query_plan.template.json", false, &jsonfile);
+    "../../conf/ut/query_plan.ut.json", false, &jsonfile);
   EXPECT_TRUE(ok);
 
   flatbuffers::Parser parser;
