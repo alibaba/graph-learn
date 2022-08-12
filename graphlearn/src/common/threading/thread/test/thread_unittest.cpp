@@ -45,7 +45,7 @@ struct Foo {
   }
 };
 
-TEST(ThreadTest, DISABLED_LaunchWithFunction) {
+TEST(ThreadTest, LaunchWithFunction) {
   sem_init(&sCount_added, 0, 0);
   Closure<void>* func = NewClosure(&ThreadFunc);
   ThreadHandle handle = CreateThread(func);
@@ -57,7 +57,7 @@ TEST(ThreadTest, DISABLED_LaunchWithFunction) {
   EXPECT_EQ(1, sCount);
 }
 
-TEST(ThreadTest, DISABLED_LaunchWithMethod) {
+TEST(ThreadTest, LaunchWithMethod) {
   Foo foo;
   Closure<void>* func = NewClosure(&foo, &Foo::Bar);
   ThreadHandle handle = CreateThread(func);
