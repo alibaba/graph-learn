@@ -27,7 +27,7 @@ DegreeGetterActor::DegreeGetterActor(hiactor::actor_base* exec_ctx,
   SetOp("GetDegree");
   auto& tm = GetParams();
   edge_type_ = tm.at(kEdgeType).GetString(0);
-  node_from_ = static_cast<NodeFrom>(tm.at(kSideInfo).GetInt32(0));
+  node_from_ = static_cast<NodeFrom>(tm.at(kNodeFrom).GetInt32(0));
 }
 
 DegreeGetterActor::~DegreeGetterActor() = default;
