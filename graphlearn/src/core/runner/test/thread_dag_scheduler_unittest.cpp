@@ -248,12 +248,14 @@ TEST_F(ThreadDagSchedulerTest, GetNodes) {
     auto& record = tape->Retrieval(1);
     // GetNodes with batch_size 2.
     EXPECT_EQ(record.at("nid").Size(), 2);
+    delete tape;
   }
 
   tape = store->WaitAndPop(GLOBAL_FLAG(ClientId));
   EXPECT_EQ(tape->Id(), 5);
   EXPECT_EQ(tape->Epoch(), 0);
   EXPECT_TRUE(tape->IsFaked());
+  delete tape;
 
   // Epoch 1: 0,1 | 2,3 | 4,5 | 6,7 | 8,9 | Fake
   for (int32_t idx = 6; idx < 11; ++idx) {
@@ -267,14 +269,14 @@ TEST_F(ThreadDagSchedulerTest, GetNodes) {
     auto record = tape->Retrieval(1);
     // GetNodes with batch_size 2.
     EXPECT_EQ(record.at("nid").Size(), 2);
+    delete tape;
   }
 
   tape = store->WaitAndPop(GLOBAL_FLAG(ClientId));
   EXPECT_EQ(tape->Id(), 11);
   EXPECT_EQ(tape->Epoch(), 1);
   EXPECT_TRUE(tape->IsFaked());
+  delete tape;
 
   env_->SetStopping();
-
-  delete tape;
 }

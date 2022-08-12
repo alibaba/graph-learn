@@ -8,8 +8,9 @@ script_dir=$(dirname "$(realpath "$0")")
 
 pushd "${script_dir}"
 source env.sh
-cd "${script_dir}/built/bin"
+pushd "${script_dir}/built/bin"
 for i in *_unittest
   do ./"$i"
 done
+popd
 popd

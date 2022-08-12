@@ -96,8 +96,8 @@ DagScheduler* NewDefaultDagScheduler(Env* env) {
 
 #ifndef OPEN_ACTOR_ENGINE
 DagScheduler* NewActorDagScheduler(Env* env) {
-  USER_LOG("Actor engine is disabled!");
-  return nullptr;
+  USER_LOG("Hiactor is disabled! Using default dag scheduler.");
+  return new ThreadDagScheduler(env);
 }
 #endif
 

@@ -35,7 +35,6 @@ void init_contrib_module(py::module&);
 PYBIND11_MODULE(pywrap_graphlearn, m) {
   m.doc() = "Python interface for graph-learn.";
   // setters
-  m.def("set_enable_actor", &SetGlobalFlagEnableActor);
   m.def("set_default_neighbor_id", &SetGlobalFlagDefaultNeighborId);
   m.def("set_tracker_mode", &SetGlobalFlagTrackerMode);
   m.def("set_padding_mode", &SetGlobalFlagPaddingMode);
@@ -64,10 +63,9 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
   m.def("set_ignore_invalid", &SetGlobalFlagIgnoreInvalid);
   m.def("set_neg_sampler_retry_times", &SetGlobalFlagNegativeSamplingRetryTimes);
   m.def("set_field_delimiter", &SetGlobalFlagFieldDelimiter);
-
   // For Actor
   m.def("set_enable_actor", &SetGlobalFlagEnableActor);
-  m.def("set_local_shard_count", &SetGlobalFlagLocalShardCount);
+  m.def("set_actor_local_shard_count", &SetGlobalFlagActorLocalShardCount);
 
   // Constants
   m.attr("kPartitionKey") = kPartitionKey;

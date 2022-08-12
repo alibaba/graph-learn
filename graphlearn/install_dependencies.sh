@@ -2,10 +2,27 @@
 #
 # A script to install dependencies and third parties for graphlearn.
 
-set -e
+set -eo pipefail
 
 gl_root_dir=$(dirname "$(realpath "$0")")
 third_party_dir=${gl_root_dir}/../third_party
+
+build_hiactor=false
+
+for i in "$@"; do
+  case $i in
+    --build-hiactor)
+      build_hiactor=true
+      shift # past argument with no value
+      ;;
+    --*)
+      echo "Unknown option $i"
+      exit 1
+      ;;
+    *)
+      ;;
+  esac
+done
 
 # os-release may be missing in container environment by default.
 if [ -f "/etc/os-release" ]; then
@@ -25,6 +42,31 @@ debian_packages=(
   zlib1g-dev
 )
 
+if [ "${build_hiactor}" = true ] ; then
+  debian_packages=(
+    "${debian_packages[@]}"
+    # hiactor dependencies
+    ragel
+    libhwloc-dev
+    libnuma-dev
+    libpciaccess-dev
+    libcrypto++-dev
+    libboost-all-dev
+    libxml2-dev
+    xfslibs-dev
+    libgnutls28-dev
+    liblz4-dev
+    libsctp-dev
+    systemtap-sdt-dev
+    libtool
+    libyaml-cpp-dev
+    stow
+    libfmt-dev
+    diffutils
+    valgrind
+  )
+fi
+
 # installing dgs system dependencies
 if [ "$ID" = "ubuntu" ] || [ "$ID" = "debian" ]; then
   sudo apt-get -y install "${debian_packages[@]}"
@@ -34,6 +76,17 @@ else
 fi
 
 ## installing submodules
+
+# hiactor
+if [ "${build_hiactor}" = true ] ; then
+  echo "-- installing hiactor ..."
+  if [ ! -f "${third_party_dir}/hiactor/build/include/hiactor/core/actor-template.hh" ]; then
+    pushd "${third_party_dir}/hiactor"
+    git submodule update --init hiactor
+    /bin/bash build.sh
+    popd
+  fi
+fi
 
 # glog
 echo "-- installing glog ..."
