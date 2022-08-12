@@ -206,8 +206,7 @@ LookupEdgesRequest::LookupEdgesRequest()
     : OpRequest(), cursor_(0) {
 }
 
-LookupEdgesRequest::LookupEdgesRequest(const std::string& edge_type,
-                                       int32_t neighbour_count)
+LookupEdgesRequest::LookupEdgesRequest(const std::string& edge_type)
     : OpRequest(), cursor_(0) {
   ADD_TENSOR(params_, kOpName, kString, 1);
   params_[kOpName].AddString("LookupEdges");
@@ -217,9 +216,6 @@ LookupEdgesRequest::LookupEdgesRequest(const std::string& edge_type,
 
   ADD_TENSOR(params_, kEdgeType, kString, 1);
   params_[kEdgeType].AddString(edge_type);
-
-  ADD_TENSOR(params_, kNeighborCount, kInt32, 1);
-  params_[kNeighborCount].AddInt32(neighbour_count);
 
   ADD_TENSOR(tensors_, kEdgeIds, kInt64, kReservedSize);
   edge_ids_ = &(tensors_[kEdgeIds]);
