@@ -29,7 +29,6 @@ def main(argv):
 
   # gl.enable_actor()
   # gl.set_actor_local_shard_count(4)
-  # TODO(@Seventeen17): add GetDegree actor op
 
   # Step 1: Construct graph with data source.
   #   Edges:

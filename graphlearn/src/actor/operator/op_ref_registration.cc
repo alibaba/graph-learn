@@ -15,6 +15,7 @@ limitations under the License.
 
 #include "actor/operator/op_ref_factory.h"
 
+#include "actor/generated/operator/degree_getter_ref.act.autogen.h"
 #include "actor/generated/operator/edge_getter_ref.act.autogen.h"
 #include "actor/generated/operator/edge_lookuper_ref.act.autogen.h"
 #include "actor/generated/operator/edge_weight_sampler_ref.act.autogen.h"
@@ -34,6 +35,7 @@ namespace graphlearn {
 namespace act {
 namespace op_ref_registration {
 
+OpRefRegistration<DegreeGetterActor_ref> _degree_getter_("GetDegree");
 OpRefRegistration<EdgeGetterActor_ref> _edge_getter_("GetEdges");
 OpRefRegistration<EdgeLookuperActor_ref> _edge_lookuper_("LookupEdges");
 OpRefRegistration<EdgeWeightSamplerActor_ref> _edge_weight_sampler_("EdgeWeightSampler");

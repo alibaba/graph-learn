@@ -13,32 +13,30 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "actor/operator/edge_lookuper.act.h"
+#ifndef GRAPHLEARN_ACTOR_OPERATOR_DEGREE_GETTER_ACT_H_
+#define GRAPHLEARN_ACTOR_OPERATOR_DEGREE_GETTER_ACT_H_
 
-#include "include/graph_request.h"
+#include "actor/operator/base_op.act.h"
 
 namespace graphlearn {
 namespace act {
 
-EdgeLookuperActor::EdgeLookuperActor(hiactor::actor_base* exec_ctx,
-                                     const hiactor::byte_t* addr)
-    : BaseOperatorActor(exec_ctx, addr) {
-  set_max_concurrency(UINT32_MAX);  // stateless
-  SetOp("LookupEdges");
-  auto& tm = GetParams();
-  edge_type_ = tm.at("et").GetString(0);
-}
+class ANNOTATION(actor:impl) DegreeGetterActor : public BaseOperatorActor {
+public:
+  DegreeGetterActor(hiactor::actor_base* exec_ctx, const hiactor::byte_t* addr);
+  ~DegreeGetterActor() override;
 
-EdgeLookuperActor::~EdgeLookuperActor() = default;
+  seastar::future<TensorMap>
+  ANNOTATION(actor:method) Process(TensorMap&& tensors) override;
 
-seastar::future<TensorMap> EdgeLookuperActor::Process(TensorMap&& tensors) {
-  LookupEdgesRequest request(edge_type_);
-  request.Set(tensors.tensors_);
-  LookupEdgesResponse response;
-  impl_->Process(&request, &response);
+  ACTOR_DO_WORK()
 
-  return seastar::make_ready_future<TensorMap>(std::move(response.tensors_));
-}
+private:
+  std::string edge_type_;
+  NodeFrom    node_from_;
+};
 
 }  // namespace act
 }  // namespace graphlearn
+
+#endif  // GRAPHLEARN_ACTOR_OPERATOR_DEGREE_GETTER_ACT_H_

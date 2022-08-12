@@ -13,28 +13,29 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "actor/operator/edge_lookuper.act.h"
+#include "actor/operator/degree_getter.act.h"
 
 #include "include/graph_request.h"
 
 namespace graphlearn {
 namespace act {
 
-EdgeLookuperActor::EdgeLookuperActor(hiactor::actor_base* exec_ctx,
+DegreeGetterActor::DegreeGetterActor(hiactor::actor_base* exec_ctx,
                                      const hiactor::byte_t* addr)
     : BaseOperatorActor(exec_ctx, addr) {
   set_max_concurrency(UINT32_MAX);  // stateless
   SetOp("LookupEdges");
   auto& tm = GetParams();
   edge_type_ = tm.at("et").GetString(0);
+  node_from_ = static_cast<NodeFrom>(tm.at(kSideInfo).GetInt32(0));
 }
 
-EdgeLookuperActor::~EdgeLookuperActor() = default;
+DegreeGetterActor::~DegreeGetterActor() = default;
 
-seastar::future<TensorMap> EdgeLookuperActor::Process(TensorMap&& tensors) {
-  LookupEdgesRequest request(edge_type_);
+seastar::future<TensorMap> DegreeGetterActor::Process(TensorMap&& tensors) {
+  GetDegreeRequest request(edge_type_, node_from_);
   request.Set(tensors.tensors_);
-  LookupEdgesResponse response;
+  GetDegreeResponse response;
   impl_->Process(&request, &response);
 
   return seastar::make_ready_future<TensorMap>(std::move(response.tensors_));
