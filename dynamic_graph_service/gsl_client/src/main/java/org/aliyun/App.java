@@ -14,6 +14,7 @@ import org.aliyun.gsl_client.parser.PlanNode;
 import org.aliyun.gsl_client.parser.schema.Schema;
 import org.aliyun.gsl_client.predict.EgoGraph;
 import org.aliyun.gsl_client.predict.TFPredictClient;
+import org.aliyun.gsl_client.status.ErrorCode;
 import org.aliyun.gsl_client.status.Status;
 
 
@@ -78,7 +79,7 @@ public class App
           System.out.println("Barrier u2i_finished is not ready...");
         }
 
-        TFPredictClient client = new TFPredictClient(schema, "localhost", 9000);
+        TFPredictClient client = new TFPredictClient(schema, "localhost", 9007);
         for (int i = 0; i < iters; ++i) {
           // Get Sampled EgoGraph from Service
           Value content = g.run(query);

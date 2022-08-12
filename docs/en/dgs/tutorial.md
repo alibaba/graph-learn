@@ -7,14 +7,13 @@ This document is an e2e tutorial of offline training and online inference for a 
 
 Here is an example of a supervised job with EgoBipartiteSage, containing the following sections.
 1. Prepare u2i and i2i bipartite graph data, including bulk-loading data for offline training and streaming data for online inference.
-2. Train the EgoBipartiteSage model using the offline bulk-loading data, it
-contain user model and item model.
+2. Train the EgoBipartiteSage model using the offline bulk-loading data, it contains user model and item model.
 3. Exporting user model.
 4. Deploying the model on tensorflow model serving.
 5. Deploy the online dynamic graph service and ingest the streaming data.
 6. Start Java Client, sample and predict.
 
-The first 3 part need to to use the training framework GraphLearn-Training, a detailed description of the reference [GraphLearn-Training](../gl/intro.md).
+The first 3 parts need to use the training framework GraphLearn-Training, a detailed description refs:[GraphLearn-Training](../gl/intro.md).
 
 ## 1. Prepare data
 
