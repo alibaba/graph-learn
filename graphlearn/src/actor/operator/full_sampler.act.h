@@ -34,6 +34,7 @@ public:
 private:
   std::string edge_type_;
   std::string sampling_strategy_;
+  int32_t     neighbor_count_;
 };
 
 }  // namespace act

@@ -28,13 +28,14 @@ FullSamplerActor::FullSamplerActor(hiactor::actor_base* exec_ctx,
   auto& tm = GetParams();
   edge_type_ = tm.at(kEdgeType).GetString(0);
   sampling_strategy_ = tm.at(kStrategy).GetString(0);
+  neighbor_count_ = tm.at(kNeighborCount).GetInt32(0);
 }
 
 FullSamplerActor::~FullSamplerActor() = default;
 
 seastar::future<TensorMap> FullSamplerActor::Process(TensorMap&& tensors) {
   // create request
-  SamplingRequest request(edge_type_, sampling_strategy_, 0);
+  SamplingRequest request(edge_type_, sampling_strategy_, neighbor_count_, 0);
   request.Set(tensors.tensors_);
   SamplingResponse response;
   impl_->Process(&request, &response);
