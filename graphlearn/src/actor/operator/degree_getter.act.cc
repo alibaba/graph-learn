@@ -24,9 +24,9 @@ DegreeGetterActor::DegreeGetterActor(hiactor::actor_base* exec_ctx,
                                      const hiactor::byte_t* addr)
     : BaseOperatorActor(exec_ctx, addr) {
   set_max_concurrency(UINT32_MAX);  // stateless
-  SetOp("LookupEdges");
+  SetOp("GetDegree");
   auto& tm = GetParams();
-  edge_type_ = tm.at("et").GetString(0);
+  edge_type_ = tm.at(kEdgeType).GetString(0);
   node_from_ = static_cast<NodeFrom>(tm.at(kSideInfo).GetInt32(0));
 }
 

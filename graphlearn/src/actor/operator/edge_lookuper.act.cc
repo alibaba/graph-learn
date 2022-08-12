@@ -26,7 +26,7 @@ EdgeLookuperActor::EdgeLookuperActor(hiactor::actor_base* exec_ctx,
   set_max_concurrency(UINT32_MAX);  // stateless
   SetOp("LookupEdges");
   auto& tm = GetParams();
-  edge_type_ = tm.at("et").GetString(0);
+  edge_type_ = tm.at(kEdgeType).GetString(0);
 }
 
 EdgeLookuperActor::~EdgeLookuperActor() = default;

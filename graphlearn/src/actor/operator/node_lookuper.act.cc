@@ -26,7 +26,7 @@ NodeLookuperActor::NodeLookuperActor(hiactor::actor_base* exec_ctx,
   set_max_concurrency(UINT32_MAX);  // stateless
   SetOp("LookupNodes");
   auto& tm = GetParams();
-  node_type_ = tm.at("nt").GetString(0);
+  node_type_ = tm.at(kNodeType).GetString(0);
 }
 
 NodeLookuperActor::~NodeLookuperActor() = default;
