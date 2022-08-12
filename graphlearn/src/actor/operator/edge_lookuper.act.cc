@@ -25,14 +25,13 @@ EdgeLookuperActor::EdgeLookuperActor(hiactor::actor_base* exec_ctx,
     : BaseOperatorActor(exec_ctx, addr) {
   set_max_concurrency(UINT32_MAX);  // stateless
   SetOp("LookupEdges");
-  auto& tm = GetParams();
-  edge_type_ = tm.at(kEdgeType).GetString(0);
 }
 
 EdgeLookuperActor::~EdgeLookuperActor() = default;
 
 seastar::future<TensorMap> EdgeLookuperActor::Process(TensorMap&& tensors) {
-  LookupEdgesRequest request(edge_type_);
+  LookupEdgesRequest request;
+  request.Init(*params_);
   request.Set(tensors.tensors_);
   LookupEdgesResponse response;
   impl_->Process(&request, &response);

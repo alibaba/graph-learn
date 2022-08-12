@@ -25,6 +25,10 @@ namespace act {
 BaseOperatorActor::BaseOperatorActor(hiactor::actor_base* exec_ctx,
                                      const hiactor::byte_t* addr)
     : hiactor::actor(exec_ctx, addr), impl_(nullptr) {
+  auto& mgr = DagActorManager::GetInstance();
+  const auto* actor_params = reinterpret_cast<const OpActorParams*>(
+      mgr.GetActorParams(actor_id()));
+  params_ = &actor_params->node->Params();
 }
 
 BaseOperatorActor::~BaseOperatorActor() = default;

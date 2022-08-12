@@ -211,7 +211,8 @@ private:
 class LookupEdgesRequest : public OpRequest {
 public:
   LookupEdgesRequest();
-  explicit LookupEdgesRequest(const std::string& edge_type);
+  explicit LookupEdgesRequest(const std::string& edge_type,
+                              int32_t neighbour_count = 1);
   virtual ~LookupEdgesRequest() = default;
 
   OpRequest* Clone() const override;

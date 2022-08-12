@@ -30,9 +30,6 @@ public:
   ANNOTATION(actor:method) Process(TensorMap&& tensors) override;
 
   ACTOR_DO_WORK()
-
-private:
-  std::string edge_type_;
 };
 
 }  // namespace act
