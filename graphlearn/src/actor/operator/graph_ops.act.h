@@ -13,11 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef GRAPHLEARN_ACTOR_OPERATOR_NODE_GETTER_ACT_H_
-#define GRAPHLEARN_ACTOR_OPERATOR_NODE_GETTER_ACT_H_
+#ifndef GRAPHLEARN_ACTOR_OPERATOR_GRAPH_OPS_ACT_H_
+#define GRAPHLEARN_ACTOR_OPERATOR_GRAPH_OPS_ACT_H_
 
-#include "actor/operator/base_op.act.h"
+#include "actor/operator/op_def_macro.h"
 #include "actor/operator/batch_generator.h"
+#include "include/graph_request.h"
 
 namespace graphlearn {
 namespace act {
@@ -38,13 +39,31 @@ private:
 private:
   NodeBatchGenerator* generator_;
   std::string         node_type_;
-  std::string         strategy_;
-  int32_t             node_from_;
-  int32_t             batch_size_;
-  int32_t             epoch_;
 };
+
+class ANNOTATION(actor:impl) EdgeGetterActor : public BaseOperatorActor {
+public:
+  EdgeGetterActor(hiactor::actor_base* exec_ctx, const hiactor::byte_t* addr);
+  ~EdgeGetterActor() override;
+
+  seastar::future<TensorMap>
+  ANNOTATION(actor:method) Process(TensorMap&& tensors) override;
+
+  ACTOR_DO_WORK()
+
+private:
+  seastar::future<TensorMap> DelegateFetchData(TensorMap&& tensors);
+
+private:
+  EdgeBatchGenerator* generator_;
+  std::string         edge_type_;
+};
+
+DEFINE_OP_ACTOR(GetDegree, GetDegreeRequest, GetDegreeResponse)
+DEFINE_OP_ACTOR(LookupNodes, LookupNodesRequest, LookupNodesResponse)
+DEFINE_OP_ACTOR(LookupEdges, LookupEdgesRequest, LookupEdgesResponse)
 
 }  // namespace act
 }  // namespace graphlearn
 
-#endif  // GRAPHLEARN_ACTOR_OPERATOR_NODE_GETTER_ACT_H_
+#endif  // GRAPHLEARN_ACTOR_OPERATOR_GRAPH_OPS_ACT_H_
