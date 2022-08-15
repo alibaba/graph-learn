@@ -21,12 +21,10 @@ limitations under the License.
 #include "actor/test/test_env.h"
 #include "actor/dag/dag_actor_manager.h"
 #include "actor/operator/batch_generator.h"
-#include "actor/operator/edge_getter.act.h"
 #include "actor/service/actor_alien.h"
 #include "platform/protobuf.h"
 
-#include "actor/generated/operator/edge_getter_ref.act.autogen.h"
-#include "actor/generated/operator/node_getter_ref.act.autogen.h"
+#include "actor/generated/operator/graph_ops_ref.act.autogen.h"
 #include "generated/proto/dag.pb.h"
 
 using namespace graphlearn;  // NOLINT [build/namespaces]
