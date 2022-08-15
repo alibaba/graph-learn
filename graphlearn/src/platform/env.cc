@@ -140,8 +140,8 @@ void Env::ShutdownReservedThreadPool() {
 }
 
 Env* Env::Default() {
-  static Env* default_env = new Env;
-  return default_env;
+  static Env default_env;
+  return &default_env;
 }
 
 }  // namespace graphlearn
