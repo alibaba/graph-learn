@@ -4,6 +4,10 @@ import org.aliyun.dgs.AttributeRecordRep;
 import org.aliyun.dgs.AttributeValueTypeRep;
 import org.aliyun.dgs.EdgeRecordRep;
 import org.aliyun.dgs.VertexRecordRep;
+import org.aliyun.gsl_client.exception.UserException;
+import org.aliyun.gsl_client.parser.schema.AttrDef;
+import org.aliyun.gsl_client.parser.schema.Schema;
+import org.aliyun.gsl_client.parser.schema.TypeDef;
 
 import com.google.flatbuffers.FlatBufferBuilder;
 
@@ -16,8 +20,9 @@ import org.aliyun.dgs.RecordUnionRep;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.LongBuffer;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+
 
 /**
  * This is a helper class for created `Value` manually instead of quering from
@@ -30,14 +35,16 @@ public class ValueBuilder {
   private int cursor;
   private Query query;
   private long input;
-  private Decoder decoder;
+  private Schema schema;
+  private int dim;
 
-  public ValueBuilder(Query query, int size, Decoder decoder, long input) {
+  public ValueBuilder(Query query, int size, Schema schema, long input, int dim) {
     this.query = query;
     results = new int[size];
     cursor = 0;
-    this.decoder = decoder;
+    this.schema = schema;
     this.input = input;
+    this.dim = dim;
   }
 
   public Value finish() {
@@ -52,24 +59,29 @@ public class ValueBuilder {
     return new Value(query, input, buf);
   }
 
-  private int addFloatAttributes(int dim, short idx) {
+  private int addFloatAttributes(int dim, int attrTypeId) {
     float[] floatAttrs = new float[dim];
     Arrays.fill(floatAttrs, 1F);
     ByteBuffer bb = ByteBuffer.allocate(4 * dim);
     FloatBuffer fbb= bb.asFloatBuffer();
     fbb.put(floatAttrs);
+
     int val = AttributeRecordRep.createValueBytesVector(builder, bb);
 
     AttributeRecordRep.startAttributeRecordRep(builder);
-    AttributeRecordRep.addAttrType(builder, idx);  // assume we use incremental encode of attr type
-    AttributeRecordRep.addValueType(builder, AttributeValueTypeRep.FLOAT32);  // FLOAT32=6 in AttributeValueTypeRep
+
+    AttributeRecordRep.addAttrType(builder, (short) attrTypeId);
+    int attrDataType = AttributeValueTypeRep.FLOAT32_LIST;
+    if (dim == 1) {
+      attrDataType = AttributeValueTypeRep.FLOAT32;
+    }
+    AttributeRecordRep.addValueType(builder, attrDataType);
     AttributeRecordRep.addValueBytes(builder, val);
     int attr = AttributeRecordRep.endAttributeRecordRep(builder);
-    // builder.finish(attr);
     return attr;
   }
 
-  private int addLongAttributes(int dim, short idx) {
+  private int addLongAttributes(int dim, int attrTypeId) {
     long[] longAttrs = new long[dim];
     Arrays.fill(longAttrs, 1L);
     ByteBuffer bb = ByteBuffer.allocate(8 * dim);
@@ -78,14 +90,18 @@ public class ValueBuilder {
     int val = AttributeRecordRep.createValueBytesVector(builder, bb);
 
     AttributeRecordRep.startAttributeRecordRep(builder);
-    AttributeRecordRep.addAttrType(builder, idx);  // assume we use incremental encode of attr type
-    AttributeRecordRep.addValueType(builder, AttributeValueTypeRep.INT64);  // INT64=5 in AttributeValueTypeRep
+    AttributeRecordRep.addAttrType(builder, (short)attrTypeId);
+    int attrDataType = AttributeValueTypeRep.INT64_LIST;
+    if (dim == 1) {
+      attrDataType = AttributeValueTypeRep.INT64;
+    }
+    AttributeRecordRep.addValueType(builder, attrDataType);
     AttributeRecordRep.addValueBytes(builder, val);
     int attr = AttributeRecordRep.endAttributeRecordRep(builder);
     return attr;
   }
 
-  private int addStringAttributes(int length, short idx) {
+  private int addStringAttributes(int length, int attrTypeId) {
     char[] charArray = new char[length];
     Arrays.fill(charArray, ' ');
     String attrs = new String(charArray);
@@ -93,25 +109,30 @@ public class ValueBuilder {
     int val = AttributeRecordRep.createValueBytesVector(builder, bb);
 
     AttributeRecordRep.startAttributeRecordRep(builder);
-    AttributeRecordRep.addAttrType(builder, idx);  // assume we use incremental encode of attr type
-    AttributeRecordRep.addValueType(builder, AttributeValueTypeRep.STRING);  // =5 in AttributeValueTypeRep
+    AttributeRecordRep.addAttrType(builder, (short)attrTypeId);
+    AttributeRecordRep.addValueType(builder, AttributeValueTypeRep.STRING);
     AttributeRecordRep.addValueBytes(builder, val);
     int attr = AttributeRecordRep.endAttributeRecordRep(builder);
     return attr;
   }
 
-  public int addVertex(short vtype, long vid) {
-    ArrayList<Integer> featTypes = decoder.getFeatTypes(vtype);
-    int[] offsets = new int[featTypes.size()];
-    for (short idx = 0; idx < featTypes.size(); ++idx) {
-      int dim = decoder.getFeatDims(vtype).get(idx);
-      switch (featTypes.get(idx)) {
-        case AttributeValueTypeRep.FLOAT32: offsets[idx] = addFloatAttributes(dim, idx);
-                                            break;
-        case AttributeValueTypeRep.INT32: offsets[idx] = addLongAttributes(dim, idx);
-                                            break;
-        case AttributeValueTypeRep.STRING: offsets[idx] = addStringAttributes(dim, idx);
-                                            break;
+  public int addVertex(short vtype, long vid) throws UserException {
+    TypeDef typeDef = schema.getTypeDef(vtype);
+    List<AttrDef> attrDefs = typeDef.getAttributes();
+
+    int[] offsets = new int[attrDefs.size()];
+    for (short idx = 0; idx < attrDefs.size(); ++idx) {
+
+      switch (attrDefs.get(idx).getDataType()) {
+        case FLOAT32_LIST: offsets[idx] = addFloatAttributes(dim, attrDefs.get(idx).getTypeId());
+        break;
+        case STRING: offsets[idx] = addStringAttributes(dim, attrDefs.get(idx).getTypeId());
+        break;
+        case INT64: offsets[idx] = addLongAttributes(1, attrDefs.get(idx).getTypeId());
+        break;
+        default:
+        System.out.println("Add not existed attr type=" + attrDefs.get(idx).getDataType());
+        break;
       }
     }
     int attr = VertexRecordRep.createAttributesVector(builder, offsets);
@@ -129,10 +150,25 @@ public class ValueBuilder {
   }
 
   public int addEdge(short etype, short srcVtype, short dstVtype,
-                     long srcId, long dstId) {
-    int[] offsets = new int[1];
-    offsets[0] = addFloatAttributes(1, (short)0);  // weight
-    int attr = EdgeRecordRep.createAttributesVector(builder, offsets);
+                     long srcId, long dstId) throws UserException {
+    TypeDef typeDef = schema.getTypeDef(etype);
+    List<AttrDef> attrDefs = typeDef.getAttributes();
+
+    int[] offsets = new int[attrDefs.size()];
+    for (short idx = 0; idx < attrDefs.size(); ++idx) {
+
+      switch (attrDefs.get(idx).getDataType()) {
+        case FLOAT32_LIST: offsets[idx] = addFloatAttributes(dim, attrDefs.get(idx).getTypeId());
+        break;
+        case STRING: offsets[idx] = addStringAttributes(dim, attrDefs.get(idx).getTypeId());
+        break;
+        case INT64: offsets[idx] = addLongAttributes(1, attrDefs.get(idx).getTypeId());
+        break;
+        default:
+        break;
+      }
+    }
+    int attr = VertexRecordRep.createAttributesVector(builder, offsets);
 
     EdgeRecordRep.startEdgeRecordRep(builder);
     EdgeRecordRep.addEtype(builder, etype);
@@ -148,7 +184,7 @@ public class ValueBuilder {
     return RecordRep.endRecordRep(builder);
   }
 
-  public int addVertexRecords(int batchSize, short vtype, long vid) {
+  public int addVertexRecords(int batchSize, short vtype, long vid) throws UserException {
     int[] offs = new int[batchSize];
     for (int i = 0; i < batchSize; ++i) {
       offs[i] = addVertex(vtype, vid);
@@ -164,7 +200,7 @@ public class ValueBuilder {
 
   public int addEdgeRecords(int batchSize,
                             short etype, short srcVtype, short dstVtype,
-                            long vid) {
+                            long vid) throws UserException {
     int[] offs = new int[batchSize];
     for (int i = 0; i < batchSize; ++i) {
       offs[i] = addEdge(etype, srcVtype, dstVtype,
@@ -179,7 +215,7 @@ public class ValueBuilder {
     return orc;
   }
 
-  public int addVopRes(int opid, short vtype, long vid, int batchSize) {
+  public int addVopRes(int opid, short vtype, long vid, int batchSize) throws UserException {
     int vec = addVertexRecords(batchSize, vtype, vid);
 
     EntryRep.startEntryRep(builder);
@@ -193,7 +229,7 @@ public class ValueBuilder {
   }
 
   public int addEopRes(int opid, short etype, short srcType, short DstType,
-                       long vid, int batchSize) {
+                       long vid, int batchSize) throws UserException {
     int vec = addEdgeRecords(batchSize, etype, srcType, DstType, vid);
     EntryRep.startEntryRep(builder);
     EntryRep.addOpid(builder, opid);

@@ -23,7 +23,7 @@ public class SchemaTest extends TestCase {
   }
 
   public void testSchemaParsing() throws UserException, IOException {
-    Schema schema = Schema.parseFrom("../conf/schema.template.json");
+    Schema schema = Schema.parseFrom("../conf/ut/schema.ut.json");
 
     assertEquals(schema.getAttrDef("timestamp").getDataType(), DataType.INT64);
     assertEquals(schema.getAttrDef("weight").getTypeId(), 1);

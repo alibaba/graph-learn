@@ -183,7 +183,7 @@ public:
     }
 
     ok = flatbuffers::LoadFile(
-      "../../conf/query_plan.template.json", false, &jsonfile);
+      "../../conf/ut/query_plan.ut.json", false, &jsonfile);
     if (!ok) {
       LOG(ERROR) << "Load query_plan json file failed.";
     }

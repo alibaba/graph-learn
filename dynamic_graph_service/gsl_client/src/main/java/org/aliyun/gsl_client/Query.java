@@ -29,9 +29,9 @@ public class Query {
     this.id = id;
   }
 
-  public void feed(String alias, DataSource source) throws UserException {
-    PlanNode node = plan.getNode(alias);
-    node.setSource(source);
+  public void feed(DataSource source) throws UserException {
+    PlanNode root = plan.root();
+    root.setSource(source);
   }
 
 }

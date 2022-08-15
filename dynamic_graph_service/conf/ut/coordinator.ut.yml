@@ -1,4 +1,4 @@
-schema-file: "../../conf/schema.template.json"
+schema-file: "../../conf/ut/schema.ut.json"
 
 meta-dir: "./coordinator_meta"
 

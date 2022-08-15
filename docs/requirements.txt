@@ -1,6 +1,6 @@
 sphinx
 sphinx_rtd_theme
 recommonmark
-markdown==3.3.7
+markdown
 sphinx-markdown-tables
 myst-parser

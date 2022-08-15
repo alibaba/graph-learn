@@ -22,6 +22,7 @@ import graphlearn.python.nn.tf as tfg
 
 class EgoBipartiteGraphSAGE(tfg.EgoGNN):
   def __init__(self,
+               model_name,
                src_input_dim,
                dst_input_dim,
                hidden_dims,
@@ -29,29 +30,43 @@ class EgoBipartiteGraphSAGE(tfg.EgoGNN):
                bn_func=None,
                act_func=tf.nn.relu,
                dropout=0.0,
+               i2i=False,
                **kwargs):
-    """EgoGraph based Bipartite GraphSAGE. 
-  
+    """EgoGraph based Bipartite GraphSAGE.
+
     Args:
       src_input_dim: input dimension of src nodes.
       dst_input_dim: input dimension of dst nodes.
-      hidden_dims: An integer list, in which two adjacent elements stand for 
+      hidden_dims: An integer list, in which two adjacent elements stand for
         the input and output dimensions of the corresponding EgoLayer.
+      i2i: Boolean, if i2i exists.
       agg_type: A string, aggregation strategy. The optional values are
         'mean', 'sum', 'max'.
     """
     layers = []
+    convs = []
     # input layer
-    conv_src2dst = tfg.EgoSAGEConv("src_to_dst",
+    conv_src2dst = tfg.EgoSAGEConv(model_name + "_src_to_dst_" + str(src_input_dim + dst_input_dim),
                                    in_dim=(src_input_dim, dst_input_dim),
                                    out_dim=hidden_dims[0],
                                    agg_type=agg_type)
-    conv_dst2src = tfg.EgoSAGEConv("dst_to_src",
-                                   in_dim=(dst_input_dim, src_input_dim),
-                                   out_dim=hidden_dims[0],
-                                   agg_type=agg_type)
-    # the meta-path is 'src->dst->src->dst...'
-    input_layer = tfg.EgoLayer([(conv_src2dst, conv_dst2src)[i % 2] for i in range(len(hidden_dims))])
+    if not i2i:
+      conv_dst2src = tfg.EgoSAGEConv(model_name + "_dst_to_src_" + str(src_input_dim + dst_input_dim),
+                                    in_dim=(dst_input_dim, src_input_dim),
+                                    out_dim=hidden_dims[0],
+                                    agg_type=agg_type)
+      # the meta-path is 'src->dst->src->dst...'
+      convs = [(conv_src2dst, conv_dst2src)[i % 2] for i in range(len(hidden_dims))]
+    else:
+      conv_dst2dst = tfg.EgoSAGEConv(model_name + "_dst_to_dst_" + str(dst_input_dim + dst_input_dim),
+                                    in_dim=(dst_input_dim, dst_input_dim),
+                                    out_dim=hidden_dims[0],
+                                    agg_type=agg_type)
+      convs = [(conv_src2dst, conv_dst2dst)[i > 0] for i in range(len(hidden_dims))]
+
+    for conv in convs:
+      print(str(conv))
+    input_layer = tfg.EgoLayer(convs)
     layers.append(input_layer)
 
     # hidden and output layer

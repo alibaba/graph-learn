@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
   std::string input_path = "../../../python/data/generated/" + input_file_name;
 
   auto& schema = Schema::GetInstance();
-  bool ok = schema.Init("../../../conf/schema.template.json",
+  bool ok = schema.Init("../../../conf/ut/schema.ut.json",
                         "../../../fbs/schema.fbs",
                         {"../../../fbs/"});
 

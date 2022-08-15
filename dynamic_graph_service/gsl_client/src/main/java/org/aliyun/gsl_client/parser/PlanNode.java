@@ -14,11 +14,19 @@ import java.util.Map;
  */
 public abstract class PlanNode {
   protected int id;
-  protected String alias;
+  protected String alias = "";
   protected Map<String, Integer> params = new HashMap<>();
   protected Vector<Link> childLinks = new Vector<>();
   protected boolean withProperty = true;
   protected DataSource source;
+
+  public PlanNode() {}
+
+  public PlanNode(int id, Map<String, Integer> params, Vector<Link> childLinks) {
+    this.id = id;
+    this.params = params;
+    this.childLinks = childLinks;
+  }
 
   public int getId() {
     return this.id;
@@ -133,6 +141,14 @@ class RootNode extends PlanNode {
     this.id = 0;
   }
 
+  public RootNode(int id,
+                  Map<String, Integer> params,
+                  Vector<Link> childLinks) {
+    this.id = id;
+    this.params = params;
+    this.childLinks = childLinks;
+  }
+
   @Override
   public String getKind() {
     return "SOURCE";
@@ -157,6 +173,14 @@ class VertexSamplerNode extends PlanNode {
     this.id = opid;
   }
 
+  public VertexSamplerNode(int id,
+                           Map<String, Integer> params,
+                           Vector<Link> childLinks) {
+    this.id = id;
+    this.params = params;
+    this.childLinks = childLinks;
+  }
+
   @Override
   public String getKind() {
     return "VERTEX_SAMPLER";
@@ -179,6 +203,14 @@ class VertexSamplerNode extends PlanNode {
 class EdgeSamplerNode extends PlanNode {
   public EdgeSamplerNode(int opid) {
     this.id = opid;
+  }
+
+  public EdgeSamplerNode(int id,
+                         Map<String, Integer> params,
+                         Vector<Link> childLinks) {
+    this.id = id;
+    this.params = params;
+    this.childLinks = childLinks;
   }
 
   @Override

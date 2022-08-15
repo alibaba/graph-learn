@@ -23,4 +23,18 @@ public enum DataType {
     public static DataType parseString(String type) {
         return DataType.valueOf(StringUtils.upperCase(type));
     }
+
+    public int size() {
+        switch (type) {
+            case 0: return 4;
+            case 1: return 4;
+            case 2: return 8;
+            case 3: return 8;
+            case 4: return 4;
+            case 5: return 4;
+            case 6: return 8;
+            case 7: return 8;
+            default: return 1;
+        }
+    }
 }

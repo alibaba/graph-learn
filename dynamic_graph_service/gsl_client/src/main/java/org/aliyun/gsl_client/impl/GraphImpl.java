@@ -13,7 +13,6 @@ import org.json.JSONObject;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 
-import org.aliyun.gsl_client.Decoder;
 import org.aliyun.gsl_client.Graph;
 import org.aliyun.gsl_client.Query;
 import org.aliyun.gsl_client.Traversal;
@@ -60,7 +59,7 @@ public class GraphImpl implements Graph {
       this.traversal.plan_node = root;
       return this.traversal;
     } catch (Exception e) {
-      throw new UserException(ErrorCode.PAESE_ERROR, e.getMessage());
+      throw new UserException(ErrorCode.PARSE_ERROR, e.getMessage());
     }
   }
 
@@ -98,7 +97,7 @@ public class GraphImpl implements Graph {
         return new Status(ErrorCode.OK);
       } else {
         query.setId("-1");
-        return new Status(ErrorCode.PAESE_ERROR);
+        return new Status(ErrorCode.PARSE_ERROR);
       }
     } catch (UserException e) {
       e.printStackTrace();
@@ -155,9 +154,43 @@ public class GraphImpl implements Graph {
     try {
       this.schema = Schema.parseFrom(content);
     } catch (Exception e) {
-      throw new UserException(ErrorCode.HTTP_ERROR, e.getMessage());
+      e.printStackTrace();
+      throw new UserException(ErrorCode.PARSE_ERROR, e.getMessage());
     }
     log.info("Successfully get schema from server :)");
     return this.schema;
+  }
+
+  public Status checkBarrier(String name) throws UserException {
+    byte[] content = null;
+    try {
+      CompletableFuture<byte[]> fut = client.checkBarrier(name);
+      content = fut.join();
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw new UserException(ErrorCode.HTTP_ERROR, e.getMessage());
+    }
+    String res = new String(content);
+    if (res.equals("READY")) {
+      return new Status(ErrorCode.OK);
+    } else {
+      System.out.println("CheckBarrier with status " + res);
+      return new Status(ErrorCode.NOT_READY_ERROR);
+    }
+  }
+
+  public Query getQuery() throws UserException {
+    byte[] content = null;
+    try {
+      CompletableFuture<byte[]> fut = client.getQuery();
+      content = fut.join();
+      Plan plan = Plan.parseFrom(content);
+      Query query = new Query(plan);
+      query.setId("0");
+      return query;
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw new UserException(ErrorCode.HTTP_ERROR, e.getMessage());
+    }
   }
 }

@@ -74,7 +74,7 @@ public class HttpClient {
     RequestBody body = RequestBody.create(queryPlan.getBytes());
 
     Request request = new Request.Builder()
-            .url(uri + "/admin/init/")
+            .url(uri + "/admin/init")
             .post(body)
             .header("Connection", "Keep-Alive")
             .header("Content-Type", contentType)
@@ -104,7 +104,31 @@ public class HttpClient {
 
   public CompletableFuture<byte[]> getSchema() {
     Request request = new Request.Builder()
-            .url(uri + "/admin/schema/")
+            .url(uri + "/admin/schema")
+            .header("Connection", "Keep-Alive")
+            .header("Content-Type", contentType)
+            .build();
+
+    CompletableFuture<byte[]> content = getContent(request);
+    return content;
+  }
+
+  public CompletableFuture<byte[]> checkBarrier(String name) {
+    String url = uri + "/admin/barrier/status?name=" + name;
+    Request request = new Request.Builder()
+            .url(url)
+            .header("Connection", "Keep-Alive")
+            .header("Content-Type", contentType)
+            .build();
+
+    CompletableFuture<byte[]> content = getContent(request);
+    return content;
+  }
+
+  public CompletableFuture<byte[]> getQuery() {
+    String url = uri + "/admin/query";
+    Request request = new Request.Builder()
+            .url(url)
             .header("Connection", "Keep-Alive")
             .header("Content-Type", contentType)
             .build();

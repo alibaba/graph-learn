@@ -51,7 +51,7 @@ public class Traversal {
       return this;
     } catch (Exception e) {
       e.printStackTrace();
-      throw new UserException(ErrorCode.PAESE_ERROR, "Parse Query Failed.");
+      throw new UserException(ErrorCode.PARSE_ERROR, "Parse Query Failed.");
     }
   }
 
@@ -72,7 +72,7 @@ public class Traversal {
       return this;
     } catch (Exception e) {
       e.printStackTrace();
-      throw new UserException(ErrorCode.PAESE_ERROR, "Parse Query Failed.");
+      throw new UserException(ErrorCode.PARSE_ERROR, "Parse Query Failed.");
     }
   }
 
@@ -137,7 +137,7 @@ public class Traversal {
       return this;
     } catch (Exception e) {
       e.printStackTrace();
-      throw new UserException(ErrorCode.PAESE_ERROR, "Parse Query Failed.");
+      throw new UserException(ErrorCode.PARSE_ERROR, "Parse Query Failed.");
     }
   }
 
@@ -164,7 +164,7 @@ public class Traversal {
       plan.optimize(rule);
     } catch (Exception e) {
       e.printStackTrace();
-      throw new UserException(ErrorCode.PAESE_ERROR, "Query values() Failed.");
+      throw new UserException(ErrorCode.PARSE_ERROR, "Query values() Failed.");
     }
     return new Query(plan);
   }

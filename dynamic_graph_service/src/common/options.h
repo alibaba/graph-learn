@@ -229,7 +229,7 @@ private:
   std::string fbs_file_dir = "../../fbs";
 
   /// Specify the json file of graph schema
-  std::string schema_file = "../../conf/schema.template.json";
+  std::string schema_file = "../../conf/ut/schema.ut.json";
 
   /// Compound options
   RdbEnvOptions            rdb_env_options_;

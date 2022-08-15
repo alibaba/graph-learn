@@ -1,7 +1,5 @@
 package org.aliyun;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Vector;
@@ -10,10 +8,14 @@ import org.aliyun.gsl_client.DataSource;
 import org.aliyun.gsl_client.Graph;
 import org.aliyun.gsl_client.Query;
 import org.aliyun.gsl_client.Value;
+import org.aliyun.gsl_client.ValueBuilder;
+import org.aliyun.gsl_client.exception.UserException;
+import org.aliyun.gsl_client.parser.PlanNode;
+import org.aliyun.gsl_client.parser.schema.Schema;
 import org.aliyun.gsl_client.predict.EgoGraph;
 import org.aliyun.gsl_client.predict.TFPredictClient;
+import org.aliyun.gsl_client.status.ErrorCode;
 import org.aliyun.gsl_client.status.Status;
-import org.aliyun.gsl_client.Decoder;
 
 
 class MockDataSource extends DataSource {
@@ -42,56 +44,54 @@ class MockDataSource extends DataSource {
     return true;
   }
 }
+
 public class App
 {
   public static void main( String[] args ) {
-    String server = "http://dynamic-graph-service.info";
+    String server = args[0];
+    String modelName = args[1];
     Graph g = Graph.connect(server);
+
 
     int iters = 5;
     DataSource source = new MockDataSource(iters);
-    Instant start = Instant.now();
+
     try {
-        Query query = g.V("user").feed(source).properties(1).alias("seed")
-            .outV("u2i").sample(15).by("topk_by_timestamp").properties(1).alias("hop1")
-            .outV("i2i").sample(10).by("topk_by_timestamp").properties(1).alias("hop2")
-            .values();
-        System.out.println("Waiting for Query Installation Ready...");
-        Status s = g.install(query);
-        if (s.ok()) {
-          // describe the attributes with alias in query.
-          Decoder decoder = new Decoder(g);
-          decoder.addFeatDesc("user",
-                              new ArrayList<String>(Arrays.asList("string", "float")),
-                              new ArrayList<Integer>(Arrays.asList(1, 100)));
-          decoder.addFeatDesc("item",
-                              new ArrayList<String>(Arrays.asList("string", "float")),
-                              new ArrayList<Integer>(Arrays.asList(1, 100)));
+      Schema schema = g.getSchema();
 
-          System.out.println("Install Query succeed, query id: " + query.getId());
-          TFPredictClient client = new TFPredictClient(decoder, "localhost", 9000);
-          for (int i = 0; i < iters; ++i) {
-            Value content = g.run(query);
-            EgoGraph egoGraph = content.getEgoGraph("seed");
-            client.predict("model", 1, egoGraph);
-          }
-        } else {
-          System.out.println("Install Query failed, error code:" + s.getCode());
+      Query query = g.V("user").feed(source).properties(1).alias("seed")
+          .outV("u2i").sample(10).by("topk_by_timestamp").properties(1).alias("hop1")
+          .outV("i2i").sample(5).by("topk_by_timestamp").properties(1).alias("hop2")
+          .values();
+      Status s = g.install(query);
+
+      // Uncomment me on other clients.
+      // Query query = g.getQuery();
+      // query.feed(source);
+      // Status s = new Status(ErrorCode.OK);
+
+      System.out.println("Query Installation Ready: " + query.getPlan().toJson().toString());
+
+      if (s.ok()) {
+        // Note: Make sure that DataLoader has set barrier("u2i_finished")
+        while (!g.checkBarrier("u2i_finished").ok()) {
+          Thread.sleep(1000);
+          System.out.println("Barrier u2i_finished is not ready...");
         }
-      } catch (Exception e) {
-          e.printStackTrace();
+
+        TFPredictClient client = new TFPredictClient(schema, "localhost", 9007);
+        for (int i = 0; i < iters; ++i) {
+          // Get Sampled EgoGraph from Service
+          Value content = g.run(query);
+          EgoGraph egoGraph = content.getEgoGraph();
+          ArrayList<Integer> phs = new ArrayList<Integer>(Arrays.asList(0, 3, 4));
+          client.predict(modelName, 1, egoGraph, phs);
+        }
+      } else {
+        System.out.println("Install Query failed, error code:" + s.getCode());
       }
-      // for other clients
-      // DataSource source = ..;
-      // Graph g = Graph.connect(server);
-      // Query query = g.getQuery(queryId);
-      // query.feed("seed", source);
-      // Value val = q.run(query)
-
-      // desc attr decoder
-
-      Instant end = Instant.now();
-      Duration timeElapsed = Duration.between(start, end);
-      System.out.println("AppTest Time taken: "+ timeElapsed.toMillis() +" milliseconds");
+    } catch (Exception e) {
+        e.printStackTrace();
     }
+  }
 }

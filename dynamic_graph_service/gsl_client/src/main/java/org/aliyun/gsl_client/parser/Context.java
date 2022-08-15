@@ -8,16 +8,16 @@ public class Context {
   private Plan plan;
   private Graph graph;
   private int kind; // 0: Traversal to Vertex, 1: Traversal to Edge
-  private int type;
+  private int typeId;
   private Schema schema;
 
   public Context(Plan plan, Graph graph, int kind,
-                 String type, Schema schema) throws UserException {
+                 String typeName, Schema schema) throws UserException {
     this.plan = plan;
     this.graph = graph;
     this.kind = kind;
     this.schema = schema;
-    this.type = schema.getTypeDef(type).getTypeId();
+    this.typeId = schema.getTypeDef(typeName).getTypeId();
   }
 
   public Plan getPlan() {
@@ -45,22 +45,22 @@ public class Context {
   }
 
   public int getType() {
-    return this.type;
+    return this.typeId;
   }
 
-  public void setType(int type) {
-    this.type = type;
+  public void setType(int typeId) {
+    this.typeId = typeId;
   }
 
-  public int type(String type) throws UserException {
-    return schema.getTypeDef(type).getTypeId();
+  public int type(String typeName) throws UserException {
+    return schema.getTypeDef(typeName).getTypeId();
   }
 
-  public int srcType(String type) throws UserException {
-    return schema.getRelation(type).getSrcTypeId();
+  public int srcType(String typeName) throws UserException {
+    return schema.getRelation(typeName).getSrcTypeId();
   }
 
-  public int dstType(String type) throws UserException {
-    return schema.getRelation(type).getDstTypeId();
+  public int dstType(String typeName) throws UserException {
+    return schema.getRelation(typeName).getDstTypeId();
   }
 }
