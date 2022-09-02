@@ -1,9 +1,0 @@
-# The service host name is: {{ .Values.frontend.ingressHostName }}
-
-# You can get the service ip by:
-
-  export ServiceIP=$(kubectl get ingress --namespace {{ .Release.Namespace }} {{ include "dgs.frontend.name" . }}-ingress --output jsonpath='{.status.loadBalancer.ingress[0].ip}')
-
-# In order to access the service from your local machine, you need to register the service host with:
-
-  echo "${ServiceIP} {{ .Values.frontend.ingressHostName }}" >> /etc/hosts

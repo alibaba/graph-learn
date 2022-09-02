@@ -1,1 +1,0 @@
-from ultra_gcn import UltraGCN

@@ -1,1 +1,0 @@
-from ego_sage import EgoGraphSAGE
