@@ -39,19 +39,19 @@ __global__ void Find_Kernel(
 {
     int32_t batch_size = 0;
 	int32_t node_off = 0;
-	if(op_id == 5){
+	if(op_id == 1){
 		node_off = node_counter[3];
 		batch_size = node_counter[4];
-	}else if(op_id == 6){
+	}else if(op_id == 3){
 		node_off = node_counter[5];
 		batch_size = node_counter[6];
-	}else if(op_id == 7){
+	}else if(op_id == 5){
 		node_off = node_counter[7];
 		batch_size = node_counter[8];
 	}
     for(int32_t thread_idx = threadIdx.x + blockDim.x * blockIdx.x; thread_idx < batch_size; thread_idx += gridDim.x * blockDim.x){
         int32_t id = sampled_ids[node_off + thread_idx];
-        // offset[thread_idx] = -1;
+        // cache_offset[thread_idx] = -1;
         if(id < 0){
             cache_offset[thread_idx] = -1;
         }else{
@@ -947,10 +947,10 @@ public:
         dim3 block_num(64, 1);
         dim3 thread_num(1024, 1);
         
-        CacheHitTimes<<<block_num, thread_num, 0, static_cast<cudaStream_t>(stream)>>>(candidates, node_counter, cache_map_);
-        int32_t* h_node_counter = (int32_t*)malloc(16*sizeof(int32_t));
-        cudaMemcpy(h_node_counter, node_counter, 64, cudaMemcpyDeviceToHost);
-        std::cout<<device_idx_<<" "<<h_node_counter[10]*1.0/h_node_counter[9]<<"\n";
+        // CacheHitTimes<<<block_num, thread_num, 0, static_cast<cudaStream_t>(stream)>>>(candidates, node_counter, cache_map_);
+        // int32_t* h_node_counter = (int32_t*)malloc(16*sizeof(int32_t));
+        // cudaMemcpy(h_node_counter, node_counter, 64, cudaMemcpyDeviceToHost);
+        // std::cout<<device_idx_<<" "<<h_node_counter[10]*1.0/h_node_counter[9]<<"\n";
 
         cudaMemsetAsync(global_counter_, 0, 4 * sizeof(int32_t) , static_cast<cudaStream_t>(stream));
         cudaCheckError();

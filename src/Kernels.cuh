@@ -9,8 +9,6 @@
 #include "GPUCache.cuh"
 
 #define SAMPLING_THREAD_NUM 1024
-typedef void* stream_handle;
-typedef void* event_handle;
 
 // Macro for checking cuda errors following a cuda launch or api call
 #define cudaCheckError()                                       \
@@ -22,6 +20,7 @@ typedef void* event_handle;
       exit(EXIT_FAILURE);                                      \
     }                                                          \
   }
+
 extern "C"
 void* d_alloc_space(int64_t num_bytes);
 
@@ -45,7 +44,7 @@ void* host_alloc_space(unsigned int num_bytes);
 
 extern "C"
 void batch_generator_kernel(
-	stream_handle strm_hdl, 
+	cudaStream_t strm_hdl, 
 	GPUNodeStorage* noder,
 	GPUCache* cache,
 	GPUMemoryPool* memorypool,
@@ -57,7 +56,7 @@ void batch_generator_kernel(
 
 extern "C"											
 void GPU_Random_Sampling(
-  stream_handle strm_hdl, 
+  cudaStream_t strm_hdl, 
   GPUGraphStorage* graph,
   GPUCache* cache,
   GPUMemoryPool* memorypool,
@@ -66,7 +65,7 @@ void GPU_Random_Sampling(
 
 extern "C"
 void get_feature_kernel(
-  stream_handle strm_hdl,
+  cudaStream_t strm_hdl,
   GPUCache* cache, 
   GPUNodeStorage* noder,
   GPUMemoryPool* memorypool,
@@ -75,7 +74,7 @@ void get_feature_kernel(
 
 extern "C"
 void make_update_plan(
-	stream_handle strm_hdl, 
+	cudaStream_t strm_hdl, 
 	GPUGraphStorage* graph, 
 	GPUCache* cache,
   GPUMemoryPool* memorypool,
@@ -84,7 +83,7 @@ void make_update_plan(
 
 extern "C"
 void update_cache(
-  stream_handle strm_hdl, 
+  cudaStream_t strm_hdl, 
   GPUCache* cache, 
   GPUNodeStorage* noder,
   GPUMemoryPool* memorypool,

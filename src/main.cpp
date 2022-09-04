@@ -1,9 +1,9 @@
 #include "Server.h"
-#define DEVCOUNT 8
+#include <stdlib.h>
 
-int main(){
+int main(int argc, char** argv){
     Server* server = NewGPUServer();
-    server->Initialize(DEVCOUNT);
+    server->Initialize(atoi(argv[1]));
     server->Run();
     server->Finalize();
 }

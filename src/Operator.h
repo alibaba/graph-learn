@@ -3,8 +3,8 @@
 
 struct OpParams {
     int device_id;
-    void* stream;
-    void* event;
+    cudaStream_t stream;
+    cudaEvent_t event;
     void* memorypool;
     void* cache;
     void* graph;

@@ -32,6 +32,7 @@ struct BuildInfo{
     std::vector<int32_t> partition_offset;
     //train
     int32_t epoch;
+    int32_t raw_batch_size;
 };
 
 #endif

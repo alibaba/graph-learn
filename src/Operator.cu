@@ -23,7 +23,8 @@ public:
         int32_t batch_size = env->GetCurrentBatchsize(device_id, mode);
 
         batch_generator_kernel(params->stream, noder, cache, memorypool, batch_size, iter, device_id, device_id, mode);
-        cudaEventRecord((static_cast<cudaEvent_t>(params->event)), (static_cast<cudaStream_t>(params->stream)));
+        cudaEventRecord(((params->event)), ((params->stream)));
+        cudaCheckError();
     }
 private:
     int op_id_;
@@ -45,7 +46,8 @@ public:
         GPUCache* cache = (GPUCache*)(params->cache);
 
         GPU_Random_Sampling(params->stream, graph, cache, memorypool, count, op_id_);
-        cudaEventRecord((static_cast<cudaEvent_t>(params->event)), (static_cast<cudaStream_t>(params->stream)));
+        cudaEventRecord(((params->event)), ((params->stream)));
+        cudaCheckError();
     }
 private:
     int op_id_;
@@ -87,7 +89,7 @@ public:
         int mode = memorypool->GetCurrentMode();
 
         make_update_plan(params->stream, graph, cache, memorypool, params->device_id, mode);
-        cudaEventRecord((static_cast<cudaEvent_t>(params->event)), (static_cast<cudaStream_t>(params->stream)));
+        cudaEventRecord(((params->event)), ((params->stream)));
     }
 private:
     int op_id_;
@@ -109,7 +111,7 @@ public:
         int mode = memorypool->GetCurrentMode();
 
         update_cache(params->stream, cache, noder, memorypool, params->device_id, mode);
-        cudaEventRecord((static_cast<cudaEvent_t>(params->event)), (static_cast<cudaStream_t>(params->stream)));
+        cudaEventRecord(((params->event)), ((params->stream)));
     }
 private:
     int op_id_;

@@ -19,6 +19,7 @@ from dgl.nn.pytorch import SAGEConv
 from dgl.heterograph import DGLBlock
 import time
 import numpy as np
+import torchmetrics
 
 def setup(rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
@@ -81,8 +82,9 @@ def train_one_step(model, optimizer, loss_fcn, device, feat_len):
     loss.backward()
     optimizer.step()
     ipc_service.synchronize()
+    return loss
 
-def valid_one_step(model, loss_fcn, device, feat_len):
+def valid_one_step(model, metric, device, feat_len):
     
     ids, features, labels, block1_agg_src, block1_agg_dst, block2_agg_src, block2_agg_dst = ipc_service.get_next(feat_len)
     block1_src_num, block1_dst_num, block2_src_num, block2_dst_num = ipc_service.get_block_size()
@@ -91,8 +93,12 @@ def valid_one_step(model, loss_fcn, device, feat_len):
     blocks.append(create_dgl_block(block2_agg_src, block2_agg_dst, block2_src_num, block2_dst_num))
     batch_pred = model(blocks, features)
     long_labels = torch.as_tensor(labels, dtype=torch.long, device=device)
-    loss = loss_fcn(batch_pred, long_labels)
-    return loss
+    # loss = loss_fcn(batch_pred, long_labels)
+    # ipc_service.synchronize()
+    batch_pred = torch.softmax(batch_pred, dim=1).to(device)
+    acc = metric(batch_pred, long_labels)
+    ipc_service.synchronize()
+    return acc
 
 def test_one_step(model, metric, device, feat_len):
     
@@ -103,11 +109,13 @@ def test_one_step(model, metric, device, feat_len):
     blocks.append(create_dgl_block(block2_agg_src, block2_agg_dst, block2_src_num, block2_dst_num))
     batch_pred = model(blocks, features)
     long_labels = torch.as_tensor(labels, dtype=torch.long, device=device)
+    batch_pred = torch.softmax(batch_pred, dim=1).to(device)
     acc = metric(batch_pred, long_labels)
+    ipc_service.synchronize()
     return acc
 
 def worker_process(rank, world_size, args):
-    print(f"Running basic DDP example on rank {rank}.")
+    print(f"Running GNN Training on CUDA {rank}.")
     device_id = rank
     setup(rank, world_size)
     cuda_device = torch.device("cuda:{}".format(device_id))
@@ -143,26 +151,46 @@ def worker_process(rank, world_size, args):
         start = time.time()
         epoch_time = 0
         for iter in range(train_steps):
-            train_one_step(model, optimizer, loss_fcn, cuda_device, feat_len)
+            train_loss = train_one_step(model, optimizer, loss_fcn, cuda_device, feat_len)
+            # if device_id == 0:
+            #     print('Iter {} Train Loss :{} '.format(iter, train_loss))
         epoch_time += time.time() - start
 
-        loss = []
-        for iter in range(valid_steps):
-            loss_per_batch = valid_one_step(model, optimizer, loss_fcn, cuda_device, feat_len)
-            loss.append(loss_per_batch)
-        val_loss = np.mean(loss[:])
+        # loss = []
+        # with torch.no_grad():
+        #     for iter in range(valid_steps):
+        #         loss_per_batch = valid_one_step(model, loss_fcn, cuda_device, feat_len)
+        #         loss_per_batch = loss_per_batch.cpu()
+        #         loss_per_batch = loss_per_batch.numpy()
+        #         # if device_id == 0:
+        #         #     print('Iter {} Val Loss :{} '.format(iter, train_loss))
+        #         loss.append(loss_per_batch)
+        # val_loss = np.mean(loss[:])
+        # if device_id == 0:
+        #     print('Epoch:{}, Cost:{} s, Loss :{} '.format(epoch, epoch_time, val_loss))
+        
+        model.eval()
+        metric = torchmetrics.Accuracy()
+        metric = metric.to(device_id)
+        model.metric = metric
+        with torch.no_grad():
+            for iter in range(valid_steps):
+                valid_one_step(model, metric, cuda_device, feat_len)
+            acc_val = metric.compute()
         if device_id == 0:
-            print('Epoch:{}, Cost:{} s, Loss on CUDA {} :{} '.format(epoch, epoch_time, device_id, val_loss))
+            print("Epoch:{}, Cost:{} s, Val Acc: {}".format(epoch, epoch_time, acc_val))
+
     
-    print('Finish training, start test')
     model.eval()
-    model.metric = metric
     metric = torchmetrics.Accuracy()
-    for iter in range(test_steps):
-        infer_one_step(model, optimizer, loss_fcn, cuda_device, feat_len)
-    acc = metric.compute()
+    metric = metric.to(device_id)
+    model.metric = metric
+    with torch.no_grad():
+        for iter in range(test_steps):
+            test_one_step(model, metric, cuda_device, feat_len)
+        acc = metric.compute()
     if device_id == 0:
-        print("Accuracy on test data: {acc}")
+        print("Accuracy on test data: {}".format(acc))
     metric.reset()
 
     ipc_service.finalize()
@@ -177,19 +205,17 @@ def run_distribute(dist_fn, world_size, args):
 if __name__ == "__main__":
     cur_path = sys.path[0]
     argparser = argparse.ArgumentParser("Train Graphsage.")
-    argparser.add_argument('--class_num', type=int, default=2)
+    argparser.add_argument('--class_num', type=int, default=172)
     argparser.add_argument('--features_num', type=int, default=128)
     argparser.add_argument('--train_batch_size', type=int, default=8000)
     argparser.add_argument('--hidden_dim', type=int, default=256)
     argparser.add_argument('--hops_num', type=int, default=2)
     argparser.add_argument('--nbrs_num', type=list, default=[25, 10])
-    argparser.add_argument('--drop_rate', type=float, default=0.0)
-    argparser.add_argument('--learning_rate', type=float, default=0.001)
-    argparser.add_argument('--epoch', type=int, default=10)
+    argparser.add_argument('--drop_rate', type=float, default=0.5)
+    argparser.add_argument('--learning_rate', type=float, default=0.003)
+    argparser.add_argument('--epoch', type=int, default=1)
     args = argparser.parse_args()
 
-    # n_gpus = torch.cuda.device_count()
-    # assert n_gpus >= 2, f"Requires at least 2 GPUs to run, but got {n_gpus}"
-    world_size = 8
+    world_size = 4
 
     run_distribute(worker_process, world_size, args)

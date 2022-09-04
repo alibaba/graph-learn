@@ -30,7 +30,11 @@
 void mmap_trainingset_read(std::string &training_file, std::vector<int32_t>& training_set_ids){
     int64_t t_idx = 0;
     int32_t fd = open(training_file.c_str(), O_RDONLY);
-    int64_t buf_len = lseek(fd, 0, SEEK_END);
+    if(fd == -1){
+        std::cout<<"cannout open file: "<<training_file<<"\n";
+    }
+    // int64_t buf_len = lseek(fd, 0, SEEK_END);
+    int64_t buf_len = int64_t(int64_t(training_set_ids.size()) * 4); 
     const int32_t* buf = (int32_t *)mmap(NULL, buf_len, PROT_READ, MAP_PRIVATE, fd, 0);
     const int32_t* buf_end = buf + buf_len/sizeof(int32_t);
     int32_t temp;
@@ -46,6 +50,9 @@ void mmap_trainingset_read(std::string &training_file, std::vector<int32_t>& tra
 void mmap_partition_read(std::string &partition_file, std::vector<char>& partition_index){
     int64_t part_idx = 0;
     int32_t fd = open(partition_file.c_str(), O_RDONLY);
+    if(fd == -1){
+        std::cout<<"cannout open file: "<<partition_file<<"\n";
+    }
     int64_t buf_len = lseek(fd, 0, SEEK_END);
     const int32_t* buf = (int32_t *)mmap(NULL, buf_len, PROT_READ, MAP_PRIVATE, fd, 0);
     const int32_t* buf_end = buf + buf_len/sizeof(int32_t);
@@ -62,6 +69,9 @@ void mmap_partition_read(std::string &partition_file, std::vector<char>& partiti
 void mmap_indptr_read(std::string &indptr_file, std::vector<int64_t>& indptr){
     int64_t indptr_index = 0;
     int32_t fd = open(indptr_file.c_str(), O_RDONLY);
+    if(fd == -1){
+        std::cout<<"cannout open file: "<<indptr_file<<"\n";
+    }
     int64_t buf_len = lseek(fd, 0, SEEK_END);
     const int64_t *buf = (int64_t *)mmap(NULL, buf_len, PROT_READ, MAP_PRIVATE, fd, 0);
     const int64_t* buf_end = buf + buf_len/sizeof(int64_t);
@@ -78,6 +88,9 @@ void mmap_indptr_read(std::string &indptr_file, std::vector<int64_t>& indptr){
 void mmap_indices_read(std::string &indices_file, std::vector<int32_t>& indices){
     int64_t indices_index = 0;
     int32_t fd = open(indices_file.c_str(), O_RDONLY);
+    if(fd == -1){
+        std::cout<<"cannout open file: "<<indices_file<<"\n";
+    }
     int64_t buf_len = lseek(fd, 0, SEEK_END);
     const int32_t *buf = (int32_t *)mmap(NULL, buf_len, PROT_READ, MAP_PRIVATE, fd, 0);
     const int32_t* buf_end = buf + buf_len/sizeof(int32_t);
@@ -94,6 +107,9 @@ void mmap_indices_read(std::string &indices_file, std::vector<int32_t>& indices)
 void mmap_features_read(std::string &features_file, float* features){
     int64_t n_idx = 0;
     int32_t fd = open(features_file.c_str(), O_RDONLY);
+    if(fd == -1){
+        std::cout<<"cannout open file: "<<features_file<<"\n";
+    }
     int64_t buf_len = lseek(fd, 0, SEEK_END);
     const float *buf = (float *)mmap(NULL, buf_len, PROT_READ, MAP_PRIVATE, fd, 0);
     const float* buf_end = buf + buf_len/sizeof(float);
@@ -110,6 +126,9 @@ void mmap_features_read(std::string &features_file, float* features){
 void mmap_labels_read(std::string &labels_file, std::vector<int32_t>& labels){
     int64_t n_idx = 0;
     int32_t fd = open(labels_file.c_str(), O_RDONLY);
+    if(fd == -1){
+        std::cout<<"cannout open file: "<<labels_file<<"\n";
+    }
     int64_t buf_len = lseek(fd, 0, SEEK_END);
     const int32_t *buf = (int32_t *)mmap(NULL, buf_len, PROT_READ, MAP_PRIVATE, fd, 0);
     const int32_t* buf_end = buf + buf_len/sizeof(int32_t);
@@ -171,7 +190,7 @@ void GPUGraphStore::ConfigPartition(BuildInfo* info, int32_t shard_count){
 void GPUGraphStore::ReadMetaFIle(BuildInfo* info){
     std::istringstream iss;
     std::string buff;
-    std::ifstream Metafile("/home/sunjie/gl-716/meta_config");
+    std::ifstream Metafile("/home/sunjie/graph-learn/meta_config");
     if(!Metafile.is_open()){
      std::cout<<"unable to open meta config file"<<"\n";
     }
@@ -182,6 +201,7 @@ void GPUGraphStore::ReadMetaFIle(BuildInfo* info){
     std::cout<<"Dataset path:       "<<dataset_path_<<"\n";
     iss >> raw_batch_size_;
     std::cout<<"Raw Batchsize:      "<<raw_batch_size_<<"\n";
+    info->raw_batch_size = raw_batch_size_;
     iss >> node_num_;
     std::cout<<"Graph nodes num:    "<<node_num_<<"\n";
     iss >> edge_num_;
@@ -278,11 +298,16 @@ void GPUGraphStore::Load_Feature(BuildInfo* info){
     (info->testing_set_ids).resize(partition_count);
     (info->testing_labels).resize(partition_count);
 
-    std::string training_path = dataset_path_  + "trainingset";
-    std::string validation_path = dataset_path_  + "validationset";
-    std::string testing_path = dataset_path_  + "testingset";
+    // std::string training_path = dataset_path_  + "trainingset";
+    // std::string validation_path = dataset_path_  + "validationset";
+    // std::string testing_path = dataset_path_  + "testingset";
+    std::string training_path = dataset_path_  + "train_ids";
+    std::string validation_path = dataset_path_  + "valid_ids";
+    std::string testing_path = dataset_path_  + "test_ids";
     std::string features_path = dataset_path_ + "features";
-    std::string labels_path = dataset_path_ + "labels";
+    // std::string labels_path = dataset_path_ + "labels";
+    std::string labels_path = dataset_path_ + "labels_raw";
+
     std::string partition_path = dataset_path_ + "partition_" + std::to_string(partition_count);
 
     std::vector<int32_t> training_ids;
@@ -299,18 +324,20 @@ void GPUGraphStore::Load_Feature(BuildInfo* info){
     cudaHostAlloc(&host_float_attrs, int64_t(int64_t(int64_t(node_num) * nf) * sizeof(float)), cudaHostAllocMapped);
     cudaCheckError();
 
+
     mmap_trainingset_read(training_path, training_ids);
-    mmap_trainingset_read(training_path, validation_ids);
-    mmap_trainingset_read(training_path, testing_ids);
-    mmap_features_read(features_path, host_float_attrs);
+    mmap_trainingset_read(validation_path, validation_ids);
+    mmap_trainingset_read(testing_path, testing_ids);
+    // mmap_features_read(features_path, host_float_attrs);
     mmap_labels_read(labels_path, all_labels);
     mmap_partition_read(partition_path, partition_index);
 
-    //partition nodes
+    std::cout<<"Finish Reading All Files\n";
+    // partition nodes
     for(int32_t i = 0; i < training_set_num_; i++){
         int32_t tid = training_ids[i];
-        // int32_t part_id = tid % partition_count;
-        int32_t part_id = partition_index[tid];
+        int32_t part_id = tid % partition_count;
+        // int32_t part_id = partition_index[tid];
         if(part_id < partition_count){
             (info->training_set_ids[part_id]).push_back(tid);
         }
@@ -318,8 +345,8 @@ void GPUGraphStore::Load_Feature(BuildInfo* info){
 
     for(int32_t i = 0; i < validation_set_num_; i++){
         int32_t tid = validation_ids[i];
-        // int32_t part_id = tid % partition_count;
-        int32_t part_id = partition_index[tid];
+        int32_t part_id = tid % partition_count;
+        // int32_t part_id = partition_index[tid];
         if(part_id < partition_count){
             (info->validation_set_ids[part_id]).push_back(tid);
         }
@@ -327,8 +354,8 @@ void GPUGraphStore::Load_Feature(BuildInfo* info){
 
     for(int32_t i = 0; i < testing_set_num_; i++){
         int32_t tid = testing_ids[i];
-        // int32_t part_id = tid % partition_count;
-        int32_t part_id = partition_index[tid];
+        int32_t part_id = tid % partition_count;
+        // int32_t part_id = partition_index[tid];
         if(part_id < partition_count){
             (info->testing_set_ids[part_id]).push_back(tid);
         }
@@ -408,6 +435,7 @@ void GPUGraphStore::Initialze(int32_t shard_count){
     cudaSetDevice(0);
     cache_ -> Initialize(device, cache_cap_, 0, float_attr_len_, future_batch_, cache_way_);
     cudaSetDevice(0);
+    std::cout<<"Storage Initialized\n";
 }
 
 GPUGraphStorage* GPUGraphStore::GetGraph(){

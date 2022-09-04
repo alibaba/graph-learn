@@ -110,7 +110,7 @@ __global__ void update_counter(
 	int32_t op_id, 
 	int32_t size)
 {
-	if(op_id == 1){
+	if(op_id == 0){
 		node_counter[0] = size;//global offset for output
 		node_counter[1] = 0;//for next op count
 		node_counter[2] = size;//for next op input size
@@ -130,7 +130,7 @@ __global__ void update_counter(
 		edge_counter[2] = edge_counter[0];
 		edge_counter[0] += edge_counter[1];//global offset for output
 		edge_counter[1] = 0;//for next op count
-	}else if(op_id == 3){
+	}else if(op_id == 4){
 		node_counter[0] += node_counter[1];//global offset for output
 		node_counter[7] = node_counter[5] + node_counter[6];//global offset for feature extracting
 		node_counter[8] = node_counter[1];//feature extracting size
@@ -156,7 +156,7 @@ __global__ void Init_Array_Int32(
 
 extern "C"
 void batch_generator_kernel(
-	stream_handle strm_hdl, 
+	cudaStream_t strm_hdl, 
 	GPUNodeStorage* noder,
 	GPUCache* cache,
 	GPUMemoryPool* memorypool,
@@ -208,22 +208,22 @@ void batch_generator_kernel(
 		return;
 	}
 
-	cudaMemsetAsync(accessed_map, 0, int64_t(int64_t(total_node_num) * int64_t(sizeof(int32_t))), static_cast<cudaStream_t>(strm_hdl));
-	cudaMemsetAsync(position_map, 0, int64_t(int64_t(total_node_num) * int64_t(sizeof(int32_t))), static_cast<cudaStream_t>(strm_hdl));
+	cudaMemsetAsync(accessed_map, 0, int64_t(int64_t(total_node_num) * int64_t(sizeof(int32_t))), (strm_hdl));
+	cudaMemsetAsync(position_map, 0, int64_t(int64_t(total_node_num) * int64_t(sizeof(int32_t))), (strm_hdl));
 
-	cudaMemsetAsync(node_counter, 0, 16 * sizeof(int32_t), static_cast<cudaStream_t>(strm_hdl));
-	cudaMemsetAsync(edge_counter, 0, 16 * sizeof(int32_t), static_cast<cudaStream_t>(strm_hdl));
+	cudaMemsetAsync(node_counter, 0, 16 * sizeof(int32_t), (strm_hdl));
+	cudaMemsetAsync(edge_counter, 0, 16 * sizeof(int32_t), (strm_hdl));
 
 	int32_t size = ((batch_size*(counter+1)) >= total_cap) ? (total_cap - batch_size * counter) : batch_size;
 	dim3 bg_block((size - 1)/1024 + 1, 1);
 	dim3 bg_thread(1024, 1);
-	batch_generator<<<bg_block, bg_thread, 0, static_cast<cudaStream_t>(strm_hdl)>>>(batch_ids, labels, size, counter, all_ids, all_labels, total_cap, accessed_map, position_map);
+	batch_generator<<<bg_block, bg_thread, 0, (strm_hdl)>>>(batch_ids, labels, size, counter, all_ids, all_labels, total_cap, accessed_map, position_map);
 	cudaCheckError();
 	if(mode == TRAINMODE){
-		future_batch_generator<<<bg_block, bg_thread, 0, static_cast<cudaStream_t>(strm_hdl)>>>(all_future_ids, batch_size, k_batch, counter, total_cap, all_ids);
+		future_batch_generator<<<bg_block, bg_thread, 0, (strm_hdl)>>>(all_future_ids, batch_size, k_batch, counter, total_cap, all_ids);
 		cudaCheckError();
 	}
-	update_counter<<<1, 1, 0, static_cast<cudaStream_t>(strm_hdl)>>>(node_counter, edge_counter, 1, size);
+	update_counter<<<1, 1, 0, (strm_hdl)>>>(node_counter, edge_counter, 0, size);
 	cudaCheckError();
 }
 
@@ -413,7 +413,7 @@ __global__ void construct_graph(int32_t* agg_src_ids, int32_t* agg_dst_ids,
 
 extern "C" 
 void GPU_Random_Sampling(
-	stream_handle strm_hdl, 
+	cudaStream_t strm_hdl, 
 	GPUGraphStorage* graph,
 	GPUCache* cache,
 	GPUMemoryPool* memorypool,
@@ -443,10 +443,9 @@ void GPU_Random_Sampling(
 	int32_t* agg_src_off = memorypool->GetAggSrcOf();
 	int32_t* agg_dst_off = memorypool->GetAggDstOf();
 
-    dim3 block_num(40, 1);
+    dim3 block_num(64, 1);
     dim3 thread_num(1024, 1);
-	kernel_random_sampler_optimized<<<block_num, thread_num, 0, static_cast<cudaStream_t>(strm_hdl)>>>(sampled_ids, op_id,
-																										csr_node_index, csr_dst_node_ids, 
+	kernel_random_sampler_optimized<<<block_num, thread_num, 0, (strm_hdl)>>>(sampled_ids, op_id, csr_node_index, csr_dst_node_ids, 
 																										partition_index, parition_offset,
 																										count, partition_count,
 																										agg_src_ids, agg_dst_ids,
@@ -455,11 +454,10 @@ void GPU_Random_Sampling(
 																										node_counter,
 																										edge_counter);		
 	cudaCheckError();
-	construct_graph<<<block_num, thread_num, 0, static_cast<cudaStream_t>(strm_hdl)>>>(agg_src_ids, agg_dst_ids,
-																						agg_src_off, agg_dst_off,
+	construct_graph<<<block_num, thread_num, 0, (strm_hdl)>>>(agg_src_ids, agg_dst_ids, agg_src_off, agg_dst_off,
 																						position_map, edge_counter, node_counter, op_id, dev_id);
 	cudaCheckError();	
-	update_counter<<<1, 1, 0, static_cast<cudaStream_t>(strm_hdl)>>>(node_counter, edge_counter, op_id, 0);		
+	update_counter<<<1, 1, 0, (strm_hdl)>>>(node_counter, edge_counter, op_id, 0);		
 	cudaCheckError();																																																																									
 }
 
@@ -473,13 +471,13 @@ __global__ void zero_copy_with_cache(
 {
 	int32_t batch_size = 0;
 	int32_t node_off = 0;
-	if(op_id == 5){
+	if(op_id == 1){
 		node_off = node_counter[3];
 		batch_size = node_counter[4];
-	}else if(op_id == 6){
+	}else if(op_id == 3){
 		node_off = node_counter[5];
 		batch_size = node_counter[6];
-	}else if(op_id == 7){
+	}else if(op_id == 5){
 		node_off = node_counter[7];
 		batch_size = node_counter[8];
 	}
@@ -504,7 +502,7 @@ __global__ void zero_copy_with_cache(
 
 extern "C"
 void get_feature_kernel(
-	stream_handle strm_hdl, 
+	cudaStream_t strm_hdl, 
 	GPUCache* cache, 
 	GPUNodeStorage* noder,
 	GPUMemoryPool* memorypool,
@@ -530,9 +528,9 @@ void get_feature_kernel(
 	if(float_attr_len > 0){
 		cache_float_attrs = cache->Float_Feature_Cache(dev_id);
 	}
-	dim3 block_num(40, 1);
+	dim3 block_num(64, 1);
 	dim3 thread_num(1024, 1);
-	zero_copy_with_cache<<<block_num, thread_num, 0, static_cast<cudaStream_t>(strm_hdl)>>>(cpu_float_attrs, cache_float_attrs, float_attr_len,
+	zero_copy_with_cache<<<block_num, thread_num, 0, (strm_hdl)>>>(cpu_float_attrs, cache_float_attrs, float_attr_len,
 																							sampled_ids, cache_index, cache_capacity,
 																							node_counter, dst_float_buffer,
 																							total_num_nodes,
@@ -543,7 +541,7 @@ void get_feature_kernel(
 
 extern "C"
 void make_update_plan(
-	stream_handle strm_hdl, 
+	cudaStream_t strm_hdl, 
 	GPUGraphStorage* graph, 
 	GPUCache* cache,
 	GPUMemoryPool* memorypool,
@@ -564,7 +562,7 @@ void make_update_plan(
 /*every shard has different piece of candidates*/
 extern "C"
 void update_cache(
-	stream_handle strm_hdl, 
+	cudaStream_t strm_hdl, 
 	GPUCache* cache, 
 	GPUNodeStorage* noder,
 	GPUMemoryPool* memorypool,

@@ -1,6 +1,5 @@
 #include <math.h>
 #include <iostream>
-//#include <mutex>
 #include "GPUMemoryPool.cuh"
 
 GPUMemoryPool::GPUMemoryPool(int32_t pipeline_depth){

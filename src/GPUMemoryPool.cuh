@@ -132,6 +132,14 @@ public:
         iter_ = iter;
     }
 
+    void Finalize() {
+        cudaFree(cache_search_buffer_);
+        cudaFree(accessed_map_);
+        cudaFree(position_map_);
+        cudaFree(agg_src_ids_);
+        cudaFree(agg_dst_ids_);
+    }
+
 private:
     int32_t iter_;
     int32_t mode_;

@@ -130,6 +130,7 @@ private:
 	std::vector<int32_t**> csr_dst_node_ids_;	
     std::vector<char*> partition_index_;
     std::vector<int32_t*> partition_offset_;
+
 };
 
 extern "C" 

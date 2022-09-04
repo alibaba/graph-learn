@@ -12,6 +12,17 @@
 
 #define PIPELINE_DEPTH 2
 
+// Macro for checking cuda errors following a cuda launch or api call
+#define cudaCheckError()                                       \
+  {                                                            \
+    cudaError_t e = cudaGetLastError();                        \
+    if (e != cudaSuccess) {                                    \
+      printf("Cuda failure %s:%d: '%s'\n", __FILE__, __LINE__, \
+             cudaGetErrorString(e));                           \
+      exit(EXIT_FAILURE);                                      \
+    }                                                          \
+  }
+
 void RunnerLoop(int max_step, Runner* runner, RunnerParams* params){
     for(int i = 0; i < max_step; i++){
         params->global_batch_id = i;
@@ -21,7 +32,7 @@ void RunnerLoop(int max_step, Runner* runner, RunnerParams* params){
 
 class GPUServer : public Server {
 public:
-    void Initialize(int global_shard_count) override {
+    void Initialize(int global_shard_count) {
         shard_count_ = global_shard_count;
         std::cout<<"CUDA Device Count: "<<shard_count_<<"\n";
         
@@ -33,8 +44,12 @@ public:
         gpu_ipc_env_ = gpu_graph_store->GetIPCEnv();
 
         max_step_ = gpu_ipc_env_->GetMaxStep();
-        
+        std::cout<<"max step "<<max_step_<<"\n";
+        runners_.resize(shard_count_);
+        params_.resize(shard_count_);
+
         for(int i = 0; i < shard_count_; i++){
+            cudaSetDevice(i);
             RunnerParams* new_params = new RunnerParams();
             new_params->device_id = i;
             (new_params->fanout).push_back(25);
@@ -44,13 +59,15 @@ public:
             new_params->noder = (void*)gpu_node_storage_ptr_;
             new_params->env = (void*)gpu_ipc_env_;
             new_params->global_batch_id = 0;
-            params_.push_back(new_params);
-            Runner* new_runner = NewGPURunner(new_params);
-            runners_.push_back(std::move(new_runner));
+            params_[i] = new_params;
+            Runner* new_runner = NewGPURunner();
+            runners_[i] = new_runner;
+            runners_[i]->Initialize(params_[i]);
         }
+        std::cout<<"System is ready for serving\n";
     }
 
-    void Run() override {
+    void Run() {
         for(int i = 0; i < shard_count_; i++){
             Runner* runner = runners_[i];
             RunnerParams* params = params_[i];
@@ -62,11 +79,15 @@ public:
         }
     }
 
-    void Finalize() override {
+    void Finalize() {
+        for(int i = 0; i < shard_count_; i++){
+            runners_[i]->Finalize(params_[i]);
+        }
         gpu_graph_storage_ptr_->Finalize();
         gpu_node_storage_ptr_->Finalize();
         gpu_cache_ptr_->Finalize();
         gpu_ipc_env_->Finalize();
+        std::cout<<"Server Stopped\n";
     }
 private:
 
@@ -88,7 +109,7 @@ Server* NewGPUServer(){
 
 class GPURunner : public Runner {
 public:
-    GPURunner(RunnerParams* params){
+    void Initialize(RunnerParams* params) override {
         cudaSetDevice(params->device_id);
         local_dev_id_ = params->device_id;
 
@@ -101,9 +122,6 @@ public:
         streams_.resize(2);
         cudaStreamCreate(&streams_[0]);
         cudaStreamCreate(&streams_[1]);
-        events_.resize(2);
-        cudaEventCreate(&events_[0]);
-        cudaEventCreate(&events_[1]);
 
         /*dag params analysis*/
         int batch_size = env->GetRawBatchsize();
@@ -165,19 +183,22 @@ public:
           memorypool_->SetEdgeCounter(env->GetEdgeCounter(local_dev_id_, i), i);
         }
         
+        events_.resize(op_num_);
         op_params_.resize(op_num_);
+
         for(int i = 0; i < op_num_; i++){
             op_params_[i] = new OpParams();
             op_params_[i]->device_id = local_dev_id_;
-            op_params_[i]->stream = (void*)(&streams_[i%2]);
+            op_params_[i]->stream = (streams_[i%2]);
+            cudaEventCreate(&events_[i]);
+            op_params_[i]->event = (events_[i]);
             op_params_[i]->memorypool = memorypool_;
             op_params_[i]->cache = cache;
             op_params_[i]->graph = graph;
             op_params_[i]->noder = noder;
             op_params_[i]->env = env;
         }
-        op_params_[op_num_- 2]->event = (void*)(&events_[0]);
-        op_params_[op_num_- 1]->event = (void*)(&events_[1]);
+
 
         for(int i = 0; i < hop_num; i++){
             op_params_[2 * i + 2]->neighbor_count = (params->fanout)[i];
@@ -194,22 +215,16 @@ public:
         memorypool_->SetIter(env->GetLocalBatchId(batch_id));
         env->IPCWait(local_dev_id_, current_pipe_);
         
-        bool is_ready = false;
         for(int i = 0; i < op_num_; i++){
-            op_factory_[i]->run(op_params_[i]);
-            if(i % 2 == 0){
-                is_ready = false;
-                while(!is_ready){
-                    if(!(cudaEventQuery(static_cast<cudaEvent_t>(op_params_[i]->event)) == cudaErrorNotReady)){
-                        is_ready = true;
-                    }
-                }
+            if(i % 2 == 1){
+                cudaStreamWaitEvent(streams_[1], events_[i - 1]);
             }
+            op_factory_[i]->run(op_params_[i]);
         }
         
-        is_ready = false;
+        bool is_ready = false;
         while(!is_ready){
-            if(!(cudaEventQuery(static_cast<cudaEvent_t>(op_params_[op_num_-1]->event)) == cudaErrorNotReady)){
+            if(!(cudaEventQuery((op_params_[op_num_-1]->event)) == cudaErrorNotReady)){
                 is_ready = true;
             }
         }
@@ -219,6 +234,12 @@ public:
         memorypool_ -> SetCurrentPipe(current_pipe_);
     }
 
+    void Finalize(RunnerParams* params) override {
+        IPCEnv* env = (IPCEnv*)(params->env);
+        env->IPCWait(local_dev_id_, (current_pipe_ + 1) % pipeline_depth_);
+        cudaSetDevice(local_dev_id_);
+        memorypool_->Finalize();
+    }
 private:
 
     /*vertex id & feature buffer*/
@@ -248,7 +269,7 @@ private:
     std::vector<OpParams*> op_params_;
 };
 
-Runner* NewGPURunner(RunnerParams* params){
-    return new GPURunner(params);
+Runner* NewGPURunner(){
+    return new GPURunner();
 }
 

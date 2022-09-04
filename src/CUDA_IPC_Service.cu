@@ -44,8 +44,11 @@ public:
       printf("Failed to create shared memory slab\n");
       exit(EXIT_FAILURE);
     }
+    std::cout<<"Shared Memory Opened\n";
+
     shm_ = (volatile shmStruct *)info_.addr;
     memset((void *)shm_, 0, sizeof(*shm_));
+    
     ids_.resize(device_count);
     float_features_.resize(device_count);
     labels_.resize(device_count);
@@ -60,8 +63,10 @@ public:
   }
   
   void Coordinate(BuildInfo* info) override {
+    std::cout<<"Start Coordinate Data Parallel Params\n";
     int32_t partition_count = info->partition_count;
     epoch_ = info->epoch;
+    raw_batch_size_ = info->raw_batch_size;
 
     int32_t max_train_size = 0;
     for(int32_t i = 0; i < partition_count; i++){
@@ -99,9 +104,14 @@ public:
       test_batch_size_.push_back(((info->testing_set_num[i] - 1)/test_step_ + 1));
     }
 
+    std::cout<<"Train Steps: "<<train_step_<<"\n";
+    std::cout<<"Valid Steps: "<<valid_step_<<"\n";
+    std::cout<<"Test Steps: "<<test_step_<<"\n";
+
     shm_->steps[0] = train_step_;
     shm_->steps[1] = valid_step_;
     shm_->steps[2] = test_step_;
+
   }
 
   int32_t GetMaxStep() override {
@@ -271,6 +281,12 @@ public:
         if(sem_close(sem) == -1){
           std::cout<<"close sem "<<i<<" "<<j<<" failed\n";
         }
+        std::string ssr = "sem_r_";
+        std::string ssw = "sem_w_";
+        std::string ssri = ssr + std::to_string(i) + "_" + std::to_string(j);
+        std::string sswi = ssw + std::to_string(i) + "_" + std::to_string(j);
+        sem_unlink(ssri.c_str());
+        sem_unlink(sswi.c_str());
       }
     }
 
