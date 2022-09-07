@@ -40,7 +40,8 @@ protected:
   const Tensor::Map& GetParams();
 
 protected:
-  op::Operator* impl_;
+  op::Operator*      impl_;
+  const Tensor::Map* params_;
 };
 
 }  // namespace act

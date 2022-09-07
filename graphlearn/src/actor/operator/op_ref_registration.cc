@@ -15,39 +15,31 @@ limitations under the License.
 
 #include "actor/operator/op_ref_factory.h"
 
-#include "actor/generated/operator/edge_getter_ref.act.autogen.h"
-#include "actor/generated/operator/edge_lookuper_ref.act.autogen.h"
-#include "actor/generated/operator/edge_weight_sampler_ref.act.autogen.h"
-#include "actor/generated/operator/full_sampler_ref.act.autogen.h"
-#include "actor/generated/operator/in_degree_negative_sampler_ref.act.autogen.h"
-#include "actor/generated/operator/in_degree_sampler_ref.act.autogen.h"
-#include "actor/generated/operator/node_getter_ref.act.autogen.h"
-#include "actor/generated/operator/node_lookuper_ref.act.autogen.h"
-#include "actor/generated/operator/node_weight_negative_sampler_ref.act.autogen.h"
-#include "actor/generated/operator/random_negative_sampler_ref.act.autogen.h"
-#include "actor/generated/operator/random_sampler_ref.act.autogen.h"
-#include "actor/generated/operator/random_without_replacement_sampler_ref.act.autogen.h"
-#include "actor/generated/operator/soft_in_degree_negative_sampler_ref.act.autogen.h"
-#include "actor/generated/operator/topk_sampler_ref.act.autogen.h"
+#include "actor/generated/operator/graph_ops_ref.act.autogen.h"
+#include "actor/generated/operator/sampler_ops_ref.act.autogen.h"
 
 namespace graphlearn {
 namespace act {
 namespace op_ref_registration {
 
+/// Graph Operators
+OpRefRegistration<GetDegreeActor_ref> _degree_getter_("GetDegree");
+OpRefRegistration<NodeGetterActor_ref> _node_getter_("GetNodes");
+OpRefRegistration<LookupNodesActor_ref> _node_lookuper_("LookupNodes");
 OpRefRegistration<EdgeGetterActor_ref> _edge_getter_("GetEdges");
-OpRefRegistration<EdgeLookuperActor_ref> _edge_lookuper_("LookupEdges");
+OpRefRegistration<LookupEdgesActor_ref> _edge_lookuper_("LookupEdges");
+
+/// Sampler Operators
 OpRefRegistration<EdgeWeightSamplerActor_ref> _edge_weight_sampler_("EdgeWeightSampler");
 OpRefRegistration<FullSamplerActor_ref> _full_sampler_("FullSampler");
 OpRefRegistration<InDegreeNegativeSamplerActor_ref> _in_degree_negative_sampler_("InDegreeNegativeSampler");
 OpRefRegistration<InDegreeSamplerActor_ref> _in_degree_sampler_("InDegreeSampler");
-OpRefRegistration<NodeGetterActor_ref> _node_getter_("GetNodes");
-OpRefRegistration<NodeLookuperActor_ref> _node_lookuper_("LookupNodes");
 OpRefRegistration<NodeWeightNegativeSamplerActor_ref> _node_weight_negative_sampler_("NodeWeightNegativeSampler");
 OpRefRegistration<RandomNegativeSamplerActor_ref> _random_negative_sampler_("RandomNegativeSampler");
 OpRefRegistration<RandomSamplerActor_ref> _random_sampler_("RandomSampler");
 OpRefRegistration<RandomWithoutReplacementSamplerActor_ref> _random_without_replacement_sampler_("RandomWithoutReplacementSampler");
 OpRefRegistration<SoftInDegreeNegativeSamplerActor_ref> _soft_in_degree_negative_sampler_("SoftInDegreeNegativeSampler");
-OpRefRegistration<TopKSamplerActor_ref> _topK_sampler_("TopkSampler");
+OpRefRegistration<TopkSamplerActor_ref> _topk_sampler_("TopkSampler");
 
 }  // namespace op_ref_registration
 }  // namespace act
