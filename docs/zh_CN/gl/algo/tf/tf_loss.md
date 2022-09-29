@@ -32,7 +32,7 @@ def sigmoid_cross_entropy_loss(pos_logit,
 #### unsupervised_softmax_cross_entropy_loss
 Softmax CE loss，将负样本看作一个batch里共享的形式，从而可以将原来的二分类看成一个正样本和batch_size * neg_num 的负样本的一个“多分类”任务。我们将标签看成one-hot的编码格式，也即只有正样本标记为1，那么总的loss为：
 ​
-![loss](../../../images/loss.png)
+![loss](../../../../images/loss.png)
 
 其中，sp表示正样本的score。
 

@@ -27,4 +27,4 @@ kubectl apply -f dist.yaml
 **Note**: **GL** servers should use different grpc port with tf-PS.
 
 
-![dist-graphsage](../../../images/dist-graphsage.png)
+![dist-graphsage](../../../../images/dist-graphsage.png)

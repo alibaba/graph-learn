@@ -17,11 +17,11 @@ virtual Status Process(const OpRequest* req, OpResponse* res) = 0;
 ```
 
 If you just want to implement a kind of neighborhood **sampler**,
-inheriting from class [**Sampler**](../../src/core/operator/sampler/sampler.h) may be an easy way.
+inheriting from class [**Sampler**](../../../../graphlearn/src/core/operator/sampler/sampler.h) may be an easy way.
 
-The context of each **operator** is [**OpRequest**](../../../../graphlearn/src/include/op_request.h) and [**OpResponse**](../../include/op_request.h).
+The context of each **operator** is [**OpRequest**](../../../../graphlearn/src/include/op_request.h) and [**OpResponse**](../../../../graphlearn/src/include/op_request.h).
 Two kinds of data map are contained in the context. `params_` is the description of the context.
-It is usually made up of some **scalar** [**Tensor**](../../src/include/tensor.h), such as "node type" and "sampling strategy".
+It is usually made up of some **scalar** [**Tensor**](../../../../graphlearn/src/include/tensor.h), such as "node type" and "sampling strategy".
 `tensors_` is the body of the context. It usually takes data **vectors**.
 For example, sampling one-hop neighbors for a batch of node ids, in which the ids should be put in `tensors_`.
 
@@ -30,7 +30,7 @@ When a server receives an operator execution request, part of the request may be
 The data that needs to be partitioned should be placed into `tensors_`, and rewrite the **Partition()** function.
 
 Till now, we have abstracted the partition rules for all the existed operators.
-You can just use the [**Partitioner**](../../src/core/partition/partitioner.h) in most cases.
+You can just use the [**Partitioner**](../../../../graphlearn/src/core/partition/partitioner.h) in most cases.
 
 
 ## Distributed Runtime Design
@@ -43,7 +43,7 @@ Some operators may return responses that need to be **stitched** together, and s
 As above, we propose the **Partition-Stitch** computing pattern for operators.
 Developers just need care about the next three functions **Partition()**, **Process()**, **Stitch()**.
 
-![op](../images/operator_runtime.png)
+![op](../../../images/operator_runtime.png)
 
 
 ## Implement a New Operator
@@ -57,7 +57,7 @@ git clone https://github.com/alibaba/graph-learn.git
 git submodule update --init
 ```
 
-Refer to [building from source](install.md) to build pass.
+Refer to [building from source](../install.md) to build pass.
 
 ### Implement your operator class
 
@@ -83,7 +83,7 @@ REGISTER_OPERATOR("OpName", MyOperator);
 ```
 
 Please make sure that the registered name should be the same with **OpRequest.Name()**.
-Refer to an existed operator, such as [**RandomSampler**](../../src/core/operator/sampler/random_sampler.cc) for details.
+Refer to an existed operator, such as [**RandomSampler**](../../../../graphlearn/src/core/operator/sampler/random_sampler.cc) for details.
 
 ### Compile
 
@@ -109,6 +109,6 @@ For example, if a new sampler named **xxxSampler**, you can call it like this:
 g.sample(count).by("xxx")...
 ```
 
-More information about **API** refer to [this](graph/gsl.md).
+More information about **API** refer to [this](../graph/gsl.md).
 
 

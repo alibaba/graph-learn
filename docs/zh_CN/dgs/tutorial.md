@@ -84,7 +84,7 @@ cd kafka_2.13-3.0.0
 ./bin/zookeeper-server-start.sh config/zookeeper.properties &
 ./bin/kafka-server-start.sh config/server.properties &
 
-# create related topics used by dgs
+# create related topics used by DGS
 ./bin/kafka-topics.sh --create --topic record-batches --bootstrap-server localhost:9092 --partitions 4 --replication-factor 1
 ./bin/kafka-topics.sh --create --topic sample-batches --bootstrap-server localhost:9092 --partitions 4 --replication-factor 1
 ```
@@ -92,15 +92,15 @@ cd kafka_2.13-3.0.0
 这里提供了一些helm charts用于在k8s集群上部署一个stable kafka service，
 e.g. [bitnami kafka](https://github.com/bitnami/charts/tree/master/bitnami/kafka).
 
-### 5.2 Deploy dgs on k8s cluster
+### 5.2 Deploy DGS on k8s cluster
 
-我们提供了一个部署dgs的helm chart, 在部署前，先确认kafka集群已经正确部署，并安装了helm。
+我们提供了一个部署DGS的helm chart, 在部署前，先确认kafka集群已经正确部署，并安装了helm。
 
 DGS使用k8s ingress来提供服务，确保k8s集群包含nginx controller。
 
 1. 获取helm repo:
 ```
-helm repo add dgs https://graphlearn.oss-cn-hangzhou.aliyuncs.com/charts/dgs/
+helm repo add DGS https://graphlearn.oss-cn-hangzhou.aliyuncs.com/charts/dgs/
 helm repo update
 ```
 
@@ -127,7 +127,7 @@ export DgsServiceIP=$(kubectl get ingress --namespace default dgs-u2i-frontend-i
 echo $DgsServiceIP
 ```
 
-更多的配置参考：[dgs deployment doc](deploy.md)。
+更多的配置参考：[DGS deployment doc](deploy.md)。
 
 ### 5.3 Start dataloader
 
@@ -157,7 +157,7 @@ cd dynamic_graph_service/dataloader
     --barrier u2i_finished
 ```
 
-> **Tip**: 如你想将dataloader部署到dgs同一个k8s集群中,你需要确保
+> **Tip**: 如你想将dataloader部署到DGS同一个k8s集群中,你需要确保
 > nginx controller的`externalTrafficPolicy` 配置为 `Cluster`.
 
 ## 6. Sample and Predict

@@ -17,7 +17,7 @@ Return type is dict, where key is edge_type and value contains src_type, dst_typ
 
 <br />The heterogeneous graph shown below, get its topology and return the result format see the sample code.
 
-![topology](../../../images/topology.png)
+![topology](../../../../images/topology.png)
 
 
 <br /> Figure 1: Topology information of the graph

@@ -32,7 +32,6 @@ Welcome to GraphLearn's documentation!
    zh_CN/dgs/deploy
    zh_CN/dgs/dataloader
    zh_CN/dgs/tutorial
-   zh_CN/dgs/developer
    apis/index
 
 

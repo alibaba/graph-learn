@@ -10,7 +10,7 @@ The Dynamic-Graph-Service can be deployed on a [Kubernetes](https://kubernetes.i
 
 ## Deploy kafka Queue Service
 The Dynamic-Graph-Service uses [Kafka](https://kafka.apache.org/) queue service to store streaming graph updates and sampled results.
-Before deploy a dgs service, you must deploy a kafka cluster first and create the following kafka queues:
+Before deploy a DGS service, you must deploy a kafka cluster first and create the following kafka queues:
 - `dl2spl`: receiving graph updates from your data-source loaders, and consumed by sampling workers.
 - `spl2srv`: receiving sampled results from sampling workers, and consumed by serving workers.
 
@@ -18,7 +18,7 @@ Before deploy a dgs service, you must deploy a kafka cluster first and create th
 
 Get repo info:
 ```shell
-helm repo add dgs https://graphlearn.oss-cn-hangzhou.aliyuncs.com/charts/dgs/
+helm repo add DGS https://graphlearn.oss-cn-hangzhou.aliyuncs.com/charts/dgs/
 helm repo update
 ```
 

@@ -92,4 +92,4 @@ class PyGDataLoader(torch.utils.data.DataLoader):
 
 
 ### 示例
-完整示例见 [examples/pytorch](../../../../examples/pytorch)。
+完整示例见 [examples/pytorch](../../../../../graphlearn/examples/pytorch)。

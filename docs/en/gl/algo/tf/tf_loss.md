@@ -30,7 +30,7 @@ def sigmoid_cross_entropy_loss(pos_logit,
 #### unsupervised_softmax_cross_entropy_loss
 Softmax CE loss, which treats negative samples as a shared form in a batch, allows the original binary classification to be viewed as a "multi-classification" task with one positive sample and negative samples of batch_size * neg_num. If we consider the labels as one-hot encoding format, i.e., only positive samples are labeled as 1, then the total loss is.
 ​
-![loss](../../../images/loss.png)
+![loss](../../../../images/loss.png)
 
 where sp denotes the score of the positive sample.
 

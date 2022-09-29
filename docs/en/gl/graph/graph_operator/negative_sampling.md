@@ -10,7 +10,7 @@ The negative sampling operator takes an edge or vertex type as input. When edge 
 
 - Define the negative sampling operator by `g.negative_sampler()` to obtain the `NegativeSampler` object `S`.
 - call `S.get(ids)`, to get the `Nodes` object.
-- call the [interface](graph_query.md) of the `Nodes` object to get the specific values.
+- call the [interface](../graph_operator/graph_query.md) of the `Nodes` object to get the specific values.
 
 
 ```python

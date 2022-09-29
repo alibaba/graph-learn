@@ -24,12 +24,12 @@ class Data(object):
                labels=None,
                weights=None,
                **kwargs):
-    """ ints, floats and strings are attributes in numpy or Tensor format 
+    """ ints, floats and strings are attributes in numpy or Tensor format
       with the shape
       [batch_size, int_attr_num],
       [batch_size, float_attr_num],
       [batch_size, string_attr_num].
-      labels and weights are in numpy or Tensor format with the shape 
+      labels and weights are in numpy or Tensor format with the shape
       [batch_size], [batch_size].
       The data object can be extented by any other additional data.
     """
@@ -59,7 +59,7 @@ To simplify the modeling of GNNs algorithm, we use `SubGraph` to represent a sam
 
 ```python
 class SubGraph(object):
-  """ `SubGraph` is a basic data structure used to describe a sampled 
+  """ `SubGraph` is a basic data structure used to describe a sampled
   subgraph. It constists of `edge_index` and nodes `Data` and edges `Data`.
 
   Args:
@@ -67,7 +67,7 @@ class SubGraph(object):
       [rows, cols] of SubGraph.
     nodes: A `Data` object denoting the input nodes.
     edges: A `Data` object denoting the input edges.
-    
+
   Note that this object can be extented by any other additional data.
   """
   def __init__(self, edge_index, nodes, edges=None, **kwargs):
@@ -111,11 +111,11 @@ class HeteroSubGraph(object):
   Different types of nodes and edges are represented by a dict.
 
   Args:
-    edge_index_dict: A dict of np.ndarray objects. Each key is a tuple of 
+    edge_index_dict: A dict of np.ndarray objects. Each key is a tuple of
       (src_type, edge_type, dst_type) and each value indicates [rows, cols].
     nodes_dict: A dict of `Data`/ndarray object denoting different types of nodes.
     edges_dict: A dict of `Data`/ndarray object denoting different types of edges.
-  
+
   Examples:
     For meta-path "user-click-item", the HeteroSubGraph may be created as follows:
       edge_index_dict[('user', 'click', 'item')] = np.array([[0,1,2], [2,3,4]])
@@ -403,7 +403,7 @@ class BatchGraph(SubGraph):
 
 #### HeteroBatchGraph(since v1.1.0)
 
-```
+``` python
 class HeteroBatchGraph(HeteroSubGraph):
   """A HeteroBatchGraph object, which represents a batch of `HeteroSubGraph`s.
   Each type of Nodes, edges in subgraphs are concatenated together and their 
