@@ -2,7 +2,7 @@
 
 By using kafka queues as the entry for streaming graph updates, the Dynamic-Graph-Service (abbreviated as DGS) can
 decouple the different data sources and sampling workers.
-Users can develop their own data loaders to  ingest from a customized source data and push graph updates into the output kafka queues
+Users can develop their own data loaders to ingest from a customized source data and push graph updates into the output kafka queues
 for further consuming.
 
 ## Rules to Follow
