@@ -165,17 +165,17 @@ cd dynamic_graph_service/dataloader
 
 ## 6. Sample and Predict
 
-We provide a Java Client for Sampling from DGS and predict with TF model service.
+We provide a client-side [example](https://github.com/alibaba/graph-learn/blob/master/dynamic_graph_service/gsl_client/src/main/java/org/aliyun/App.java) 
+to show how to combine DGS and the TF model service to build a 
+workflow of online inference.
 
-```
+Build the client app:
+```shell
 cd dynamic_graph_service/gsl_client
 mvn clean compile assembly:single
-
-java -jar gsl_client-1.0-SNAPSHOT-jar-with-dependencies.jar http://dynamic-graph-service.info egomodel
 ```
 
-Java command with the following args,
-0: DGS service host name
-1: Serving model name.
-
-refs to `dynamic_graph_service/gsl_client/src/main/java/org/aliyun/App.java`
+Run the client app with two arguments: the host name of the DGS service and the name of the serving model.
+```shell
+java -jar gsl_client-1.0-SNAPSHOT-jar-with-dependencies.jar http://dynamic-graph-service.info egomodel
+```
