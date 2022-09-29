@@ -181,6 +181,8 @@ void batch_generator_kernel(
 		all_ids = noder->GetTestingSetIds(dev_id);
 		all_labels = noder->GetTestingLabels(dev_id);
 		total_cap = noder->TestingSetSize(dev_id);
+	}else{
+		std::cout<<"invalid mode: "<<mode<<"\n";
 	}
 
 	int32_t total_node_num = noder->TotalNodeNum();
@@ -219,91 +221,13 @@ void batch_generator_kernel(
 	dim3 bg_thread(1024, 1);
 	batch_generator<<<bg_block, bg_thread, 0, (strm_hdl)>>>(batch_ids, labels, size, counter, all_ids, all_labels, total_cap, accessed_map, position_map);
 	cudaCheckError();
-	if(mode == TRAINMODE){
-		future_batch_generator<<<bg_block, bg_thread, 0, (strm_hdl)>>>(all_future_ids, batch_size, k_batch, counter, total_cap, all_ids);
-		cudaCheckError();
-	}
+	// if(mode == TRAINMODE){
+	// 	future_batch_generator<<<bg_block, bg_thread, 0, (strm_hdl)>>>(all_future_ids, batch_size, k_batch, counter, total_cap, all_ids);
+	// 	cudaCheckError();
+	// }
 	update_counter<<<1, 1, 0, (strm_hdl)>>>(node_counter, edge_counter, 0, size);
 	cudaCheckError();
 }
-
-
-/////////random sampler//////////
-__global__ void kernel_random_sampler(
-	int32_t* d_src_ids, 
-	int64_t** csr_node_index, 
-	int32_t** csr_dst_node_ids,
-	char* partition_index,
-	int32_t* parition_offset,
-	int32_t batch_size, 
-	int32_t count, 
-	int32_t partition_count, 
-	int32_t* GPU_dst_nodes_ids
-	)
-{
-	int32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
-
-	if (idx < batch_size * count){
-		thrust::minstd_rand engine;
-		engine.discard(idx);
-		int32_t batch_idx = idx / count;
-		int32_t src_id = d_src_ids[batch_idx];
-		if(src_id < 0){
-			GPU_dst_nodes_ids[idx] = -1;
-			return;
-		}
-		int32_t part_id = partition_index[src_id];
-		int32_t part_offset = parition_offset[src_id];
-		int64_t start_index = csr_node_index[part_id][part_offset];
-		int32_t col_size = csr_node_index[part_id][(part_offset + 1)] - start_index;
-		
-		if(col_size > 0){
-			thrust::uniform_int_distribution<> dist(0, col_size - 1);
-			int32_t dst_index = dist(engine);
-			GPU_dst_nodes_ids[idx] = csr_dst_node_ids[part_id][(int64_t(start_index + dst_index))];
-		}else{
-			GPU_dst_nodes_ids[idx] = -1;
-		}
-	}
-}
-
-/////////random sampler//////////
-__global__ void kernel_random_sampler_bounded(
-	int32_t* d_src_ids, 
-	int64_t** csr_node_index, 
-	int32_t** csr_dst_node_ids,
-	char* partition_index,
-	int32_t* parition_offset,
-	int32_t batch_size, 
-	int32_t count, 
-	int32_t partition_count, 
-	int32_t* GPU_dst_nodes_ids
-	)
-{
-	int32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
-	if (idx < batch_size * count){
-		int32_t src_id = d_src_ids[idx/count];
-		if(src_id >= 0){
-			int32_t neighbor_offset = idx%count;
-			int32_t part_id = partition_index[src_id];
-			int32_t part_offset = parition_offset[src_id];
-			int64_t start_index = csr_node_index[part_id][part_offset];
-			int32_t col_size = csr_node_index[part_id][(part_offset + 1)] - start_index;
-			if(neighbor_offset >= col_size){
-				GPU_dst_nodes_ids[idx] = -1;
-			}else{
-				thrust::minstd_rand engine;
-				engine.discard(idx);
-				thrust::uniform_int_distribution<> dist(0, col_size - 1);
-				int32_t dst_index = dist(engine);
-				GPU_dst_nodes_ids[idx] = csr_dst_node_ids[part_id][(int64_t(start_index + dst_index))];
-			}
-		}else{
-			GPU_dst_nodes_ids[idx] = -1;
-		}
-	}
-}
-
 
 /////////random sampler//////////
 __global__ void kernel_random_sampler_optimized(
@@ -443,7 +367,7 @@ void GPU_Random_Sampling(
 	int32_t* agg_src_off = memorypool->GetAggSrcOf();
 	int32_t* agg_dst_off = memorypool->GetAggDstOf();
 
-    dim3 block_num(64, 1);
+    dim3 block_num(38, 1);
     dim3 thread_num(1024, 1);
 	kernel_random_sampler_optimized<<<block_num, thread_num, 0, (strm_hdl)>>>(sampled_ids, op_id, csr_node_index, csr_dst_node_ids, 
 																										partition_index, parition_offset,
@@ -461,7 +385,7 @@ void GPU_Random_Sampling(
 	cudaCheckError();																																																																									
 }
 
-__global__ void zero_copy_with_cache(
+__global__ void zero_copy_with_individual_cache(
 	float* cpu_float_attrs, float* cache_float_attrs, int32_t float_attr_len,
 	int32_t* sampled_ids, int32_t* cache_index, int32_t cache_capacity,
 	int32_t* node_counter, float* dst_float_buffer,
@@ -484,7 +408,7 @@ __global__ void zero_copy_with_cache(
 	int32_t fidx; 
 	int32_t foffset;
 	if(float_attr_len > 0){
-		for(int32_t thread_idx = threadIdx.x + blockDim.x * blockIdx.x; thread_idx < (int64_t(batch_size) * float_attr_len); thread_idx += blockDim.x * gridDim.x){
+		for(int64_t thread_idx = threadIdx.x + blockDim.x * blockIdx.x; thread_idx < (int64_t(batch_size) * float_attr_len); thread_idx += blockDim.x * gridDim.x){
 			fidx = cache_index[thread_idx / float_attr_len];
 			foffset = thread_idx % float_attr_len;
 			if(fidx < 0){/*cache miss*/
@@ -495,6 +419,48 @@ __global__ void zero_copy_with_cache(
 			}else{/*cache hit, find gpu*/
 				int32_t local_id = fidx % cache_capacity;
 				dst_float_buffer[int64_t(int64_t((int64_t(node_off) * float_attr_len)) + thread_idx)] = cache_float_attrs[int64_t(int64_t(int64_t(local_id) * float_attr_len) + foffset)];
+			}
+		}
+	}
+}
+
+__global__ void zero_copy_with_aggregated_cache(
+	float* cpu_float_attrs, float** cache_float_attrs, int32_t float_attr_len,
+	int32_t* sampled_ids, int32_t* cache_index, int32_t cache_capacity,
+	int32_t* node_counter, float* dst_float_buffer,
+	int32_t total_num_nodes,
+	int32_t dev_id,
+	int32_t op_id)
+{
+	int32_t batch_size = 0;
+	int32_t node_off = 0;
+	if(op_id == 1){
+		node_off = node_counter[3];
+		batch_size = node_counter[4];
+	}else if(op_id == 3){
+		node_off = node_counter[5];
+		batch_size = node_counter[6];
+	}else if(op_id == 5){
+		node_off = node_counter[7];
+		batch_size = node_counter[8];
+	}
+	int32_t gidx;//global cache index
+	int32_t fidx;//local cache index
+	int32_t didx;//device index
+	int32_t foffset;
+	if(float_attr_len > 0){
+		for(int64_t thread_idx = threadIdx.x + blockDim.x * blockIdx.x; thread_idx < (int64_t(batch_size) * float_attr_len); thread_idx += blockDim.x * gridDim.x){
+			gidx = (cache_index[thread_idx / float_attr_len]);
+			didx = gidx / cache_capacity;
+			fidx = gidx % cache_capacity;
+			foffset = thread_idx % float_attr_len;
+			if(gidx < 0){/*cache miss*/
+				fidx = sampled_ids[node_off + (thread_idx / float_attr_len)];
+				if(fidx >= 0){
+					dst_float_buffer[int64_t(int64_t((int64_t(node_off) * float_attr_len)) + thread_idx)] = cpu_float_attrs[int64_t(int64_t(int64_t(fidx%total_num_nodes) * float_attr_len) + foffset)];
+				}
+			}else{/*cache hit, find global position*/
+				dst_float_buffer[int64_t(int64_t((int64_t(node_off) * float_attr_len)) + thread_idx)] = cache_float_attrs[didx][int64_t(int64_t(int64_t(fidx) * float_attr_len) + foffset)];
 			}
 		}
 	}
@@ -523,14 +489,14 @@ void get_feature_kernel(
 	cudaCheckError();
 
 	float* cpu_float_attrs = float_attrs;
-	float* cache_float_attrs = nullptr;
+	float** cache_float_attrs = nullptr;
 
 	if(float_attr_len > 0){
-		cache_float_attrs = cache->Float_Feature_Cache(dev_id);
+		cache_float_attrs = cache->Global_Float_Feature_Cache(dev_id);
 	}
-	dim3 block_num(64, 1);
+	dim3 block_num(40, 1);
 	dim3 thread_num(1024, 1);
-	zero_copy_with_cache<<<block_num, thread_num, 0, (strm_hdl)>>>(cpu_float_attrs, cache_float_attrs, float_attr_len,
+	zero_copy_with_aggregated_cache<<<block_num, thread_num, 0, (strm_hdl)>>>(cpu_float_attrs, cache_float_attrs, float_attr_len,
 																							sampled_ids, cache_index, cache_capacity,
 																							node_counter, dst_float_buffer,
 																							total_num_nodes,
@@ -570,13 +536,13 @@ void update_cache(
 	int32_t mode)
 {
 	if(mode == TRAINMODE){
-		int32_t float_attr_len = noder->GetFloatAttrLen();
-		float* cache_float_feature = nullptr;
-		int32_t* candidates_ids = memorypool->GetSampledIds();
-		float* candidates_float_feature = memorypool->GetFloatFeatures();
-		if(float_attr_len > 0){
-			cache_float_feature = cache -> Float_Feature_Cache(dev_id);
-		}
-		cache->Update(candidates_ids, candidates_float_feature, cache_float_feature, float_attr_len, strm_hdl, dev_id);
+		// int32_t float_attr_len = noder->GetFloatAttrLen();
+		// float* cache_float_feature = nullptr;
+		// int32_t* candidates_ids = memorypool->GetSampledIds();
+		// float* candidates_float_feature = memorypool->GetFloatFeatures();
+		// if(float_attr_len > 0){
+		// 	cache_float_feature = cache -> Float_Feature_Cache(dev_id);
+		// }
+		// cache->Update(candidates_ids, candidates_float_feature, cache_float_feature, float_attr_len, strm_hdl, dev_id);
 	}
 }

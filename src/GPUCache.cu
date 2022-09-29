@@ -7,6 +7,22 @@
 #include <mutex>
 #include <thrust/random/uniform_int_distribution.h>
 #include <thrust/random/linear_congruential_engine.h>
+#include <thrust/sort.h>
+#include <thrust/execution_policy.h>
+#include <algorithm>
+#include <functional>
+#include <cstdlib>
+
+#include <cstdint>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <time.h>
+#include <sys/types.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/time.h>
+#include <time.h>
 
 // Macro for checking cuda errors following a cuda launch or api call
 #define cudaCheckError()                                       \
@@ -354,6 +370,7 @@ public:
         int32_t** csr_dst_node_ids, 
         char* partition_index,
         int32_t* parition_offset,
+        bool is_presc,
         void* stream) override 
     {
         // dim3 block_num(64, 1);
@@ -408,6 +425,14 @@ public:
         access_count<<<block_num, thread_num, 0, static_cast<cudaStream_t>(stream)>>>(d_key, access_time_, num_keys, total_num_nodes_);
     }
 
+    int32_t* GetAccessedMap(){
+        return access_time_;
+    }
+
+    int32_t* GetCacheMap(){
+        return cache_map_;
+    }
+
     int32_t* FutureBatch() override 
     {
         return future_ids_;
@@ -456,8 +481,8 @@ CacheController* NewDirectMapCacheController()
     return new DirectMapCacheController();
 } 
 
-__device__ int32_t SetHash(int32_t id, int32_t set_num){
-    return id % set_num;
+__device__ int32_t SetHash(int32_t id, int32_t set_num, int32_t seed){
+    return (id + seed) % set_num;
 }
 
 __global__ void CacheHitTimes(int32_t* raw_candidates, int32_t* node_counter, int32_t* cache_map){
@@ -482,8 +507,36 @@ __global__ void CacheHitTimes(int32_t* raw_candidates, int32_t* node_counter, in
     }
 }
 
-__global__ void CacheHitRate(int32_t* node_counter, int32_t dev_id){
-    printf("%d: %f\n", dev_id, (node_counter[10]*1.0/node_counter[9]));
+__global__ void BatchSimularity(int32_t* new_batch_ids, int32_t* node_counter, int32_t* old_map){
+    __shared__ int32_t count[1];
+    if(threadIdx.x == 0){
+        count[0] = 0;
+    }
+    __syncthreads();
+    int32_t num_candidates = node_counter[9];
+    for(int32_t thread_idx = threadIdx.x + blockDim.x * blockIdx.x; thread_idx < num_candidates; thread_idx += gridDim.x * blockDim.x){
+        int32_t cid = new_batch_ids[thread_idx];
+        if(cid >= 0){
+            int32_t is_old = old_map[cid];
+            if(is_old > 0){
+                atomicAdd(count, 1);
+            }
+        }
+    }
+    __syncthreads();
+    if(threadIdx.x == 0){
+        atomicAdd(node_counter + 11, count[0]);
+    }
+}
+
+__global__ void HotnessMeasure(int32_t* new_batch_ids, int32_t* node_counter, int32_t* access_map){
+    int32_t num_candidates = node_counter[9];
+    for(int32_t thread_idx = threadIdx.x + blockDim.x * blockIdx.x; thread_idx < num_candidates; thread_idx += gridDim.x * blockDim.x){
+        int32_t cid = new_batch_ids[thread_idx];
+        if(cid >= 0){
+            atomicAdd(access_map + cid, 1);
+        }
+    }
 }
 
 __global__ void FilterCandidate(int32_t* raw_candidates, int32_t* filtered_candidates,
@@ -530,7 +583,7 @@ __global__ void FilterCandidate(int32_t* raw_candidates, int32_t* filtered_candi
 __global__ void SelectSet(int32_t* candidate, int32_t* global_counter,
                           int32_t* set_fifo, int32_t set_num,
                           int32_t* cache_map,
-                          int32_t* set_conflict_map, int32_t* set_pos_map)
+                          int32_t* set_conflict_map, int32_t* set_pos_map, int32_t seed)
 {
     __shared__ int32_t local_fifo[1024];
     __shared__ int32_t offset[2];//0 : local offset, 1 : global offset
@@ -544,7 +597,7 @@ __global__ void SelectSet(int32_t* candidate, int32_t* global_counter,
         __syncthreads();
         int32_t cid = candidate[thread_idx];
         if(cid >= 0){
-            int32_t set_id = SetHash(cid, set_num);
+            int32_t set_id = SetHash(cid, set_num, seed);
             int32_t set_conflict = atomicAdd(set_conflict_map + set_id, 1);
             if(set_conflict == 0){
                 int32_t local_offset = atomicAdd(offset, 1);
@@ -569,14 +622,15 @@ __global__ void SelectSet(int32_t* candidate, int32_t* global_counter,
 
 __global__ void GatherCandidate(int32_t* filtered_candidate, int32_t* filtered_index,
                                 int32_t* global_counter, int32_t* set_conflict_map,
-                                int32_t* final_candidates, int32_t* final_index, int32_t set_num, int32_t* set_pos_map)
+                                int32_t* final_candidates, int32_t* final_index, int32_t set_num, int32_t* set_pos_map,
+                                int32_t seed)
 {
     int32_t candidate_count = global_counter[0];
     for(int32_t thread_idx = threadIdx.x + blockDim.x * blockIdx.x; thread_idx < candidate_count; thread_idx += gridDim.x * blockDim.x){
         int32_t cid = filtered_candidate[thread_idx];
         int32_t iid = filtered_index[thread_idx];
         if(cid >= 0){
-            int32_t set_id = SetHash(cid, set_num);
+            int32_t set_id = SetHash(cid, set_num, seed);
             int32_t set_pos = set_pos_map[set_id];
             int32_t set_conflict = atomicAdd(set_conflict_map + set_id, 1);
             final_candidates[(set_pos * TOL) + (set_conflict%TOL)] = cid;
@@ -688,13 +742,13 @@ __global__ void ComputeImportance(
             float imp = -1;
             vertex_importance[thread_idx] = imp;
         }else{
-            // float imp = future_access_map[vid] * 1.0;
-            // vertex_importance[thread_idx] = imp;
-            if(is_candidate){
-                vertex_importance[thread_idx] = 1.0;
-            }else{
-                vertex_importance[thread_idx] = 0;
-            }
+            float imp = (future_access_map[vid] - 1) * 1.0;
+            vertex_importance[thread_idx] = imp;
+            // if(is_candidate){
+            //     vertex_importance[thread_idx] = 1.0;
+            // }else{
+            //     vertex_importance[thread_idx] = 0;
+            // }
         }
     }
 
@@ -747,7 +801,7 @@ __global__ void MakePlanKernel(float* cachedids_importance, float* candidates_im
             if(lane_id == 0){
                 float current_min = sh_min_importance[threadIdx.x];
                 int32_t target_way = -1;
-                if(current_min <= sh_cand_importance[local_warp_id * TOL + i]){
+                if(current_min < sh_cand_importance[local_warp_id * TOL + i]){
                     target_way = sh_min_index[threadIdx.x];
                     int32_t is_updated = sh_way_updated[threadIdx.x + target_way];
                     if(is_updated >= 0){
@@ -862,8 +916,8 @@ public:
 
         cudaMalloc(&future_ids_, batch_size_ * k_batch_ * sizeof(int32_t));
         
-        // cudaMalloc(&access_time_, total_num_nodes * sizeof(int32_t));
-        // cudaMemset(access_time_, 0, total_num_nodes * sizeof(int32_t));
+        cudaMalloc(&access_time_, total_num_nodes * sizeof(int32_t));
+        cudaMemset(access_time_, 0, total_num_nodes * sizeof(int32_t));
         iter_ = 0;
 
         // std::ifstream infile;
@@ -929,7 +983,7 @@ public:
         int32_t op_id,
         void* stream) override 
     {
-        dim3 block_num(64, 1);
+        dim3 block_num(40, 1);
         dim3 thread_num(1024, 1);
         Find_Kernel<<<block_num, thread_num, 0, static_cast<cudaStream_t>(stream)>>>(sampled_ids, cache_offset, node_counter, total_num_nodes_, op_id, cache_map_);
         cudaCheckError();
@@ -942,16 +996,24 @@ public:
                  int32_t** csr_dst_node_ids, 
                  char* partition_index,
                  int32_t* parition_offset,
+                 bool is_presc,
                  void* stream) override
     {
-        dim3 block_num(64, 1);
+        dim3 block_num(38, 1);
         dim3 thread_num(1024, 1);
-        
-        // CacheHitTimes<<<block_num, thread_num, 0, static_cast<cudaStream_t>(stream)>>>(candidates, node_counter, cache_map_);
-        // int32_t* h_node_counter = (int32_t*)malloc(16*sizeof(int32_t));
-        // cudaMemcpy(h_node_counter, node_counter, 64, cudaMemcpyDeviceToHost);
-        // std::cout<<device_idx_<<" "<<h_node_counter[10]*1.0/h_node_counter[9]<<"\n";
-
+        CacheHitTimes<<<block_num, thread_num, 0, static_cast<cudaStream_t>(stream)>>>(candidates, node_counter, cache_map_);
+        // BatchSimularity<<<block_num, thread_num, 0, static_cast<cudaStream_t>(stream)>>>(candidates, node_counter, access_time_);
+        // cudaMemsetAsync(access_time_, 0, total_num_nodes_ * sizeof(int32_t), static_cast<cudaStream_t>(stream));
+        if(iter_ < 127){
+            HotnessMeasure<<<block_num, thread_num, 0, static_cast<cudaStream_t>(stream)>>>(candidates, node_counter, future_access_map_);
+        }
+        int32_t* h_node_counter = (int32_t*)malloc(16*sizeof(int32_t));
+        cudaMemcpy(h_node_counter, node_counter, 64, cudaMemcpyDeviceToHost);
+        int32_t seed = std::rand()%set_num_;
+        if(iter_ % 100 == 0){
+            std::cout<<device_idx_<<" "<<h_node_counter[10]*1.0/h_node_counter[9]<<" "<<seed<<"\n";
+        }
+        free(h_node_counter);
         cudaMemsetAsync(global_counter_, 0, 4 * sizeof(int32_t) , static_cast<cudaStream_t>(stream));
         cudaCheckError();
         cudaMemsetAsync(candidates_map_, 0, total_num_nodes_ * sizeof(int32_t), static_cast<cudaStream_t>(stream));
@@ -962,13 +1024,13 @@ public:
         cudaCheckError();
         cudaMemsetAsync(set_pos_map_, 0, set_num_ * sizeof(int32_t), static_cast<cudaStream_t>(stream));
         cudaCheckError();
-        SelectSet<<<block_num, thread_num, 0, static_cast<cudaStream_t>(stream)>>>(filtered_candidates_, global_counter_, set_fifo_, set_num_, cache_map_, set_conflict_map_, set_pos_map_);
+        SelectSet<<<block_num, thread_num, 0, static_cast<cudaStream_t>(stream)>>>(filtered_candidates_, global_counter_, set_fifo_, set_num_, cache_map_, set_conflict_map_, set_pos_map_, seed);
         cudaCheckError();
         cudaMemsetAsync(set_conflict_map_, 0, set_num_ * sizeof(int32_t), static_cast<cudaStream_t>(stream));
         cudaCheckError();
         Init_Int32<<<block_num, thread_num, 0, static_cast<cudaStream_t>(stream)>>>(final_candidates_, sampled_num_*TOL, -1);
         cudaCheckError();
-        GatherCandidate<<<block_num, thread_num, 0, static_cast<cudaStream_t>(stream)>>>(filtered_candidates_, filtered_index_, global_counter_, set_conflict_map_, final_candidates_, final_index_, set_num_, set_pos_map_);
+        GatherCandidate<<<block_num, thread_num, 0, static_cast<cudaStream_t>(stream)>>>(filtered_candidates_, filtered_index_, global_counter_, set_conflict_map_, final_candidates_, final_index_, set_num_, set_pos_map_, seed);
         cudaCheckError();
         GetCachedIds<<<block_num, thread_num, 0, static_cast<cudaStream_t>(stream)>>>(set_fifo_, all_cached_ids_, current_cache_ids_, global_counter_, way_num_);
         cudaCheckError();
@@ -984,6 +1046,8 @@ public:
         cudaCheckError();
         MakePlanKernel<<<block_num, thread_num, 0, static_cast<cudaStream_t>(stream)>>>(cachedids_importance_, candidates_importance_, set_fifo_, set_conflict_map_, way_num_, global_counter_, update_plan_);
         cudaCheckError();
+        iter_++;
+
     }
     /*num candidates = sampled num*/
     void Update(
@@ -993,7 +1057,7 @@ public:
         int32_t float_attr_len, 
         void* stream) override 
     {  
-        dim3 block_num(64, 1);
+        dim3 block_num(78, 1);
         dim3 thread_num(1024, 1);
         UpdateIdKernel<<<block_num, thread_num, 0, static_cast<cudaStream_t>(stream)>>>(final_candidates_, final_index_, set_fifo_, update_plan_, way_num_, candidates_ids, all_cached_ids_, cache_map_, global_counter_);
         cudaCheckError();
@@ -1023,6 +1087,14 @@ public:
                 }
             }
         }
+    }
+
+    int32_t* GetAccessedMap(){
+        return access_time_;
+    }
+
+    int32_t* GetCacheMap(){
+        return cache_map_;
     }
 
     int32_t* FutureBatch() override 
@@ -1081,6 +1153,7 @@ private:
 
     int32_t* access_time_;
     int32_t iter_;
+
 };
 
 CacheController* NewSetAssociateCacheController(int32_t way_num, int32_t K_Batch)
@@ -1088,30 +1161,187 @@ CacheController* NewSetAssociateCacheController(int32_t way_num, int32_t K_Batch
     return new SetAssociateCacheController(way_num, K_Batch);
 } 
 
+void mmap_cache_read(std::string &cache_file, std::vector<int32_t>& cache_map){
+    int64_t t_idx = 0;
+    int32_t fd = open(cache_file.c_str(), O_RDONLY);
+    if(fd == -1){
+        std::cout<<"cannout open file: "<<cache_file<<"\n";
+    }
+    // int64_t buf_len = lseek(fd, 0, SEEK_END);
+    int64_t buf_len = int64_t(int64_t(cache_map.size()) * 4); 
+    const int32_t* buf = (int32_t *)mmap(NULL, buf_len, PROT_READ, MAP_PRIVATE, fd, 0);
+    const int32_t* buf_end = buf + buf_len/sizeof(int32_t);
+    int32_t temp;
+    while(buf < buf_end){
+        temp = *buf;
+        cache_map[t_idx++] = temp;
+        buf++;
+    }
+    close(fd);
+    return;
+}
+
+class PreSCCacheController : public CacheController {
+public:
+    PreSCCacheController(int32_t train_step){
+       train_step_ = train_step;
+    }
+
+    virtual ~PreSCCacheController(){}
+
+    void Initialize(
+        int32_t dev_id, 
+        int32_t capacity, 
+        int32_t sampled_num, 
+        int32_t total_num_nodes,
+        int32_t batch_size) override
+    {
+        device_idx_ = dev_id;
+        capacity_ = capacity;
+        total_num_nodes_ = total_num_nodes;
+        sampled_num_ = sampled_num;
+        batch_size_ = batch_size;
+        cudaSetDevice(dev_id);
+        cudaMalloc(&cache_map_, int64_t(total_num_nodes) * sizeof(int32_t));//may overflow when meet 1B nodes
+        cudaMalloc(&access_time_, int64_t(total_num_nodes) * sizeof(int32_t));
+        cudaMemset(access_time_, 0, int64_t(total_num_nodes) * sizeof(int32_t));
+        cudaCheckError();
+        iter_ = 0;
+    }  
+
+    void Finalize(int32_t dev_id) override {
+        cudaSetDevice(dev_id);
+        cudaFree(cache_map_);
+        cudaCheckError();
+    }
+
+    void MakePlan(int32_t* candidates, 
+                 float* importance, 
+                 int32_t* node_counter, 
+                 int64_t** csr_node_index,
+                 int32_t** csr_dst_node_ids, 
+                 char* partition_index,
+                 int32_t* parition_offset,
+                 bool is_presc,
+                 void* stream) override
+    {
+        dim3 block_num(38, 1);
+        dim3 thread_num(1024, 1);
+        CacheHitTimes<<<block_num, thread_num, 0, static_cast<cudaStream_t>(stream)>>>(candidates, node_counter, cache_map_);
+        if(is_presc){
+            HotnessMeasure<<<block_num, thread_num, 0, static_cast<cudaStream_t>(stream)>>>(candidates, node_counter, access_time_);
+            if(iter_ == (train_step_ - 1)){
+                iter_ = 0;
+            }
+        }else{
+            int32_t* h_node_counter = (int32_t*)malloc(16*sizeof(int32_t));
+            cudaMemcpy(h_node_counter, node_counter, 64, cudaMemcpyDeviceToHost);
+            if(iter_ % 100 == 0){
+                std::cout<<device_idx_<<" "<<h_node_counter[10]*1.0/h_node_counter[9]<<"\n";
+            }
+            free(h_node_counter);
+        }
+        iter_++;
+    }
+
+    /*num candidates = sampled num*/
+    void Update(
+        int32_t* candidates_ids, 
+        float* candidates_float_feature, 
+        float* cache_float_feature,
+        int32_t float_attr_len, 
+        void* stream) override 
+    {}
+
+    void AccessCount(
+        int32_t* d_key, 
+        int32_t num_keys, 
+        void* stream) override 
+    {}
+    
+    int32_t* GetAccessedMap(){
+        return access_time_;
+    }
+
+    int32_t* GetCacheMap(){
+        return cache_map_;
+    }
+
+    int32_t* FutureBatch() override 
+    {
+        return nullptr;
+    }
+
+    int32_t Capacity() override 
+    {
+        return capacity_;
+    }
+
+    int32_t* AllCachedIds() override 
+    {
+        return nullptr;
+    }
+
+    int32_t* RecentMark() override {
+        return nullptr;
+    }
+
+    void Find(
+        int32_t* sampled_ids, 
+        int32_t* cache_offset, 
+        int32_t* node_counter, 
+        int32_t op_id,
+        void* stream) override 
+    {
+        dim3 block_num(40, 1);
+        dim3 thread_num(1024, 1);
+        Find_Kernel<<<block_num, thread_num, 0, static_cast<cudaStream_t>(stream)>>>(sampled_ids, cache_offset, node_counter, total_num_nodes_, op_id, cache_map_);
+        cudaCheckError();
+    }
+
+private:
+    int32_t device_idx_;
+    int32_t capacity_;
+    int32_t total_num_nodes_;
+    int32_t set_num_;
+    int32_t way_num_;
+    int32_t sampled_num_;
+    int32_t k_batch_;
+    int32_t batch_size_;
+
+    int32_t* cache_map_;
+    int32_t* access_time_;
+    int32_t train_step_;
+    int32_t iter_;
+};
+
+CacheController* NewPreSCCacheController(int32_t train_step)
+{
+    return new PreSCCacheController(train_step);
+} 
+
+__global__ void init_feature_cache(float** pptr, float* ptr, int dev_id){
+    pptr[dev_id] = ptr;
+}
+
 void GPUCache::Initialize(
     std::vector<int> device, 
     int32_t capacity, 
     int32_t int_attr_len, 
     int32_t float_attr_len, 
     int32_t K_batch, 
-    int32_t way_num)
+    int32_t way_num,
+    int32_t train_step)
 {
+    //allocate essential buffer
     dev_ids_.resize(TOTAL_DEV_NUM);
     cache_controller_.resize(TOTAL_DEV_NUM);
-
-    cache_hit_.resize(TOTAL_DEV_NUM);
 
     k_batch_ = K_batch;
     way_num_ = way_num;
 
-    iter_.resize(8);
-    for(int32_t i = 0 ; i < TOTAL_DEV_NUM; i++){
-        iter_[i] = 0;
-    }
-
     for(int32_t i = 0; i < TOTAL_DEV_NUM; i++){
         dev_ids_[i] = false;
-        cache_hit_[i] = 0;
     }
 
     if(int_attr_len > 0){
@@ -1122,14 +1352,20 @@ void GPUCache::Initialize(
     }
     cudaCheckError();
 
-    d_accessed.resize(8);
-    global_count.resize(8);
+    d_float_feature_cache_ptr_.resize(TOTAL_DEV_NUM);
 
+    for(int32_t i = 0; i < device.size(); i++){
+        int32_t dev_id = device[i];
+        cudaSetDevice(dev_id);
+        float** new_ptr;        
+        cudaMalloc(&new_ptr, device.size() * sizeof(float*)); 
+        d_float_feature_cache_ptr_[dev_id] = new_ptr;
+    }
     for(int32_t i = 0; i < device.size(); i++){
         int32_t dev_id = device[i];
         dev_ids_[dev_id] = true;
 
-        CacheController* cctl = NewSetAssociateCacheController(way_num_, k_batch_);
+        CacheController* cctl = NewPreSCCacheController(train_step);
         cache_controller_[dev_id] = cctl;
 
         if(float_attr_len > 0){
@@ -1137,11 +1373,20 @@ void GPUCache::Initialize(
             float* new_float_feature_cache;
             cudaMalloc(&new_float_feature_cache, int64_t(int64_t(int64_t(capacity) * float_attr_len) * sizeof(float)));
             float_feature_cache_[dev_id] = new_float_feature_cache;
+            init_feature_cache<<<1,1>>>(d_float_feature_cache_ptr_[0], new_float_feature_cache, dev_id);
+            cudaCheckError();
         }
+    }
+    for(int32_t i = 0; i < device.size(); i++){
+        int32_t dev_id = device[i];
+        cudaSetDevice(dev_id);
+        cudaMemcpy(d_float_feature_cache_ptr_[dev_id], d_float_feature_cache_ptr_[0], device.size() * sizeof(float**), cudaMemcpyDeviceToDevice);
+        cudaCheckError();
     }
     capacity_ = capacity;
     int_attr_len_ = int_attr_len;
     float_attr_len_ = float_attr_len;
+    is_presc_ = true;
 }
 
 void GPUCache::InitializeCacheController(
@@ -1199,7 +1444,7 @@ void GPUCache::MakePlan(
     int32_t dev_id)
 {
     if(dev_ids_[dev_id] == true){
-        cache_controller_[dev_id]->MakePlan(candidates, importance, node_counter, csr_node_index, csr_dst_node_ids, partition_index, parition_offset, stream);
+        cache_controller_[dev_id]->MakePlan(candidates, importance, node_counter, csr_node_index, csr_dst_node_ids, partition_index, parition_offset, is_presc_, stream);
     }else{
         std::cout<<"invalid device for cache\n"; 
     }
@@ -1231,6 +1476,157 @@ void GPUCache::AccessCount(
     }else{
         std::cout<<"invalid device for cache\n"; 
     }
+}
+
+__global__ void aggregate_access(int32_t* agg_access_time, int32_t* new_access_time, int32_t total_num_nodes){
+    for(int32_t thread_idx = threadIdx.x + blockDim.x * blockIdx.x; thread_idx < (total_num_nodes); thread_idx += blockDim.x * gridDim.x){
+        agg_access_time[thread_idx] += new_access_time[thread_idx];
+    }
+}
+
+__global__ void init_cache_order(int32_t* cache_order, int32_t total_num_nodes){
+    for(int32_t thread_idx = threadIdx.x + blockDim.x * blockIdx.x; thread_idx < (total_num_nodes); thread_idx += blockDim.x * gridDim.x){
+        cache_order[thread_idx] = thread_idx;
+    }
+}
+
+__global__ void set_cache_map(int32_t* cache_order, int32_t* cache_map, int32_t total_num_nodes, int32_t cache_capacity, int32_t cache_agg_mode, int32_t dev_id){
+    if(cache_agg_mode == 0){
+        for(int32_t thread_idx = threadIdx.x + blockDim.x * blockIdx.x; thread_idx < (total_num_nodes); thread_idx += blockDim.x * gridDim.x){
+            int32_t id = cache_order[thread_idx];
+            if(thread_idx < cache_capacity){
+                cache_map[id] = thread_idx + cache_capacity * dev_id;
+            }else{
+                cache_map[id] = -1;
+            }
+        }
+    }else if(cache_agg_mode == 1){
+        for(int32_t thread_idx = threadIdx.x + blockDim.x * blockIdx.x; thread_idx < (total_num_nodes); thread_idx += blockDim.x * gridDim.x){
+            int32_t id = cache_order[thread_idx];
+            if(thread_idx < cache_capacity * 4){
+                cache_map[id] = thread_idx / 4 + (thread_idx % 4) * cache_capacity + 4 * cache_capacity * (dev_id/4);
+            }else{
+                cache_map[id] = -1;
+            }
+        }
+    }else if(cache_agg_mode == 2){
+        for(int32_t thread_idx = threadIdx.x + blockDim.x * blockIdx.x; thread_idx < (total_num_nodes); thread_idx += blockDim.x * gridDim.x){
+            int32_t id = cache_order[thread_idx];
+            if(thread_idx < cache_capacity){
+                cache_map[id] = thread_idx + cache_capacity * dev_id;
+            }else{
+                cache_map[id] = -1;
+            }
+        }
+    }
+}
+
+__global__ void complement_cache_map(int32_t* local_cache_map, int32_t* remote_cache_map, int32_t total_num_nodes){
+    for(int32_t thread_idx = threadIdx.x + blockDim.x * blockIdx.x; thread_idx < (total_num_nodes); thread_idx += blockDim.x * gridDim.x){
+        if(local_cache_map[thread_idx] < 0){
+            local_cache_map[thread_idx] = remote_cache_map[thread_idx];
+        }
+    }
+}
+
+
+__global__ void fill_feature_cache(int32_t* cache_order, float* cpu_float_attrs, float* feature_cache, int32_t cache_capacity, int32_t float_attr_len, int32_t cache_agg_mode, int32_t dev_id){
+    if(cache_agg_mode == 0){
+        for(int64_t thread_idx = threadIdx.x + blockDim.x * blockIdx.x; thread_idx < (int64_t(cache_capacity)*float_attr_len); thread_idx += blockDim.x * gridDim.x){
+            int32_t id = cache_order[thread_idx/float_attr_len];
+            feature_cache[thread_idx] = cpu_float_attrs[int64_t(int64_t(id)*float_attr_len)+(thread_idx%float_attr_len)];
+        }
+    }else if(cache_agg_mode == 1){
+        for(int64_t thread_idx = threadIdx.x + blockDim.x * blockIdx.x; thread_idx < (int64_t(cache_capacity)*float_attr_len); thread_idx += blockDim.x * gridDim.x){
+            int32_t id = cache_order[(thread_idx /float_attr_len) * 4 + dev_id];
+            feature_cache[thread_idx] = cpu_float_attrs[int64_t(int64_t(id)*float_attr_len)+(thread_idx%float_attr_len)];
+        } 
+    }
+}
+
+void GPUCache::Coordinate(int cache_agg_mode, GPUNodeStorage* noder){
+    std::vector<int32_t*> access_time;
+    std::vector<int32_t*> cache_map;
+    for(int32_t i = 0; i < TOTAL_DEV_NUM; i++){
+        if(dev_ids_[i] == true){
+            access_time.push_back(cache_controller_[i]->GetAccessedMap());
+            cache_map.push_back(cache_controller_[i]->GetCacheMap());
+        }
+    }
+    dim3 block_num(80,1);
+    dim3 thread_num(1024,1);
+    int32_t total_num_nodes = noder->TotalNodeNum();
+    float* cpu_float_attrs = noder->GetAllFloatAttr();
+    int32_t float_attr_len = noder->GetFloatAttrLen();
+    if(cache_agg_mode == 0){//individual mode, metis partition, cannot read remote memory
+        for(int32_t i = 0; i < access_time.size(); i++){
+            cudaSetDevice(i);
+            int32_t* cache_order;
+            cudaMalloc(&cache_order, total_num_nodes * sizeof(int32_t));
+            cudaCheckError();
+            init_cache_order<<<block_num, thread_num>>>(cache_order, total_num_nodes);
+            cudaCheckError();
+            thrust::sort_by_key(thrust::device, access_time[i], access_time[i] + total_num_nodes, cache_order, thrust::greater<int32_t>());
+            cudaCheckError();
+            set_cache_map<<<block_num, thread_num>>>(cache_order, cache_map[i], total_num_nodes, capacity_, cache_agg_mode, i);
+            cudaCheckError();
+            fill_feature_cache<<<block_num, thread_num>>>(cache_order, cpu_float_attrs, float_feature_cache_[i], capacity_, float_attr_len, cache_agg_mode, i);
+            cudaCheckError();
+            cudaFree(cache_order);
+            cudaCheckError();
+        }
+    }else if(cache_agg_mode == 1){//level1, metis partition;level2, hash partition
+        for(int32_t i = 0; i < 2; i++){//2 nvlink cluster
+            cudaSetDevice(i*4);
+            int32_t* cache_order;
+            cudaMalloc(&cache_order, total_num_nodes * sizeof(int32_t));
+            cudaCheckError();
+            for(int32_t j = 1; j < 4; j++){
+                aggregate_access<<<block_num, thread_num>>>(access_time[i*4], access_time[i*4+j], total_num_nodes);
+            }
+            cudaCheckError();
+            init_cache_order<<<block_num, thread_num>>>(cache_order, total_num_nodes);
+            thrust::sort_by_key(thrust::device, access_time[i*4], access_time[i*4] + total_num_nodes, cache_order, thrust::greater<int32_t>());
+            cudaCheckError();
+            for(int32_t j = 0; j < 4; j++){
+                // cudaSetDevice(i*4 + j);
+                set_cache_map<<<block_num, thread_num>>>(cache_order, cache_map[i*4 + j], total_num_nodes, capacity_, cache_agg_mode, i*4 + j);
+                cudaCheckError();
+                fill_feature_cache<<<block_num, thread_num>>>(cache_order, cpu_float_attrs, float_feature_cache_[i], capacity_, float_attr_len, cache_agg_mode, i*4 + j);
+                cudaCheckError();
+            }
+            cudaSetDevice(i*4);
+            cudaFree(cache_order);
+        }
+    }else if(cache_agg_mode == 2){//level1, metis partition;level2, metis partition, can read remote memory
+        for(int32_t i = 0; i < access_time.size(); i++){
+            cudaSetDevice(i);
+            int32_t* cache_order;
+            cudaMalloc(&cache_order, total_num_nodes * sizeof(int32_t));
+            cudaCheckError();
+            init_cache_order<<<block_num, thread_num>>>(cache_order, total_num_nodes);
+            cudaCheckError();
+            thrust::sort_by_key(thrust::device, access_time[i], access_time[i] + total_num_nodes, cache_order, thrust::greater<int32_t>());
+            cudaCheckError();
+            set_cache_map<<<block_num, thread_num>>>(cache_order, cache_map[i], total_num_nodes, capacity_, cache_agg_mode, i);
+            cudaCheckError();
+            fill_feature_cache<<<block_num, thread_num>>>(cache_order, cpu_float_attrs, float_feature_cache_[i], capacity_, float_attr_len, cache_agg_mode, i);
+            cudaCheckError();
+            cudaFree(cache_order);
+            cudaCheckError();
+        }
+        for(int32_t i = 0; i < access_time.size(); i++){
+            cudaSetDevice(i);
+            int cluster_id = i / 4;
+            for(int32_t j = 1; j < 4; j++){
+                complement_cache_map<<<block_num, thread_num>>>(cache_map[i], cache_map[(i + j)%4 + cluster_id * 4], total_num_nodes);
+            }
+        }
+    }else{//global hash partition
+
+    }
+    std::cout<<"Finish load presc feature cache\n";
+    is_presc_ = false;
 }
 
 int32_t* GPUCache::FutureBatch(int32_t dev_id)
@@ -1273,6 +1669,16 @@ float* GPUCache::Float_Feature_Cache(int32_t dev_id)
     }
 }
 
+float** GPUCache::Global_Float_Feature_Cache(int32_t dev_id)
+{
+    if(dev_ids_[dev_id] == true){
+        return d_float_feature_cache_ptr_[dev_id];
+    }else{
+        std::cout<<"invalid device for cache\n";
+        return nullptr;
+    }
+}
+
 int64_t* GPUCache::Int_Feature_Cache(int32_t dev_id)
 {
     if(dev_ids_[dev_id] == true){
@@ -1286,19 +1692,4 @@ int64_t* GPUCache::Int_Feature_Cache(int32_t dev_id)
 int32_t GPUCache::K_Batch()
 {
     return k_batch_;
-}
-
-int64_t GPUCache::GetCacheHit(int32_t dev_id)
-{
-    return cache_hit_[dev_id];
-}
-
-void GPUCache::SetCacheHit(int32_t dev_id, int32_t hit_times)
-{
-    cache_hit_[dev_id] = int64_t(cache_hit_[dev_id] + int64_t(hit_times));
-}
-
-void GPUCache::ResetCacheHit(int32_t dev_id)
-{
-    cache_hit_[dev_id] = 0;
 }

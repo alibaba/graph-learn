@@ -75,16 +75,19 @@ def train_one_step(model, optimizer, loss_fcn, device, feat_len):
     blocks = []
     blocks.append(create_dgl_block(block1_agg_src, block1_agg_dst, block1_src_num, block1_dst_num))
     blocks.append(create_dgl_block(block2_agg_src, block2_agg_dst, block2_src_num, block2_dst_num))
+    # print(device, blocks)
+    # print(features)
     batch_pred = model(blocks, features)
     long_labels = torch.as_tensor(labels, dtype=torch.long, device=device)
     loss = loss_fcn(batch_pred, long_labels)
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
+    torch.cuda.synchronize()
     ipc_service.synchronize()
     return loss
 
-def valid_one_step(model, metric, device, feat_len):
+def valid_one_step(model, loss_fcn, device, feat_len):
     
     ids, features, labels, block1_agg_src, block1_agg_dst, block2_agg_src, block2_agg_dst = ipc_service.get_next(feat_len)
     block1_src_num, block1_dst_num, block2_src_num, block2_dst_num = ipc_service.get_block_size()
@@ -93,12 +96,13 @@ def valid_one_step(model, metric, device, feat_len):
     blocks.append(create_dgl_block(block2_agg_src, block2_agg_dst, block2_src_num, block2_dst_num))
     batch_pred = model(blocks, features)
     long_labels = torch.as_tensor(labels, dtype=torch.long, device=device)
-    # loss = loss_fcn(batch_pred, long_labels)
-    # ipc_service.synchronize()
-    batch_pred = torch.softmax(batch_pred, dim=1).to(device)
-    acc = metric(batch_pred, long_labels)
+    loss = loss_fcn(batch_pred, long_labels)
     ipc_service.synchronize()
-    return acc
+    return loss
+    # batch_pred = torch.softmax(batch_pred, dim=1).to(device)
+    # acc = metric(batch_pred, long_labels)
+    # ipc_service.synchronize()
+    # return acc
 
 def test_one_step(model, metric, device, feat_len):
     
@@ -126,9 +130,7 @@ def worker_process(rank, world_size, args):
     hop1 = (args.nbrs_num)[0]
     hop2 = (args.nbrs_num)[1]
 
-    num_ids = batch_size * (1 + hop1 + hop1 * hop2)
     feat_len = args.features_num
-    num_feat = num_ids * feat_len
 
     model = SAGE(in_feats=args.features_num,
                         n_hidden=args.hidden_dim,
@@ -139,6 +141,9 @@ def worker_process(rank, world_size, args):
 
     if dist.is_initialized():
         model = DDP(model, device_ids=[device_id])
+    # loss_weight = torch.tensor([0.9861,0.0139])
+    # loss_weight = loss_weight.to(device_id)
+    # loss_fcn = nn.CrossEntropyLoss(weight=loss_weight)
     loss_fcn = nn.CrossEntropyLoss()
     loss_fcn = loss_fcn.to(device_id)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
@@ -156,29 +161,29 @@ def worker_process(rank, world_size, args):
             #     print('Iter {} Train Loss :{} '.format(iter, train_loss))
         epoch_time += time.time() - start
 
-        # loss = []
-        # with torch.no_grad():
-        #     for iter in range(valid_steps):
-        #         loss_per_batch = valid_one_step(model, loss_fcn, cuda_device, feat_len)
-        #         loss_per_batch = loss_per_batch.cpu()
-        #         loss_per_batch = loss_per_batch.numpy()
-        #         # if device_id == 0:
-        #         #     print('Iter {} Val Loss :{} '.format(iter, train_loss))
-        #         loss.append(loss_per_batch)
-        # val_loss = np.mean(loss[:])
-        # if device_id == 0:
-        #     print('Epoch:{}, Cost:{} s, Loss :{} '.format(epoch, epoch_time, val_loss))
-        
-        model.eval()
-        metric = torchmetrics.Accuracy()
-        metric = metric.to(device_id)
-        model.metric = metric
+        loss = []
         with torch.no_grad():
             for iter in range(valid_steps):
-                valid_one_step(model, metric, cuda_device, feat_len)
-            acc_val = metric.compute()
+                loss_per_batch = valid_one_step(model, loss_fcn, cuda_device, feat_len)
+                loss_per_batch = loss_per_batch.cpu()
+                loss_per_batch = loss_per_batch.numpy()
+                # if device_id == 0:
+                #     print('Iter {} Val Loss :{} '.format(iter, train_loss))
+                loss.append(loss_per_batch)
+        val_loss = np.mean(loss[:])
         if device_id == 0:
-            print("Epoch:{}, Cost:{} s, Val Acc: {}".format(epoch, epoch_time, acc_val))
+            print('Epoch:{}, Cost:{} s, Loss :{} '.format(epoch, epoch_time, val_loss))
+        
+        # model.eval()
+        # metric = torchmetrics.Accuracy()
+        # metric = metric.to(device_id)
+        # model.metric = metric
+        # with torch.no_grad():
+        #     for iter in range(valid_steps):
+        #         valid_one_step(model, metric, cuda_device, feat_len)
+        #     acc_val = metric.compute()
+        # if device_id == 0:
+        #     print("Epoch:{}, Cost:{} s, Val Acc: {}".format(epoch, epoch_time, acc_val))
 
     
     model.eval()
@@ -205,17 +210,17 @@ def run_distribute(dist_fn, world_size, args):
 if __name__ == "__main__":
     cur_path = sys.path[0]
     argparser = argparse.ArgumentParser("Train Graphsage.")
-    argparser.add_argument('--class_num', type=int, default=172)
-    argparser.add_argument('--features_num', type=int, default=128)
+    argparser.add_argument('--class_num', type=int, default=2)
+    argparser.add_argument('--features_num', type=int, default=768)
     argparser.add_argument('--train_batch_size', type=int, default=8000)
     argparser.add_argument('--hidden_dim', type=int, default=256)
     argparser.add_argument('--hops_num', type=int, default=2)
     argparser.add_argument('--nbrs_num', type=list, default=[25, 10])
     argparser.add_argument('--drop_rate', type=float, default=0.5)
     argparser.add_argument('--learning_rate', type=float, default=0.003)
-    argparser.add_argument('--epoch', type=int, default=1)
+    argparser.add_argument('--epoch', type=int, default=100)
     args = argparser.parse_args()
 
-    world_size = 4
+    world_size = 8
 
     run_distribute(worker_process, world_size, args)

@@ -190,7 +190,7 @@ void GPUGraphStore::ConfigPartition(BuildInfo* info, int32_t shard_count){
 void GPUGraphStore::ReadMetaFIle(BuildInfo* info){
     std::istringstream iss;
     std::string buff;
-    std::ifstream Metafile("/home/sunjie/graph-learn/meta_config");
+    std::ifstream Metafile("./meta_config");
     if(!Metafile.is_open()){
      std::cout<<"unable to open meta config file"<<"\n";
     }
@@ -232,7 +232,7 @@ void GPUGraphStore::Load_Graph(BuildInfo* info){
     int32_t node_num = node_num_;
     int64_t edge_num = edge_num_;
 
-    std::string partition_path = dataset_path_ + "partition_" + std::to_string(partition_count);
+    std::string partition_path = dataset_path_ + "partition_" + std::to_string(partition_count) + "_bn";
 
     std::vector<int> partition_id_num;
     for(int32_t i = 0; i < partition_count; i++){
@@ -298,17 +298,17 @@ void GPUGraphStore::Load_Feature(BuildInfo* info){
     (info->testing_set_ids).resize(partition_count);
     (info->testing_labels).resize(partition_count);
 
-    // std::string training_path = dataset_path_  + "trainingset";
-    // std::string validation_path = dataset_path_  + "validationset";
-    // std::string testing_path = dataset_path_  + "testingset";
-    std::string training_path = dataset_path_  + "train_ids";
-    std::string validation_path = dataset_path_  + "valid_ids";
-    std::string testing_path = dataset_path_  + "test_ids";
+    std::string training_path = dataset_path_  + "trainingset";
+    std::string validation_path = dataset_path_  + "validationset";
+    std::string testing_path = dataset_path_  + "testingset";
+    // std::string training_path = dataset_path_  + "train_ids";
+    // std::string validation_path = dataset_path_  + "valid_ids";
+    // std::string testing_path = dataset_path_  + "test_ids";
     std::string features_path = dataset_path_ + "features";
-    // std::string labels_path = dataset_path_ + "labels";
-    std::string labels_path = dataset_path_ + "labels_raw";
+    std::string labels_path = dataset_path_ + "labels";
+    // std::string labels_path = dataset_path_ + "labels_raw";
 
-    std::string partition_path = dataset_path_ + "partition_" + std::to_string(partition_count);
+    std::string partition_path = dataset_path_ + "partition_" + std::to_string(partition_count) + "_bn";
 
     std::vector<int32_t> training_ids;
     training_ids.resize(training_set_num_);
@@ -329,15 +329,15 @@ void GPUGraphStore::Load_Feature(BuildInfo* info){
     mmap_trainingset_read(validation_path, validation_ids);
     mmap_trainingset_read(testing_path, testing_ids);
     // mmap_features_read(features_path, host_float_attrs);
-    mmap_labels_read(labels_path, all_labels);
+    // mmap_labels_read(labels_path, all_labels);
     mmap_partition_read(partition_path, partition_index);
 
     std::cout<<"Finish Reading All Files\n";
     // partition nodes
     for(int32_t i = 0; i < training_set_num_; i++){
         int32_t tid = training_ids[i];
-        int32_t part_id = tid % partition_count;
-        // int32_t part_id = partition_index[tid];
+        // int32_t part_id = tid % partition_count;
+        int32_t part_id = partition_index[tid];
         if(part_id < partition_count){
             (info->training_set_ids[part_id]).push_back(tid);
         }
@@ -432,8 +432,10 @@ void GPUGraphStore::Initialze(int32_t shard_count){
         }
     }
 
+    int32_t train_step = env_->GetTrainStep();
+
     cudaSetDevice(0);
-    cache_ -> Initialize(device, cache_cap_, 0, float_attr_len_, future_batch_, cache_way_);
+    cache_ -> Initialize(device, cache_cap_, 0, float_attr_len_, future_batch_, cache_way_, train_step);
     cudaSetDevice(0);
     std::cout<<"Storage Initialized\n";
 }

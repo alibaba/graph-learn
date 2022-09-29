@@ -87,7 +87,6 @@ public:
         GPUCache* cache = (GPUCache*)(params->cache);
         GPUMemoryPool* memorypool = (GPUMemoryPool*)(params->memorypool);
         int mode = memorypool->GetCurrentMode();
-
         make_update_plan(params->stream, graph, cache, memorypool, params->device_id, mode);
         cudaEventRecord(((params->event)), ((params->stream)));
     }

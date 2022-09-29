@@ -23,6 +23,13 @@
     }                                                          \
   }
 
+void PreSCLoop(int train_step, Runner* runner, RunnerParams* params){
+    for(int i = 0; i < train_step; i++){
+        params->global_batch_id = i;
+        runner->RunPreSc(params);
+    }
+} 
+
 void RunnerLoop(int max_step, Runner* runner, RunnerParams* params){
     for(int i = 0; i < max_step; i++){
         params->global_batch_id = i;
@@ -43,8 +50,9 @@ public:
         gpu_cache_ptr_ = gpu_graph_store->GetCache();
         gpu_ipc_env_ = gpu_graph_store->GetIPCEnv();
 
+        train_step_ = gpu_ipc_env_->GetTrainStep();
         max_step_ = gpu_ipc_env_->GetMaxStep();
-        std::cout<<"max step "<<max_step_<<"\n";
+
         runners_.resize(shard_count_);
         params_.resize(shard_count_);
 
@@ -67,14 +75,27 @@ public:
         std::cout<<"System is ready for serving\n";
     }
 
+    void PreSc(int cache_agg_mode) {
+        for(int i = 0; i < shard_count_; i++){
+            Runner* runner = runners_[i];
+            RunnerParams* params = params_[i];
+            std::thread th(&PreSCLoop, train_step_, runner, params);
+            presc_thread_pool_.push_back(std::move(th));
+        }
+        for(auto &th : presc_thread_pool_){
+            th.join();
+        }
+        gpu_cache_ptr_->Coordinate(cache_agg_mode, gpu_node_storage_ptr_);
+    }
+
     void Run() {
         for(int i = 0; i < shard_count_; i++){
             Runner* runner = runners_[i];
             RunnerParams* params = params_[i];
             std::thread th(&RunnerLoop, max_step_, runner, params);
-            thread_pool_.push_back(std::move(th));
+            train_thread_pool_.push_back(std::move(th));
         }
-        for(auto &th : thread_pool_){
+        for(auto &th : train_thread_pool_){
             th.join();
         }
     }
@@ -96,9 +117,11 @@ private:
     GPUCache* gpu_cache_ptr_;
     IPCEnv* gpu_ipc_env_;
     int shard_count_;
+    int train_step_;
     int max_step_;
 
-    std::vector<std::thread> thread_pool_;
+    std::vector<std::thread> presc_thread_pool_;
+    std::vector<std::thread> train_thread_pool_;
     std::vector<Runner*> runners_;
     std::vector<RunnerParams*> params_;
 };
@@ -199,12 +222,26 @@ public:
             op_params_[i]->env = env;
         }
 
-
         for(int i = 0; i < hop_num; i++){
             op_params_[2 * i + 2]->neighbor_count = (params->fanout)[i];
         }
     }
-    
+
+    void RunPreSc(RunnerParams* params) override {
+        cudaSetDevice(local_dev_id_);
+        int32_t batch_id = params->global_batch_id;
+        memorypool_->SetCurrentMode(0);
+        memorypool_->SetIter(batch_id);
+        for(int i = 0; i < op_num_; i+=2){
+            op_factory_[i]->run(op_params_[i]);
+        }
+        bool is_ready = false;
+        while(!is_ready){
+            if(!(cudaEventQuery((op_params_[op_num_-1]->event)) == cudaErrorNotReady)){
+                is_ready = true;
+            }
+        }
+    }
 
     void RunOnce(RunnerParams* params) override {
         cudaSetDevice(local_dev_id_);
@@ -217,7 +254,7 @@ public:
         
         for(int i = 0; i < op_num_; i++){
             if(i % 2 == 1){
-                cudaStreamWaitEvent(streams_[1], events_[i - 1]);
+                cudaStreamWaitEvent(streams_[1], events_[i - 1], 0);
             }
             op_factory_[i]->run(op_params_[i]);
         }
@@ -240,6 +277,7 @@ public:
         cudaSetDevice(local_dev_id_);
         memorypool_->Finalize();
     }
+
 private:
 
     /*vertex id & feature buffer*/

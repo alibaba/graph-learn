@@ -11,6 +11,7 @@ struct OpParams {
     void* noder;
     void* env;
     int neighbor_count;
+    bool is_presc;
 };
 
 class Operator {

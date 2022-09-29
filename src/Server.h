@@ -15,6 +15,7 @@ struct RunnerParams {
 class Server {
 public:
     virtual void Initialize(int global_shard_count) = 0;
+    virtual void PreSc(int cache_agg_mode) = 0;
     virtual void Run() = 0;
     virtual void Finalize() = 0;
 };
@@ -23,6 +24,7 @@ Server* NewGPUServer();
 class Runner {
 public:
     virtual void Initialize(RunnerParams* params) = 0;
+    virtual void RunPreSc(RunnerParams* params) = 0;
     virtual void RunOnce(RunnerParams* params) = 0;
     virtual void Finalize(RunnerParams* params) = 0;
 };

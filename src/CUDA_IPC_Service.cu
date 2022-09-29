@@ -78,6 +78,7 @@ public:
     train_step_ = (max_train_size - 1) / raw_batch_size_ + 1;
     for(int32_t i = 0; i < partition_count; i++){
       train_batch_size_.push_back(((info->training_set_num[i] - 1)/train_step_ + 1));
+      // train_batch_size_.push_back(raw_batch_size_);
     }
 
     int32_t max_valid_size = 0;
@@ -291,6 +292,10 @@ public:
     }
 
     sharedMemoryClose(&info_);
+  }
+
+  int32_t GetTrainStep() override {
+    return train_step_;
   }
   
 private:

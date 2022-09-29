@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include "GPU_Node_Storage.cuh"
 
 class CacheController{
 public:
@@ -32,6 +33,7 @@ public:
         int32_t** csr_dst_node_ids, 
         char* partition_index,
         int32_t* parition_offset,
+        bool is_presc,
         void* stream) = 0;
 
     virtual void Update(
@@ -45,7 +47,11 @@ public:
         int32_t* d_key, 
         int32_t num_keys, 
         void* stream) = 0;
+
+    virtual int32_t* GetAccessedMap() = 0;
    
+    virtual int32_t* GetCacheMap() = 0;
+
     virtual int32_t* FutureBatch() = 0;
     
     virtual int32_t Capacity() = 0;
@@ -57,6 +63,7 @@ public:
 
 CacheController* NewDirectMapCacheController();
 CacheController* NewSetAssociateCacheController(int32_t way_num, int32_t K_Batch);
+CacheController* NewPreSCCacheController(int32_t train_step);
 
 class GPUCache{
 public:
@@ -66,7 +73,8 @@ public:
         int32_t int_attr_len, 
         int32_t float_attr_len, 
         int32_t K_batch, 
-        int32_t way_num);
+        int32_t way_num,
+        int32_t train_step);
     
     void InitializeCacheController(
         int32_t dev_id, 
@@ -112,6 +120,8 @@ public:
         int32_t num_keys, 
         void* stream, 
         int32_t dev_id);
+
+    void Coordinate(int cache_agg_mode, GPUNodeStorage* noder);
     
     int32_t* FutureBatch(int32_t dev_id);
 
@@ -120,16 +130,12 @@ public:
     int32_t* RecentMark(int32_t dev_id);
 
     float* Float_Feature_Cache(int32_t dev_id);//return all features
+    
+    float** Global_Float_Feature_Cache(int32_t dev_id);
 
     int64_t* Int_Feature_Cache(int32_t dev_id);
 
     int32_t K_Batch();
-
-    int64_t GetCacheHit(int32_t dev_id);
-
-    void SetCacheHit(int32_t dev_id, int32_t hit_times);
-
-    void ResetCacheHit(int32_t dev_id);
 
 private:    
     std::vector<bool> dev_ids_;/*valid device, indexed by device id, False means invalid, True means valid*/
@@ -138,17 +144,13 @@ private:
 
     std::vector<int64_t*> int_feature_cache_;
     std::vector<float*> float_feature_cache_; 
+    std::vector<float**> d_float_feature_cache_ptr_;
 
     int32_t int_attr_len_;
     int32_t float_attr_len_;
     int32_t k_batch_;
     int32_t way_num_;
-    std::vector<int64_t> cache_hit_;
-
-public:
-    std::vector<int> iter_;
-    std::vector<int*> d_accessed;
-    std::vector<int*> global_count;
+    bool is_presc_;
 };
 
 #endif

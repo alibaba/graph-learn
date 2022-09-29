@@ -27,6 +27,8 @@ public:
   virtual void IPCWait(int32_t dev_id, int32_t current_pipe) = 0;
 
   virtual void Finalize() = 0;
+  virtual int32_t GetTrainStep() = 0;
+
 };
  
 IPCEnv* NewIPCEnv(int32_t device_count);
