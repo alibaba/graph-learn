@@ -1,22 +1,22 @@
 # Loading From Your Data Source
 
-By using kafka queues as the entry for streaming graph updates, the Dynamic-Graph-Service (abbreviated as dgs) can
+By using kafka queues as the entry for streaming graph updates, the Dynamic-Graph-Service (abbreviated as DGS) can
 decouple the different data sources and sampling workers.
-Users can develop their own data loaders to ingest the source data and push graph updates into the output kafka queues
+Users can develop their own data loaders to  ingest from a customized source data and push graph updates into the output kafka queues
 for further consuming.
 
 ## Rules to Follow
 
 When processing source data in the dataloader, these rules should be followed:
-- The graph schema from source data must be consistent with dgs.
+- The graph schema of the source data must be consistent with dgs.
 - A produced kafka message must be a batch of graph updates, defined as a flatbuffers table [RecordBatchRep](https://github.com/alibaba/graph-learn/blob/master/dynamic_graph_service/fbs/record.fbs).
-- Graph updates are partitioned for sampling workers, all records in one batch must have the same data partition id.
+- Graph updates are partitioned among sampling workers, all records in one batch must have the same data partition id.
 
 ## Dataloader SDK
 
 In practice, it is difficult for users to batch records with dgs graph schema, manage partitioning logic and
 produce partitioned batches into kafka queues with themselves.
-Thus, we provide a dataloader sdk (a c++ lib) to help users to do these things.
+Thus, we provide a dataloader sdk (a c++ lib) to help users to batch records with following the specified graph schema in DGS, manage partitioning logics and dispatch partitioned records to the kafka queues.
 
 
 ### Build
@@ -29,7 +29,7 @@ $ cmake -DCMAKE_INSTALL_PREFIX=$install_prefix ..
 $ make && make install
 ```
 
-use it in CMakeLists.txt:
+Use it in CMakeLists.txt:
 ```cmake
 list (APPEND CMAKE_PREFIX_PATH $install_prefix)
 find_package (DataLoader)
@@ -39,8 +39,7 @@ target_link_libraries (program_name
 
 ### Initialization
 The dataloader must be initialized before the program runs.
-We provide a simple func to help do this, after deploying dgs, specify the dgs host name and
-the sdk will fetch info from dgs and init automatically.
+We provide a simple func to initialize the data loader, after deploying dgs, specify the dgs host name and the sdk will fetch info from dgs and perform the initialization automatically.
 ```c++
 void Initialize(const std::string& dgs_host);
 ```
@@ -103,8 +102,8 @@ To help users track the data-loading progress of the cluster, we provide a barri
 the status of data produced from dataloader to dgs service at a synchronized view.
 
 A barrier is a global state and shared between all dataloader instances in cluster.
-Setting a barrier will insert a checking-point into the output data stream (kafka queues),
-when all produced data (produced from all dataloader instances) before this checking-point are sampled and ready
+Setting a barrier will insert a synchronization point into the output data stream (kafka queues),
+when all produced data (produced from all dataloader instances) before this synchronization point are sampled and ready
 for serving in dgs service, the barrier will be set to "ready" status.
 
 A global barrier is uniquely identified by its "barrier_name". For a specific barrier, it must be set on all
