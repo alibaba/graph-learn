@@ -2,7 +2,7 @@
 
 This document is an e2e tutorial of offline training and online inference for a GNN model with:
   - GraphLearn-Training(gl) for offline training.
-  - Dynamic-Graph-Service(dgs) for online inference.
+  - Dynamic-Graph-Service(DGS) for online inference.
   - Tensorflow model serving.
 
 Here is an example of a supervised job with EgoBipartiteSage, containing the following sections.
@@ -96,7 +96,7 @@ cd kafka_2.13-3.0.0
 ./bin/zookeeper-server-start.sh config/zookeeper.properties &
 ./bin/kafka-server-start.sh config/server.properties &
 
-# create related topics used by dgs
+# create related topics used by DGS
 ./bin/kafka-topics.sh --create --topic record-batches --bootstrap-server localhost:9092 --partitions 4 --replication-factor 1
 ./bin/kafka-topics.sh --create --topic sample-batches --bootstrap-server localhost:9092 --partitions 4 --replication-factor 1
 ```
@@ -104,13 +104,13 @@ cd kafka_2.13-3.0.0
 Some other helm charts can also be used to deploy a stable kafka service on k8s cluster,
 e.g. [bitnami kafka](https://github.com/bitnami/charts/tree/master/bitnami/kafka).
 
-### 5.2 Deploy dgs on k8s cluster
-We provide a helm chart to deploy dgs, before this, make sure your k8s cluster has been created correctly and helm tools have been installed.
-Besides, dgs uses a k8s ingress to expose its service, make sure your k8s cluster contains a nginx controller.
+### 5.2 Deploy DGS on k8s cluster
+We provide a helm chart to deploy DGS, before this, make sure your k8s cluster has been created correctly and helm tools have been installed.
+Besides, DGS uses a k8s ingress to expose its service, make sure your k8s cluster contains a nginx controller.
 
 Get helm repo info first:
 ```shell
-helm repo add dgs https://graphlearn.oss-cn-hangzhou.aliyuncs.com/charts/dgs/
+helm repo add DGS https://graphlearn.oss-cn-hangzhou.aliyuncs.com/charts/dgs/
 helm repo update
 ```
 
@@ -135,10 +135,10 @@ export DgsServiceIP=$(kubectl get ingress --namespace default dgs-u2i-frontend-i
 echo $DgsServiceIP
 ```
 
-Ref to [dgs deployment doc](deploy.md) for more details about service configuration.
+Ref to [DGS deployment doc](deploy.md) for more details about service configuration.
 
 ### 5.3 Start dataloader
-In order to access the dgs from your dataloader machine, you need to register its host name with its service ip first:
+In order to access the DGS from your dataloader machine, you need to register its host name with its service ip first:
 ```shell
 echo "$DgsServiceIP  dynamic-graph-service.info" >> /etc/hosts
 ```
@@ -159,7 +159,7 @@ cd dynamic_graph_service/dataloader
     --batch-size 32 \
     --barrier u2i_finished
 ```
-> **Tip**: If you want to deploy your dataloader in the same k8s cluster with dgs, you should make sure that the
+> **Tip**: If you want to deploy your dataloader in the same k8s cluster with DGS, you should make sure that the
 > `externalTrafficPolicy` of nginx controller has been set to `Cluster`.
 
 

@@ -8,13 +8,13 @@ for further consuming.
 ## Rules to Follow
 
 When processing source data in the dataloader, these rules should be followed:
-- The graph schema of the source data must be consistent with dgs.
+- The graph schema of the source data must be consistent with DGS.
 - A produced kafka message must be a batch of graph updates, defined as a flatbuffers table [RecordBatchRep](https://github.com/alibaba/graph-learn/blob/master/dynamic_graph_service/fbs/record.fbs).
 - Graph updates are partitioned among sampling workers, all records in one batch must have the same data partition id.
 
 ## Dataloader SDK
 
-In practice, it is difficult for users to batch records with dgs graph schema, manage partitioning logic and
+In practice, it is difficult for users to batch records with DGS graph schema, manage partitioning logic and
 produce partitioned batches into kafka queues with themselves.
 Thus, we provide a dataloader sdk (a c++ lib) to help users to batch records with following the specified graph schema in DGS, manage partitioning logics and dispatch partitioned records to the kafka queues.
 
@@ -39,7 +39,7 @@ target_link_libraries (program_name
 
 ### Initialization
 The dataloader must be initialized before the program runs.
-We provide a simple func to initialize the data loader, after deploying dgs, specify the dgs host name and the sdk will fetch info from dgs and perform the initialization automatically.
+We provide a simple func to initialize the data loader, after deploying DGS, specify the DGS host name and the sdk will fetch info from DGS and perform the initialization automatically.
 ```c++
 void Initialize(const std::string& dgs_host);
 ```
@@ -104,7 +104,7 @@ the status of data produced from dataloader to dgs service at a synchronized vie
 A barrier is a global state and shared between all dataloader instances in cluster.
 Setting a barrier will insert a synchronization point into the output data stream (kafka queues),
 when all produced data (produced from all dataloader instances) before this synchronization point are sampled and ready
-for serving in dgs service, the barrier will be set to "ready" status.
+for serving in DGS service, the barrier will be set to "ready" status.
 
 A global barrier is uniquely identified by its "barrier_name". For a specific barrier, it must be set on all
 dataloader instances separately along with current instance's unique id.
