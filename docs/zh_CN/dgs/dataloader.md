@@ -56,37 +56,37 @@ int main() {
     // Init sdk
     std::string dgs_host = "dynamic-graph-service.info";
     Initialize(dgs_host);
-    
+
     // Using a group producer to auto partition, batch and produce updates,
     uint32_t batch_size = 8; // max record number in one batch
     GroupProducer p(batch_size);
-    
+
     // Using schema to query types.
     // user -> buy -> item
     auto& schema = Schema::Get();
     auto user_type = schema.GetVertexDefByName("user").Type();
     auto item_type = schema.GetVertexDefByName("item").Type();
     auto buy_type = schema.GetEdgeDefByName("buy").Type();
-    
+
     // add "user" vertex with vid = 111.
     p.AddVertex(user_type, 111, {
         {schema.GetAttrDefByName("name").Type(), STRING, "Li Hua"},
         {schema.GetAttrDefByName("timestamp").Type(), INT64, 1000}
     });
-    
+
     // add "item" vertex with vid = 222.
     p.AddVertex(item_type, 222, {
         {schema.GetAttrDefByName("name").Type(), STRING, "Coca-Cola"},
         {schema.GetAttrDefByName("feature").Type(), FLOAT32_LIST, std::vector<float>{1.0, 1.4, 2.2}},
         {schema.GetAttrDefByName("timestamp").Type(), INT64, 1001}
     });
-    
+
     // add "buy" edge
     p.AddEdge(buy_type, user_type, item_type, 111, 222, {
         {schema.GetAttrDefByName("wight").Type(), FLOAT64, 4.0},
         {schema.GetAttrDefByName("timestamp").Type(), INT64, 1002}
     });
-    
+
     // flush and produce
     p.FlushAll();
 }
@@ -97,7 +97,6 @@ refer to [file-loader](https://github.com/alibaba/graph-learn/blob/master/dynami
 
 ## Data Loading Barrier
 
-Sometimes, users may want to deploy their own data-loading cluster with multiple dataloader instances.
 To help users track the data-loading progress of the cluster, we provide a barrier mechanism to check
 the status of data produced from dataloader to DGS service at a synchronized view.
 

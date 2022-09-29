@@ -97,7 +97,6 @@ refer to [file-loader](https://github.com/alibaba/graph-learn/blob/master/dynami
 
 ## Data Loading Barrier
 
-Sometimes, users may want to deploy their own data-loading cluster with multiple dataloader instances.
 To help users track the data-loading progress of the cluster, we provide a barrier mechanism to check
 the status of data produced from dataloader to dgs service at a synchronized view.
 
