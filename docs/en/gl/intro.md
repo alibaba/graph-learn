@@ -7,4 +7,4 @@ It provides both Python and C++ interfaces for graph sampling operations and pro
 
 ## Architecture
 
-(coming soon)
+![architecture](../../images/gl-arch.png)

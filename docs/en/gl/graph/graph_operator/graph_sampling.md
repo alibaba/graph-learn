@@ -43,7 +43,7 @@ Sampling returns a `Layers` object, which means "the neighboring vertices of the
 ```python
 def Layers.layer_nodes(layer_id):
 """ Get the `Nodes` of the ith layer layer, layer_id starts from 1. """
-    
+
 def Layers.layer_edges(layer_id):
 """ Get the `Edges` of the ith layer, with layer_id starting at 1. """
 ```
@@ -61,7 +61,7 @@ g.V().outV().sample(count).by(strategy).outV().sample(count).by(strategy)
 #### Example
 As shown in the figure below, starting from a vertex of type user, sample its 2-hop neighbors, and return the result as layers, which contains layer1 and layer2. **layer's index starts from 1**, i.e. 1-hop neighbor is layer1 and 2-hop neighbor is layer2.
 
-![2-hop-sampling](../../../images/2-hop-sampling.png)
+![2-hop-sampling](../../../../images/2-hop-sampling.png)
 
 ```python
 s = g.neighbor_sampler(["buy", "i2i"], expand_factor=[2, 2])

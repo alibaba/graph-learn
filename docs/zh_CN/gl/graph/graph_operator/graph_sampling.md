@@ -66,7 +66,7 @@ g.V().outV().sample(count).by(strategy).outV().sample(count).by(strategy)
 如下图所示，从user类型的顶点开始，采样其2跳邻居，返回结果为layers，layers包含layer1和layer2。**layer的index从1开始**，即1跳邻居为layer1，2跳邻居为layer2。
 
 ​
-![2-hop-sampling](../../../images/2-hop-sampling.png)
+![2-hop-sampling](../../../../images/2-hop-sampling.png)
 
 ```python
 s = g.neighbor_sampler(["buy", "i2i"], expand_factor=[2, 2])

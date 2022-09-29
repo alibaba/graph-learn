@@ -19,7 +19,7 @@ def get_topology()
 
 <br />如下所示的异构图，获取其拓扑结构及返回结果格式参见示例代码。
 
-![topology](../../../images/topology.png)
+![topology](../../../../images/topology.png)
 
 <br /> 图1 图的拓扑信息 </div>
 

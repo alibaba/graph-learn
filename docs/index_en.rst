@@ -32,7 +32,6 @@ Welcome to GraphLearn's documentation!
    en/dgs/deploy
    en/dgs/dataloader
    en/dgs/tutorial
-   en/dgs/developer
    apis/index
 
 
