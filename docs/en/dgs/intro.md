@@ -42,7 +42,7 @@ sampling query), and dispatches the sampled updates to serving workers.
 The sample dispatching follows the principle that, the n-hop sample 
 results of a specific vertex must be dispatched to the same serving 
 worker. The inference requests are served by the serving workers. On 
-receiving a serving requests, the serving worker reconstructs the 
+receiving an inference request, the serving worker reconstructs the 
 complete sample results from its local cache. This way, the execution 
 of a sample request is transformed to multiple local memory lookups.
 These subservices are connected via fault-tolerant queue services, 
