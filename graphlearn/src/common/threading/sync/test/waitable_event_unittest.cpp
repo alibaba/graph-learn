@@ -39,7 +39,7 @@ void StartWorkerThread(WaitableEvent* event, int64_t delayInMs, int64_t count) {
 
 }  // anonymous namespace
 
-TEST(WaitableEventTest, Basic) {
+TEST(WaitableEventTest, DISABLED_Basic) {
   WaitableEvent event[2];
   int64_t count = 1024;
 
@@ -51,7 +51,7 @@ TEST(WaitableEventTest, Basic) {
   }
 }
 
-TEST(WaitableEventTest, WaitAndDtor) {
+TEST(WaitableEventTest, DISABLED_WaitAndDtor) {
   for (int k = 0; k < 10000; ++k) {
     WaitableEvent event;
     Closure<void>* closure = NewClosure(&event, &WaitableEvent::Set);
