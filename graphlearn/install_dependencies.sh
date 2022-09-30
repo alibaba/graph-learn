@@ -69,7 +69,7 @@ fi
 
 # installing dgs system dependencies
 if [ "$ID" = "ubuntu" ] || [ "$ID" = "debian" ]; then
-  sudo apt-get -y install "${debian_packages[@]}"
+  apt-get -y install "${debian_packages[@]}"
 else
   echo "Your system ($ID) is not supported by this script. Please install dependencies manually or build in ubuntu env."
   exit 1
