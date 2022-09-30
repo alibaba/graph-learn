@@ -487,6 +487,8 @@ if (TESTING)
     ${GL_SERVICE_DIR}/*.cpp)
   # fixme: disable thread_unittest now
   list (FILTER GL_TEST_FILES EXCLUDE REGEX ".*/thread_unittest\\.cpp$")
+  list (FILTER GL_TEST_FILES EXCLUDE REGEX ".*/waitable_event_unittest\\.cpp$")
+  list (FILTER GL_TEST_FILES EXCLUDE REGEX ".*/vineyard_storage_unittest\\.cpp$")
   add_gl_tests (${GL_TEST_FILES})
 
   if (KNN)
