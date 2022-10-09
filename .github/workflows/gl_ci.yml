@@ -56,12 +56,6 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 python --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-    - name: Download third-party built package
-      working-directory: ${{github.workspace}}/third_party
-      run: |
-        wget -q https://graphlearn.oss-cn-hangzhou.aliyuncs.com/package/gl_third_party_built.tgz
-        tar zxvf gl_third_party_built.tgz
-
     - name: Install Dependencies
       working-directory: ${{github.workspace}}/graphlearn
       run: |
