@@ -38,7 +38,6 @@ debian_packages=(
   libopenblas-dev
   libgflags-dev
   libssl-dev
-  libc-ares-dev
   zlib1g-dev
 )
 
@@ -46,6 +45,7 @@ if [ "${build_hiactor}" = true ] ; then
   debian_packages=(
     "${debian_packages[@]}"
     # hiactor dependencies
+    libc-ares-dev
     ragel
     libhwloc-dev
     libnuma-dev

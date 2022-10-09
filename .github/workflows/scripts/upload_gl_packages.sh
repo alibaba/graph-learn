@@ -14,7 +14,7 @@ else
   pyabis=$(echo $PYABI | tr ":" "\n")
   for abi in $pyabis; do
     docker run --rm -e "PYABI=$abi" -e "GIT_TAG=$GIT_TAG" -v `pwd`:/io \
-      $DOCKER_IMAGE $PRE_CMD bash -c "chmod +x /io/.github/workflows/scripts/build_gl.sh; git config --global --add safe.directory /io; /io/.github/workflows/scripts/build_gl.sh"
+      $DOCKER_IMAGE $PRE_CMD bash -c "chmod +x /io/.github/workflows/scripts/build_gl.sh; git config --global --add safe.directory '*'; /io/.github/workflows/scripts/build_gl.sh"
     sudo chown -R $(id -u):$(id -g) ./graphlearn/*
     mv graphlearn/dist/*.whl /tmp
   done
