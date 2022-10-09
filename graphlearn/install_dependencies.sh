@@ -35,6 +35,7 @@ else
 fi
 
 debian_packages=(
+  wget
   libopenblas-dev
   libgflags-dev
   libssl-dev
