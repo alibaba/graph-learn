@@ -35,9 +35,12 @@ class GCN(torch.nn.Module):
     self.depth = depth
     self.drop_rate = drop_rate
     self.layers = torch.nn.ModuleList()
+    self.input_dim = input_dim
+    self.hidden_dim = hidden_dim
+    self.output_dim = output_dim
     for i in range(depth):
-      input_dim = input_dim if i == 0 else hidden_dim
-      output_dim = output_dim if i == depth - 1 else hidden_dim
+      input_dim = self.input_dim if i == 0 else self.hidden_dim
+      output_dim = self.output_dim if i == self.depth - 1 else self.hidden_dim
       self.layers.append(GCNConv(input_dim, output_dim))
 
   def forward(self, data):
