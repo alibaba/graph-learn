@@ -23,10 +23,16 @@ import os
 import sys
 import time
 
+import numpy as np
+try:
+  # https://www.tensorflow.org/guide/migrate
+  import tensorflow.compat.v1 as tf
+  tf.disable_v2_behavior()
+except ImportError:
+  import tensorflow as tf
+
 import graphlearn as gl
 import graphlearn.python.nn.tf as tfg
-import numpy as np
-import tensorflow as tf
 
 sys.path.append("../..")
 from trainer import DistTrainer as BaseDistTrainer

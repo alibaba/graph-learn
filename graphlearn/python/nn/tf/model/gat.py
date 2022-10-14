@@ -14,7 +14,12 @@
 # =============================================================================
 '''SubGraph based GAT.'''
 
-import tensorflow as tf
+try:
+  # https://www.tensorflow.org/guide/migrate
+  import tensorflow.compat.v1 as tf
+  tf.disable_v2_behavior()
+except ImportError:
+  import tensorflow as tf
 
 from graphlearn.python.nn.tf.config import conf
 from graphlearn.python.nn.tf.module import Module

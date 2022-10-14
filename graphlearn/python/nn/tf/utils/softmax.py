@@ -14,7 +14,12 @@
 # =============================================================================
 """unsorted_segment_softmax op"""
 
-import tensorflow as tf
+try:
+  # https://www.tensorflow.org/guide/migrate
+  import tensorflow.compat.v1 as tf
+  tf.disable_v2_behavior()
+except ImportError:
+  import tensorflow as tf
 
 def unsorted_segment_softmax(data, segment_ids, num_segments):
   """Computes segment_softmax.

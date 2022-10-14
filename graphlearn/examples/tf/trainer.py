@@ -23,10 +23,16 @@ import datetime
 import os
 import time
 
+import numpy as np
 import graphlearn as gl
 import graphlearn.python.nn.tf as tfg
-import numpy as np
-import tensorflow as tf
+
+try:
+  # https://www.tensorflow.org/guide/migrate
+  import tensorflow.compat.v1 as tf
+  tf.disable_v2_behavior()
+except ImportError:
+  import tensorflow as tf
 
 from tensorflow.python.client import timeline
 run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
