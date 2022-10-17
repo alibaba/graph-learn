@@ -17,9 +17,14 @@ from __future__ import print_function
 import datetime
 
 import numpy as np
-import graphlearn as gl
-import tensorflow as tf
+try:
+  # https://www.tensorflow.org/guide/migrate
+  import tensorflow.compat.v1 as tf
+  tf.disable_v2_behavior()
+except ImportError:
+  import tensorflow as tf
 
+import graphlearn as gl
 import graphlearn.python.nn.tf as tfg
 
 from edge_cn_inducer import EdgeCNInducer

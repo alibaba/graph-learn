@@ -18,8 +18,15 @@ from __future__ import print_function
 
 import unittest
 import random
+
 import numpy as np
-import tensorflow as tf
+try:
+  # https://www.tensorflow.org/guide/migrate
+  import tensorflow.compat.v1 as tf
+  tf.disable_v2_behavior()
+except ImportError:
+  import tensorflow as tf
+
 from graphlearn.python.data.feature_spec import *
 from graphlearn.python.nn.data import Data
 from graphlearn.python.nn.tf.data.feature_column import *
