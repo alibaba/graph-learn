@@ -13,4 +13,5 @@
 # limitations under the License.
 # =============================================================================
 
-from .edge_cn_inducer import EdgeCNInducer
+from .ego_gcn import EgoGCN
+from .ego_gcn_data import EgoGCNData

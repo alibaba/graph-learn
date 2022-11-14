@@ -34,8 +34,8 @@ import graphlearn as gl
 import graphlearn.python.nn.tf as tfg
 from graphlearn.examples.tf.trainer import LocalTrainer
 
-from ego_rgcn import EgoRGCN
-from ego_rgcn_data import EgoRGCNData
+from ego_gcn import EgoGCN
+from ego_gcn_data import EgoGCNData
 
 flags = tf.app.flags
 FLAGS = flags.FLAGS
@@ -47,17 +47,13 @@ flags.DEFINE_float('learning_rate', 0.05, 'learning rate')
 flags.DEFINE_float('drop_out', 0.5, 'drop out rate')
 flags.DEFINE_integer('hidden_dim', 128, 'hidden layer dim')
 flags.DEFINE_integer('class_num', 7, 'final output embedding dim')
-flags.DEFINE_string('nbrs_num', '[20]', 'string of list, neighbor num of each hop')
+flags.DEFINE_string('nbrs_num', '[10, 20]', 'string of list, neighbor num of each hop')
 flags.DEFINE_string('agg_type', 'mean', 'aggregation type, mean, max or sum')
 flags.DEFINE_string('sampler', 'random', 'neighbor sampler strategy. random, in_degree, topk.')
-flags.DEFINE_integer('num_relations', 2, 'number of relations')
-flags.DEFINE_integer('num_bases', 1, 'number of bases to use for RGCNConv')
-flags.DEFINE_integer('num_blocks', None, 'number of blocks to use for RGCNConv')
 flags.DEFINE_string('attr_types', None, 'node attribute types')
 flags.DEFINE_string('attr_dims', None, 'node attribute dimensions')
 flags.DEFINE_integer('float_attr_num', 1433, 
   'number of float attrs. If there is only float attrs, we use this flag to instead of two above flags.')
-
 
 if FLAGS.attr_types is not None and FLAGS.attr_dims is not None:
   attr_types = json.loads(FLAGS.attr_types)
@@ -76,19 +72,18 @@ def load_graph():
   cur_path = sys.path[0]
   dataset_folder = os.path.join(cur_path, '../../data/cora/')
   g = gl.Graph()\
-        .node(dataset_folder + "node_table", node_type="i",
+        .node(dataset_folder + "node_table", node_type="item",
               decoder=gl.Decoder(labeled=True,
                                  attr_types=attr_types,
                                  attr_delimiter=":"))                      \
         .edge(dataset_folder + "edge_table",
-              edge_type=("i", "i", "r_0"),
+              edge_type=("item", "item", "relation"),
               decoder=gl.Decoder(weighted=True), directed=False)           \
-        .edge(dataset_folder + "edge_table_with_self_loop",
-              edge_type=("i", "i", "r_1"),
-              decoder=gl.Decoder(weighted=True), directed=False)           \
-        .node(dataset_folder + "train_table", node_type="i",
+        .node(dataset_folder + "train_table", node_type="item",
               decoder=gl.Decoder(weighted=True), mask=gl.Mask.TRAIN)       \
-        .node(dataset_folder + "test_table", node_type="i",
+        .node(dataset_folder + "val_table", node_type="item",
+              decoder=gl.Decoder(weighted=True), mask=gl.Mask.VAL)       \
+        .node(dataset_folder + "test_table", node_type="item",
               decoder=gl.Decoder(weighted=True), mask=gl.Mask.TEST)
   return g
 
@@ -106,19 +101,15 @@ def main(unused_argv):
   g = load_graph()
   g.init()
   # Define Model
-  # Define Model
   input_dim = sum([1 if not i else i for i in attr_dims])
-  model = EgoRGCN(input_dim,
-                  FLAGS.hidden_dim,
-                  FLAGS.class_num,
-                  len(nbrs_num),
-                  FLAGS.num_relations,
-                  FLAGS.num_bases,
-                  FLAGS.num_blocks,
-                  agg_type=FLAGS.agg_type,
-                  dropout=FLAGS.drop_out)
-  data = EgoRGCNData(g, model, FLAGS.nbrs_num, FLAGS.sampler,
-                     FLAGS.train_batch_size, FLAGS.test_batch_size, FLAGS.train_batch_size)
+  model = EgoGCN(input_dim,
+                 FLAGS.hidden_dim,
+                 FLAGS.class_num,
+                 len(nbrs_num),
+                 agg_type=FLAGS.agg_type,
+                 dropout=FLAGS.drop_out)
+  data = EgoGCNData(g, model, FLAGS.nbrs_num, FLAGS.sampler,
+                    FLAGS.train_batch_size, FLAGS.test_batch_size, FLAGS.train_batch_size)
 
   # train and test
   trainer = LocalTrainer()

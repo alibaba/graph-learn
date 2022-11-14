@@ -19,6 +19,7 @@ from __future__ import division
 from __future__ import print_function
 
 import atexit
+import contextlib
 import datetime
 import os
 import time
@@ -38,88 +39,81 @@ from tensorflow.python.client import timeline
 run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
 run_metadata = tf.RunMetadata()
 
-class DistTrainer(object):
-  """Class for distributed training and evaluation
+class TFTrainer(object):
+  """Class for local or distributed training and evaluation.
 
   Args:
-    cluster_spec: TensorFlow ClusterSpec.
-    job_name: name of this worker.
     task_index: index of this worker.
-    worker_count: The number of TensorFlow worker.
     ckpt_dir: checkpoint dir.
+    ckpt_freq: checkpoint frequency.
+    ckpt_steps: checkpoint steps.
     profiling: Whether write timeline for profiling, default is False.
   """
   def __init__(self,
-               cluster_spec,
-               job_name,
-               task_index,
-               worker_count,
                ckpt_dir=None,
                ckpt_freq=None,
+               ckpt_steps=None,
                profiling=False):
-    self.cluster_spec = cluster_spec
-    self.job_name = job_name
-    self.task_index = task_index
-    self.worker_count = worker_count
     self.ckpt_dir = ckpt_dir
     self.ckpt_freq = ckpt_freq
+    self.ckpt_steps = ckpt_steps
     self.profiling = profiling
 
-    conf = tf.ConfigProto()
-    conf.gpu_options.allow_growth = True
-    conf.allow_soft_placement = False
-    conf.device_filters.append('/job:ps')
-    conf.device_filters.append('/job:worker/task:%d' % self.task_index)
-    #conf.inter_op_parallelism_threads = 1
-    self.server = tf.train.Server(self.cluster_spec,
-                                  job_name=self.job_name,
-                                  task_index=self.task_index,
-                                  config=conf)
-    self.context = self.context
-    self.sync_barrier = tfg.SyncBarrierHook(self.worker_count, self.task_index == 0)
+    self.conf = tf.ConfigProto()
+    self.conf.gpu_options.allow_growth = True
+    self.conf.allow_soft_placement = False
     self.sess = None
 
-  def context(self):
-    return tf.device(tf.train.replica_device_setter(
-        worker_device='/job:worker/task:%d' % self.task_index,
-        cluster=self.cluster_spec))
+    # use for distributed training
+    self.sync_barrier = None
+    self.global_step = None
+    self.is_local = None
 
-  def init_session(self, hooks=[]):
-    hooks_ = [self.sync_barrier]
-    hooks_.extend(hooks)
-    conf = tf.ConfigProto()
-    conf.gpu_options.allow_growth = True
-    conf.allow_soft_placement = False
-    conf.device_filters.append('/job:ps')
-    conf.device_filters.append('/job:worker/task:%d' % self.task_index)
-    #conf.inter_op_parallelism_threads = 1
+  def context(self):
+    """
+    """
+
+  def init_session(self, hooks=None, **kwargs):
+    if isinstance(hooks, (list, tuple)):
+      hooks_ = [hook for hook in hooks]
+    elif hooks is not None:
+      hooks_ = [hooks]
+
+    checkpoint_args = dict()
     if self.ckpt_dir is not None:
-      self.sess = tf.train.MonitoredTrainingSession(
-          master=self.server.target,
-          checkpoint_dir=self.ckpt_dir,
-          save_checkpoint_secs=self.ckpt_freq,
-          is_chief=(self.task_index == 0),
-          hooks=hooks_,
-          config=conf)
-    else:
-      self.sess = tf.train.MonitoredTrainingSession(
-          master=self.server.target,
-          is_chief=(self.task_index == 0),
-          hooks=hooks_,
-          config=conf)
+      checkpoint_args['checkpoint_dir'] = self.ckpt_dir
+    if self.ckpt_freq is not None:
+      checkpoint_args['save_checkpoint_secs'] = self.ckpt_freq
+    if self.ckpt_steps is not None:
+      checkpoint_args['save_checkpoint_steps'] = self.ckpt_steps
+
+    self.sess = tf.train.MonitoredTrainingSession(
+        hooks=hooks_,
+        config=self.conf,
+        **checkpoint_args,
+        **kwargs)
 
     def _close_session():
       if self.sess is not None:
         self.sess.close()
     atexit.register(_close_session)
 
-  def train(self, iterator, loss, learning_rate, epochs=10, hooks=[], **kwargs):
+  def run_and_profiling(self, train_ops, local_step):
+    """
+    """
+
+  def add_initializer(self, iterator):
+    tf.add_to_collection(tf.GraphKeys.TABLE_INITIALIZERS, iterator.initializer)
+
+  def train(self, iterator, loss, optimizer=None, learning_rate=None,
+            epochs=10, hooks=[], **kwargs):
     with self.context():
       self.global_step = tf.train.get_or_create_global_step()
-      try:
-        optimizer = tf.train.AdamAsyncOptimizer(learning_rate=learning_rate)
-      except AttributeError:
-        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+      if optimizer is None:
+        try:
+          optimizer = tf.train.AdamAsyncOptimizer(learning_rate=learning_rate)
+        except AttributeError:
+          optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
       train_op = optimizer.minimize(loss, global_step=self.global_step)
       # if self._use_input_bn:
       #   update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
@@ -127,52 +121,99 @@ class DistTrainer(object):
       train_ops = [train_op, loss, self.global_step]
       tf.add_to_collection(tf.GraphKeys.TABLE_INITIALIZERS, iterator.initializer)
       self.init_session(hooks=hooks)
+
       print('Start training...')
       local_step = 0
-      t = time.time()
+      last_local_step = 0
       last_global_step = 0
+      t = time.time()
       epoch = 0
       outs = None
       while (not self.sess.should_stop()) and (epoch < epochs):
         try:
-          if self.profiling and self.task_index == 1 and \
-            local_step % 100 == 0 and local_step > 500 and local_step < 1000:
-            outs = self.sess.run(train_ops,
-                                 options=run_options,
-                                 run_metadata=run_metadata)
-            tl = timeline.Timeline(run_metadata.step_stats)
-            content = tl.generate_chrome_trace_format()
-            file_name = 'timeline_' + str(local_step) + '_' + \
-              str(self.task_index) + '.json'
-            save_path = os.path.join(self.ckpt_dir, file_name)
-            writeGFile = tf.gfile.GFile(save_path, mode='w')
-            writeGFile.write(content)
-            writeGFile.flush()
-            writeGFile.close()
-            print("Profiling data save to %s success." % save_path)
+          if self.profiling:
+            outs = self.run_and_profiling(train_ops, local_step)
           else:
             outs = self.sess.run(train_ops)
         except tf.errors.OutOfRangeError:
+          print('End of the epoch %d.' % (epoch,))
           epoch += 1
-          print('End of an epoch.')
-          self.sess._tf_sess().run(iterator.initializer)
+          self.sess._tf_sess().run(iterator.initializer)  # reinitialize dataset.
         if outs is not None:
           train_loss = outs[1]
           global_step = outs[-1]
           # Print results
           if local_step % 10 == 0:
-            print(datetime.datetime.now(),
-                  'Epoch {}, Iter {}, Global_step/sec {:.2f}, Time(s) {:.4f}, '
-                  'Loss {:.5f}, Global_step {}'
-                  .format(epoch, local_step,
-                          (global_step - last_global_step) * 1.0 / (time.time() - t),
-                          (time.time() - t) * 1.0 / 10,
-                          train_loss, global_step))
+            if self.is_local:
+              print(datetime.datetime.now(),
+                    'Epoch {}, Iter {}, LocalStep/sec {:.2f}, Time(s) {:.4f}, '
+                    'Loss {:.5f}'
+                    .format(epoch, local_step,
+                            (local_step - last_local_step) * 1.0 / (time.time() - t),
+                            (time.time() - t) * 1.0 / 10, train_loss))
+            else:
+              print(datetime.datetime.now(),
+                    'Epoch {}, Iter {}, GlobalStep/sec {:.2f}, Time(s) {:.4f}, '
+                    'Loss {:.5f}, Global_step {}'
+                    .format(epoch, local_step,
+                            (global_step - last_global_step) * 1.0 / (time.time() - t),
+                            (time.time() - t) * 1.0 / 10, train_loss, global_step))
             t = time.time()
+            last_local_step = local_step
             last_global_step = global_step
           local_step += 1
 
-      self.sync_barrier.end(self.sess)
+      if self.sync_barrier is not None:
+        self.sync_barrier.end(self.sess)
+
+  def test(self, iterator, test_acc, hooks=[], **kwargs):
+    with self.context():
+      self.global_step = tf.train.get_or_create_global_step()
+      if self.sess is None:
+        self.init_session(hooks=hooks)
+
+      print('Start testing ...')
+      total_test_acc = []
+      local_step = 0
+      last_local_step = 0
+      last_global_step = 0
+      self.sess._tf_sess().run(iterator.initializer)
+      try:
+        while True:
+          t = time.time()
+          outs = self.sess._tf_sess().run([test_acc, self.global_step])
+          if outs is not None:
+            accuracy = outs[0]
+            global_step = outs[-1]
+            # Print results
+            if local_step % 10 == 0:
+              if self.is_local:
+                print(datetime.datetime.now(),
+                      'Iter {}, LocalStep/sec {:.2f}, Time(s) {:.4f}, '
+                      'Accuracy {:.5f}'
+                      .format(local_step,
+                              (local_step - last_local_step) * 1.0 / (time.time() - t),
+                              (time.time() - t) * 1.0 / 10, accuracy))
+              else:
+                print(datetime.datetime.now(),
+                      'Iter {}, GlobalStep/sec {:.2f}, Time(s) {:.4f}, '
+                      'Accuracy {:.5f}, Global_step {}'
+                      .format(local_step,
+                              (global_step - last_global_step) * 1.0 / (time.time() - t),
+                              (time.time() - t) * 1.0 / 10, accuracy, global_step))
+              t = time.time()
+              last_local_step = local_step
+              last_global_step = global_step
+            local_step += 1
+          total_test_acc.append(accuracy)
+      except tf.errors.OutOfRangeError:
+        print("Finished.")
+      print('Test Accuracy is: {:.4f}'.format(np.mean(total_test_acc)))
+
+  def train_and_evaluate(self, train_iterator, test_iterator, loss, test_acc, optimizer=None, learning_rate=None,
+                         epochs=10, hooks=[], **kwargs):
+    self.train(train_iterator, loss, optimizer, learning_rate, epochs, hooks, **kwargs)
+    self.test(test_iterator, test_acc, hooks, **kwargs)
 
   def save_node_embedding(self, emb_writer, iterator, ids, emb, batch_size):
     print('Start saving embeddings...')
@@ -195,10 +236,123 @@ class DistTrainer(object):
         except tf.errors.OutOfRangeError:
           print('Save node embeddings done.')
           break
-      # Prevent chief worker from exiting before other workers start.
-      # if self.task_index == 0:
-      #   time.sleep(60 * 2)
-      # print('Write to ODPS table done!')
+
+class LocalTrainer(TFTrainer):
+  """Class for local training and evaluation
+
+  Args:
+    ckpt_dir: checkpoint dir.
+    profiling: Whether write timeline for profiling, default is False.
+  """
+  def __init__(self,
+               ckpt_dir=None,
+               ckpt_freq=None,
+               ckpt_steps=None,
+               profiling=False):
+    super().__init__(ckpt_dir, ckpt_freq, ckpt_steps, profiling)
+    self.is_local = True 
+
+  if hasattr(contextlib, 'nullcontext'):
+    def context(self):
+      return contextlib.nullcontext()
+  else:
+    @contextlib.contextmanager
+    def context(self, enter_result=None):
+        yield enter_result
+
+  def run_and_profiling(self, train_ops, local_step):
+    if local_step % 100 == 0 and local_step > 500 and local_step < 1000:
+      outs = self.sess.run(train_ops,
+                           options=run_options,
+                           run_metadata=run_metadata)
+      tl = timeline.Timeline(run_metadata.step_stats)
+      content = tl.generate_chrome_trace_format()
+      file_name = 'timeline_' + str(local_step) + '.json'
+      save_path = os.path.join(self.ckpt_dir, file_name)
+      writeGFile = tf.gfile.GFile(save_path, mode='w')
+      writeGFile.write(content)
+      writeGFile.flush()
+      writeGFile.close()
+      print("Profiling data save to %s success." % save_path)
+    else:
+      outs = self.sess.run(train_ops)
+    return outs
+
+class DistTrainer(TFTrainer):
+  """Class for distributed training and evaluation
+
+  Args:
+    cluster_spec: TensorFlow ClusterSpec.
+    job_name: name of this worker.
+    task_index: index of this worker.
+    worker_count: The number of TensorFlow worker.
+    ckpt_dir: checkpoint dir.
+    profiling: Whether write timeline for profiling, default is False.
+  """
+  def __init__(self,
+               cluster_spec,
+               job_name,
+               task_index,
+               worker_count,
+               ckpt_dir=None,
+               ckpt_freq=None,
+               ckpt_steps=None,
+               profiling=False):
+    super().__init__(ckpt_dir, ckpt_freq, ckpt_steps, profiling)
+    self.is_local = False
+    self.cluster_spec = cluster_spec
+    self.job_name = job_name
+    self.task_index = task_index
+    self.worker_count = worker_count
+
+    self.conf.device_filters.append('/job:ps')
+    self.conf.device_filters.append('/job:worker/task:%d' % self.task_index)
+    self.server = tf.train.Server(self.cluster_spec,
+                                  job_name=self.job_name,
+                                  task_index=self.task_index,
+                                  config=self.conf)
+    self.sync_barrier = tfg.SyncBarrierHook(self.worker_count, self.task_index == 0)
+
+  def context(self):
+    return tf.device(tf.train.replica_device_setter(
+        worker_device='/job:worker/task:%d' % self.task_index,
+        cluster=self.cluster_spec))
+
+  def init_session(self, hooks=None):
+    hooks_ = [self.sync_barrier]
+    if isinstance(hooks, (list, tuple)):
+      hooks_.extend(hooks)
+    elif hooks is not None:
+      hooks_.append(hooks)
+
+    self.conf.device_filters.append('/job:ps')
+    self.conf.device_filters.append('/job:worker/task:%d' % self.task_index)
+
+    super().init_session(
+      hooks=[self.sync_barrier] + (hooks or []),
+      master=self.server.target,
+      is_chief=(self.task_index == 0),
+    )
+
+  def run_and_profiling(self, train_ops, local_step):
+    if self.task_index == 1 and \
+        local_step % 100 == 0 and local_step > 500 and local_step < 1000:
+      outs = self.sess.run(train_ops,
+                            options=run_options,
+                            run_metadata=run_metadata)
+      tl = timeline.Timeline(run_metadata.step_stats)
+      content = tl.generate_chrome_trace_format()
+      file_name = 'timeline_' + str(local_step) + '_' + \
+        str(self.task_index) + '.json'
+      save_path = os.path.join(self.ckpt_dir, file_name)
+      writeGFile = tf.gfile.GFile(save_path, mode='w')
+      writeGFile.write(content)
+      writeGFile.flush()
+      writeGFile.close()
+      print("Profiling data save to %s success." % save_path)
+    else:
+      outs = self.sess.run(train_ops)
+    return outs
 
   def join(self):
     self.server.join()
