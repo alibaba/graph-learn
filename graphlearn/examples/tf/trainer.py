@@ -131,10 +131,7 @@ class TFTrainer(object):
       outs = None
       while (not self.sess.should_stop()) and (epoch < epochs):
         try:
-          if self.profiling:
-            outs = self.run_and_profiling(train_ops, local_step)
-          else:
-            outs = self.sess.run(train_ops)
+          outs = self.run_and_profiling(train_ops, local_step)
         except tf.errors.OutOfRangeError:
           print('End of the epoch %d.' % (epoch,))
           epoch += 1
@@ -261,7 +258,7 @@ class LocalTrainer(TFTrainer):
         yield enter_result
 
   def run_and_profiling(self, train_ops, local_step):
-    if local_step % 100 == 0 and local_step > 500 and local_step < 1000:
+    if self.profiling and local_step % 100 == 0 and local_step > 500 and local_step < 1000:
       outs = self.sess.run(train_ops,
                            options=run_options,
                            run_metadata=run_metadata)
@@ -335,7 +332,7 @@ class DistTrainer(TFTrainer):
     )
 
   def run_and_profiling(self, train_ops, local_step):
-    if self.task_index == 1 and \
+    if self.profiling and self.task_index == 1 and \
         local_step % 100 == 0 and local_step > 500 and local_step < 1000:
       outs = self.sess.run(train_ops,
                             options=run_options,

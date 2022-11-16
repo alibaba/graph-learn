@@ -35,7 +35,7 @@ import graphlearn.python.nn.tf as tfg
 from graphlearn.examples.tf.trainer import LocalTrainer
 
 from ego_rgcn import EgoRGCN
-from ego_rgcn_data import EgoRGCNData
+from ego_rgcn_data import EgoRGCNDataLoader
 
 flags = tf.app.flags
 FLAGS = flags.FLAGS
@@ -117,17 +117,23 @@ def main(unused_argv):
                   FLAGS.num_blocks,
                   agg_type=FLAGS.agg_type,
                   dropout=FLAGS.drop_out)
-  data = EgoRGCNData(g, model, FLAGS.nbrs_num, FLAGS.sampler,
-                     FLAGS.train_batch_size, FLAGS.test_batch_size, FLAGS.train_batch_size)
+  # prepare train dataset
+  train_data = EgoRGCNDataLoader(g, gl.Mask.TRAIN, FLAGS.sampler, FLAGS.train_batch_size,
+                                 node_type='i', nbrs_num=nbrs_num, num_relations=FLAGS.num_relations)
+  train_embedding = model.forward(train_data.as_list(), nbrs_num)
+  loss = supervised_loss(train_embedding, train_data['seed'].labels)
+  optimizer = tf.train.AdamOptimizer(learning_rate=FLAGS.learning_rate)
+
+  # prepare test dataset
+  test_data = EgoRGCNDataLoader(g, gl.Mask.TEST, FLAGS.sampler, FLAGS.test_batch_size,
+                                 node_type='i', nbrs_num=nbrs_num, num_relations=FLAGS.num_relations)
+  test_embedding = model.forward(test_data.as_list(), nbrs_num)
+  test_acc = accuracy(test_embedding, test_data['seed'].labels)
 
   # train and test
   trainer = LocalTrainer()
-  loss = supervised_loss(data.train_embedding, data.train_dict['train'].labels)
-  optimizer = tf.train.AdamOptimizer(learning_rate=FLAGS.learning_rate)
-  test_acc = accuracy(data.test_embedding, data.test_dict['test'].labels)
-    
-  trainer.train(data.train_iterator, loss, optimizer, epochs=FLAGS.epochs)
-  trainer.test(data.test_iterator, test_acc)
+  trainer.train(train_data.iterator, loss, optimizer, epochs=FLAGS.epochs)
+  trainer.test(test_data.iterator, test_acc)
 
   # finish
   g.close()

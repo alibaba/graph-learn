@@ -32,68 +32,54 @@ except ImportError:
 
 import graphlearn as gl
 import graphlearn.python.nn.tf as tfg
-from graphlearn.python.utils import parse_nbrs_num
 
-class EgoData:
-  def __init__(self, graph, model, nbrs_num=None, sampler='random',
-               train_batch_size=128, test_batch_size=128, val_batch_size=128):
-    self.graph = graph
-    self.model = model
-    self.nbrs_num = parse_nbrs_num(nbrs_num)
-    self.train_batch_size = train_batch_size
-    self.test_batch_size = test_batch_size
-    self.val_batch_size = val_batch_size
-    self.sampler = sampler
+class EgoDataLoader:
+  def __init__(self, graph, mask=gl.Mask.TRAIN, sampler='random',
+               batch_size=128, window=10):
+    self._graph = graph
+    if isinstance(mask, gl.Mask):
+      self._mask = mask
+    else:
+      self._mask = gl.Mask[mask.to_upper()]
+    self._sampler = sampler
+    self._batch_size = batch_size
 
     # train
-    tfg.conf.training = True
-    self.query_train = self.query(self.graph, gl.Mask.TRAIN)
-    self.dataset_train = tfg.Dataset(self.query_train, window=10)
-    self.train_iterator = self.dataset_train.iterator
-    self.train_dict = self.dataset_train.get_data_dict()
-    self.train_embedding = self.model.forward(
-      self.reformat_node_feature(
-        self.train_dict,
-        self.query_train.list_alias(),
-        tfg.FeatureHandler('feature_handler', self.query_train.get_node("train").decoder.feature_spec),
-      ),
-      self.nbrs_num
+    if self._mask == gl.Mask.TRAIN:
+      tfg.conf.training = True
+    else:
+      tfg.conf.training = False
+  
+    self._q = self._query(self._graph)
+    self._dataset = tfg.Dataset(self._q, window=window)
+    self._iterator = self._dataset.iterator
+    self._data_dict = self._dataset.get_data_dict()
+
+  @property
+  def iterator(self):
+    return self._iterator
+
+  @property
+  def data_dict(self):
+    return self._data_dict
+
+  def data(self, key):
+    return self._data_dict[key]
+
+  def __getitem__(self, key):
+    return self.data(key)
+
+  def as_list(self):
+    return self._format(
+      self._data_dict,
+      self._q.list_alias(),
+      tfg.FeatureHandler('feature_handler', self._q.get_node("seed").decoder.feature_spec),
     )
 
-    # test
-    tfg.conf.training = False
-    self.query_test = self.query(self.graph, gl.Mask.TEST)
-    self.dataset_test = tfg.Dataset(self.query_test, window=10)
-    self.test_iterator = self.dataset_test.iterator
-    self.test_dict = self.dataset_test.get_data_dict()
-    self.test_embedding = self.model.forward(
-      self.reformat_node_feature(
-        self.test_dict,
-        self.query_test.list_alias(),
-        tfg.FeatureHandler('feature_handler', self.query_test.get_node("test").decoder.feature_spec),
-      ),
-      self.nbrs_num
-    )
-
-    # val
-    tfg.conf.training = False
-    self.query_val = self.query(self.graph, gl.Mask.VAL)
-    self.dataset_val = tfg.Dataset(self.query_val, window=10)
-    self.val_iterator = self.dataset_val.iterator
-    self.val_dict = self.dataset_val.get_data_dict()
-    self.val_embedding = self.model.forward(
-      self.reformat_node_feature(
-        self.val_dict,
-        self.query_val.list_alias(),
-        tfg.FeatureHandler('feature_handler', self.query_val.get_node("val").decoder.feature_spec),
-      ),
-      self.nbrs_num
-    )
-
-  def query(self, graph, mask=gl.Mask.TRAIN):
+  def _query(self, graph, mask=gl.Mask.TRAIN):
     """
     """
 
-  def reformat_node_feature(self, data_dict, alias_list, feature_handler):
+  def _format(self, data_dict, alias_list, feature_handler):
     """
     """

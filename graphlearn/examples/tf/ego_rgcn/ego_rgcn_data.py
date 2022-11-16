@@ -34,15 +34,16 @@ import graphlearn as gl
 import graphlearn.python.nn.tf as tfg
 import graphlearn.examples.tf.ego_data as ego_data
 
-class EgoRGCNData(ego_data.EgoData):
-  def __init__(self, graph, model, nbrs_num=None, sampler='random',
-               train_batch_size=128, test_batch_size=128, val_batch_size=128,
-               num_relations=2):
-    self.num_relations = num_relations
-    super().__init__(graph, model, nbrs_num, sampler,
-                     train_batch_size, test_batch_size, val_batch_size)
+class EgoRGCNDataLoader(ego_data.EgoDataLoader):
+  def __init__(self, graph, mask=gl.Mask.TRAIN, sampler='random',
+               batch_size=128, window=10,
+               node_type='i', nbrs_num=None, num_relations=2):
+    self._node_type = node_type
+    self._nbrs_num = nbrs_num
+    self._num_relations = num_relations
+    super().__init__(graph, mask, sampler, batch_size, window)
 
-  def query(self, graph, mask=gl.Mask.TRAIN):
+  def _query(self, graph):
     """ k-hop neighbor sampling using different relations.
       For train, the query node name are as follows:
       root: ['train']
@@ -51,25 +52,18 @@ class EgoRGCNData(ego_data.EgoData):
                         'train_hop_0_r_1_hop_1_r_0', 'train_hop_0_r_1_hop_1_r_0']
       ...
     """
-    prefix = ('train', 'test', 'val')[mask.value - 1]
-    if prefix == "train":
-      bs = self.train_batch_size
-    elif prefix == "val":
-      bs = self.val_batch_size
-    elif prefix == "test":
-      bs = self.test_batch_size
-    q = graph.V("i", mask=mask).batch(bs).alias(prefix)
+    q = graph.V(self._node_type, mask=self._mask).batch(self._batch_size).alias('seed')
     current_hop_list = [q]
-    for idx, hop in enumerate(self.nbrs_num):
+    for idx, hop in enumerate(self._nbrs_num):
       next_hop_list = []
       for hop_q in current_hop_list:
-        for i in range(self.num_relations):
+        for i in range(self._num_relations):
           alias = hop_q.get_alias() + '_hop_' + str(idx) + '_r_' + str(i)
-          next_hop_list.append(hop_q.outV('r_'+str(i)).sample(hop).by(self.sampler).alias(alias))
+          next_hop_list.append(hop_q.outV('r_'+str(i)).sample(hop).by(self._sampler).alias(alias))
       current_hop_list = next_hop_list
     return q.values()
 
-  def reformat_node_feature(self, data_dict, alias_list, feature_handler):
+  def _format(self, data_dict, alias_list, feature_handler):
     """ Transforms and organizes the input data to a list of list,
     each element of list is also a list which consits of k-hop multi-relations
     neighbor nodes' feature tensor.
@@ -79,12 +73,12 @@ class EgoRGCNData(ego_data.EgoData):
     cursor += 1
     x_list = [[x]]
     
-    nbr_list_len = self.num_relations
-    for idx in range(len(self.nbrs_num)):
+    nbr_list_len = self._num_relations
+    for idx in range(len(self._nbrs_num)):
       nbr_list = []
       for i in range(nbr_list_len):
         nbr_list.append(feature_handler.forward(data_dict[alias_list[cursor]]))
         cursor += 1
       x_list.append(nbr_list)
-      nbr_list_len *= self.num_relations
+      nbr_list_len *= self._num_relations
     return x_list
