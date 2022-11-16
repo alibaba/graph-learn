@@ -52,7 +52,8 @@ class EgoRGCNDataLoader(ego_data.EgoDataLoader):
                         'train_hop_0_r_1_hop_1_r_0', 'train_hop_0_r_1_hop_1_r_0']
       ...
     """
-    q = graph.V(self._node_type, mask=self._mask).batch(self._batch_size).alias('seed')
+    prefix = ('train', 'test', 'val')[self._mask.value - 1]
+    q = graph.V(self._node_type, mask=self._mask).batch(self._batch_size).alias(prefix)
     current_hop_list = [q]
     for idx, hop in enumerate(self._nbrs_num):
       next_hop_list = []

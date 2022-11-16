@@ -69,11 +69,51 @@ class EgoDataLoader:
   def __getitem__(self, key):
     return self.data(key)
 
+  def get_egograph(self, key):
+    return self._dataset.get_egograph(key)
+
+  @property
+  def train_ego(self):
+    ''' Alias for `self.get_egograph('train')`.
+    '''
+    return self.get_egograph('train')
+
+  @property
+  def test_ego(self):
+    ''' Alias for `self.get_egograph('test')`.
+    '''
+    return self.get_egograph('test')
+
+  @property
+  def src_ego(self):
+    ''' Alias for `self.get_egograph('src')`.
+    '''
+    return self.get_egograph('src')
+
+  @property
+  def dst_ego(self):
+    ''' Alias for `self.get_egograph('dst')`.
+    '''
+    return self.get_egograph('dst')
+
+  @property
+  def train_labels(self):
+    return self._data_dict['train'].labels
+
+  @property
+  def test_labels(self):
+    return self._data_dict['test'].labels
+
+  @property
+  def val_labels(self):
+    return self._data_dict['val'].labels
+
   def as_list(self):
+    prefix = ('train', 'test', 'val')[self._mask.value - 1]
     return self._format(
       self._data_dict,
       self._q.list_alias(),
-      tfg.FeatureHandler('feature_handler', self._q.get_node("seed").decoder.feature_spec),
+      tfg.FeatureHandler('feature_handler', self._q.get_node(prefix).decoder.feature_spec),
     )
 
   def _query(self, graph, mask=gl.Mask.TRAIN):

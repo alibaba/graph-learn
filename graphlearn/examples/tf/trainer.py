@@ -53,11 +53,13 @@ class TFTrainer(object):
                ckpt_dir=None,
                ckpt_freq=None,
                ckpt_steps=None,
-               profiling=False):
+               profiling=False,
+               logging_steps=10):
     self.ckpt_dir = ckpt_dir
     self.ckpt_freq = ckpt_freq
     self.ckpt_steps = ckpt_steps
     self.profiling = profiling
+    self.logging_steps = logging_steps
 
     self.conf = tf.ConfigProto()
     self.conf.gpu_options.allow_growth = True
@@ -98,7 +100,7 @@ class TFTrainer(object):
         self.sess.close()
     atexit.register(_close_session)
 
-  def run_and_profiling(self, train_ops, local_step):
+  def run_step(self, train_ops, local_step):
     """
     """
 
@@ -131,7 +133,7 @@ class TFTrainer(object):
       outs = None
       while (not self.sess.should_stop()) and (epoch < epochs):
         try:
-          outs = self.run_and_profiling(train_ops, local_step)
+          outs = self.run_step(train_ops, local_step)
         except tf.errors.OutOfRangeError:
           print('End of the epoch %d.' % (epoch,))
           epoch += 1
@@ -140,7 +142,7 @@ class TFTrainer(object):
           train_loss = outs[1]
           global_step = outs[-1]
           # Print results
-          if local_step % 10 == 0:
+          if local_step % self.logging_steps == 0:
             if self.is_local:
               print(datetime.datetime.now(),
                     'Epoch {}, Iter {}, LocalStep/sec {:.2f}, Time(s) {:.4f}, '
@@ -183,7 +185,7 @@ class TFTrainer(object):
             accuracy = outs[0]
             global_step = outs[-1]
             # Print results
-            if local_step % 10 == 0:
+            if local_step % self.logging_steps == 0:
               if self.is_local:
                 print(datetime.datetime.now(),
                       'Iter {}, LocalStep/sec {:.2f}, Time(s) {:.4f}, '
@@ -227,7 +229,7 @@ class TFTrainer(object):
           # [B,], [B,dim]
           feat = [','.join(str(x) for x in arr) for arr in outs[1]]
           emb_writer.write(list(zip(outs[0], feat)), indices=[0, 1])  # id,emb
-          if local_step % 10 == 0:
+          if local_step % self.logging_steps == 0:
             print('Saved {} node embeddings, Time(s) {:.4f}'.format(local_step * batch_size, time.time() - t))
           local_step += 1
         except tf.errors.OutOfRangeError:
@@ -257,7 +259,7 @@ class LocalTrainer(TFTrainer):
     def context(self, enter_result=None):
         yield enter_result
 
-  def run_and_profiling(self, train_ops, local_step):
+  def run_step(self, train_ops, local_step):
     if self.profiling and local_step % 100 == 0 and local_step > 500 and local_step < 1000:
       outs = self.sess.run(train_ops,
                            options=run_options,
@@ -331,7 +333,7 @@ class DistTrainer(TFTrainer):
       is_chief=(self.task_index == 0),
     )
 
-  def run_and_profiling(self, train_ops, local_step):
+  def run_step(self, train_ops, local_step):
     if self.profiling and self.task_index == 1 and \
         local_step % 100 == 0 and local_step > 500 and local_step < 1000:
       outs = self.sess.run(train_ops,
