@@ -97,16 +97,9 @@ class EgoDataLoader:
     return self.get_egograph('dst')
 
   @property
-  def train_labels(self):
-    return self._data_dict['train'].labels
-
-  @property
-  def test_labels(self):
-    return self._data_dict['test'].labels
-
-  @property
-  def val_labels(self):
-    return self._data_dict['val'].labels
+  def labels(self):
+    prefix = ('train', 'test', 'val')[self._mask.value - 1]
+    return self._data_dict[prefix].labels
 
   def as_list(self):
     prefix = ('train', 'test', 'val')[self._mask.value - 1]
