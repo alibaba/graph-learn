@@ -34,10 +34,10 @@ import graphlearn as gl
 import graphlearn.python.nn.tf as tfg
 
 class EgoDataLoader:
-  def __init__(self, graph, mask=gl.Mask.TRAIN, sampler='random',
+  def __init__(self, graph, mask=None, sampler='random',
                batch_size=128, window=10):
     self._graph = graph
-    if isinstance(mask, gl.Mask):
+    if mask is None or isinstance(mask, gl.Mask):
       self._mask = mask
     else:
       self._mask = gl.Mask[mask.to_upper()]
@@ -73,22 +73,14 @@ class EgoDataLoader:
     return self._dataset.get_egograph(key)
 
   @property
-  def train_ego(self):
-    ''' Alias for `self.get_egograph('train')`.
-    '''
-    return self.get_egograph('train')
-
-  @property
-  def test_ego(self):
-    ''' Alias for `self.get_egograph('test')`.
-    '''
-    return self.get_egograph('test')
-
-  @property
   def src_ego(self):
     ''' Alias for `self.get_egograph('src')`.
     '''
-    return self.get_egograph('src')
+    if self._mask is None:
+      return self.get_egograph('src')
+    else:
+      prefix = ('train', 'test', 'val')[self._mask.value - 1]
+      return self.get_egograph(prefix)
 
   @property
   def dst_ego(self):
@@ -97,11 +89,17 @@ class EgoDataLoader:
     return self.get_egograph('dst')
 
   @property
+  def neg_dst_ego(self):
+    ''' Alias for `self.get_egograph('neg_dst')`.
+    '''
+    return self.get_egograph('neg_dst')
+
+  @property
   def labels(self):
     prefix = ('train', 'test', 'val')[self._mask.value - 1]
     return self._data_dict[prefix].labels
 
-  def as_list(self):
+  def x_list(self):
     prefix = ('train', 'test', 'val')[self._mask.value - 1]
     return self._format(
       self._data_dict,
@@ -110,9 +108,7 @@ class EgoDataLoader:
     )
 
   def _query(self, graph, mask=gl.Mask.TRAIN):
-    """
-    """
+    raise NotImplementedError
 
   def _format(self, data_dict, alias_list, feature_handler):
-    """
-    """
+    raise NotImplementedError

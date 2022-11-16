@@ -35,7 +35,7 @@ import graphlearn.python.nn.tf as tfg
 from graphlearn.examples.tf.trainer import LocalTrainer
 
 from ego_rgcn import EgoRGCN
-from ego_rgcn_data import EgoRGCNDataLoader
+from ego_rgcn_data_loader import EgoRGCNDataLoader
 
 flags = tf.app.flags
 FLAGS = flags.FLAGS
@@ -119,14 +119,14 @@ def main(unused_argv):
   # prepare train dataset
   train_data = EgoRGCNDataLoader(g, gl.Mask.TRAIN, FLAGS.sampler, FLAGS.train_batch_size,
                                  node_type='i', nbrs_num=nbrs_num, num_relations=FLAGS.num_relations)
-  train_embedding = model.forward(train_data.as_list(), nbrs_num)
+  train_embedding = model.forward(train_data.x_list(), nbrs_num)
   loss = supervised_loss(train_embedding, train_data.labels)
   optimizer = tf.train.AdamOptimizer(learning_rate=FLAGS.learning_rate)
 
   # prepare test dataset
   test_data = EgoRGCNDataLoader(g, gl.Mask.TEST, FLAGS.sampler, FLAGS.test_batch_size,
                                  node_type='i', nbrs_num=nbrs_num, num_relations=FLAGS.num_relations)
-  test_embedding = model.forward(test_data.as_list(), nbrs_num)
+  test_embedding = model.forward(test_data.x_list(), nbrs_num)
   test_acc = accuracy(test_embedding, test_data.labels)
 
   # train and test

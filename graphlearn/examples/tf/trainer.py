@@ -43,23 +43,23 @@ class TFTrainer(object):
   """Class for local or distributed training and evaluation.
 
   Args:
-    task_index: index of this worker.
     ckpt_dir: checkpoint dir.
     ckpt_freq: checkpoint frequency.
     ckpt_steps: checkpoint steps.
-    profiling: Whether write timeline for profiling, default is False.
+    profiling: whether write timeline for profiling, default is False.
+    progress_steps: print a progress logs for given steps.
   """
   def __init__(self,
                ckpt_dir=None,
                ckpt_freq=None,
                ckpt_steps=None,
                profiling=False,
-               logging_steps=10):
+               progress_steps=10):
     self.ckpt_dir = ckpt_dir
     self.ckpt_freq = ckpt_freq
     self.ckpt_steps = ckpt_steps
     self.profiling = profiling
-    self.logging_steps = logging_steps
+    self.progress_steps = progress_steps
 
     self.conf = tf.ConfigProto()
     self.conf.gpu_options.allow_growth = True
@@ -72,8 +72,7 @@ class TFTrainer(object):
     self.is_local = None
 
   def context(self):
-    """
-    """
+    raise NotImplementedError('Use LocalTrainer or DistTrainer instead.')
 
   def init_session(self, hooks=None, **kwargs):
     if isinstance(hooks, (list, tuple)):
@@ -101,11 +100,7 @@ class TFTrainer(object):
     atexit.register(_close_session)
 
   def run_step(self, train_ops, local_step):
-    """
-    """
-
-  def add_initializer(self, iterator):
-    tf.add_to_collection(tf.GraphKeys.TABLE_INITIALIZERS, iterator.initializer)
+    raise NotImplementedError('Use LocalTrainer or DistTrainer instead.')
 
   def train(self, iterator, loss, optimizer=None, learning_rate=None,
             epochs=10, hooks=[], **kwargs):
@@ -142,7 +137,7 @@ class TFTrainer(object):
           train_loss = outs[1]
           global_step = outs[-1]
           # Print results
-          if local_step % self.logging_steps == 0:
+          if local_step % self.progress_steps == 0:
             if self.is_local:
               print(datetime.datetime.now(),
                     'Epoch {}, Iter {}, LocalStep/sec {:.2f}, Time(s) {:.4f}, '
@@ -185,7 +180,7 @@ class TFTrainer(object):
             accuracy = outs[0]
             global_step = outs[-1]
             # Print results
-            if local_step % self.logging_steps == 0:
+            if local_step % self.progress_steps == 0:
               if self.is_local:
                 print(datetime.datetime.now(),
                       'Iter {}, LocalStep/sec {:.2f}, Time(s) {:.4f}, '
@@ -229,7 +224,7 @@ class TFTrainer(object):
           # [B,], [B,dim]
           feat = [','.join(str(x) for x in arr) for arr in outs[1]]
           emb_writer.write(list(zip(outs[0], feat)), indices=[0, 1])  # id,emb
-          if local_step % self.logging_steps == 0:
+          if local_step % self.progress_steps == 0:
             print('Saved {} node embeddings, Time(s) {:.4f}'.format(local_step * batch_size, time.time() - t))
           local_step += 1
         except tf.errors.OutOfRangeError:
@@ -241,14 +236,18 @@ class LocalTrainer(TFTrainer):
 
   Args:
     ckpt_dir: checkpoint dir.
-    profiling: Whether write timeline for profiling, default is False.
+    ckpt_freq: checkpoint frequency.
+    ckpt_steps: checkpoint steps.
+    profiling: whether write timeline for profiling, default is False.
+    progress_steps: print a progress logs for given steps.
   """
   def __init__(self,
                ckpt_dir=None,
                ckpt_freq=None,
                ckpt_steps=None,
-               profiling=False):
-    super().__init__(ckpt_dir, ckpt_freq, ckpt_steps, profiling)
+               profiling=False,
+               progress_steps=10):
+    super().__init__(ckpt_dir, ckpt_freq, ckpt_steps, profiling, progress_steps)
     self.is_local = True 
 
   if hasattr(contextlib, 'nullcontext'):
@@ -286,7 +285,10 @@ class DistTrainer(TFTrainer):
     task_index: index of this worker.
     worker_count: The number of TensorFlow worker.
     ckpt_dir: checkpoint dir.
-    profiling: Whether write timeline for profiling, default is False.
+    ckpt_freq: checkpoint frequency.
+    ckpt_steps: checkpoint steps.
+    profiling: whether write timeline for profiling, default is False.
+    progress_steps: print a progress logs for given steps.
   """
   def __init__(self,
                cluster_spec,
@@ -296,8 +298,9 @@ class DistTrainer(TFTrainer):
                ckpt_dir=None,
                ckpt_freq=None,
                ckpt_steps=None,
-               profiling=False):
-    super().__init__(ckpt_dir, ckpt_freq, ckpt_steps, profiling)
+               profiling=False,
+               progress_steps=10):
+    super().__init__(ckpt_dir, ckpt_freq, ckpt_steps, profiling, progress_steps)
     self.is_local = False
     self.cluster_spec = cluster_spec
     self.job_name = job_name

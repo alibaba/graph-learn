@@ -32,7 +32,7 @@ except ImportError:
 
 import graphlearn as gl
 import graphlearn.python.nn.tf as tfg
-import graphlearn.examples.tf.ego_data as ego_data
+import graphlearn.examples.tf.ego_data_loader as ego_data
 
 
 class EgoSAGESupervisedDataLoader(ego_data.EgoDataLoader):

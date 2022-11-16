@@ -32,7 +32,7 @@ import graphlearn.python.nn.tf as tfg
 from graphlearn.examples.tf.trainer import LocalTrainer
 
 from ego_sage import EgoGraphSAGE
-from ego_sage_data import EgoSAGEUnsupervisedDataLoader
+from ego_sage_data_loader import EgoSAGEUnsupervisedDataLoader
 
 
 def parse_args():
@@ -78,11 +78,11 @@ def run(args):
                        dropout=args.drop_out)
 
   # prepare train dataset
-  train_data = EgoSAGEUnsupervisedDataLoader(g, gl.Mask.TRAIN, args.sampler, args.neg_sampler, args.batch_size,
+  train_data = EgoSAGEUnsupervisedDataLoader(g, None, args.sampler, args.neg_sampler, args.batch_size,
                                              node_type='i', edge_type='train', nbrs_num=args.nbrs_num)
   src_emb = model.forward(train_data.src_ego)
   dst_emb = model.forward(train_data.dst_ego)
-  neg_dst_emb = model.forward(train_data.get_egograph('neg_dst'))
+  neg_dst_emb = model.forward(train_data.neg_dst_ego)
   loss = tfg.unsupervised_softmax_cross_entropy_loss(
     src_emb, dst_emb, neg_dst_emb, temperature=args.temperature)
   optimizer = tf.train.AdamOptimizer(learning_rate=args.learning_rate)

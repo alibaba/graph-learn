@@ -34,7 +34,7 @@ import graphlearn.python.nn.tf as tfg
 from graphlearn.examples.tf.trainer import LocalTrainer
 
 from ego_sage import EgoGraphSAGE
-from ego_sage_data import EgoSAGESupervisedDataLoader
+from ego_sage_data_loader import EgoSAGESupervisedDataLoader
 
 def parse_args():
   cur_path = sys.path[0]
@@ -107,16 +107,16 @@ def run(args):
   train_data = EgoSAGESupervisedDataLoader(g, gl.Mask.TRAIN, 'random', args.train_batch_size,
                                            node_type=args.node_type, edge_type=args.edge_type,
                                            nbrs_num=args.nbrs_num, hops_num=args.hops_num)
-  train_embedding = model.forward(train_data.train_ego)
-  loss = supervised_loss(train_embedding, train_data.train_ego.src.labels)
+  train_embedding = model.forward(train_data.src_ego)
+  loss = supervised_loss(train_embedding, train_data.src_ego.src.labels)
   optimizer = tf.train.AdamOptimizer(learning_rate=args.learning_rate)
 
   # prepare test dataset
   test_data = EgoSAGESupervisedDataLoader(g, gl.Mask.TEST, 'random', args.test_batch_size,
                                           node_type=args.node_type, edge_type=args.edge_type,
                                           nbrs_num=args.nbrs_num, hops_num=args.hops_num)
-  test_embedding = model.forward(test_data.test_ego)
-  test_acc = accuracy(test_embedding, test_data.test_ego.src.labels)
+  test_embedding = model.forward(test_data.src_ego)
+  test_acc = accuracy(test_embedding, test_data.src_ego.src.labels)
 
   # train and test
   trainer = LocalTrainer()
