@@ -106,7 +106,6 @@ def main(unused_argv):
   g = load_graph()
   g.init()
   # Define Model
-  # Define Model
   input_dim = sum([1 if not i else i for i in attr_dims])
   model = EgoRGCN(input_dim,
                   FLAGS.hidden_dim,
