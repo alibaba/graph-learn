@@ -14,7 +14,10 @@
 # =============================================================================
 from __future__ import print_function
 
+import argparse
 import datetime
+import os
+import sys
 
 import numpy as np
 try:
@@ -26,102 +29,70 @@ except ImportError:
 
 import graphlearn as gl
 import graphlearn.python.nn.tf as tfg
+from graphlearn.examples.tf.trainer import LocalTrainer
 
 from ego_sage import EgoGraphSAGE
+from ego_sage_data_loader import EgoSAGEUnsupervisedDataLoader
 
 
-def load_graph(config):
-  data_dir = config['dataset_folder']
+def parse_args():
+  cur_path = sys.path[0]
+  argparser = argparse.ArgumentParser("Train EgoSAGE Unsupervised.")
+  argparser.add_argument('--dataset_folder', type=str,
+                         default=os.path.join(cur_path, '../../data/ogbl_collab/'))
+  argparser.add_argument('--batch_size', type=int, default=128)
+  argparser.add_argument('--features_num', type=int, default=128)
+  argparser.add_argument('--hidden_dim', type=int, default=128)
+  argparser.add_argument('--output_dim', type=int, default=128)
+  argparser.add_argument('--nbrs_num', type=list, default=[10, 5])
+  argparser.add_argument('--neg_num', type=int, default=5)
+  argparser.add_argument('--learning_rate', type=float, default=0.0001)
+  argparser.add_argument('--epochs', type=int, default=1)
+  argparser.add_argument('--agg_type', type=str, default="mean")
+  argparser.add_argument('--drop_out', type=float, default=0.0)
+  argparser.add_argument('--sampler', type=str, default='random')
+  argparser.add_argument('--neg_sampler', type=str, default='in_degree')
+  argparser.add_argument('--temperature', type=float, default=0.07)
+  argparser.add_argument('--edge_type', type=str, default='relation')
+  return argparser.parse_args()
+
+def load_graph(args):
+  data_dir = args.dataset_folder
   g = gl.Graph() \
     .node(data_dir+'ogbl_collab_node', node_type='i',
-          decoder=gl.Decoder(attr_types=['float'] * config['features_num'],
-                             attr_dims=[0]*config['features_num'])) \
+          decoder=gl.Decoder(attr_types=['float'] * args.features_num,
+                             attr_dims=[0]*args.features_num)) \
     .edge(data_dir+'ogbl_collab_train_edge', edge_type=('i', 'i', 'train'),
           decoder=gl.Decoder(weighted=True), directed=False)
   return g
 
-def meta_path_sample(ego, ego_name, nbrs_num, sampler):
-  """ creates the meta-math sampler of the input ego.
-  config:
-    ego: A query object, the input centric nodes/edges
-    ego_name: A string, the name of `ego`.
-    nbrs_num: A list, the number of neighbors for each hop.
-    sampler: A string, the strategy of neighbor sampling.
-  """
-  alias_list = [ego_name + '_hop_' + str(i + 1) for i in range(len(nbrs_num))]
-  for nbr_count, alias in zip(nbrs_num, alias_list):
-    ego = ego.outV('train').sample(nbr_count).by(sampler).alias(alias)
-  return ego
 
-def query(graph, config):
-  seed = graph.E('train').batch(config['batch_size']).shuffle(traverse=True)
-  src = seed.outV().alias('src')
-  dst = seed.inV().alias('dst')
-  neg_dst = src.outNeg('train').sample(config['neg_num']).by(config['neg_sampler']).alias('neg_dst')
-  src_ego = meta_path_sample(src, 'src', config['nbrs_num'], config['sampler'])
-  dst_ego = meta_path_sample(dst, 'dst', config['nbrs_num'], config['sampler'])
-  dst_neg_ego = meta_path_sample(neg_dst, 'neg_dst', config['nbrs_num'], config['sampler'])
-  return seed.values()
-
-def train(graph, model, config):
-  tfg.conf.training = True
-  query_train = query(graph, config)
-  dataset = tfg.Dataset(query_train, window=10)
-  src_ego = dataset.get_egograph('src')
-  dst_ego = dataset.get_egograph('dst')
-  neg_dst_ego = dataset.get_egograph('neg_dst')
-  src_emb = model.forward(src_ego)
-  dst_emb = model.forward(dst_ego)
-  neg_dst_emb = model.forward(neg_dst_ego)
-  # use sampled softmax loss with temperature.
-  loss = tfg.unsupervised_softmax_cross_entropy_loss(src_emb, dst_emb, neg_dst_emb, 
-    temperature=config['temperature'])
-  return dataset.iterator, loss
-
-def run(config):
+def run(args):
   # graph input data
-  g = load_graph(config=config)
+  g = load_graph(args=args)
   g.init()
   # Define Model
-  dims = [config['features_num']] + [config['hidden_dim']] * (len(config['nbrs_num']) - 1) + [config['output_dim']]
+  dims = [args.features_num] + [args.hidden_dim] * (len(args.nbrs_num) - 1) + [args.output_dim]
   model = EgoGraphSAGE(dims,
-                       agg_type=config['agg_type'],
-                       dropout=config['drop_out'])
+                       agg_type=args.agg_type,
+                       dropout=args.drop_out)
+
+  # prepare train dataset
+  train_data = EgoSAGEUnsupervisedDataLoader(g, None, args.sampler, args.neg_sampler, args.batch_size,
+                                             node_type='i', edge_type='train', nbrs_num=args.nbrs_num)
+  src_emb = model.forward(train_data.src_ego)
+  dst_emb = model.forward(train_data.dst_ego)
+  neg_dst_emb = model.forward(train_data.neg_dst_ego)
+  loss = tfg.unsupervised_softmax_cross_entropy_loss(
+    src_emb, dst_emb, neg_dst_emb, temperature=args.temperature)
+  optimizer = tf.train.AdamOptimizer(learning_rate=args.learning_rate)
+
   # train
-  iterator, loss = train(g, model, config)
-  optimizer = tf.train.AdamOptimizer(learning_rate=config['learning_rate'])
-  train_op = optimizer.minimize(loss)
-  train_ops = [loss, train_op]
-  with tf.Session() as sess:
-    sess.run(tf.local_variables_initializer())
-    sess.run(tf.global_variables_initializer())
-    sess.run(iterator.initializer)
-    step = 0
-    print("Start Training...")
-    for i in range(config['epoch']):
-      try:
-        while True:
-          ret = sess.run(train_ops)
-          print("Epoch {}, Iter {}, Loss {:.5f}".format(i, step, ret[0]))
-          step += 1
-      except tf.errors.OutOfRangeError:
-        sess.run(iterator.initializer) # reinitialize dataset.
+  trainer = LocalTrainer()
+  trainer.train(train_data.iterator, loss, optimizer, epochs=args.epochs)
+
+  # finish
   g.close()
 
 if __name__ == "__main__":
-  config = {'dataset_folder': '../../data/ogbl_collab/',
-            'batch_size': 128,
-            'features_num': 128,
-            'hidden_dim': 128,
-            'output_dim': 128,
-            'nbrs_num': [10, 5],
-            'neg_num': 5,
-            'learning_rate': 0.0001,
-            'epoch': 1,
-            'agg_type': 'mean',
-            'drop_out': 0.0,
-            'sampler': 'random',
-            'neg_sampler': 'in_degree',
-            'temperature': 0.07
-            }
-  run(config)
+  run(parse_args())

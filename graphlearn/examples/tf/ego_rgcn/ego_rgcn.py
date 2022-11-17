@@ -41,7 +41,7 @@ class EgoRGCN(tfg.Module):
                act_func=tf.nn.relu,
                dropout=0.0,
                **kwargs):
-    """EgoGraph based Bipartite GraphSAGE. 
+    """EgoGraph based RGCN. 
   
     Args:
       input_dim: input dimension of nodes.

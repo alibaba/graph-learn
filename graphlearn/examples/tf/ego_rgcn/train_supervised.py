@@ -32,8 +32,10 @@ except ImportError:
 
 import graphlearn as gl
 import graphlearn.python.nn.tf as tfg
+from graphlearn.examples.tf.trainer import LocalTrainer
 
 from ego_rgcn import EgoRGCN
+from ego_rgcn_data_loader import EgoRGCNDataLoader
 
 flags = tf.app.flags
 FLAGS = flags.FLAGS
@@ -90,28 +92,6 @@ def load_graph():
               decoder=gl.Decoder(weighted=True), mask=gl.Mask.TEST)
   return g
 
-def query(graph, mask):
-  """ k-hop neighbor sampling using different relations.
-    For train, the query node name are as follows:
-    root: ['train']
-    1-hop neighbors: ['train_hop_0_r_0', 'train_hop_0_r_1']
-    2-hop neighbors: ['train_hop_0_r_0_hop_1_r_0', 'train_hop_0_r_0_hop_1_r_0', 
-                      'train_hop_0_r_1_hop_1_r_0', 'train_hop_0_r_1_hop_1_r_0']
-    ...
-  """
-  prefix = ('train', 'test')[mask.value - 1]
-  bs = FLAGS.train_batch_size if prefix == 'train' else FLAGS.test_batch_size
-  q = graph.V("i", mask=mask).batch(bs).alias(prefix)
-  current_hop_list = [q]
-  for idx, hop in enumerate(nbrs_num):
-    next_hop_list = []
-    for hop_q in current_hop_list:
-      for i in range(FLAGS.num_relations):
-        alias = hop_q.get_alias() + '_hop_' + str(idx) + '_r_' + str(i)
-        next_hop_list.append(hop_q.outV('r_'+str(i)).sample(hop).by(FLAGS.sampler).alias(alias))
-    current_hop_list = next_hop_list
-  return q.values()
-
 def supervised_loss(logits, labels):
   loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
       labels=labels, logits=logits)
@@ -121,53 +101,6 @@ def accuracy(logits, labels):
   indices = tf.math.argmax(logits, 1, output_type=tf.int32)
   correct = tf.reduce_sum(tf.cast(tf.math.equal(indices, labels), tf.float32))
   return correct / tf.cast(tf.shape(labels)[0], tf.float32)
-
-def reformat_node_feature(data_dict, alias_list, feature_handler):
-  """ Transforms and organizes the input data to a list of list,
-  each element of list is also a list which consits of k-hop multi-relations
-  neighbor nodes' feature tensor.
-  """
-  cursor = 0
-  x = feature_handler.forward(data_dict[alias_list[cursor]])
-  cursor += 1
-  x_list = [[x]]
-  
-  nbr_list_len = FLAGS.num_relations
-  for idx in range(len(nbrs_num)):
-    nbr_list = []
-    for i in range(nbr_list_len):
-      nbr_list.append(feature_handler.forward(data_dict[alias_list[cursor]]))
-      cursor += 1
-    x_list.append(nbr_list)
-    nbr_list_len *= FLAGS.num_relations
-  return x_list
-
-def train(graph, model):
-  tfg.conf.training = True
-  query_train = query(graph, gl.Mask.TRAIN)
-  dataset = tfg.Dataset(query_train, window=10)
-  data_dict = dataset.get_data_dict()
-  feature_handler = tfg.FeatureHandler('feature_handler',
-    query_train.get_node("train").decoder.feature_spec)
-
-  x_list = reformat_node_feature(data_dict, query_train.list_alias(), feature_handler)
-  train_embeddings = model.forward(x_list, nbrs_num)
-  loss = supervised_loss(train_embeddings, data_dict['train'].labels)
-  return dataset.iterator, loss
-
-def test(graph, model):
-  tfg.conf.training = False
-  query_test = query(graph, gl.Mask.TEST)
-  dataset = tfg.Dataset(query_test, window=10)
-  data_dict = dataset.get_data_dict()
-  feature_handler = tfg.FeatureHandler('feature_handler',
-    query_test.get_node("test").decoder.feature_spec)
-
-  x_list = reformat_node_feature(data_dict, query_test.list_alias(), feature_handler)
-  test_embeddings = model.forward(x_list, nbrs_num)
-  test_acc = accuracy(test_embeddings, data_dict['test'].labels)
-  return dataset.iterator, test_acc, data_dict['test'].ids,\
-    data_dict['test'].labels, tf.nn.softmax(test_embeddings)
 
 def main(unused_argv):
   g = load_graph()
@@ -183,37 +116,25 @@ def main(unused_argv):
                   FLAGS.num_blocks,
                   agg_type=FLAGS.agg_type,
                   dropout=FLAGS.drop_out)
-  # train and test
-  train_iterator, loss = train(g, model)
-  optimizer=tf.train.AdamOptimizer(learning_rate=FLAGS.learning_rate)
-  train_op = optimizer.minimize(loss)
-  train_ops = [loss, train_op]
-  test_iterator, test_acc, _, _, _ = test(g, model)
-  with tf.Session() as sess:
-    sess.run(tf.local_variables_initializer())
-    sess.run(tf.global_variables_initializer())
-    sess.run(train_iterator.initializer)
-    step = 0
-    print("Start Training...")
-    for i in range(FLAGS.epochs):
-      try:
-        while True:
-          ret = sess.run(train_ops)
-          print("Epoch {}, Iter {}, Loss {:.5f}".format(i, step, ret[0]))
-          step += 1
-      except tf.errors.OutOfRangeError:
-        sess.run(train_iterator.initializer) # reinitialize dataset.
+  # prepare train dataset
+  train_data = EgoRGCNDataLoader(g, gl.Mask.TRAIN, FLAGS.sampler, FLAGS.train_batch_size,
+                                 node_type='i', nbrs_num=nbrs_num, num_relations=FLAGS.num_relations)
+  train_embedding = model.forward(train_data.x_list(), nbrs_num)
+  loss = supervised_loss(train_embedding, train_data.labels)
+  optimizer = tf.train.AdamOptimizer(learning_rate=FLAGS.learning_rate)
 
-    print("Start Testing...")
-    total_test_acc = []
-    sess.run(test_iterator.initializer)
-    try:
-      while True:
-        ret = sess.run(test_acc)
-        total_test_acc.append(ret)
-    except tf.errors.OutOfRangeError:
-      print("Finished.")
-    print('Test Accuracy is: {:.4f}'.format(np.mean(total_test_acc)))
+  # prepare test dataset
+  test_data = EgoRGCNDataLoader(g, gl.Mask.TEST, FLAGS.sampler, FLAGS.test_batch_size,
+                                 node_type='i', nbrs_num=nbrs_num, num_relations=FLAGS.num_relations)
+  test_embedding = model.forward(test_data.x_list(), nbrs_num)
+  test_acc = accuracy(test_embedding, test_data.labels)
+
+  # train and test
+  trainer = LocalTrainer()
+  trainer.train(train_data.iterator, loss, optimizer, epochs=FLAGS.epochs)
+  trainer.test(test_data.iterator, test_acc)
+
+  # finish
   g.close()
 
 

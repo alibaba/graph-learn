@@ -10,7 +10,9 @@ pushd "${script_dir}"
 source env.sh
 pushd "${script_dir}/built/bin"
 for i in *_unittest
-  do ./"$i"
+do
+  echo "running unit test $i ..."
+  ./"$i"
 done
 popd
 popd

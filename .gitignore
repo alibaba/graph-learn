@@ -50,3 +50,13 @@ dynamic_graph_service/dist/
 **/_static
 **/_templates
 **/apis/apis/apis
+
+# ignore logs
+**/*.INFO
+**/*.WARNING
+**/*.ERROR
+**/*.FATAL
+**/*.log.INFO.*
+**/*.log.WARNING.*
+**/*.log.ERROR.*
+**/*.log.FATAL.*
