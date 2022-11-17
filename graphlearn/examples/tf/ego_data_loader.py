@@ -76,36 +76,26 @@ class EgoDataLoader:
   def src_ego(self):
     ''' Alias for `self.get_egograph('src')`.
     '''
-    if self._mask is None:
-      return self.get_egograph('src')
-    else:
-      prefix = ('train', 'test', 'val')[self._mask.value - 1]
-      return self.get_egograph(prefix)
+    raise NotImplementedError
 
   @property
   def dst_ego(self):
     ''' Alias for `self.get_egograph('dst')`.
     '''
-    return self.get_egograph('dst')
+    raise NotImplementedError
 
   @property
   def neg_dst_ego(self):
     ''' Alias for `self.get_egograph('neg_dst')`.
     '''
-    return self.get_egograph('neg_dst')
+    raise NotImplementedError
 
   @property
   def labels(self):
-    prefix = ('train', 'test', 'val')[self._mask.value - 1]
-    return self._data_dict[prefix].labels
+    raise NotImplementedError
 
   def x_list(self):
-    prefix = ('train', 'test', 'val')[self._mask.value - 1]
-    return self._format(
-      self._data_dict,
-      self._q.list_alias(),
-      tfg.FeatureHandler('feature_handler', self._q.get_node(prefix).decoder.feature_spec),
-    )
+    raise NotImplementedError
 
   def _query(self, graph, mask=gl.Mask.TRAIN):
     raise NotImplementedError

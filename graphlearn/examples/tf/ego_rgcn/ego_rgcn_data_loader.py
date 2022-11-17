@@ -43,6 +43,19 @@ class EgoRGCNDataLoader(ego_data.EgoDataLoader):
     self._num_relations = num_relations
     super().__init__(graph, mask, sampler, batch_size, window)
 
+  @property
+  def labels(self):
+    prefix = ('train', 'test', 'val')[self._mask.value - 1]
+    return self._data_dict[prefix].labels
+
+  def x_list(self):
+    prefix = ('train', 'test', 'val')[self._mask.value - 1]
+    return self._format(
+      self._data_dict,
+      self._q.list_alias(),
+      tfg.FeatureHandler('feature_handler', self._q.get_node(prefix).decoder.feature_spec),
+    )
+
   def _query(self, graph):
     """ k-hop neighbor sampling using different relations.
       For train, the query node name are as follows:

@@ -45,6 +45,12 @@ class EgoSAGESupervisedDataLoader(ego_data.EgoDataLoader):
     self._hops_num = hops_num
     super().__init__(graph, mask, sampler, batch_size, window)
 
+
+  @property
+  def src_ego(self):
+    prefix = ('train', 'test', 'val')[self._mask.value - 1]
+    return self.get_egograph(prefix)
+
   def _query(self, graph):
     assert len(self._nbrs_num) == self._hops_num
     prefix = ('train', 'test', 'val')[self._mask.value - 1]
@@ -66,15 +72,27 @@ class EgoSAGEUnsupervisedDataLoader(ego_data.EgoDataLoader):
     self._neg_num = neg_num
     super().__init__(graph, mask, sampler, batch_size, window)
 
+  @property
+  def src_ego(self):
+    return self.get_egograph('src')
+
+  @property
+  def dst_ego(self):
+    return self.get_egograph('dst')
+
+  @property
+  def neg_dst_ego(self):
+    return self.get_egograph('neg_dst')
+
   def _query(self, graph):
-      seed = graph.E('train').batch(self._batch_size).shuffle(traverse=True)
-      src = seed.outV().alias('src')
-      dst = seed.inV().alias('dst')
-      neg_dst = src.outNeg(self._edge_type).sample(self._neg_num).by(self._neg_sampler).alias('neg_dst')
-      src_ego = self.meta_path_sample(src, 'src', self._nbrs_num, self._sampler)
-      dst_ego = self.meta_path_sample(dst, 'dst', self._nbrs_num, self._sampler)
-      dst_neg_ego = self.meta_path_sample(neg_dst, 'neg_dst', self._nbrs_num, self._sampler)
-      return seed.values()
+    seed = graph.E('train').batch(self._batch_size).shuffle(traverse=True)
+    src = seed.outV().alias('src')
+    dst = seed.inV().alias('dst')
+    neg_dst = src.outNeg(self._edge_type).sample(self._neg_num).by(self._neg_sampler).alias('neg_dst')
+    src_ego = self.meta_path_sample(src, 'src', self._nbrs_num, self._sampler)
+    dst_ego = self.meta_path_sample(dst, 'dst', self._nbrs_num, self._sampler)
+    dst_neg_ego = self.meta_path_sample(neg_dst, 'neg_dst', self._nbrs_num, self._sampler)
+    return seed.values()
 
   def meta_path_sample(self, ego, ego_name, nbrs_num, sampler):
     """ creates the meta-math sampler of the input ego.
