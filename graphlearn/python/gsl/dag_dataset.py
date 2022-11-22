@@ -42,7 +42,7 @@ class Dataset(object):
     raise_exception_on_not_ok_status(status)
 
     pywrap.set_dataset_capacity(window)
-    self._dag_dataset = pywrap.Dataset(client, self._dag_id)
+    self._dag_dataset = pywrap.Dataset(client.current_client, self._dag_id)
     graph.add_dataset(self)
 
   def next(self):

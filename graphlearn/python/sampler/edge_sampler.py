@@ -78,7 +78,16 @@ class EdgeSampler(object):
 
     status = self._client.get_edges(req, res)
     if not status.ok():
-      self._graph.edge_state.inc(mask_type)
+      if self._client.connect_to_next_server():
+        req = pywrap.new_get_edges_request(
+          mask_type, self._strategy, self._batch_size, state)
+        res = pywrap.new_get_edges_response()
+        status = self._client.get_edges(req, res)
+        src_ids = pywrap.get_edge_src_id(res)
+        dst_ids = pywrap.get_edge_dst_id(res)
+        edge_ids = pywrap.get_edge_id(res)
+      else:
+        self._graph.edge_state.inc(mask_type)
     else:
       src_ids = pywrap.get_edge_src_id(res)
       dst_ids = pywrap.get_edge_dst_id(res)

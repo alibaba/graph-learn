@@ -14,3 +14,4 @@
 # =============================================================================
 
 from .ego_sage import EgoGraphSAGE
+from .ego_sage_data_loader import EgoSAGESupervisedDataLoader, EgoSAGEUnsupervisedDataLoader

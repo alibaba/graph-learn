@@ -292,7 +292,7 @@ endif ()
 
 ## contrib vineyard
 if (WITH_VINEYARD)
-  message(INFO "Graph-learn is built with vineyard support.")
+  message("Graph-learn is built with vineyard support.")
   find_package (vineyard)
   include_directories (SYSTEM ${VINEYARD_INCLUDE_DIRS})
   add_definitions (-DWITH_VINEYARD)

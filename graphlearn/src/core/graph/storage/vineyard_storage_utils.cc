@@ -413,7 +413,7 @@ SideInfo *frag_node_side_info(const std::shared_ptr<gl_frag_t>& frag,
   if (cache_entry) {
     return cache_entry.get();
   }
-  std::cerr << "init node sideinfo " << frag->id();
+  std::cerr << "init node sideinfo " << frag->id() << std::endl;
   auto side_info = std::make_shared<SideInfo>();
   // compute attribute numbers of i/f/s
   auto node_table = frag->vertex_data_table(node_label);

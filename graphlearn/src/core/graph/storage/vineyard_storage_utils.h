@@ -20,6 +20,7 @@ limitations under the License.
 #include <set>
 
 #if defined(WITH_VINEYARD)
+#include "boost/algorithm/string.hpp"
 #include "vineyard/graph/fragment/arrow_fragment.vineyard.h"
 #endif
 
