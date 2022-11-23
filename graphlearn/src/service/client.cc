@@ -94,7 +94,7 @@ public:
     }
   }
 
-  ClientImpl* LookupOrCreate(int32_t server_id, bool server_own) {
+  ClientImpl* LookupOrCreate(int32_t server_id) {
     if (server_id >= GLOBAL_FLAG(ServerCount)) {
       LOG(FATAL) << "Unexpected server id: " << server_id;
       return nullptr;
@@ -102,7 +102,7 @@ public:
 
     ScopedLocker<std::mutex> _(&mtx_);
     if (clients_[server_id] == nullptr) {
-      ClientImpl* c = NewRpcClientImpl(server_id, server_own);
+      ClientImpl* c = NewRpcClientImpl(server_id);
       clients_[server_id] = c;
     }
     return clients_[server_id];
@@ -113,13 +113,13 @@ private:
   std::vector<ClientImpl*> clients_;
 };
 
-Client* NewRpcClient(int32_t server_id, bool server_own, bool client_own) {
+Client* NewRpcClient(int32_t server_id, bool client_own) {
   static ClientManager manager;
   if (server_id < 0 || client_own) {
     // auto select
-    return new Client(NewRpcClientImpl(server_id, server_own), true);
+    return new Client(NewRpcClientImpl(server_id), true);
   } else {
-    return new Client(manager.LookupOrCreate(server_id, server_own), false);
+    return new Client(manager.LookupOrCreate(server_id), false);
   }
 }
 

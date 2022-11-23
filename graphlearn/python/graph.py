@@ -406,41 +406,35 @@ class Graph(object):
       kwargs:
         tracker (string): Optional tracker path for WORKER mode.
         hosts (string): Optional worker hosts for WORKER mode.
-        server_own (bool): Optional, TODO, default is False.
     """
     if self._with_vineyard:
       pywrap.set_storage_mode(8)
       pywrap.set_tracker_mode(0)
 
-    if "server_own" in kwargs:
-      extra_args = {"server_own": kwargs["server_own"]}
-    else:
-      extra_args = {}
-
     if not cluster and task_count == 1:
       # Local mode
       pywrap.set_deploy_mode(pywrap.DeployMode.LOCAL)
-      self.deploy_in_local_mode(task_index, **extra_args)
+      self.deploy_in_local_mode(task_index)
     elif not cluster:
       if task_count > 1 or kwargs.get("hosts") is not None:
         # WORKER mode
         pywrap.set_deploy_mode(pywrap.DeployMode.WORKER)
         tracker = kwargs.get("tracker", "root://graphlearn")
         hosts = kwargs.get("hosts")
-        self.deploy_in_worker_mode(tracker, hosts, task_index, task_count, **extra_args)
+        self.deploy_in_worker_mode(tracker, hosts, task_index, task_count)
     else:
       # SERVER mode
       pywrap.set_deploy_mode(pywrap.DeployMode.SERVER)
-      self.deploy_in_server_mode(task_index, cluster, job_name, **extra_args)
+      self.deploy_in_server_mode(task_index, cluster, job_name)
     return self
 
-  def deploy_in_local_mode(self, task_index, **extra_args):
-    self._client = Client(client_id=task_index, **extra_args)
+  def deploy_in_local_mode(self, task_index):
+    self._client = Client(client_id=task_index)
     self._server = Server(0, 1, "", "")
     self._server.start()
     self._server.init(self._edge_sources, self._node_sources)
 
-  def deploy_in_worker_mode(self, tracker, hosts, task_index, task_count, **extra_args):
+  def deploy_in_worker_mode(self, tracker, hosts, task_index, task_count):
     if hosts:
       pywrap.set_server_hosts(hosts)
       hosts = hosts.split(',')
@@ -456,12 +450,12 @@ class Graph(object):
     pywrap.set_server_count(task_count)
     pywrap.set_tracker(tracker)
 
-    self._client = Client(client_id=task_index, **extra_args)
+    self._client = Client(client_id=task_index)
     self._server = Server(task_index, task_count, host, tracker)
     self._server.start()
     self._server.init(self._edge_sources, self._node_sources)
 
-  def deploy_in_server_mode(self, task_index, cluster, job_name, **extra_args):
+  def deploy_in_server_mode(self, task_index, cluster, job_name):
     if isinstance(cluster, dict):
       cluster_spec = cluster
     elif isinstance(cluster, str):
@@ -494,7 +488,7 @@ class Graph(object):
     if job_name == "client":
       pywrap.set_tracker(tracker)
       pywrap.set_client_id(task_index)
-      self._client = Client(client_id=task_index, in_memory=False, **extra_args)
+      self._client = Client(client_id=task_index, in_memory=False)
       self._server = None
     elif job_name == "server":
       self._client = None
@@ -509,7 +503,7 @@ class Graph(object):
     self._datasets.append(ds)
 
   def init_vineyard(self, server_index=None, worker_index=None, worker_count=None,
-                    standalone=False, server_own=True):
+                    standalone=False):
     if not self._with_vineyard:
       raise ValueError('Not a vineyard graph')
 
@@ -525,9 +519,9 @@ class Graph(object):
     cluster = {'server': self._vineyard_handle['server'],
                'client_count': self._vineyard_handle['client_count']}
     if server_index is not None:
-      self.init(cluster=cluster, task_index=server_index, job_name="server", server_own=server_own)
+      self.init(cluster=cluster, task_index=server_index, job_name="server")
     else:
-      self.init(cluster=cluster, task_index=worker_index, job_name="client", server_own=server_own)
+      self.init(cluster=cluster, task_index=worker_index, job_name="client")
     return self
 
   def close(self):

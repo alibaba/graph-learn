@@ -43,10 +43,9 @@ class Client(object):
       self._cur_index = 0
     else:
       server_id = kwargs.get("server_id", -1)
-      server_own = kwargs.get("server_own", False)
       client_own = kwargs.get("client_own", True)
       # auto select
-      client = pywrap.rpc_client(server_id, server_own, client_own)
+      client = pywrap.rpc_client(server_id, client_own)
       self._own_servers = client.get_own_servers()
       self._client_cache = [None] * len(self._own_servers)
       self._client_cache[0] = client
