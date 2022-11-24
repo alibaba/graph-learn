@@ -36,14 +36,21 @@ class Dataset(object):
     self._dag_id = dag.name
     self._cur_res = None
 
-    graph = dag.graph
-    client = graph.get_client()
-    status = client.run_dag(self._dag.dag_def)
-    raise_exception_on_not_ok_status(status)
+    self._graph = dag.graph
+    self._client = self._graph.get_client()
+    self._dag_datasets = [None] * len(self._client)
+    self._current_index = 0
 
     pywrap.set_dataset_capacity(window)
-    self._dag_dataset = pywrap.Dataset(client.current_client, self._dag_id)
-    graph.add_dataset(self)
+
+    # initialize the dataset for the first client
+    # note that the dag_def may need to be copied to avoid been moved
+    status = self._client.run_dag(self._dag.dag_def, self._current_index != len(self._client) - 1)
+    raise_exception_on_not_ok_status(status)
+    self._dag_datasets[self._current_index] = pywrap.Dataset(self._client.current_client, self._dag_id)
+
+    # associate to graph to delete it when the graph been deleted
+    self._graph.add_dataset(self)
 
   def next(self):
     # Delete the response of last round.
@@ -54,7 +61,7 @@ class Dataset(object):
     state = global_dag_state.get(self._dag.name)
 
     # Fill response.
-    res = self._dag_dataset.next(state)
+    res = self._dag_datasets[self._current_index].next(state)
 
     if res and res.valid():
       dag_values = DagValues(self._dag, res)
@@ -62,14 +69,29 @@ class Dataset(object):
       self._cur_res = res
       return result
     else:
-      global_dag_state.inc(self._dag.name)
+      # drop the last step response
       if res:
         pywrap.del_get_dag_value_response(res)
       self._cur_res = None
-      raise OutOfRangeError("OutOfRange")
+
+      if self._client.connect_to_next_server():
+        self._current_index = (self._current_index + 1) % len(self._client)
+        # initialize the dataset for the next client
+        if self._dag_datasets[self._current_index] is None:
+          status = self._client.run_dag(self._dag.dag_def, self._current_index != len(self._client) - 1)
+          raise_exception_on_not_ok_status(status)
+          self._dag_datasets[self._current_index] = pywrap.Dataset(self._client.current_client, self._dag_id)
+        return self.next()
+      else:
+        self._current_index = 0
+        # start the next epoch
+        global_dag_state.inc(self._dag.name)
+        raise OutOfRangeError("OutOfRange: end of epoch")
 
   def close(self):
-    self._dag_dataset.close()
+    for dataset in self._dag_datasets:
+      if dataset is not None:
+        dataset.close()
 
 
 class DagValues(object):

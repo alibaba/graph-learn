@@ -32,6 +32,7 @@ public:
   DagRequest();
   void SerializeTo(void* request) override;
   bool ParseFrom(const void* request) override;
+  bool ParseFrom(const void* request, const bool copy=false);
 
   std::string Name() const override;
 

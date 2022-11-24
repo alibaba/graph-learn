@@ -106,6 +106,7 @@ class Graph(object):
             "client_count": 1,
             "vineyard_socket": "/var/run/vineyard.sock",
             "vineyard_id": 13278328736,
+            "fragments": [13278328736, ...],  # fragment ids, may be None
             "node_schema": [
                 "user:false:false:10:0:0",
                 "item:true:false:0:0:5"
@@ -519,6 +520,9 @@ class Graph(object):
     cluster = {'server': self._vineyard_handle['server'],
                'client_count': self._vineyard_handle['client_count']}
     if server_index is not None:
+      # re-target to fragment id, if exists
+      if self._vineyard_handle.get('fragments', None):
+        pywrap.set_vineyard_graph_id(self._vineyard_handle['fragments'][server_index])
       self.init(cluster=cluster, task_index=server_index, job_name="server")
     else:
       self.init(cluster=cluster, task_index=worker_index, job_name="client")

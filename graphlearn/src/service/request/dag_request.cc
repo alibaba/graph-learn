@@ -34,6 +34,16 @@ bool DagRequest::ParseFrom(const void* request) {
   return true;
 }
 
+bool DagRequest::ParseFrom(const void* request, const bool copy) {
+  DagDef* pb = const_cast<DagDef*>(static_cast<const DagDef*>(request));
+  if (copy) {
+    def_ = *pb;
+  } else {
+    def_.Swap(pb);
+  }
+  return true;
+}
+
 std::string DagRequest::Name() const {
   return "DagRequest";
 }

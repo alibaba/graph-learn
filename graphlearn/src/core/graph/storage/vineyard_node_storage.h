@@ -49,20 +49,10 @@ public:
     std::cerr << std::endl;
 
     VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
-    auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
-        GLOBAL_FLAG(VineyardGraphID));
-    if (fg == nullptr) {
-      throw std::runtime_error("Node: failed to find the graph");
-    }
-    // assume 1 worker per server
-    for (const auto& kv : fg->Fragments()) {
-      if (fg->FragmentLocations().at(kv.first) == client_.instance_id()) {
-        frag_ = client_.GetObject<gl_frag_t>(kv.second);
-        break;
-      }
-    }
+    frag_ = get_vineyard_fragment(client_, GLOBAL_FLAG(VineyardGraphID));
     if (frag_ == nullptr) {
-      throw std::runtime_error("Node: failed to find a local fragment");
+      throw std::runtime_error(
+        "Graph: failed to find the vineyard fragment: " + GLOBAL_FLAG(VineyardGraphID));
     }
     vertex_map_ = frag_->GetVertexMap();
 
@@ -237,8 +227,8 @@ public:
     }
     auto offset = frag_->vertex_offset(v);
 #ifndef NDEBUG
-    std::cerr << "node: get attribute: node_id = " << node_id << ", label -> "
-              << label << ", offset -> " << offset << std::endl;
+    VLOG(10) << "node: get attribute: node_id = " << node_id << ", label -> "
+             << label << ", offset -> " << offset << std::endl;
 #endif
 
 // The thread_local optimization doesn't work for multiple-node graphs,
@@ -301,12 +291,12 @@ public:
       return nullptr;
     }
 #ifndef NDEBUG
-    std::cerr << "node: get attributes: node_label = " << node_label_
-              << std::endl;
+    VLOG(10) << "node: get attributes: node_label = " << node_label_
+             << std::endl;
 #endif
     size_t count = frag_->GetInnerVerticesNum(node_label_);
 #ifndef NDEBUG
-    std::cerr << "node: get attributes: count = " << count << std::endl;
+    VLOG(10) << "node: get attributes: count = " << count << std::endl;
 #endif
 
     auto value_list = new std::vector<Attribute>();

@@ -100,20 +100,14 @@ class NodeSampler(object):
 
     res = pywrap.new_get_nodes_response()
     status = self._client.get_nodes(req, res)
-    if not status.ok():
-      if self._client.connect_to_next_server():
-        req = pywrap.new_get_nodes_request(mask_type,
-                                           self._strategy,
-                                           self._node_from,
-                                           self._batch_size,
-                                           state)
-        res = pywrap.new_get_nodes_response()
-        status = self._client.get_nodes(req, res)
-        ids = pywrap.get_node_ids(res)
+    if status.ok():
+      ids = pywrap.get_node_ids(res)
+    else:
+      if status.code() == errors.OUT_OF_RANGE:
+        if self._client.connect_to_next_server():
+          return self.get()
       else:
         self._graph.node_state.inc(mask_type)
-    else:
-      ids = pywrap.get_node_ids(res)
 
     pywrap.del_op_response(res)
     pywrap.del_op_request(req)

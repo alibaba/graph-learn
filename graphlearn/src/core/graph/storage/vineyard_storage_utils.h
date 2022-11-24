@@ -55,6 +55,9 @@ using graphlearn::io::IndexArray;
 using graphlearn::io::NewDataHeldAttributeValue;
 using graphlearn::io::SideInfo;
 
+std::shared_ptr<gl_frag_t> get_vineyard_fragment(vineyard::Client &client,
+                                                 const vineyard::ObjectID object_id);
+
 void init_table_accessors(const std::shared_ptr<arrow::Table>& table,
                           const std::set<std::string>& attrs,
                           std::vector<int>& i32_indexes,
