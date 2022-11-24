@@ -543,9 +543,9 @@ add_custom_command (TARGET python
   COMMAND ${CMAKE_COMMAND} -E remove_directory graphlearn.egg-info
   COMMAND ${CMAKE_COMMAND} -E make_directory ${GL_PYTHON_LIB_DIR}
   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:graphlearn_shared> ${GL_PYTHON_LIB_DIR}
-  COMMAND cp -f ${GL_SETUP_DIR}/gl.__init__.py ${GL_PYTHON_DIR}/__init__.py
-  COMMAND echo "__version__ = ${VERSION}" >> ${GL_PYTHON_DIR}/__init__.py
-  COMMAND echo "__git_version__ = '${GIT_BRANCH}-${GIT_VERSION}'" >> ${GL_PYTHON_DIR}/__init__.py
+  COMMAND cp -f ${GL_SETUP_DIR}/version.py ${GL_PYTHON_DIR}/python/version.py
+  COMMAND echo "__version__ = ${VERSION}" >> ${GL_PYTHON_DIR}/python/version.py
+  COMMAND echo "__git_version__ = '${GIT_BRANCH}-${GIT_VERSION}'" >> ${GL_PYTHON_DIR}/python/version.py
   COMMAND OPEN_KNN=${KNN_FLAG} ${GL_PYTHON_BIN} ${GL_SETUP_DIR}/setup.py build_ext --inplace
   COMMAND OPEN_KNN=${KNN_FLAG} ${GL_PYTHON_BIN} ${GL_SETUP_DIR}/setup.py bdist_wheel
   COMMAND ${CMAKE_COMMAND} -E make_directory "${GL_BUILT_BIN_DIR}/ge_data/data"
@@ -553,7 +553,7 @@ add_custom_command (TARGET python
   WORKING_DIRECTORY ${GL_ROOT}
   VERBATIM)
 
-# install the graphlearn_shared library
+# install the graphlearn_shared library.
 install(TARGETS graphlearn_shared
         EXPORT graphlearn-targets
         ARCHIVE DESTINATION lib

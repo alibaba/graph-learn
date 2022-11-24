@@ -8,5 +8,5 @@ examples/tf/*.tar.gz
 # core dump
 /core
 
-# ignore generated __init__.py
-/__init__.py
+# ignore generated version.py
+/python/version.py
