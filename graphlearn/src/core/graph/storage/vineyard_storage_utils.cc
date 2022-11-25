@@ -38,6 +38,25 @@ namespace io {
 
 #if defined(WITH_VINEYARD)
 
+std::shared_ptr<gl_frag_t> get_vineyard_fragment(vineyard::Client &client,
+                                                 const vineyard::ObjectID object_id) {
+  auto target = client.GetObject(object_id);
+  std::shared_ptr<gl_frag_t> frag;
+  if ((frag = std::dynamic_pointer_cast<gl_frag_t>(target)) != nullptr) {
+    return frag;
+  }
+  std::shared_ptr<vineyard::ArrowFragmentGroup> fg;
+  if ((fg = std::dynamic_pointer_cast<vineyard::ArrowFragmentGroup>(target)) != nullptr) {
+    // assume 1 worker per server
+    for (const auto& kv : fg->Fragments()) {
+      if (fg->FragmentLocations().at(kv.first) == client.instance_id()) {
+        return client.GetObject<gl_frag_t>(kv.second);
+      }
+    }
+  }
+  return nullptr;
+}
+
 void init_table_accessors(const std::shared_ptr<arrow::Table>& table,
                           const std::set<std::string>& attrs,
                           std::vector<int>& i32_indexes,
@@ -413,7 +432,7 @@ SideInfo *frag_node_side_info(const std::shared_ptr<gl_frag_t>& frag,
   if (cache_entry) {
     return cache_entry.get();
   }
-  std::cerr << "init node sideinfo " << frag->id();
+  std::cerr << "init node sideinfo " << frag->id() << std::endl;
   auto side_info = std::make_shared<SideInfo>();
   // compute attribute numbers of i/f/s
   auto node_table = frag->vertex_data_table(node_label);

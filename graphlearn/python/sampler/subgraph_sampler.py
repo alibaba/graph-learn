@@ -71,13 +71,16 @@ class SubGraphSampler(object):
     res = pywrap.new_subgraph_response()
 
     status = self._client.sample_subgraph(req, res)
-    if not status.ok():
-      self._graph.node_state.inc(self._seed_type)
-    else:
+    if status.ok():
       node_ids = pywrap.get_node_set(res)
       row_idx = pywrap.get_row_idx(res)
       col_idx = pywrap.get_col_idx(res)
       edge_ids = pywrap.get_edge_set(res)
+    else:
+      if status.code() == errors.OUT_OF_RANGE:
+        if self._client.connect_to_next_server():
+          return self.get()
+      self._graph.node_state.inc(self._seed_type)
 
     pywrap.del_op_response(res)
     pywrap.del_op_request(req)

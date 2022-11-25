@@ -55,6 +55,8 @@ def get_mask_type(raw_type, mask=Mask.NONE):
   VAL mask for raw_type of "user, return "MASK***user".
   """
   assert isinstance(raw_type, str)
+  if isinstance(mask, str):  # accept string type
+    mask = Mask[mask.upper()]
   assert isinstance(mask, Mask)
   if mask == Mask.NONE:
     return raw_type

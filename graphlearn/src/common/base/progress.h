@@ -55,7 +55,7 @@ struct Progress {
     if (count > stage * grading) {
       char buffer[100];
       snprintf(buffer, sizeof(buffer),
-               "Progress of %s: %ld", key.c_str(), stage * grading);
+               "Progress of %s: %lld", key.c_str(), (long long)(stage * grading));
       USER_LOG(buffer);
       ++stage;
     }

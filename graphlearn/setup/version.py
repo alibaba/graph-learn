@@ -1,4 +1,4 @@
-# Copyright 2021-2022 Alibaba Group Holding Limited. All Rights Reserved.
+# Copyright 2020 Alibaba Group Holding Limited. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,5 +13,3 @@
 # limitations under the License.
 # =============================================================================
 
-from .ego_sage import EgoGraphSAGE
-from .ego_sage_data_loader import EgoSAGESupervisedDataLoader, EgoSAGEUnsupervisedDataLoader

@@ -39,13 +39,14 @@ try:
         from .tf.ego_bipartite_sage.ego_bipartite_sage import EgoBipartiteGraphSAGE
         from .tf.ego_gat.ego_gat import EgoGAT
         from .tf.ego_rgcn.ego_rgcn import EgoRGCN
-        from .tf.ego_rgcn.ego_rgcn_data import EgoRGCNDataLoader
+        from .tf.ego_rgcn.ego_rgcn_data_loader import EgoRGCNDataLoader
         from .tf.ego_sage.ego_sage import EgoGraphSAGE
-        from .tf.ego_sage.ego_sage_data import EgoSAGESupervisedDataLoader, EgoSAGEUnsupervisedDataLoader
+        from .tf.ego_sage.ego_sage_data_loader import EgoSAGESupervisedDataLoader, \
+            EgoSAGEUnsupervisedDataLoader
         from .tf.sage.edge_inducer import EdgeInducer
         from .tf.seal.edge_cn_inducer import EdgeCNInducer
         from .tf.ultra_gcn.ultra_gcn import UltraGCN
-    except:
+    except:  # noqa: E722, pylint: disable=bare-except
         pass
 
 finally:

@@ -60,20 +60,10 @@ public:
     std::cerr << std::endl;
 
     VINEYARD_CHECK_OK(client_.Connect(GLOBAL_FLAG(VineyardIPCSocket)));
-    auto fg = client_.GetObject<vineyard::ArrowFragmentGroup>(
-        GLOBAL_FLAG(VineyardGraphID));
-    if (fg == nullptr) {
-      throw std::runtime_error("Graph: failed to find the graph");
-    }
-    // assume 1 worker per server
-    for (const auto& kv : fg->Fragments()) {
-      if (fg->FragmentLocations().at(kv.first) == client_.instance_id()) {
-        frag_ = client_.GetObject<gl_frag_t>(kv.second);
-        break;
-      }
-    }
+    frag_ = get_vineyard_fragment(client_, GLOBAL_FLAG(VineyardGraphID));
     if (frag_ == nullptr) {
-      throw std::runtime_error("Graph: failed to find a local fragment");
+      throw std::runtime_error(
+        "Graph: failed to find the vineyard fragment: " + GLOBAL_FLAG(VineyardGraphID));
     }
     vertex_map_ = frag_->GetVertexMap();
 

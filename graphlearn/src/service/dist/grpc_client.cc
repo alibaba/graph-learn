@@ -26,10 +26,8 @@ namespace graphlearn {
 
 class GrpcClientImpl : public ClientImpl {
 public:
-  GrpcClientImpl(int32_t server_id, bool server_own) : server_own_(server_own) {
-    if (!server_own_) {
-      InitGoogleLogging();
-    }
+  GrpcClientImpl(int32_t server_id) {
+    InitGoogleLogging();
 
     manager_ = ChannelManager::GetInstance();
     manager_->SetCapacity(GLOBAL_FLAG(ServerCount));
@@ -42,9 +40,7 @@ public:
   }
 
   virtual ~GrpcClientImpl() {
-    if (!server_own_) {
-      UninitGoogleLogging();
-    }
+    UninitGoogleLogging();
   }
 
   Status RunOp(const OpRequest* request,
@@ -143,11 +139,10 @@ private:
 private:
   ChannelManager* manager_;
   GrpcChannel*    channel_;
-  bool            server_own_;
 };
 
-ClientImpl* NewRpcClientImpl(int32_t server_id, bool server_own) {
-  return new GrpcClientImpl(server_id, server_own);
+ClientImpl* NewRpcClientImpl(int32_t server_id) {
+  return new GrpcClientImpl(server_id);
 }
 
 }  // namespace graphlearn

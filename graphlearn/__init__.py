@@ -13,6 +13,11 @@
 # limitations under the License.
 # =============================================================================
 
+try:
+    from .python.version import __version__, __git_version__
+except ImportError:
+    pass
+
 from graphlearn import pywrap_graphlearn as pywrap
 from graphlearn.pywrap_graphlearn import IndexOption
 

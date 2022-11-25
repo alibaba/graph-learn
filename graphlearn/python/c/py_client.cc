@@ -103,12 +103,12 @@ void init_client_module(py::module& m) {
          py::arg("request"),
          py::arg("response"))
     .def("run_dag",
-         [](Client & self, DagDef* dag_def) {
+         [](Client & self, DagDef* dag_def, const bool copy) {
            std::unique_ptr<DagRequest> req(new DagRequest());
-           req->ParseFrom(dag_def);
+           req->ParseFrom(dag_def, copy);
            return self.RunDag(req.get());
          },
-         py::arg("dag_def"))
+         py::arg("dag_def"), py::arg("copy") = false)
     .def("get_dag_values",
          CALL_FUNC(GetDagValues),
          py::arg("request"),

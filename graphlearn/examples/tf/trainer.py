@@ -137,6 +137,7 @@ class TFTrainer(object):
           train_loss = outs[1]
           global_step = outs[-1]
           # Print results
+          local_step += 1
           if local_step % self.progress_steps == 0:
             if self.is_local:
               print(datetime.datetime.now(),
@@ -155,7 +156,6 @@ class TFTrainer(object):
             t = time.time()
             last_local_step = local_step
             last_global_step = global_step
-          local_step += 1
 
       if self.sync_barrier is not None:
         self.sync_barrier.end(self.sess)
@@ -179,6 +179,7 @@ class TFTrainer(object):
           if outs is not None:
             accuracy = outs[0]
             global_step = outs[-1]
+            local_step += 1
             # Print results
             if local_step % self.progress_steps == 0:
               if self.is_local:
@@ -198,7 +199,6 @@ class TFTrainer(object):
               t = time.time()
               last_local_step = local_step
               last_global_step = global_step
-            local_step += 1
           total_test_acc.append(accuracy)
       except tf.errors.OutOfRangeError:
         print("Finished.")
@@ -224,9 +224,9 @@ class TFTrainer(object):
           # [B,], [B,dim]
           feat = [','.join(str(x) for x in arr) for arr in outs[1]]
           emb_writer.write(list(zip(outs[0], feat)), indices=[0, 1])  # id,emb
+          local_step += 1
           if local_step % self.progress_steps == 0:
             print('Saved {} node embeddings, Time(s) {:.4f}'.format(local_step * batch_size, time.time() - t))
-          local_step += 1
         except tf.errors.OutOfRangeError:
           print('Save node embeddings done.')
           break

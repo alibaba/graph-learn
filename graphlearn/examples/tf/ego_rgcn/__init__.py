@@ -14,4 +14,4 @@
 # =============================================================================
 
 from .ego_rgcn import EgoRGCN
-from .ego_rgcn_data import EgoRGCNData
+from .ego_rgcn_data_loader import EgoRGCNDataLoader

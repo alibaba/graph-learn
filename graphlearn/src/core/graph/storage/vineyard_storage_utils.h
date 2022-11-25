@@ -20,6 +20,7 @@ limitations under the License.
 #include <set>
 
 #if defined(WITH_VINEYARD)
+#include "boost/algorithm/string.hpp"
 #include "vineyard/graph/fragment/arrow_fragment.vineyard.h"
 #endif
 
@@ -53,6 +54,9 @@ using graphlearn::io::IndexType;
 using graphlearn::io::IndexArray;
 using graphlearn::io::NewDataHeldAttributeValue;
 using graphlearn::io::SideInfo;
+
+std::shared_ptr<gl_frag_t> get_vineyard_fragment(vineyard::Client &client,
+                                                 const vineyard::ObjectID object_id);
 
 void init_table_accessors(const std::shared_ptr<arrow::Table>& table,
                           const std::set<std::string>& attrs,
