@@ -38,17 +38,20 @@ class Dataset(object):
 
     self._graph = dag.graph
     self._client = self._graph.get_client()
-    self._dag_datasets = [None] * len(self._client)
-    self._current_index = 0
-
     pywrap.set_dataset_capacity(window)
 
-    # initialize the dataset for the first client
-    # note that the dag_def may need to be copied to avoid been moved
-    status = self._client.run_dag(self._dag.dag_def, self._current_index != len(self._client) - 1)
-    raise_exception_on_not_ok_status(status)
-    self._dag_datasets[self._current_index] = pywrap.Dataset(self._client.current_client, self._dag_id)
+    self._dag_datasets = []
+    # initialize the dataset for the all possible clients, note that the dag_def may
+    # need to be copied to avoid been moved
+    for index in range(len(self._client)):
+      status = self._client.run_dag(self._dag.dag_def, index != len(self._client) - 1)
+      raise_exception_on_not_ok_status(status)
+      self._dag_datasets.append(pywrap.Dataset(self._client.current_client, self._dag_id))
+      # move to the next client
+      self._client.connect_to_next_server()
 
+    # starting from the dataset from the first client
+    self._current_index = 0
     # associate to graph to delete it when the graph been deleted
     self._graph.add_dataset(self)
 
@@ -74,13 +77,8 @@ class Dataset(object):
         pywrap.del_get_dag_value_response(res)
       self._cur_res = None
 
-      if self._client.connect_to_next_server():
-        self._current_index = (self._current_index + 1) % len(self._client)
-        # initialize the dataset for the next client
-        if self._dag_datasets[self._current_index] is None:
-          status = self._client.run_dag(self._dag.dag_def, self._current_index != len(self._client) - 1)
-          raise_exception_on_not_ok_status(status)
-          self._dag_datasets[self._current_index] = pywrap.Dataset(self._client.current_client, self._dag_id)
+      if self._current_index < len(self._dag_datasets) - 1:
+        self._current_index = self._current_index + 1
         return self.next()
       else:
         self._current_index = 0
