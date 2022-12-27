@@ -16,6 +16,8 @@ cmake_minimum_required (VERSION 3.13)
 
 project (GraphLearn VERSION 1.0 LANGUAGES CXX)
 
+include(CheckCXXCompilerFlag)
+
 ## options
 option (TESTING
   "Enable testing"
@@ -338,7 +340,12 @@ else()
 endif()
 
 if (WITH_VINEYARD)
-  set (GL_CXX_DIALECT "c++14")
+  CHECK_CXX_COMPILER_FLAG("-std=gnu++17" HAS_STDCXX_17)
+  if (HAS_STDCXX_17)
+    set (GL_CXX_DIALECT "gnu++17")
+  else()
+    set (GL_CXX_DIALECT "gnu++14")
+  endif()
 endif()
 
 if (WITH_HIACTOR)
@@ -511,7 +518,7 @@ if (TESTING)
   endif ()
 
   if (WITH_VINEYARD AND TARGET vineyard_storage_unittest)
-    target_compile_options(vineyard_storage_unittest PRIVATE "-std=c++14")
+    target_compile_options(vineyard_storage_unittest PRIVATE "-std=${GL_CXX_DIALECT}")
   endif ()
 endif()
 
