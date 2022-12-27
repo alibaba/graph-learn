@@ -16,6 +16,7 @@ limitations under the License.
 #include "include/config.h"
 
 #include <algorithm>
+#include <limits>
 
 namespace graphlearn {
 
