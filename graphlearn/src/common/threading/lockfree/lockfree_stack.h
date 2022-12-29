@@ -17,6 +17,7 @@ limitations under the License.
 #define GRAPHLEARN_COMMON_THREADING_LOCKFREE_LOCKFREE_STACK_H_
 
 #include <algorithm>
+#include <random>
 #include <vector>
 #include "common/threading/atomic/atomic.h"
 #include "common/threading/lockfree/lockfree_detail.h"
@@ -67,7 +68,9 @@ LockFreeStack<T>::LockFreeStack(size_t size) {
   for (size_t k = 0; k < mLimit; ++k) {
     index.push_back(k);
   }
-  std::random_shuffle(index.begin(), index.end());
+  std::random_device rd;
+  std::mt19937 g(rd());
+  std::shuffle(index.begin(), index.end(), g);
 
   for (size_t k = 0; k < mLimit; ++k) {
     Node& node = mNodeBuffer[index[k]];
