@@ -77,4 +77,3 @@ spec:
           - name: ${your_volume}
             persistentVolumeClaim:
               claimName: ${your_pvc_name}
-

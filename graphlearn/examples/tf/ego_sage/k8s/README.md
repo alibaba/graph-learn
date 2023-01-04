@@ -7,8 +7,6 @@ You need to make sure that a distributed file system (eg, NFS) is mounted succes
 
 Put directory `examples` on it.
 
-
-
 2. Train and evaluate with local mode.
 
 ```shell
