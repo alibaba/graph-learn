@@ -1,9 +1,13 @@
 # How to run on kubernets
 1. Prepare data and code
 
+We use [Kubeflow](https://github.com/kubeflow/training-operator) to deploy **GL** jobs on K8s clusters. Make sure Kubeflow is installed before running the following examples.
+
 You need to make sure that a distributed file system (eg, NFS) is mounted successfully either on each host machine or with [PVC](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolumeclaims).
 
 Put directory `examples` on it.
+
+
 
 2. Train and evaluate with local mode.
 

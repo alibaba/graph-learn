@@ -31,7 +31,7 @@ Fix-sized `EgoGraph` based GraphSAGE.
 
     ```shell script
     cd ../tf/ego_sage/
-    python train.py
+    python train_unsupervised.py
     ```
 
 ## Datasets and performance
