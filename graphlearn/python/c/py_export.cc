@@ -36,6 +36,7 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
   m.doc() = "Python interface for graph-learn.";
   // setters
   m.def("set_default_neighbor_id", &SetGlobalFlagDefaultNeighborId);
+  m.def("set_default_full_nbr_num", &SetGlobalFlagDefaultFullNbrNum);
   m.def("set_tracker_mode", &SetGlobalFlagTrackerMode);
   m.def("set_padding_mode", &SetGlobalFlagPaddingMode);
   m.def("set_storage_mode", &SetGlobalFlagStorageMode);

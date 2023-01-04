@@ -44,6 +44,7 @@ class DagNode(object):
     self._path = None  # Upstream edge type
     self._type = None  # Edge type or node type of current DagNode
     self._strategy = "random"
+    self._remove_property = False
 
     # Add by GSL.
     # All the DagEdges expect link to sink node are mapped to DagEdgeDef.
@@ -200,7 +201,7 @@ class DagNode(object):
       assert strategy in ["random", "in_degree", "conditional", "node_weight"]
     elif self._op_name == "Sampler":
       assert strategy in \
-        ["random", "topk", "in_degree", "edge_weight", "full"]
+        ["random", "topk", "in_degree", "edge_weight", "full", "random_without_replacement"]
     else:
       raise ValueError("`by(strategy)` can only be used after`sample(count)`")
 
@@ -210,7 +211,7 @@ class DagNode(object):
     return self
 
   def filter(self, target):
-    """Filter the samples that are not equal to target ids.
+    """Filter the samples that are equal to target ids.
 
     Args:
       target (string): Alias of upstream TraverseVertexDagNode.
@@ -294,6 +295,10 @@ class DagNode(object):
     func(self)
     return self
 
+  def remove_property(self):
+    self._remove_property = True
+    return self
+
   def values(self, func=lambda x: x):
     self._dag.set_ready(func)
     return self._dag
@@ -308,7 +313,10 @@ class DagNode(object):
     self._alias = alias
     self._dag.add_node(alias, self, temp=temp)
 
-    self._lookup_node = self._lookup()
+    if self._remove_property:
+      self._lookup_node = None
+    else:
+      self._lookup_node = self._lookup()
     self._link_to_sink()
 
   def _get_shape_and_degrees(self, dag_values):
@@ -355,22 +363,28 @@ class DagNode(object):
 
     next_node.set_path(edge_type, pywrap.NodeFrom.NODE)
     next_node.set_output_field(pywrap.kEdgeIds)
+
     return next_node
 
   def _new_vertex_node(self, op_name, edge_type, in_edge,
                        node_from=pywrap.NodeFrom.EDGE_DST):
     assert edge_type is not None and isinstance(edge_type, str)
 
-    self._add_out_edge(in_edge)
+    if not isinstance(in_edge, list):
+      in_edge = [in_edge]
+    for e in in_edge:
+      self._add_out_edge(e)
     shape = self._shape
 
     next_node = TraverseVertexDagNode(self._dag, op_name=op_name)
     next_node._shape = shape
     next_node._add_param(pywrap.kEdgeType, edge_type)
-    next_node._add_in_edge(in_edge)
+    for e in in_edge:
+      next_node._add_in_edge(e)
 
     next_node.set_path(edge_type, node_from)
     next_node.set_output_field(pywrap.kNodeIds)
+
     return next_node
 
   def set_ready(self, node_id):
@@ -495,6 +509,22 @@ class TraverseVertexDagNode(DagNode):
     self._neg_downstreams.append(next_node)
     return next_node
 
+  def random_walk(self, edge_type, walk_len=1, p=1.0, q=1.0):
+    walk_len = int(walk_len)
+    assert(walk_len > 0)
+    self._set_alias()
+    in_edge_src = self._new_edge(dst_input=pywrap.kSrcIds)
+    in_edge_parent = self._new_edge(dst_input=pywrap.kNodeIds)
+    next_node = self._new_vertex_node("RandomWalk", edge_type,
+                                      [in_edge_src, in_edge_parent])
+    next_node._add_param(pywrap.kSideInfo, [float(p), float(q)])
+    next_node._add_param(pywrap.kDistances, int(walk_len))
+    next_node._add_param(pywrap.kPartitionKey, pywrap.kSrcIds)
+    next_node._shape = (np.prod(self._shape), walk_len)
+    next_node._remove_property = True
+    self._pos_downstreams.append(next_node)
+    return next_node
+
   def _lookup(self):
     # Override
     # Generate an edge from traverse node to it's lookup node.
@@ -610,7 +640,6 @@ class TraverseSourceEdgeDagNode(TraverseEdgeDagNode):
     dst_ids = pywrap.get_dag_value(dag_values, self._nid, pywrap.kDstIds)
     return self._graph.get_edges(
         self._type, src_ids, dst_ids, edge_ids, degrees, shape)
-
 
 class LookupDagNode(DagNode):
   def __init__(self, op_name="", upstream=None, in_edges=[], params={}):

@@ -50,6 +50,7 @@ DEFINE_METHOD(SubGraph);
 DEFINE_METHOD(GetCount);
 DEFINE_METHOD(GetDegree);
 DEFINE_METHOD(GetStats);
+DEFINE_METHOD(RandomWalk);
 
 #undef DEFINE_METHOD
 

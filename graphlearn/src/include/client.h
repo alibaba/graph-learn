@@ -20,6 +20,7 @@ limitations under the License.
 #include "include/constants.h"
 #include "include/dag_request.h"
 #include "include/graph_request.h"
+#include "include/random_walk_request.h"
 #include "include/sampling_request.h"
 #include "include/status.h"
 #include "include/subgraph_request.h"
@@ -49,6 +50,7 @@ public:
   DECLARE_METHOD(GetCount);
   DECLARE_METHOD(GetDegree);
   DECLARE_METHOD(GetStats);
+  DECLARE_METHOD(RandomWalk);
 
   Status RunOp(const OpRequest* request, OpResponse* response);
 

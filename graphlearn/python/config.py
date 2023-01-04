@@ -23,6 +23,9 @@ from graphlearn import pywrap_graphlearn as pywrap
 def set_default_neighbor_id(nbr_id):
   pywrap.set_default_neighbor_id(nbr_id)
 
+def set_default_full_nbr_num(num):
+  pywrap.set_default_full_nbr_num(num)
+
 def set_tracker_mode(mode):
   pywrap.set_tracker_mode(mode)
 

@@ -97,6 +97,10 @@ class Decoder(object):
 
     self._attributed = self._parse_attributes()
 
+    self._has_property = False
+    if self._weighted or self._labeled or self._timestamped or self._attributed:
+      self._has_property = True
+
   def _parse_attributes(self):
     if not self._attr_types:
       return False
@@ -187,6 +191,10 @@ class Decoder(object):
     # attributed << 3 | labeled << 2 | weighted << 1
     return int(self._weighted * 2 + \
                self._labeled * 4 + self._attributed * 8)
+
+  @property
+  def has_property(self):
+    return self._has_property
 
   @property
   def int_attr_num(self):

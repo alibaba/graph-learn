@@ -61,5 +61,6 @@ const char* kFilterIds = "filt";
 const char* kDegrees = "dg";
 const char* kEpoch = "ep";
 const char* kNodeFrom = "nf";
+const char* kSparseIds = "sparse_ids";
 
 }  // namespace graphlearn

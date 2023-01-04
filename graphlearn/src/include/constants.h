@@ -64,6 +64,7 @@ extern const char* kFilterIds;
 extern const char* kDegrees;
 extern const char* kEpoch;
 extern const char* kNodeFrom;
+extern const char* kSparseIds;
 
 enum SystemState {
   kBlank = 0,

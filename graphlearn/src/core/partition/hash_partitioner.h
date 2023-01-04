@@ -54,7 +54,24 @@ public:
         if (it.first != kPartitionKey) {
           const Tensor* from = &(it.second);
           Tensor* target = &(part_req->tensors_[it.first]);
-          CopyToPartRequest(from, index, from->Size() / length, target);
+          size_t from_size = from->Size();
+          if (it.first == kSparseIds) {
+            std::vector<int32_t> cursors;
+            cursors.reserve(length + 1);
+            cursors.push_back(0);
+            auto& segs = req->tensors_.at(kSegments);
+            size_t size = segs.Size();
+            for (int32_t idx = 0; idx < length; ++idx) {
+              if (size < length) {
+                cursors.push_back(0);
+              } else {
+                cursors.push_back(segs.GetInt32(idx) + cursors[idx]);
+              }
+            }
+            CopyToPartRequest(from, index, cursors, target);
+          } else {
+            CopyToPartRequest(from, index, from->Size() / length, target);
+          }
         }
       }
     }
@@ -78,6 +95,31 @@ private:
       }
     }
     return part_req;
+  }
+
+   void CopyToPartRequest(const Tensor* from,
+                         int32_t index,
+                         const std::vector<int32_t>& dims,
+                         Tensor* target) {
+    DataType type = from->DType();
+
+#define CASE_COPY(Type)                           \
+  case k##Type:                                   \
+    for (int32_t i = dims[index]; i < dims[index + 1]; ++i) { \
+      target->Add##Type(from->Get##Type(i));      \
+    }                                             \
+    break
+
+    switch (type) {
+      CASE_COPY(Int64);
+      CASE_COPY(Int32);
+      CASE_COPY(Float);
+      CASE_COPY(Double);
+      CASE_COPY(String);
+      default:
+        break;
+    }
+#undef CASE_COPY
   }
 
   void CopyToPartRequest(const Tensor* from,

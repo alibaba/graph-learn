@@ -154,6 +154,12 @@ class Values(object):
     if self._inited:
       return
 
+    try:
+      if not self._get_decoder().has_property:
+        return
+    except AttributeError:
+      print('Get Decoder for {} failed.'.format(self._type))
+
     values = self._lookup()
     self.int_attrs = values.int_attrs
     self.float_attrs = values.float_attrs

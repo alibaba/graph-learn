@@ -122,11 +122,19 @@ private:
         int32_t to_offset = incremental_degrees[offset];
         for (auto& it : tmp->tensors_) {
           if (it.first != kDegreeKey) {
-            CopyToResponse(&(it.second),
-                           from_offset,
-                           &(t->tensors_[it.first]),
-                           to_offset,
-                           dim);
+            if (tmp->IsSparse() && it.first == kNodeIds) {
+              CopyToResponse(&(it.second),
+                            i,
+                            &(t->tensors_[it.first]),
+                            offset,
+                            1);
+            } else {
+              CopyToResponse(&(it.second),
+                            from_offset,
+                            &(t->tensors_[it.first]),
+                            to_offset,
+                            dim);
+            }
           }
         }
         from_offset += dim;
@@ -171,8 +179,13 @@ private:
 
     for (auto& it : tmp->tensors_) {
       if (it.first != kDegreeKey) {
-        ADD_TENSOR(t->tensors_, it.first, it.second.DType(), batch_degree);
-        t->tensors_[it.first].Resize(batch_degree);
+        if (tmp->IsSparse() && it.first == kNodeIds) {
+          ADD_TENSOR(t->tensors_, it.first, it.second.DType(), batch_size);
+          t->tensors_[it.first].Resize(batch_size);
+        } else {
+          ADD_TENSOR(t->tensors_, it.first, it.second.DType(), batch_degree);
+          t->tensors_[it.first].Resize(batch_degree);
+        }
       }
     }
 

@@ -122,11 +122,12 @@ class DagValues(object):
 
     # Add the attributes for the Nodes/Edges.
     lookup_node = node.get_lookup_node()
-    res.int_attrs = pywrap.get_dag_value(self._res, lookup_node.nid, "ia")
-    res.float_attrs = pywrap.get_dag_value(self._res, lookup_node.nid, "fa")
-    res.string_attrs = pywrap.get_dag_value(self._res, lookup_node.nid, "sa")
-    res.weights = pywrap.get_dag_value(self._res, lookup_node.nid, "wei")
-    res.labels = pywrap.get_dag_value(self._res, lookup_node.nid, "lb")
+    if lookup_node is not None:
+      res.int_attrs = pywrap.get_dag_value(self._res, lookup_node.nid, "ia")
+      res.float_attrs = pywrap.get_dag_value(self._res, lookup_node.nid, "fa")
+      res.string_attrs = pywrap.get_dag_value(self._res, lookup_node.nid, "sa")
+      res.weights = pywrap.get_dag_value(self._res, lookup_node.nid, "wei")
+      res.labels = pywrap.get_dag_value(self._res, lookup_node.nid, "lb")
 
     # Add degrees for the Nodes.
     for dg_node in node.get_degree_nodes():
