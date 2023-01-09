@@ -1,8 +1,8 @@
 apiVersion: kubeflow.org/v1
 kind: TFJob
 metadata:
-  name: dist-test
-  namespace: k8s-test
+  name: ${your_job_name}
+  namespace: ${your_namespace}
 spec:
   tfReplicaSpecs:
     PS:
