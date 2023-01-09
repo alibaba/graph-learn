@@ -153,7 +153,7 @@ def main():
       train_iter, loss = train(g, model)
       save_iter, ids, emb = save_node_embedding(g, model)
     # training
-    trainer.train(train_iter, loss, FLAGS.learning_rate, epochs=FLAGS.epochs)
+    trainer.train(train_iter, loss, learning_rate=FLAGS.learning_rate, epochs=FLAGS.epochs)
     # saving node embedding.
     print('Start saving node embedding...')
     trainer.save(FLAGS.outputs.split(',')[0] + str(task_index), save_iter, ids, emb, FLAGS.batch_size)

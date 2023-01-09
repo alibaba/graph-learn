@@ -31,10 +31,12 @@ except ImportError:
 
 import graphlearn as gl
 import graphlearn.python.nn.tf as tfg
-from graphlearn.examples.tf.trainer import LocalTrainer
 
 from ego_sage import EgoGraphSAGE
 from ego_sage_data_loader import EgoSAGESupervisedDataLoader
+
+sys.path.append("..")
+from trainer import LocalTrainer
 
 def parse_args():
   cur_path = sys.path[0]

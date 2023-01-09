@@ -16,7 +16,9 @@ spec:
             - /bin/sh
             - -c
             - |-
+              pip install graph-learn -U;
               pip install scipy;
+              pip install ogb;
               cd /root/data/examples/tf/ego_sage/k8s;
               python ../../../data/ogbl_collab.py;
               split -l 150000 -d -a 1 ogbl_collab/ogbl_collab_node node_;
@@ -40,7 +42,7 @@ spec:
             persistentVolumeClaim:
               claimName: ${your_pvc_name}
     Worker:
-      replicas: 4
+      replicas: 2
       template:
         metadata:
           creationTimestamp: null
@@ -50,7 +52,9 @@ spec:
             - /bin/sh
             - -c
             - |-
+              pip install graph-learn -U;
               pip install scipy;
+              pip install ogb;
               cd /root/data/examples/tf/ego_sage/k8s;
               python ../../../data/ogbl_collab.py;
               split -l 150000 -d -a 1 ogbl_collab/ogbl_collab_node node_;
