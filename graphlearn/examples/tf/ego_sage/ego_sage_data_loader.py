@@ -86,7 +86,7 @@ class EgoSAGEUnsupervisedDataLoader(ego_data.EgoDataLoader):
     return self.get_egograph('neg_dst')
 
   def _query(self, graph):
-    seed = graph.E('train').batch(self._batch_size).shuffle(traverse=True)
+    seed = graph.E(self._edge_type).batch(self._batch_size).shuffle(traverse=True)
     src = seed.outV().alias('src')
     dst = seed.inV().alias('dst')
     neg_dst = src.outNeg(self._edge_type).sample(self._neg_num).by(self._neg_sampler).alias('neg_dst')
