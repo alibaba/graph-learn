@@ -20,7 +20,7 @@ limitations under the License.
 #include "actor/graph/sharded_graph_store.h"
 #include "actor/service/actor_alien.h"
 #include "actor/params.h"
-#include "actor/tensor_map.h"
+#include "actor/tensor_partitioner.h"
 #include "actor/utils.h"
 #include "common/base/log.h"
 

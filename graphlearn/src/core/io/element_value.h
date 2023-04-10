@@ -51,11 +51,15 @@ struct SideInfo {
 
   bool IsLabeled() const { return format & kLabeled; }
 
+  bool IsTimestamped() const { return format & kTimestamped; }
+
   bool IsAttributed() const { return format & kAttributed; }
 
   void SetWeighted() { format &= kWeighted; }
 
   void SetLabeled() { format &= kLabeled; }
+
+  void SetTimestamped() { format &= kTimestamped; }
 
   void SetAttributed() { format &= kAttributed; }
 
@@ -73,9 +77,10 @@ struct SideInfo {
 
 class AttributeValue {
 public:
-  virtual ~AttributeValue() {}
-
   static AttributeValue* Default(const SideInfo* info);
+  AttributeValue() = default;
+  AttributeValue(const AttributeValue& other) {};
+  virtual ~AttributeValue() = default;
 
   virtual void Clear() = 0;
   virtual void Shrink() = 0;
@@ -108,6 +113,7 @@ struct EdgeValue {
   int64_t dst_id;
   float   weight;
   int32_t label;
+  int64_t timestamp;
   AttributeValue* attrs;
 
   EdgeValue() : attrs(NewDataHeldAttributeValue()) {}
@@ -118,9 +124,14 @@ struct NodeValue {
   int64_t id;
   float   weight;
   int32_t label;
+  int64_t timestamp;
   AttributeValue* attrs;
 
   NodeValue() : attrs(NewDataHeldAttributeValue()) {}
+  NodeValue(const NodeValue& other);
+  NodeValue& operator=(const NodeValue& other);
+  NodeValue(NodeValue&& other);
+  NodeValue& operator=(NodeValue&& other);
   ~NodeValue() { delete attrs; }
 };
 

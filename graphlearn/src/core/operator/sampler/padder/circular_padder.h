@@ -34,34 +34,34 @@ public:
   ~CircularPadder() = default;
 
   Status Pad(SamplingResponse* res, int32_t target_size) override {
-    int32_t actual_size = neighbors_.Size();
-    int32_t got = 0;
-    for (int32_t idx = 0; got < target_size; idx++) {
-      int32_t cursor = idx % actual_size;
-      if (indices_ == nullptr) {
-        // just use the cursor directly
-      } else if (cursor < indices_->size()) {
-        cursor = indices_->at(cursor);
-      } else {
-        LOG(ERROR) << "Invalid sampler indices, " << indices_->size()
-                   << ", cursor:" << cursor
-                   << ", actual_size:" << actual_size
-                   << ", target_size:" << target_size;
-        return error::InvalidArgument("Invalid sampler implementation.");
-      }
-
-      if (!HitFilter(neighbors_[cursor])) {
+    int32_t actual_size = 0;
+    if (indices_) {
+      actual_size = indices_->size();
+    } else {
+      actual_size = neighbors_.Size();
+    }
+    if (actual_size == 0) {
+      res->FillWith(GLOBAL_FLAG(DefaultNeighborId), -1);
+    } else {
+      for (int32_t idx = 0; idx < target_size; idx++) {
+        int32_t cursor = idx % actual_size;
+        if (cursor < 0) {
+          cursor += actual_size;
+        }
+        if (indices_ == nullptr) {
+          // just use the cursor directly
+        } else if (cursor < indices_->size()) {
+          cursor = indices_->at(cursor);
+        } else {
+          LOG(ERROR) << "Invalid sampler indices, " << indices_->size()
+                    << ", cursor:" << cursor
+                    << ", actual_size:" << actual_size
+                    << ", target_size:" << target_size;
+          return error::InvalidArgument("Invalid sampler implementation.");
+        }
         res->AppendNeighborId(neighbors_[cursor]);
         res->AppendEdgeId(edges_[cursor]);
-        ++got;
-      } else if (actual_size == 1) {
-        // matches the filter and no more neighbors exist, just break
-        break;
       }
-    }
-    for (int32_t idx = got; idx < target_size; idx++) {
-      res->AppendNeighborId(GLOBAL_FLAG(DefaultNeighborId));
-      res->AppendEdgeId(-1);
     }
     return Status::OK();
   }

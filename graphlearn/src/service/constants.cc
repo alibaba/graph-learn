@@ -15,7 +15,7 @@ limitations under the License.
 
 namespace graphlearn {
 
-const char* kPartitionKey = "pt";
+const char* kUnspecified = "unspecified";
 const char* kOpName = "op";
 const char* kNodeType = "nt";
 const char* kEdgeType = "et";
@@ -34,6 +34,7 @@ const char* kStrategy = "str";
 const char* kDegreeKey = "deg";
 const char* kWeightKey = "wei";
 const char* kLabelKey = "lb";
+const char* kTimestampKey = "ts";
 const char* kIntAttrKey = "ia";
 const char* kFloatAttrKey = "fa";
 const char* kStringAttrKey = "sa";
@@ -57,9 +58,14 @@ const char* kFloatProps = "fpps";
 const char* kStrCols = "scols";
 const char* kStrProps = "spps";
 const char* kFilterType = "ftype";
-const char* kFilterIds = "filt";
+const char* kFilterField = "field";
+const char* kFilterValues = "filt";
 const char* kDegrees = "dg";
 const char* kEpoch = "ep";
 const char* kNodeFrom = "nf";
+const char* kNeedDist = "need_dist";
+const char* kDistToSrc = "dist_to_src";
+const char* kDistToDst = "dist_to_dst";
+const char* kSparseIds = "sparse_ids";
 
 }  // namespace graphlearn

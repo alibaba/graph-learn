@@ -25,6 +25,7 @@ limitations under the License.
 #include <vector>
 
 #include "common/threading/sync/semaphore_shim.h"
+#include "core/dag/tensor_map.h"
 #include "include/op_request.h"
 
 namespace graphlearn {
@@ -41,10 +42,10 @@ public:
 
   /// Write a record on the tape.
   void Record(int32_t key, std::unique_ptr<OpResponse>& response);
-  void Record(int32_t key, Tensor::Map&& tensors);
+  void Record(int32_t key, TensorMap&& tensors);
 
   /// Lookup record with given key. If not found, return nullptr.
-  const Tensor::Map& Retrieval(int32_t key);
+  TensorMap& Retrieval(int32_t key);
 
   /// All the input data for running a DagNode will be dumped to a tape.
   /// Check whether it is ready for the given node.
@@ -97,7 +98,7 @@ private:
 #endif
   std::atomic<int32_t> epoch_;
   // DagNode with Id i records on index i-1
-  std::vector<Tensor::Map> recordings_;
+  std::vector<TensorMap> recordings_;
   std::vector<std::atomic<int32_t>> refs_;
 };
 

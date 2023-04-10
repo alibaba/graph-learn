@@ -87,24 +87,21 @@ GetDagValuesResponse::GetDagValuesResponse(GetDagValuesResponse&& res)
 
 void GetDagValuesResponse::MoveFrom(Tape* tape) {
   for (int32_t i = 1; i < tape->Size(); ++i) {
-    if (tape->Retrieval(i).size() > 0) {
-      records_.emplace(i, std::move(tape->Retrieval(i)));
+    auto& ret = tape->Retrieval(i);
+    if (ret.Size() > 0) {
+      records_.emplace(i, std::move(ret));
     }
   }
 }
 
-Tensor* GetDagValuesResponse::GetValue(int32_t node_id,
-                                       const std::string& key) {
+std::pair<const Tensor*, const Tensor*> GetDagValuesResponse::GetValue(
+    int32_t node_id, const std::string& key) {
   auto it = records_.find(node_id);
   if (it == records_.end()) {
-    return nullptr;
+    return {nullptr, nullptr};
   }
   auto& tensors = it->second;
-  auto iit = tensors.find(key);
-  if (iit == tensors.end()) {
-    return nullptr;
-  }
-  return &(iit->second);
+  return tensors.Find(key);;
 }
 
 void GetDagValuesResponse::SetEpoch(int32_t epoch) {
@@ -120,7 +117,8 @@ void GetDagValuesResponse::SerializeTo(void* response) {
   for (auto& record : records_) {
     DagNodeValue* res = pb->add_dag_node_value();
     res->set_id(record.first);
-    auto& tensors = record.second;
+    auto& tensors = record.second.tensors_;
+    auto& sparse_tensors = record.second.sparse_tensors_;
     for (auto& tensor : tensors) {
       auto& t = tensor.second;
       TensorValue* v = res->add_tensors();
@@ -128,6 +126,25 @@ void GetDagValuesResponse::SerializeTo(void* response) {
       v->set_length(t.Size());
       v->set_dtype(static_cast<int32_t>(t.DType()));
       t.SwapWithProto(v);
+    }
+    for (auto& tensor : sparse_tensors) {
+      auto& t = tensor.second;
+      auto t_segments = t.MutableSegments();
+      auto t_values = t.MutableValues();
+      SparseTensorValue* v = res->add_sparse_tensors();
+      v->set_name(tensor.first);
+
+      TensorValue* segments = v->mutable_segments();
+      segments->set_name("segments");
+      segments->set_length(t_segments->Size());
+      segments->set_dtype(static_cast<int32_t>(t_segments->DType()));
+      t_segments->SwapWithProto(segments);
+
+      TensorValue* values = v->mutable_values();
+      values->set_name("values");
+      values->set_length(t_values->Size());
+      values->set_dtype(static_cast<int32_t>(t_values->DType()));
+      t_values->SwapWithProto(values);
     }
   }
   pb->set_epoch(epoch_);
@@ -140,13 +157,25 @@ bool GetDagValuesResponse::ParseFrom(const void* response) {
   for (int32_t i = 0; i < pb->dag_node_value_size(); ++i) {
     DagNodeValue* res = pb->mutable_dag_node_value(i);
     Tensor::Map mmap;
+    SparseTensor::Map smap;
     for (int32_t j = 0; j < res->tensors_size(); ++j) {
       TensorValue* v = res->mutable_tensors(j);
       Tensor t(static_cast<DataType>(v->dtype()));
       t.SwapWithProto(v);
       mmap.emplace(v->name(), std::move(t));
     }
-    records_.emplace(res->id(), std::move(mmap));
+    for (int32_t j = 0; j < res->sparse_tensors_size(); ++ j) {
+      SparseTensorValue* sv = res->mutable_sparse_tensors(j);
+      auto sv_values = sv->mutable_values();
+      auto sv_segments = sv->mutable_segments();
+      Tensor values(static_cast<DataType>(sv_values->dtype()));
+      values.SwapWithProto(sv_values);
+
+      Tensor segments(static_cast<DataType>(sv_segments->dtype()));
+      segments.SwapWithProto(sv_segments);
+      smap.emplace(sv->name(), SparseTensor{std::move(segments), std::move(values)});
+    }
+    records_.emplace(res->id(), TensorMap{std::move(mmap), std::move(smap)});
   }
   epoch_ = pb->epoch();
   index_ = pb->index();

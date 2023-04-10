@@ -30,15 +30,17 @@ class GSLMaskTestCase(SamplingTestCase):
   def test_traverse_with_mask(self):
     bs = 8
     q = self.g.V(self._node1_type, mask=gl.Mask.TEST).batch(bs).alias('test') \
-            .values(lambda x:
-               (x['test'].ids, x['test'].int_attrs, x['test'].float_attrs, x['test'].string_attrs))
+            .values()
     dataset = gl.Dataset(q)
     iteration = 0
     for i in range(2):
       res = []
       while True:
         try:
-          ids, i, f, s = dataset.next()
+          ret = dataset.next()
+          nodes = ret['test']
+          ids, i, f, s = nodes.ids, nodes.int_attrs, nodes.float_attrs, nodes.string_attrs
+          utils.check_i_attrs(i, ids)
           utils.check_i_attrs(i, ids)
           utils.check_f_attrs(f, ids)
           utils.check_s_attrs(s, ids)

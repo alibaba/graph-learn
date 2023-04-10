@@ -18,7 +18,10 @@ from __future__ import print_function
 """DataLoader for pyG."""
 
 import os
-import torch
+try:
+  import torch
+except ImportError:
+  pass
 
 
 try:

@@ -53,7 +53,7 @@ class FeatureGroup(Module):
       x_list: A Tensor of shape [batch_size, feature_num] or
       a list of Tensors of shape [batch_size].
     Returns:
-      The concatenated Tensor of outputs of `FeatureColumn` in 
+      The concatenated Tensor of outputs of `FeatureColumn` in
       feature_column_list.
     """
     outputs = []
@@ -66,7 +66,7 @@ class FeatureGroup(Module):
     if self._n != num:
       raise ValueError("{} feature columns, but got {} inputs."
                        .format(self._n, num))
-    for i in range(num):
+    for i in range(self._n):
       output = self._fc_list[i](x_list[i])
       if isinstance(self._fc_list[i], NumericColumn):
         output = tf.expand_dims(output, axis=-1)
@@ -76,15 +76,15 @@ class FeatureGroup(Module):
 
 class FeatureHandler(Module):
   """Encodes the input features of `Data` using `FeatureSpec`.
-  For efficiency, we group the features into `FeatureGroup` accroding to 
-  the `FeatureSpec` and then encode each `FeatureGroup` and merge their 
+  For efficiency, we group the features into `FeatureGroup` accroding to
+  the `FeatureSpec` and then encode each `FeatureGroup` and merge their
   outputs as the final output.
 
   Args:
     name: A unique string.
-    feature_spec: A `FeatureSpec` object to describe the input feature 
+    feature_spec: A `FeatureSpec` object to describe the input feature
       of `Data`.
-    fuse_embedding: Whether fuses the input features of the same 
+    fuse_embedding: Whether fuses the input features of the same
       specified dimension before feature encoding(embedding lookup).
   """
 
@@ -172,7 +172,7 @@ class FeatureHandler(Module):
 
   def _classify_by_dimension(self, i, spec):
     """ Fuses the embedding columns of the same dimension together. It uses
-    self._fused_int_mapping, which is indexed by dimension and maintains all 
+    self._fused_int_mapping, which is indexed by dimension and maintains all
     of feature indices and buckets.
     """
     if not spec.dimension:

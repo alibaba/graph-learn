@@ -52,6 +52,7 @@ public:
     dst_ids_.shrink_to_fit();
     labels_.shrink_to_fit();
     weights_.shrink_to_fit();
+    timestamps_.shrink_to_fit();
     if (attributes_) {
       attributes_->Shrink();
     }
@@ -77,6 +78,9 @@ public:
     }
     if (side_info_.IsLabeled()) {
       labels_.push_back(value->label);
+    }
+    if (side_info_.IsTimestamped()) {
+      timestamps_.push_back(value->timestamp);
     }
     if (side_info_.IsAttributed()) {
       auto ints = value->attrs->GetInts(nullptr);
@@ -127,6 +131,14 @@ public:
     }
   }
 
+  int64_t GetTimestamp(IdType edge_id) const override {
+    if (edge_id < timestamps_.size()) {
+      return timestamps_[edge_id];
+    } else {
+      return -1;
+    }
+  }
+
   Attribute GetAttribute(IdType edge_id) const override {
     if (!side_info_.IsAttributed()) {
       return Attribute();
@@ -170,6 +182,10 @@ public:
     return Array<int32_t>(labels_);
   }
 
+  const Array<int64_t> GetTimestamps() const override {
+    return Array<int64_t>(timestamps_);
+  }
+
   const std::vector<Attribute>* GetAttributes() const override {
     return nullptr;
   }
@@ -204,6 +220,7 @@ private:
   IdList     dst_ids_;
   std::vector<float>   weights_;
   std::vector<int32_t> labels_;
+  std::vector<int64_t> timestamps_;
   AttributeValue*      attributes_;
   SideInfo             side_info_;
 };

@@ -73,7 +73,7 @@ void AttributeValue::FillStrings(Tensor* tensor) const {
 
 class DataHeldAttributeValue : public AttributeValue {
 public:
-  DataHeldAttributeValue() = default;
+  DataHeldAttributeValue() {}
   DataHeldAttributeValue(const DataHeldAttributeValue& right) {
     i_attrs_ = right.i_attrs_;
     f_attrs_ = right.f_attrs_;
@@ -291,6 +291,53 @@ AttributeValue* NewDataHeldAttributeValue() {
 
 AttributeValue* NewDataRefAttributeValue() {
   return new DataRefAttributeValue();
+}
+
+NodeValue::NodeValue(const NodeValue& other) {
+  id = other.id;
+  weight = other.weight;
+  label = other.label;
+  timestamp = other.timestamp;
+
+  attrs = new DataHeldAttributeValue(*dynamic_cast<DataHeldAttributeValue*>(other.attrs));
+}
+
+NodeValue& NodeValue::operator=(const NodeValue& other) {
+  if(this != &other) {
+    id = other.id;
+    weight = other.weight;
+    label = other.label;
+    timestamp = other.timestamp;
+    delete attrs;
+    attrs = new DataHeldAttributeValue(*dynamic_cast<DataHeldAttributeValue*>(other.attrs));
+  }
+
+  return *this;
+}
+
+NodeValue::NodeValue(NodeValue&& other) {
+  id = other.id;
+  weight = other.weight;
+  label = other.label;
+  timestamp = other.timestamp;
+
+  attrs = other.attrs;
+  other.attrs = NewDataHeldAttributeValue();
+}
+
+NodeValue& NodeValue::operator=(NodeValue&& other) {
+  if(this != &other) {
+    id = other.id;
+    weight = other.weight;
+    label = other.label;
+    timestamp = other.timestamp;
+
+    delete attrs;
+    attrs = other.attrs;
+    other.attrs = NewDataHeldAttributeValue();
+  }
+
+  return *this;
 }
 
 }  // namespace io

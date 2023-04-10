@@ -51,12 +51,14 @@ class TFTrainer(object):
   """
   def __init__(self,
                ckpt_dir=None,
-               ckpt_freq=None,
+               save_checkpoint_secs=600,
+               save_checkpoint_steps=None,
                ckpt_steps=None,
                profiling=False,
                progress_steps=10):
     self.ckpt_dir = ckpt_dir
-    self.ckpt_freq = ckpt_freq
+    self.save_checkpoint_secs = save_checkpoint_secs
+    self.save_checkpoint_steps = save_checkpoint_steps
     self.ckpt_steps = ckpt_steps
     self.profiling = profiling
     self.progress_steps = progress_steps
@@ -84,9 +86,9 @@ class TFTrainer(object):
     if self.ckpt_dir is not None:
       checkpoint_args['checkpoint_dir'] = self.ckpt_dir
     if self.ckpt_freq is not None:
-      checkpoint_args['save_checkpoint_secs'] = self.ckpt_freq
+      checkpoint_args['save_checkpoint_secs'] = self.save_checkpoint_secs
     if self.ckpt_steps is not None:
-      checkpoint_args['save_checkpoint_steps'] = self.ckpt_steps
+      checkpoint_args['save_checkpoint_steps'] = self.save_checkpoint_steps
 
     self.sess = tf.train.MonitoredTrainingSession(
         hooks=hooks_,

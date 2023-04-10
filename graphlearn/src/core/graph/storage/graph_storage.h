@@ -40,8 +40,10 @@ public:
   virtual IdType GetEdgeCount() const = 0;
   virtual IdType GetSrcId(IdType edge_id) const = 0;
   virtual IdType GetDstId(IdType edge_id) const = 0;
+  virtual IdType GetEdgeId(IdType edge_index) const = 0;
   virtual float GetEdgeWeight(IdType edge_id) const = 0;
   virtual int32_t GetEdgeLabel(IdType edge_id) const = 0;
+  virtual int64_t GetEdgeTimestamp(IdType edge_id) const = 0;
   virtual Attribute GetEdgeAttribute(IdType edge_id) const = 0;
 
   virtual Array<IdType> GetNeighbors(IdType src_id) const = 0;

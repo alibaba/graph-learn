@@ -128,6 +128,9 @@ Status EdgeLoader::CheckSchema() {
   if (source_->IsLabeled()) {
     types.push_back(kInt32);
   }
+  if (source_->IsTimestamped()) {
+    types.push_back(kInt64);
+  }
   if (source_->IsAttributed()) {
     types.push_back(kString);
   }
@@ -175,6 +178,9 @@ Status EdgeLoader::ParseValue(EdgeValue* value) {
   }
   if (source_->IsLabeled()) {
     value->label = record_[idx++].n.i;
+  }
+  if (source_->IsTimestamped()) {
+    value->timestamp = record_[idx++].n.l;
   }
   if (source_->IsAttributed()) {
     LiteString s(record_[idx].s.data, record_[idx].s.len);

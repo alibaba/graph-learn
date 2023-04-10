@@ -41,6 +41,7 @@ class Values(object):
                string_attrs=None,
                weights=None,
                labels=None,
+               timestamps=None,
                shape=None,
                graph=None):
     self._int_attrs = int_attrs
@@ -48,12 +49,13 @@ class Values(object):
     self._string_attrs = string_attrs
     self._weights = weights
     self._labels = labels
+    self._timestamps = timestamps
     self._shape = shape
     self._graph = graph
     self._inited = True
     if self._int_attrs is None and self._float_attrs is None and \
       self._string_attrs is None and self._weights is None and \
-      self._labels is None:
+      self._labels is None and self._timestamps is None:
       self._inited = False
 
   @property
@@ -83,6 +85,11 @@ class Values(object):
   def labels(self):
     self._init()
     return self._labels
+
+  @property
+  def timestamps(self):
+    self._init()
+    return self._timestamps
 
   @property
   def out_degrees(self):
@@ -125,6 +132,11 @@ class Values(object):
     self._labels = self._reshape(labels)
     self._inited = True
 
+  @timestamps.setter
+  def timestamps(self, timestamps):
+    self._timestamps = self._reshape(timestamps)
+    self._inited = True
+
   @shape.setter
   def shape(self, shape):
     self._shape = shape
@@ -153,6 +165,11 @@ class Values(object):
   def _init(self):
     if self._inited:
       return
+    try:
+      if not self._get_decoder().has_property:
+        return
+    except AttributeError:
+      print('Get Decoder for {} failed.'.format(self._type))
 
     values = self._lookup()
     self.int_attrs = values.int_attrs
@@ -160,6 +177,7 @@ class Values(object):
     self.string_attrs = values.string_attrs
     self.weights = values.weights
     self.labels = values.labels
+    self.timestamps = values.timestamps
 
   def _lookup(self):
     raise NotImplementedError("_lookup() must be override by Nodes and Edges.")
@@ -237,6 +255,7 @@ class Nodes(Values):
                string_attrs=None,
                weights=None,
                labels=None,
+               timestamps=None,
                shape=None,
                graph=None):
     super(Nodes, self).__init__(int_attrs=int_attrs,
@@ -244,9 +263,9 @@ class Nodes(Values):
                                 string_attrs=string_attrs,
                                 weights=weights,
                                 labels=labels,
+                                timestamps=timestamps,
                                 shape=shape,
                                 graph=graph)
-
     ids = np.array(ids)
     if shape is None:
       self._shape = ids.shape
@@ -375,6 +394,7 @@ class SparseNodes(Nodes, SparseBase):
                string_attrs=None,
                weights=None,
                labels=None,
+               timestamps=None,
                graph=None):
     """ Sparse Nodes.
     Args:
@@ -397,6 +417,7 @@ class SparseNodes(Nodes, SparseBase):
                    string_attrs=None,
                    weights=weights,
                    labels=labels,
+                   timestamps=timestamps,
                    shape=None,
                    graph=graph)
     SparseBase.__init__(self, offsets, dense_shape)
@@ -422,7 +443,9 @@ class SparseNodes(Nodes, SparseBase):
                     weights=self._weights[l:r] \
                         if self._weights is not None else None,
                     labels=self._labels[l:r] \
-                        if self._labels is not None else None)
+                        if self._labels is not None else None,
+                    timestamps=self._timestamps[l:r] \
+                        if self._timestamps is not None else None)
       return nodes
     else:
       raise StopIteration
@@ -465,6 +488,7 @@ class Edges(Values):
                string_attrs=None,
                weights=None,
                labels=None,
+               timestamps=None,
                shape=None,
                graph=None):
     super(Edges, self).__init__(int_attrs=None,
@@ -472,6 +496,7 @@ class Edges(Values):
                                 string_attrs=None,
                                 weights=weights,
                                 labels=labels,
+                                timestamps=timestamps,
                                 shape=shape,
                                 graph=graph)
     if src_ids is not None:
@@ -614,6 +639,7 @@ class SparseEdges(Edges, SparseBase):
                string_attrs=None,
                weights=None,
                labels=None,
+               timestamps=None,
                graph=None):
     """ Sparse Edges.
     """
@@ -630,6 +656,7 @@ class SparseEdges(Edges, SparseBase):
                    string_attrs=None,
                    weights=weights,
                    labels=labels,
+                   timestamps=None,
                    shape=None,
                    graph=graph)
     SparseBase.__init__(self, offsets, dense_shape)
@@ -665,6 +692,8 @@ class SparseEdges(Edges, SparseBase):
                       if self._weights is not None else None,
                     labels=self._labels[l:r] \
                       if self._labels is not None else None,
+                    timestamps=self._timestamps[l:r] \
+                      if self._timestamps is not None else None,
                     graph=self._graph)
       edges.int_attrs = np.array(
           [int_attr[l: r] for int_attr in self._int_attrs]) \

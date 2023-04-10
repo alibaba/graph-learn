@@ -147,7 +147,7 @@ void TestRandomSampleNeighbors(Client* client) {
   std::cout << "SampleNeighbors: " << s.ToString() << std::endl;
 
   const int64_t* nbrs = res.GetNeighborIds();
-  int32_t size = res.TotalNeighborCount();
+  int32_t size = res.GetShape().size;
   std::cout << "TotalNeighborCount: " << size << std::endl;
   for (int32_t i = 0; i < size; ++i) {
     std::cout << nbrs[i] << std::endl;

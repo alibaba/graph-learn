@@ -17,6 +17,7 @@ limitations under the License.
 #include <random>
 #include "core/operator/sampler/sampler.h"
 #include "include/config.h"
+#include "include/constants.h"
 
 namespace graphlearn {
 namespace op {
@@ -25,15 +26,18 @@ class RandomSampler : public Sampler {
 public:
   virtual ~RandomSampler() {}
 
+  /// Two types of filters are supported in RandomSampler.
+  /// Including: (1) filtering for the dst_id is equal to the given one,
+  /// and (2) filtering for the neighbor edge with timestamp exceeding the
+  ///  time constraint.
   Status Sample(const SamplingRequest* req,
                 SamplingResponse* res) override {
     int32_t count = req->NeighborCount();
     int32_t batch_size = req->BatchSize();
 
-    res->SetBatchSize(batch_size);
-    res->SetNeighborCount(count);
-    res->InitNeighborIds(batch_size * count);
-    res->InitEdgeIds(batch_size * count);
+    res->SetShape(batch_size, count);
+    res->InitNeighborIds();
+    res->InitEdgeIds();
 
     const std::string& edge_type = req->Type();
     Graph* graph = graph_store_->GetGraph(edge_type);
@@ -43,23 +47,27 @@ public:
     thread_local static std::mt19937 engine(rd());
 
     const int64_t* src_ids = req->GetSrcIds();
-    const int64_t* filters = req->GetFilters();
+    auto filter = req->GetFilter();
+    int32_t retry_times = GLOBAL_FLAG(SamplingRetryTimes);
 
     for (int32_t i = 0; i < batch_size; ++i) {
       int64_t src_id = src_ids[i];
       auto neighbor_ids = storage->GetNeighbors(src_id);
-      if (neighbor_ids.Size() == 0 || (filters && neighbor_ids.Size() == 1
-          && neighbor_ids[0] == filters[i])) {
+      auto edge_ids = storage->GetOutEdges(src_id);
+
+      if (!neighbor_ids || filter->HitAll(i, neighbor_ids, edge_ids, storage)) {
         res->FillWith(GLOBAL_FLAG(DefaultNeighborId), -1);
       } else {
-        auto edge_ids = storage->GetOutEdges(src_id);
+
         std::uniform_int_distribution<> dist(0, neighbor_ids.Size() - 1);
         for (int32_t j = 0; j < count;) {
           int32_t idx = dist(engine);
-          if (!filters || filters[i] != neighbor_ids[idx]) {
+          if (!*filter || !filter->Hit(i, neighbor_ids, edge_ids, idx, storage) ||
+              --retry_times < 0) {
             res->AppendNeighborId(neighbor_ids[idx]);
             res->AppendEdgeId(edge_ids[idx]);
             ++j;
+            retry_times = GLOBAL_FLAG(SamplingRetryTimes);
           }
         }
       }

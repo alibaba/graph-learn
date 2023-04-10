@@ -90,6 +90,7 @@ public:
     while (request->Next(&node_id)) {
       res->AppendWeight(storage_->GetWeight(node_id));
       res->AppendLabel(storage_->GetLabel(node_id));
+      res->AppendTimestamp(storage_->GetTimestamp(node_id));
       res->AppendAttribute(storage_->GetAttribute(node_id).get());
     }
     return Status::OK();

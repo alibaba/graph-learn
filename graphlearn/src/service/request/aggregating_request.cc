@@ -27,19 +27,16 @@ int32_t kReservedSize = 64;
 }  // anonymous namespace
 
 AggregatingRequest::AggregatingRequest()
-    : OpRequest(), cursor_(0), num_segments_(0),
+    : OpRequest(kNodeIds), cursor_(0), num_segments_(0),
       node_ids_(nullptr), segment_ids_(nullptr) {
 }
 
 AggregatingRequest::AggregatingRequest(const std::string& type,
                                        const std::string& strategy)
-    : OpRequest(), cursor_(0), num_segments_(0),
+    : OpRequest(kNodeIds), cursor_(0), num_segments_(0),
       node_ids_(nullptr), segment_ids_(nullptr) {
   ADD_TENSOR(params_, kOpName, kString, 1);
   params_[kOpName].AddString(strategy);
-
-  ADD_TENSOR(params_, kPartitionKey, kString, 1);
-  params_[kPartitionKey].AddString(kNodeIds);
 
   ADD_TENSOR(params_, kNodeType, kString, 1);
   params_[kNodeType].AddString(type);
@@ -63,7 +60,7 @@ void AggregatingRequest::SerializeTo(void* request) {
   OpRequest::SerializeTo(request);
 }
 
-void AggregatingRequest::SetMembers() {
+void AggregatingRequest::Finalize() {
   num_segments_ = params_[kNumSegments].GetInt32(0);
   node_ids_ = &(tensors_[kNodeIds]);
   segment_ids_ = &(tensors_[kSegmentIds]);
@@ -165,7 +162,7 @@ const int32_t* AggregatingResponse::Segments() const {
   return segments_->GetInt32();
 }
 
-void AggregatingResponse::SetMembers() {
+void AggregatingResponse::Finalize() {
   embs_ = &(tensors_[kFloatAttrKey]);
   segments_ = &(tensors_[kSegments]);
   emb_dim_ = params_[kSideInfo].GetInt32(0);
@@ -212,7 +209,7 @@ void AggregatingResponse::Stitch(ShardsPtr<OpResponse> shards) {
     }
   }
   agg_op->FinalFunc(embs, size, segments, batch_size_);
-  this->SetMembers();
+  this->Finalize();
 }
 
 REGISTER_REQUEST(MinAggregator, AggregatingRequest, AggregatingResponse);

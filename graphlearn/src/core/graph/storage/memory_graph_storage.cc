@@ -78,8 +78,16 @@ public:
     return edges_->GetDstId(edge_id);
   }
 
+  IdType GetEdgeId(IdType edge_index) const override {
+    return topo_->GetEdgeId(edge_index);
+  }
+
   int32_t GetEdgeLabel(IdType edge_id) const override {
     return edges_->GetLabel(edge_id);
+  }
+
+  int64_t GetEdgeTimestamp(IdType edge_id) const override {
+    return edges_->GetTimestamp(edge_id);
   }
 
   float GetEdgeWeight(IdType edge_id) const override {

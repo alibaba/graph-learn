@@ -19,7 +19,8 @@ limitations under the License.
 #include "hiactor/core/actor-template.hh"
 #include "hiactor/util/data_type.hh"
 
-#include "actor/tensor_map.h"
+#include "actor/tensor_partitioner.h"
+#include "actor/tensor_serializer.h"
 #include "core/operator/operator.h"
 
 namespace graphlearn {
@@ -30,8 +31,8 @@ public:
   BaseOperatorActor(hiactor::actor_base* exec_ctx, const hiactor::byte_t* addr);
   ~BaseOperatorActor() override;
 
-  virtual seastar::future<TensorMap>
-  ANNOTATION(actor:method) Process(TensorMap&& tensor) = 0;
+  virtual seastar::future<TensorMapSerializer>
+  ANNOTATION(actor:method) Process(TensorMapSerializer&& tensor) = 0;
 
   ACTOR_DO_WORK()
 

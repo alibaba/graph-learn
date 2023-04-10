@@ -89,7 +89,9 @@ class NegativeSampler(object):
   def _make_req(self, ids):
     sampler = strategy2op(self._strategy, "NegativeSampler")
     req = pywrap.new_sampling_request(
-      self._object_type, sampler, self._expand_factor, 0)
+      self._object_type, sampler, self._expand_factor,
+      pywrap.FilterType.OPERATOR_UNSPECIFIED,
+      pywrap.FilterField.FIELD_UNSPECIFIED)
     pywrap.set_sampling_request(req, ids)
     return req
 

@@ -53,10 +53,11 @@ class FeatureSpec(object):
     weighted (boolean, Optional): Whether entity data has weight or not.
     labeled (boolean, Optional): Whether entity data has label or not.
   """
-  def __init__(self, feature_num, weighted=False, labeled=False):
+  def __init__(self, feature_num, weighted=False, labeled=False, timestamped=False):
     self._feature_num = feature_num
     self._weighted = weighted
     self._labeled = labeled
+    self._timestamped = timestamped
 
     self._total_dim = 0
 
@@ -71,6 +72,10 @@ class FeatureSpec(object):
   @property
   def labeled(self):
     return self._labeled
+
+  @property
+  def timestamped(self):
+    return self._timestamped
 
   @property
   def int_specs(self):

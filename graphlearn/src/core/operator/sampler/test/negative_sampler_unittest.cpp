@@ -85,9 +85,8 @@ TEST_F(NegativeSamplerTest, Random) {
   Status s = op->Process(req, res);
   EXPECT_TRUE(s.ok());
 
-  EXPECT_EQ(res->BatchSize(), batch_size);
-  EXPECT_EQ(res->NeighborCount(), nbr_count);
-  EXPECT_EQ(res->IsSparse(), false);
+  EXPECT_EQ(res->GetShape().dim1, batch_size);
+  EXPECT_EQ(res->GetShape().dim2, nbr_count);
 
   const int64_t* neighbor_ids = res->GetNeighborIds();
 
@@ -121,9 +120,8 @@ TEST_F(NegativeSamplerTest, InDegree) {
   Status s = op->Process(req, res);
   EXPECT_TRUE(s.ok());
 
-  EXPECT_EQ(res->BatchSize(), batch_size);
-  EXPECT_EQ(res->NeighborCount(), nbr_count);
-  EXPECT_EQ(res->IsSparse(), false);
+  EXPECT_EQ(res->GetShape().dim1, batch_size);
+  EXPECT_EQ(res->GetShape().dim2, nbr_count);
 
   const int64_t* neighbor_ids = res->GetNeighborIds();
 
@@ -166,9 +164,8 @@ TEST_F(NegativeSamplerTest, SoftInDegree) {
   Status s = op->Process(req, res);
   EXPECT_TRUE(s.ok());
 
-  EXPECT_EQ(res->BatchSize(), batch_size);
-  EXPECT_EQ(res->NeighborCount(), nbr_count);
-  EXPECT_EQ(res->IsSparse(), false);
+  EXPECT_EQ(res->GetShape().dim1, batch_size);
+  EXPECT_EQ(res->GetShape().dim2, nbr_count);
 
   const int64_t* neighbor_ids = res->GetNeighborIds();
 

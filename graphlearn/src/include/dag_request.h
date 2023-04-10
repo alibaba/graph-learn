@@ -18,6 +18,7 @@ limitations under the License.
 
 #include <string>
 #include <unordered_map>
+#include "core/dag/tape.h"
 #include "include/config.h"
 #include "include/op_request.h"
 #include "include/tensor.h"
@@ -75,8 +76,7 @@ public:
   void MoveFrom(Tape* tape);
 
   /// Get the Tensor with given key from the result of each DagNode.
-  Tensor* GetValue(int32_t node_id, const std::string& key);
-
+  std::pair<const Tensor*, const Tensor*> GetValue(int32_t node_id, const std::string& key);
   void SetIndex(int32_t index);
   int32_t Index() { return index_; }
 
@@ -93,7 +93,7 @@ private:
   int32_t index_;
 
 public:
-  std::unordered_map<int32_t, Tensor::Map> records_;
+  std::unordered_map<int32_t, TensorMap> records_;
 };
 
 }  // namespace graphlearn

@@ -29,7 +29,7 @@ EMB_PT_SIZE = 128 * 1024
 
 class UltraGCN(object):
   def __init__(self, graph, batch_size, neg_num, neg_sampler,
-      user_num, item_num, emb_dim, need_hash=False,  
+      user_num, item_num, emb_dim, need_hash=False,
       neg_weight=1.0, i2i_weight=1.0, l2_weight=0.0001, nbr_num=10, ps_num=0):
     self.graph = graph
     self.batch_size = batch_size
@@ -67,7 +67,7 @@ class UltraGCN(object):
                                                partitioner=partitioner)
       self.emb_table["item"] = tf.get_variable("item_emb",
                                                [item_num, emb_dim],
-                                               trainable=True,                                               
+                                               trainable=True,
                                                partitioner=partitioner)
 
   def forward(self):
@@ -87,7 +87,7 @@ class UltraGCN(object):
     item_emb = tf.nn.embedding_lookup(self.emb_table["item"], item_ids)
     nbr_emb = tf.nn.embedding_lookup(self.emb_table["item"], nbr_ids)
     neg_emb = tf.nn.embedding_lookup(self.emb_table["item"], neg_ids)
-    
+
     # UltraGCN base u2i
     pos_logit = tf.reduce_sum(user_emb * item_emb, axis=-1)
     true_xent = tf.nn.sigmoid_cross_entropy_with_logits(
@@ -100,7 +100,7 @@ class UltraGCN(object):
     # UltraGCN i2i
     nbr_logit = tf.reduce_sum(tf.expand_dims(user_emb, axis=1) * nbr_emb, axis=-1) # [batch_size, nbr_num]
     nbr_xent = tf.nn.sigmoid_cross_entropy_with_logits(
-        labels=tf.ones_like(nbr_logit), logits=nbr_logit)  
+        labels=tf.ones_like(nbr_logit), logits=nbr_logit)
     loss_i2i = tf.reduce_sum(nbr_xent * (1 + nbr_weights))
     # regularization
     loss_l2 = tf.nn.l2_loss(user_emb) + tf.nn.l2_loss(item_emb) +\
@@ -122,7 +122,7 @@ class UltraGCN(object):
     if self.need_hash:  # int->string->hash
       ids = tf.as_string(ids)
       ids = tf.strings.to_hash_bucket_fast(ids, self.item_num)
-    item_emb = tf.nn.embedding_lookup(self.emb_table["item"], ids)    
+    item_emb = tf.nn.embedding_lookup(self.emb_table["item"], ids)
     return item_ids, item_emb
 
   def make_iterator(self, generator, mode='train'):
@@ -161,7 +161,7 @@ class UltraGCN(object):
         yield(tuple(samples))
       except gl.OutOfRangeError:
         break
-      
+
   def u_node_generator(self):
     while True:
       try:

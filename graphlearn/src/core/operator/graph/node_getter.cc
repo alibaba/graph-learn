@@ -85,6 +85,7 @@ private:
     } else {
       // Begin next epoch.
       generator->Reset();
+      generator->IncEpoch();
       return error::OutOfRange("No more nodes exist.");
     }
     return Status::OK();

@@ -28,13 +28,13 @@ public:
   NodeGetterActor(hiactor::actor_base* exec_ctx, const hiactor::byte_t* addr);
   ~NodeGetterActor() override;
 
-  seastar::future<TensorMap>
-  ANNOTATION(actor:method) Process(TensorMap&& tensors) override;
+  seastar::future<TensorMapSerializer>
+  ANNOTATION(actor:method) Process(TensorMapSerializer&& tensors) override;
 
   ACTOR_DO_WORK()
 
 private:
-  seastar::future<TensorMap> DelegateFetchData(TensorMap&& tensors);
+  seastar::future<TensorMapSerializer> DelegateFetchData(TensorMapSerializer&& tensors);
 
 private:
   NodeBatchGenerator* generator_;
@@ -46,13 +46,13 @@ public:
   EdgeGetterActor(hiactor::actor_base* exec_ctx, const hiactor::byte_t* addr);
   ~EdgeGetterActor() override;
 
-  seastar::future<TensorMap>
-  ANNOTATION(actor:method) Process(TensorMap&& tensors) override;
+  seastar::future<TensorMapSerializer>
+  ANNOTATION(actor:method) Process(TensorMapSerializer&& tensors) override;
 
   ACTOR_DO_WORK()
 
 private:
-  seastar::future<TensorMap> DelegateFetchData(TensorMap&& tensors);
+  seastar::future<TensorMapSerializer> DelegateFetchData(TensorMapSerializer&& tensors);
 
 private:
   EdgeBatchGenerator* generator_;

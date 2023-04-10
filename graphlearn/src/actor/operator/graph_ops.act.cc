@@ -44,7 +44,7 @@ NodeGetterActor::~NodeGetterActor() {
   delete generator_;
 }
 
-seastar::future<TensorMap> NodeGetterActor::Process(TensorMap&& tensors) {
+seastar::future<TensorMapSerializer> NodeGetterActor::Process(TensorMapSerializer&& tensors) {
   bool found =
       tensors.tensors_.find(DelegateFetchFlag) != tensors.tensors_.end();
   if (__builtin_expect(found, false)) {
@@ -53,9 +53,9 @@ seastar::future<TensorMap> NodeGetterActor::Process(TensorMap&& tensors) {
   return generator_->NextBatch();
 }
 
-seastar::future<TensorMap>
-NodeGetterActor::DelegateFetchData(TensorMap&& tensors) {
-  TensorMap tm;
+seastar::future<TensorMapSerializer>
+NodeGetterActor::DelegateFetchData(TensorMapSerializer&& tensors) {
+  TensorMapSerializer tm;
   auto offset = tensors.tensors_[DelegateFetchFlag].GetInt64(0);
   auto length = tensors.tensors_[DelegateFetchFlag].GetInt64(1);
   ADD_TENSOR(tm.tensors_, kNodeIds, kInt64, length);
@@ -66,7 +66,7 @@ NodeGetterActor::DelegateFetchData(TensorMap&& tensors) {
 
   auto begin = id_array + offset;
   tm.tensors_[kNodeIds].AddInt64(begin, begin + length);
-  return seastar::make_ready_future<TensorMap>(std::move(tm));
+  return seastar::make_ready_future<TensorMapSerializer>(std::move(tm));
 }
 
 EdgeGetterActor::EdgeGetterActor(hiactor::actor_base* exec_ctx,
@@ -93,7 +93,7 @@ EdgeGetterActor::~EdgeGetterActor() {
   delete generator_;
 }
 
-seastar::future<TensorMap> EdgeGetterActor::Process(TensorMap&& tensors) {
+seastar::future<TensorMapSerializer> EdgeGetterActor::Process(TensorMapSerializer&& tensors) {
   bool found =
       tensors.tensors_.find(DelegateFetchFlag) != tensors.tensors_.end();
   if (__builtin_expect(found, false)) {
@@ -102,15 +102,15 @@ seastar::future<TensorMap> EdgeGetterActor::Process(TensorMap&& tensors) {
   return generator_->NextBatch();
 }
 
-seastar::future<TensorMap>
-EdgeGetterActor::DelegateFetchData(TensorMap&& tensors) {
+seastar::future<TensorMapSerializer>
+EdgeGetterActor::DelegateFetchData(TensorMapSerializer&& tensors) {
   auto offset = tensors.tensors_[DelegateFetchFlag].GetInt64(0);
   auto length = tensors.tensors_[DelegateFetchFlag].GetInt64(1);
   auto* store = ShardedGraphStore::Get().OnShard(
       static_cast<int32_t>(hiactor::local_shard_id()));
   auto* edge_store = store->GetGraph(edge_type_)->GetLocalStorage();
 
-  TensorMap tm;
+  TensorMapSerializer tm;
   ADD_TENSOR(tm.tensors_, kEdgeIds, kInt64, length);
   ADD_TENSOR(tm.tensors_, kSrcIds, kInt64, length);
   ADD_TENSOR(tm.tensors_, kDstIds, kInt64, length);
@@ -119,7 +119,7 @@ EdgeGetterActor::DelegateFetchData(TensorMap&& tensors) {
     tm.tensors_[kSrcIds].AddInt64(edge_store->GetSrcId(id));
     tm.tensors_[kDstIds].AddInt64(edge_store->GetDstId(id));
   }
-  return seastar::make_ready_future<TensorMap>(std::move(tm));
+  return seastar::make_ready_future<TensorMapSerializer>(std::move(tm));
 }
 
 }  // namespace act

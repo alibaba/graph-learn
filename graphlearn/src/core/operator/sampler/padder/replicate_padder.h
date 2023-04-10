@@ -37,34 +37,19 @@ public:
   Status Pad(SamplingResponse* res, int32_t target_size) override {
     int32_t size = 0;
     if (indices_) {
-      size = indices_->size();
+      size = std::min(target_size, static_cast<int32_t>(indices_->size()));
     } else {
       size = std::min(target_size, neighbors_.Size());
     }
-
-    int32_t got = 0;
     for (int32_t idx = 0; idx < size; idx++) {
       int32_t cursor = idx;
       if (indices_ == nullptr) {
-        // just use the cursor directly
-      } else if (cursor < indices_->size()) {
-        cursor = indices_->at(cursor);
-      } else {
-        LOG(ERROR) << "Invalid sampler indices, " << indices_->size()
-                   << ", cursor:" << cursor
-                   << ", actual_size:" << size
-                   << ", target_size:" << target_size;
         return error::InvalidArgument("Invalid sampler implementation.");
       }
-
-      if (!HitFilter(neighbors_[cursor])) {
-        res->AppendNeighborId(neighbors_[cursor]);
-        res->AppendEdgeId(edges_[cursor]);
-        ++got;
-      }
+      res->AppendNeighborId(neighbors_[cursor]);
+      res->AppendEdgeId(edges_[cursor]);
     }
-
-    for (int32_t idx = got; idx < target_size; idx++) {
+    for (int32_t idx = size; idx < target_size; idx++) {
       res->AppendNeighborId(GLOBAL_FLAG(DefaultNeighborId));
       res->AppendEdgeId(-1);
     }

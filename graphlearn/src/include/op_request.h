@@ -21,7 +21,9 @@ limitations under the License.
 #include <mutex>  // NOLINT [build/c++11]
 #include <string>
 #include <unordered_map>
+#include "include/constants.h"
 #include "include/request.h"
+#include "include/sparse_tensor.h"
 #include "include/status.h"
 #include "include/tensor.h"
 
@@ -29,17 +31,14 @@ namespace graphlearn {
 
 class OpRequest : public ShardableRequest<OpRequest> {
 public:
-  OpRequest();
+  explicit OpRequest(const std::string& shard_key=kUnspecified);
   virtual ~OpRequest() = default;
 
   virtual void Init(const Tensor::Map& params) {}
-  virtual void Set(const Tensor::Map& tensors) {}
+  virtual void Set(const Tensor::Map& tensors,
+                   const SparseTensor::Map& sparse_tensor={}) {}
 
   std::string Name() const override;
-
-  bool HasPartitionKey() const;
-  const std::string& PartitionKey() const;
-  int32_t PartitionId() const;
 
   virtual OpRequest* Clone() const;
 
@@ -53,13 +52,15 @@ protected:
   // To simplify usage, we may need some private members pointing to
   // the elements of params_ and tensors_, such as
   // ``` src_ids_ = &(params_[kNeighborCount]); ```
-  // ``` SetMembers() ``` is designed for this. Requests inheriting from
-  // ``` OpRequest ``` should implement their own ``` SetMembers() ```.
-  virtual void SetMembers() {}
+  // ``` Finalize() ``` is designed for this. Requests inheriting from
+  // ``` OpRequest ``` should implement their own ``` Finalize() ```.
+  virtual void Finalize() {}
+  // virtual void Finalize() {} // TODO:
 
 public:
   std::unordered_map<std::string, Tensor> params_;
   std::unordered_map<std::string, Tensor> tensors_;
+  std::unordered_map<std::string, SparseTensor> sparse_tensors_;
 
 protected:
   bool is_parse_from_;
@@ -80,25 +81,27 @@ public:
   void Stitch(ShardsPtr<OpResponse> shards) override;
   virtual void Swap(OpResponse& right);
 
-  void SetSparseFlag() { is_sparse_ = true; }
-  bool IsSparse() const { return is_sparse_; }
+  virtual bool IsFinalized() const { return true;}
 
 protected:
   // All parameters and values come from params_ and tensors_.
   // To simplify usage, we may need some private members pointing to
   // the elements of params_ and tensors_, such as
   // ``` src_ids_ = &(params_[kNeighborCount]); ```
-  // ``` SetMembers() ``` is designed for this. Responses inheriting from
-  // ``` OpResponse ``` should implement their own ``` SetMembers() ```.
-  virtual void SetMembers() {}
+  // ``` Finalize() ``` is designed for this. Responses inheriting from
+  // ``` OpResponse ``` should implement their own ``` Finalize() ```.
+  // virtual void Finalize() {}
+  virtual void Finalize() {
+
+  }
 
 public:
   int32_t batch_size_;
   std::unordered_map<std::string, Tensor> params_;
   std::unordered_map<std::string, Tensor> tensors_;
+  std::unordered_map<std::string, SparseTensor> sparse_tensors_;
 
 protected:
-  bool is_sparse_;
   bool is_parse_from_;
 };
 

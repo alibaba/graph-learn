@@ -31,12 +31,6 @@ namespace {
 ShardsPtr<ShardableTensorMap> PartitionInput(
     const NodeProxy* op,
     ShardableTensorMap* req) {
-  auto& params = op->Params();
-  auto it = params.find(kPartitionKey);
-  if (it != params.end()) {
-    const std::string& pKey = it->second.GetString(0);
-    req->SetPartitionKey(pKey);
-  }
   return req->Partition();
 }
 
@@ -100,14 +94,15 @@ seastar::future<hiactor::Void> DagActor::RunOnce(TapeHolder&& holder) {
 
 // Mapping the upstream output to the downstream input
 ShardableTensorMap* DagActor::BuildInput(const NodeProxy* op, Tape* tape) {
-  Tensor::Map inputs;
+  TensorMap inputs;
   for (auto &in_edge : op->Upstreams()) {
     NodeProxy& upstream_op = dag_proxy_.Node(in_edge.UpstreamGUID());
     auto& tensors = tape->Retrieval(static_cast<int32_t>(upstream_op.GUID()));
     auto joint = in_edge.Joint();
-    if (tensors.find(joint.first) != tensors.end()) {
-      inputs.emplace(joint.second, tensors.at(joint.first));
-    } else {
+    auto ret = tensors.Find(joint.first);
+    auto values = std::get<0>(ret);
+    auto segments = std::get<1>(ret);
+    if (!inputs.Add(joint.second, values, segments)) {
       LOG(ERROR) << "Current DagNode " << op->GUID()
                  << ": cannot find " << joint.first
                  << " in the upstream output, upstream DagNode: "
@@ -115,7 +110,8 @@ ShardableTensorMap* DagActor::BuildInput(const NodeProxy* op, Tape* tape) {
       return nullptr;
     }
   }
-  return new ShardableTensorMap(std::move(inputs));
+  auto shard_key = op->ShardKey();
+  return new ShardableTensorMap(shard_key, std::move(inputs));
 }
 
 seastar::future<>
@@ -143,7 +139,9 @@ DagActor::RunInParallel(const NodeProxy* op,
     JoinableTensorMap res;
     shard_rets->StickerPtr()->CopyFrom(*(shard_reqs->StickerPtr()));
     res.Stitch(shard_rets);
-    tape->Record(static_cast<int32_t>(op->GUID()), std::move(res.tensors_));
+    tape->Record(static_cast<int32_t>(op->GUID()),
+                 TensorMap{std::move(res.tensors_),
+                           std::move(res.sparse_tensors_)});
     delete input;
     return seastar::make_ready_future<>();
   });
@@ -161,8 +159,10 @@ DagActor::ProcessInShard(const NodeProxy* op,
     return seastar::make_ready_future<JoinableTensorMap*>(nullptr);
   }
 
-  return ref->Process(TensorMap(std::move(req->tensors_))).then_wrapped(
-    [this] (seastar::future<TensorMap> response) {
+  return ref->Process(
+      TensorMapSerializer(std::move(req->tensors_), std::move(req->sparse_tensors_))
+    ).then_wrapped(
+    [this] (seastar::future<TensorMapSerializer> response) {
       JoinableTensorMap *res = nullptr;
       if (__builtin_expect(response.failed(), false)) {
         response.ignore_ready_future();
@@ -170,7 +170,9 @@ DagActor::ProcessInShard(const NodeProxy* op,
       } else {
         // Note that we only can get0 once
         auto out = response.get0();
-        res = new JoinableTensorMap(std::move(out.tensors_));
+        res = new JoinableTensorMap(
+          std::move(TensorMap{std::move(out.tensors_),
+                              std::move(out.sparse_tensors_)}));
       }
     return seastar::make_ready_future<JoinableTensorMap*>(res);
   });

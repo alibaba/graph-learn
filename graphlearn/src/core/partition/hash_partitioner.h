@@ -33,14 +33,26 @@ public:
   ShardsPtr<T> Partition(const T* req) override {
     ShardsPtr<T> ret(new Shards<T>(range_));
 
-    if (!req->HasPartitionKey()) {
-      ret->Add(req->PartitionId(), const_cast<T*>(req), false);
+    if (!req->IsShardable()) {
+      ret->Add(req->ShardId(), const_cast<T*>(req), false);
       return ret;
     }
 
-    const Tensor& part_key = req->tensors_.at(req->PartitionKey());
+    auto iter = req->tensors_.find(req->ShardKey());
+    if (iter == req->tensors_.end()) {
+      ret->Add(req->ShardId(), const_cast<T*>(req), false);
+      return ret;
+    }
+
+    auto& part_key = iter->second;
     int32_t length = part_key.Size();
     auto part_by = part_key.GetInt64();
+
+    std::unordered_map<std::string, int32_t> sparse_value_offset;
+    for (const auto& it : req->sparse_tensors_) {
+      sparse_value_offset.emplace(it.first, 0);
+    }
+
     for (int64_t index = 0; index < length; ++index) {
       int32_t part_id = HashToPartId(part_by[index]);
 
@@ -51,11 +63,24 @@ public:
       }
 
       for (const auto& it : req->tensors_) {
-        if (it.first != kPartitionKey) {
-          const Tensor* from = &(it.second);
-          Tensor* target = &(part_req->tensors_[it.first]);
-          CopyToPartRequest(from, index, from->Size() / length, target);
-        }
+        const Tensor* from = &(it.second);
+        Tensor* target = &(part_req->tensors_[it.first]);
+        size_t dim = from->Size() / length;
+        CopyToPartRequest(from, index * dim,  (index  + 1) * dim, target);
+      }
+
+      for (const auto& it : req->sparse_tensors_) {
+        const SparseTensor* from = &(it.second);
+        SparseTensor* target = &(part_req->sparse_tensors_[it.first]);
+        auto& segments = from->Segments();
+        auto& values = from->Values();
+
+        int32_t start = sparse_value_offset[it.first];
+        int32_t end = start + segments.GetInt32(index);
+        sparse_value_offset[it.first] = end;
+
+        CopyToPartRequest(&segments, index, index + 1, target->MutableSegments());
+        CopyToPartRequest(&values, start, end, target->MutableValues());
       }
     }
     return ret;
@@ -72,24 +97,28 @@ private:
 
     part_req->tensors_.reserve(req->tensors_.size());
     for (const auto& it : req->tensors_) {
-      if (it.first != kPartitionKey) {
-        auto& t = it.second;
-        ADD_TENSOR(part_req->tensors_, it.first, t.DType() , t.Size());
-      }
+      auto& t = it.second;
+      ADD_TENSOR(part_req->tensors_, it.first, t.DType() , t.Size());
+    }
+    part_req->sparse_tensors_.reserve(req->sparse_tensors_.size());
+    for (const auto& it : req->sparse_tensors_) {
+      auto& t = it.second;
+      Tensor ind(t.Segments().DType(), it.second.Segments().Size());
+      Tensor val(t.Values().DType(), it.second.Values().Size());
+      part_req->sparse_tensors_.emplace(it.first, std::move(SparseTensor{std::move(ind), std::move(val)}));
     }
     return part_req;
   }
 
   void CopyToPartRequest(const Tensor* from,
-                         int32_t index,
-                         int32_t dim,
+                         int32_t start,
+                         int32_t end,
                          Tensor* target) {
     DataType type = from->DType();
-    int32_t end = (index + 1) * dim;
 
 #define CASE_COPY(Type)                           \
   case k##Type:                                   \
-    for (int32_t i = index * dim; i < end; ++i) { \
+    for (int32_t i = start; i < end; ++i) { \
       target->Add##Type(from->Get##Type(i));      \
     }                                             \
     break

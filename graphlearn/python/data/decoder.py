@@ -16,9 +16,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
-import numpy as np
-
 from graphlearn.python.data.feature_spec import FeatureSpec
 
 class Decoder(object):
@@ -29,6 +26,7 @@ class Decoder(object):
   def __init__(self,
                weighted=False,
                labeled=False,
+               timestamped=False,
                attr_types=[],
                attr_delimiter=":",
                attr_dims=[]):
@@ -39,8 +37,11 @@ class Decoder(object):
         Default is False.
       labeled (boolean, Optional): Whether the data source has labels.
         Default is False.
+      timestamped (boolean, Optional): Whether the data source has timestamp.
+        If timestamped, the records will be sorted chronological order.
+        Default is False.
       attr_types (list, Optional): Attribute type list if attributes exist.
-        Default is None, which means no attribute exists. Each element must 
+        Default is None, which means no attribute exists. Each element must
         be string, tuple or list.
 
         Valid types like below:
@@ -86,6 +87,7 @@ class Decoder(object):
     """
     self._weighted = weighted
     self._labeled = labeled
+    self._timestamped = timestamped
     self._attr_types = attr_types
     self._attr_delimiter = attr_delimiter
     self._attr_dims = attr_dims
@@ -96,6 +98,10 @@ class Decoder(object):
     self._fspec = None
 
     self._attributed = self._parse_attributes()
+
+    self._has_property = False
+    if self._weighted or self._labeled or self._timestamped or self._attributed:
+      self._has_property = True
 
   def _parse_attributes(self):
     if not self._attr_types:
@@ -119,7 +125,7 @@ class Decoder(object):
     numeric_types = ("float", "int")
     embedding_types = ("int", "string")
 
-    self._fspec = FeatureSpec(num_attrs, self._weighted, self._labeled)
+    self._fspec = FeatureSpec(num_attrs, self._weighted, self._labeled, self._timestamped)
 
     if not self._attr_dims:
       self._attr_dims = [None for _ in range(num_attrs)]
@@ -163,12 +169,20 @@ class Decoder(object):
     return type_name, bucket_size, is_multival
 
   @property
+  def has_property(self):
+    return self._has_property
+
+  @property
   def weighted(self):
     return self._weighted
 
   @property
   def labeled(self):
     return self._labeled
+
+  @property
+  def timestamped(self):
+    return self._timestamped
 
   @property
   def attributed(self):
@@ -184,9 +198,9 @@ class Decoder(object):
 
   @property
   def data_format(self):
-    # attributed << 3 | labeled << 2 | weighted << 1
+    # attributed << 4 | timestamped << 3 | labeled << 2 | weighted << 1
     return int(self._weighted * 2 + \
-               self._labeled * 4 + self._attributed * 8)
+               self._labeled * 4 + self._timestamped * 8 + self._attributed * 16)
 
   @property
   def int_attr_num(self):
@@ -220,9 +234,6 @@ class Decoder(object):
       float_attrs = float_attrs.reshape(-1, self._float_attr_num)
 
     if string_attrs is not None:
-      string_attrs = np.array([s.decode('utf-8', errors='ignore') for s in string_attrs])
-      if (sys.version_info[0] == '3'):
-        # For Python 3.X, encode string attributes as Unicode.
-        string_attrs = string_attrs.astype('U')
+      string_attrs = string_attrs.reshape(-1, self._string_attr_num)
 
     return int_attrs, float_attrs, string_attrs

@@ -30,31 +30,34 @@ class SubGraphSampler(object):
 
   def __init__(self,
                graph,
-               seed_type,
                nbr_type,
-               batch_size,
-               strategy="random_node"):
+               num_nbrs=[0],
+               need_dist=False):
     """ Create a SubGraphSampler instance.
     Args:
       graph (`Graph` object): The graph which sample from.
-      seed_type (string): Sample seed type, either node type or edge type.
       nbr_type (string): Neighbor type of seeds nodes/edges.
-      batch_size (int): How many nodes will be returned for `get()`.
-      strategy (string, Optional): Sampling strategy, "random_node" and
-        "in_order_node" are supported.
+      strategy (string, Optional): Sampling strategy, "random_node/edge" and
+        "in_order_node/edge" are supported.
+      num_nbrs (List[int], Optional): number of neighbors for each hop.
+      need_dist: Whether need return the distance from each node in subgraph
+        to src and dst. Note that this arg is valid only when `dst_ids` in
+        `get()` is not None and size of `dst_ids` is 1.
     """
     self._graph = graph
-    self._seed_type = seed_type
     self._nbr_type = nbr_type
-    self._batch_size = batch_size
-    self._strategy = strategy
+    self._num_nbrs = num_nbrs
+    self._need_dist = need_dist
     self._client = self._graph.get_client()
 
     topology = self._graph.get_topology()
     self._node_type = topology.get_src_type(self._nbr_type)
 
-  def get(self):
+  def get(self, ids, dst_ids=None):
     """ Get sampled `SubGraph`.
+    Args:
+      ids: A 1d numpy array, the input ids(either src_id, or [src_id, dst_id]),
+        type=np.int64.
 
     Return:
       An `SubGraph` object.
@@ -65,9 +68,9 @@ class SubGraphSampler(object):
     req = pywrap.new_subgraph_request(
         self._seed_type,
         self._nbr_type,
-        strategy2op(self._strategy, "SubGraphSampler"),
-        self._batch_size,
-        state)
+        self._num_nbrs,
+        self._need_dist)
+    pywrap.set_subgraph_request(req, ids, dst_ids)
     res = pywrap.new_subgraph_response()
 
     status = self._client.sample_subgraph(req, res)
@@ -76,6 +79,10 @@ class SubGraphSampler(object):
       row_idx = pywrap.get_row_idx(res)
       col_idx = pywrap.get_col_idx(res)
       edge_ids = pywrap.get_edge_set(res)
+      dist_to_src, dist_to_dst = None, None
+      if self._need_dist:
+        dist_to_src = pywrap.get_dist_to_src(res)
+        dist_to_dst = pywrap.get_dist_to_dst(res)
     else:
       if status.code() == errors.OUT_OF_RANGE:
         if self._client.connect_to_next_server():
@@ -87,12 +94,9 @@ class SubGraphSampler(object):
     errors.raise_exception_on_not_ok_status(status)
 
     nodes = self._graph.get_nodes(self._node_type, node_ids)
-    return SubGraph(np.stack([row_idx, col_idx], axis=0), nodes, Edges(edge_ids=edge_ids))
-
-
-class RandomNodeSubGraphSampler(SubGraphSampler):
-  pass
-
-
-class InOrderNodeSubGraphSampler(SubGraphSampler):
-  pass
+    subgraph = SubGraph(np.stack([row_idx, col_idx], axis=0),
+                        nodes,
+                        Edges(edge_ids=edge_ids))
+    subgraph.dist_to_src = dist_to_src
+    subgraph.dist_to_dst = dist_to_dst
+    return subgraph

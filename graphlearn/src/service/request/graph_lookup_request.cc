@@ -77,7 +77,7 @@ int32_t GetEdgesRequest::Epoch() const {
 
 GetEdgesResponse::GetEdgesResponse() : OpResponse() {}
 
-void GetEdgesResponse::SetMembers() {
+void GetEdgesResponse::Finalize() {
   src_ids_ = &(tensors_[kSrcIds]);
   dst_ids_ = &(tensors_[kDstIds]);
   edge_ids_ = &(tensors_[kEdgeIds]);
@@ -178,7 +178,7 @@ int32_t GetNodesRequest::Epoch() const {
 GetNodesResponse::GetNodesResponse() : OpResponse() {
 }
 
-void GetNodesResponse::SetMembers() {
+void GetNodesResponse::Finalize() {
   node_ids_ = &(tensors_[kNodeIds]);
 }
 
@@ -203,16 +203,13 @@ const int64_t* GetNodesResponse::NodeIds() const {
 }
 
 LookupEdgesRequest::LookupEdgesRequest()
-    : OpRequest(), cursor_(0) {
+    : OpRequest(kSrcIds), cursor_(0) {
 }
 
 LookupEdgesRequest::LookupEdgesRequest(const std::string& edge_type)
-    : OpRequest(), cursor_(0) {
+    : OpRequest(kSrcIds), cursor_(0) {
   ADD_TENSOR(params_, kOpName, kString, 1);
   params_[kOpName].AddString("LookupEdges");
-
-  ADD_TENSOR(params_, kPartitionKey, kString, 1);
-  params_[kPartitionKey].AddString(kSrcIds);
 
   ADD_TENSOR(params_, kEdgeType, kString, 1);
   params_[kEdgeType].AddString(edge_type);
@@ -229,7 +226,7 @@ OpRequest* LookupEdgesRequest::Clone() const {
   return req;
 }
 
-void LookupEdgesRequest::SetMembers() {
+void LookupEdgesRequest::Finalize() {
   edge_ids_ = &(tensors_[kEdgeIds]);
   src_ids_ = &(tensors_[kSrcIds]);
 }
@@ -237,9 +234,6 @@ void LookupEdgesRequest::SetMembers() {
 void LookupEdgesRequest::Init(const Tensor::Map& params) {
   ADD_TENSOR(params_, kOpName, kString, 1);
   params_[kOpName].AddString("LookupEdges");
-
-  ADD_TENSOR(params_, kPartitionKey, kString, 1);
-  params_[kPartitionKey].AddString(kSrcIds);
 
   ADD_TENSOR(params_, kEdgeType, kString, 1);
   params_[kEdgeType].AddString(params.at(kEdgeType).GetString(0));
@@ -262,28 +256,39 @@ void LookupEdgesRequest::Set(const int64_t* edge_ids, const int64_t* src_ids,
   src_ids_->AddInt64(src_ids, src_ids + batch_size);
 }
 
-void LookupEdgesRequest::Set(const Tensor::Map& tensors) {
-  const int64_t* edge_ids = tensors.at(kEdgeIds).GetInt64();
-  int32_t edge_size = tensors.at(kEdgeIds).Size();
-  edge_ids_ ->AddInt64(edge_ids, edge_ids + edge_size);
-
+void LookupEdgesRequest::Set(const Tensor::Map& tensors, const SparseTensor::Map& sparse_tensors) {
   const int64_t* src_ids = tensors.at(kSrcIds).GetInt64();
   int32_t src_size = tensors.at(kSrcIds).Size();
 
-  if (edge_size == src_size) {
-    src_ids_->AddInt64(src_ids, src_ids + src_size);
-    return;
-  }
-
-  // Padding src_ids and edge_ids.
-
-  if (tensors.find(kDegreeKey) != tensors.end()) {
-    const int32_t* degrees = tensors.at(kDegreeKey).GetInt32();
-    for (int32_t i = 0; i < src_size; ++i) {
-      for (int32_t j = 0; j < *(degrees + i); ++j) {
-        src_ids_->AddInt64(*(src_ids + i));
+  int32_t edge_size = 0;
+  auto iter1 = tensors.find(kEdgeIds);
+  if (iter1 == tensors.end()) {
+    auto iter2 = sparse_tensors.find(kEdgeIds);
+    if (iter2 == sparse_tensors.end()) {
+      LOG(FATAL) << "Internal Error: Input LookupEdges loss edge_ids.";
+      ::exit(-1);
+    } else {
+      auto edge_ids = iter2->second.Values().GetInt64();
+      auto degrees = iter2->second.Segments().GetInt32();
+      edge_size = iter2->second.Values().Size();
+      edge_ids_ ->AddInt64(edge_ids, edge_ids + edge_size);
+      if (edge_size != src_size) {
+        for (int32_t i = 0; i < src_size; ++i) {
+          for (int32_t j = 0; j < *(degrees + i); ++j) {
+            src_ids_->AddInt64(*(src_ids + i));
+          }
+        }
+        return;
       }
     }
+  } else {
+    auto edge_ids = iter1->second.GetInt64();
+    edge_size = iter1->second.Size();
+    edge_ids_ ->AddInt64(edge_ids, edge_ids + edge_size);
+  }
+
+  if (edge_size == src_size) {
+    src_ids_->AddInt64(src_ids, src_ids + src_size);
     return;
   }
 
@@ -322,16 +327,13 @@ bool LookupEdgesRequest::Next(int64_t* edge_id, int64_t* src_id) {
 }
 
 LookupNodesRequest::LookupNodesRequest()
-    : OpRequest(), cursor_(0) {
+    : OpRequest(kNodeIds), cursor_(0) {
 }
 
 LookupNodesRequest::LookupNodesRequest(const std::string& node_type)
-    : OpRequest(), cursor_(0) {
+    : OpRequest(kNodeIds), cursor_(0) {
   ADD_TENSOR(params_, kOpName, kString, 1);
   params_[kOpName].AddString("LookupNodes");
-
-  ADD_TENSOR(params_, kPartitionKey, kString, 1);
-  params_[kPartitionKey].AddString(kNodeIds);
 
   ADD_TENSOR(params_, kNodeType, kString, 1);
   params_[kNodeType].AddString(node_type);
@@ -344,16 +346,13 @@ OpRequest* LookupNodesRequest::Clone() const {
   return new LookupNodesRequest(NodeType());
 }
 
-void LookupNodesRequest::SetMembers() {
+void LookupNodesRequest::Finalize() {
   node_ids_ = &(tensors_[kNodeIds]);
 }
 
 void LookupNodesRequest::Init(const Tensor::Map& params) {
   ADD_TENSOR(params_, kOpName, kString, 1);
   params_[kOpName].AddString("LookupNodes");
-
-  ADD_TENSOR(params_, kPartitionKey, kString, 1);
-  params_[kPartitionKey].AddString(kNodeIds);
 
   ADD_TENSOR(params_, kNodeType, kString, 1);
   params_[kNodeType].AddString(params.at(kNodeType).GetString(0));
@@ -366,10 +365,23 @@ void LookupNodesRequest::Set(const int64_t* node_ids, int32_t batch_size) {
   node_ids_->AddInt64(node_ids, node_ids + batch_size);
 }
 
-void LookupNodesRequest::Set(const Tensor::Map& tensors) {
-  const int64_t* node_ids = tensors.at(kNodeIds).GetInt64();
-  int32_t batch_size = tensors.at(kNodeIds).Size();
-  node_ids_ ->AddInt64(node_ids, node_ids + batch_size);
+void LookupNodesRequest::Set(const Tensor::Map& tensors, const SparseTensor::Map& sparse_tensors) {
+  auto iter1 = tensors.find(kNodeIds);
+  if (iter1 == tensors.end()) {
+    auto iter2 = sparse_tensors.find(kNodeIds);
+    if (iter2 == sparse_tensors.end()) {
+      LOG(FATAL) << "Internal Error: Input LookupNodes loss node_ids.";
+      ::exit(-1);
+    } else {
+      auto node_ids = iter2->second.Values().GetInt64();
+      auto size = iter2->second.Values().Size();
+      node_ids_ ->AddInt64(node_ids, node_ids + size);
+    }
+  } else {
+    auto node_ids = iter1->second.GetInt64();
+    auto size = iter1->second.Size();
+    node_ids_ ->AddInt64(node_ids, node_ids + size);
+  }
 }
 
 const std::string& LookupNodesRequest::NodeType() const {
@@ -380,7 +392,7 @@ int32_t LookupNodesRequest::Size() const {
   return node_ids_->Size();
 }
 
-bool LookupNodesRequest::Next(int64_t* node_id) {
+bool LookupNodesRequest::Next(int64_t* node_id) const {
   if (cursor_ >= Size()) {
     return false;
   }
@@ -407,12 +419,13 @@ void LookupResponse::Swap(OpResponse& right) {
   std::swap(infos_, res.infos_);
   std::swap(weights_, res.weights_);
   std::swap(labels_, res.labels_);
+  std::swap(timestamps_, res.timestamps_);
   std::swap(i_attrs_, res.i_attrs_);
   std::swap(f_attrs_, res.f_attrs_);
   std::swap(s_attrs_, res.s_attrs_);
 }
 
-void LookupResponse::SetMembers() {
+void LookupResponse::Finalize() {
   infos_ = &(params_[kSideInfo]);
 
   info_ = new io::SideInfo();
@@ -426,6 +439,9 @@ void LookupResponse::SetMembers() {
   }
   if (info_->IsLabeled()) {
     labels_ = &(tensors_[kLabelKey]);
+  }
+  if (info_->IsTimestamped()) {
+    timestamps_ = &(tensors_[kTimestampKey]);
   }
   if (info_->i_num > 0) {
     i_attrs_ = &(tensors_[kIntAttrKey]);
@@ -457,6 +473,10 @@ void LookupResponse::SetSideInfo(const io::SideInfo* info, int32_t batch_size) {
     ADD_TENSOR(tensors_, kLabelKey, kInt32, batch_size_);
     labels_ = &(tensors_[kLabelKey]);
   }
+  if (info_->IsTimestamped()) {
+    ADD_TENSOR(tensors_, kTimestampKey, kInt64, batch_size_);
+    timestamps_ = &(tensors_[kTimestampKey]);
+  }
   if (info_->i_num > 0) {
     ADD_TENSOR(tensors_, kIntAttrKey, kInt64, batch_size_ * info_->i_num);
     i_attrs_ = &(tensors_[kIntAttrKey]);
@@ -483,11 +503,28 @@ void LookupResponse::AppendLabel(int32_t label) {
   }
 }
 
+void LookupResponse::AppendTimestamp(int64_t timestamp) {
+  if (info_->IsTimestamped()) {
+    timestamps_->AddInt64(timestamp);
+  }
+}
+
 void LookupResponse::AppendAttribute(const io::AttributeValue* value) {
   if (info_->IsAttributed()) {
-    value->FillInts(i_attrs_);
-    value->FillFloats(f_attrs_);
-    value->FillStrings(s_attrs_);
+    auto ints = value->GetInts(nullptr);
+    for (int32_t i = 0; i < info_->i_num; ++i) {
+      i_attrs_->AddInt64(ints[i]);
+    }
+
+    auto floats = value->GetFloats(nullptr);
+    for (int32_t i = 0; i < info_->f_num; ++i) {
+      f_attrs_->AddFloat(floats[i]);
+    }
+
+    auto ss = value->GetStrings(nullptr);
+    for (int32_t i = 0; i < info_->s_num; ++i) {
+      s_attrs_->AddString(ss[i]);
+    }
   }
 }
 
@@ -513,6 +550,10 @@ const float* LookupResponse::Weights() const {
 
 const int32_t* LookupResponse::Labels() const {
   return labels_->GetInt32();
+}
+
+const int64_t* LookupResponse::Timestamps() const {
+  return timestamps_->GetInt64();
 }
 
 const int64_t* LookupResponse::IntAttrs() const {
@@ -544,7 +585,7 @@ GetCountRequest::GetCountRequest()
 GetCountResponse::GetCountResponse() : OpResponse(), count_(nullptr) {
 }
 
-void GetCountResponse::SetMembers() {
+void GetCountResponse::Finalize() {
   count_ = &(tensors_[kCount]);
 }
 
@@ -567,19 +608,16 @@ const int32_t* GetCountResponse::Count() const {
   return count_->GetInt32();
 }
 
-GetDegreeRequest::GetDegreeRequest() : OpRequest(), node_ids_(nullptr) {
+GetDegreeRequest::GetDegreeRequest() : OpRequest(kNodeIds), node_ids_(nullptr) {
 }
 
 GetDegreeRequest::GetDegreeRequest(const std::string& edge_type,
                                    NodeFrom node_from)
-    :OpRequest(),
+    :OpRequest(kNodeIds),
      node_ids_(nullptr) {
   params_.reserve(3);
   ADD_TENSOR(params_, kOpName, kString, 1);
   params_[kOpName].AddString("GetDegree");
-
-  ADD_TENSOR(params_, kPartitionKey, kString, 1);
-  params_[kPartitionKey].AddString(kNodeIds);
 
   ADD_TENSOR(params_, kEdgeType, kString, 1);
   params_[kEdgeType].AddString(edge_type);
@@ -596,7 +634,7 @@ OpRequest* GetDegreeRequest::Clone() const {
   return req;
 }
 
-void GetDegreeRequest::SetMembers() {
+void GetDegreeRequest::Finalize() {
   node_ids_ = &(tensors_[kNodeIds]);
 }
 
@@ -604,9 +642,6 @@ void GetDegreeRequest::Init(const Tensor::Map& params) {
   params_.reserve(3);
   ADD_TENSOR(params_, kOpName, kString, 1);
   params_[kOpName].AddString("GetDegree");
-
-  ADD_TENSOR(params_, kPartitionKey, kString, 1);
-  params_[kPartitionKey].AddString(kNodeIds);
 
   ADD_TENSOR(params_, kEdgeType, kString, 1);
   params_[kEdgeType].AddString(params.at(kEdgeType).GetString(0));
@@ -618,10 +653,23 @@ void GetDegreeRequest::Init(const Tensor::Map& params) {
   node_ids_ = &(tensors_[kNodeIds]);
 }
 
-void GetDegreeRequest::Set(const Tensor::Map& tensors) {
-  const int64_t* node_ids = tensors.at(kNodeIds).GetInt64();
-  int32_t batch_size = tensors.at(kNodeIds).Size();
-  node_ids_ ->AddInt64(node_ids, node_ids + batch_size);
+void GetDegreeRequest::Set(const Tensor::Map& tensors, const SparseTensor::Map& sparse_tensors) {
+  auto iter1 = tensors.find(kNodeIds);
+  if (iter1 == tensors.end()) {
+    auto iter2 = sparse_tensors.find(kNodeIds);
+    if (iter2 == sparse_tensors.end()) {
+      LOG(FATAL) << "Internal Error: Input LookupNodes loss node_ids.";
+      ::exit(-1);
+    } else {
+      auto node_ids = iter2->second.Values().GetInt64();
+      auto size = iter2->second.Values().Size();
+      node_ids_ ->AddInt64(node_ids, node_ids + size);
+    }
+  } else {
+    auto node_ids = iter1->second.GetInt64();
+    auto size = iter1->second.Size();
+    node_ids_ ->AddInt64(node_ids, node_ids + size);
+  }
 }
 
 void GetDegreeRequest::Set(const int64_t* node_ids,
@@ -660,7 +708,7 @@ void GetDegreeResponse::Swap(OpResponse& right) {
   std::swap(degrees_, res.degrees_);
 }
 
-void GetDegreeResponse::SetMembers() {
+void GetDegreeResponse::Finalize() {
   degrees_ = &(tensors_[kDegrees]);
 }
 

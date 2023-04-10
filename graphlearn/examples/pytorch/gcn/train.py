@@ -21,7 +21,10 @@ import datetime
 import os
 import sys
 import time
-import torch
+try:
+  import torch
+except ImportError:
+  pass
 
 import graphlearn as gl
 import graphlearn.python.nn.pytorch as thg
@@ -66,6 +69,7 @@ def load_graph(args):
   test_path = dataset_folder + "test_table"
 
 
+  gl.set_default_label(0)
   g = gl.Graph()                                                           \
         .node(node_path, node_type=node_type,
               decoder=gl.Decoder(labeled=True,
@@ -148,7 +152,8 @@ def run(args):
     thg.set_client_num(args.client_num)
     thg.launch_server(g)
   else:
-    g.init(task_index=args.rank, hosts=thg.get_cluster_spec())
+    g.init(task_index=args.rank, task_count=args.world_size,
+           hosts=thg.get_cluster_spec()['server'])
 
   # train loader
   train_query = query(g, args, mask=gl.Mask.TRAIN)

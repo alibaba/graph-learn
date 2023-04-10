@@ -23,7 +23,7 @@ limitations under the License.
 #include <vector>
 
 #include "actor/graph/sharded_graph_store.h"
-#include "actor/tensor_map.h"
+#include "actor/tensor_serializer.h"
 #include "actor/utils.h"
 #include "core/graph/graph_store.h"
 #include "core/graph/storage/types.h"
@@ -46,7 +46,7 @@ class NodeBatchGenerator {
 public:
   NodeBatchGenerator() = default;
   virtual ~NodeBatchGenerator() = default;
-  virtual seastar::future<TensorMap> NextBatch() = 0;
+  virtual seastar::future<TensorMapSerializer> NextBatch() = 0;
 
 protected:
   static ShardDataInfoVecT GetSortedDataInfos(const std::string& type);
@@ -62,7 +62,7 @@ public:
   TraverseNodeBatchGenerator(const std::string& type, unsigned batch_size,
     const OpActorParams* params, const std::string& strategy);
   ~TraverseNodeBatchGenerator() override;
-  seastar::future<TensorMap> NextBatch() override;
+  seastar::future<TensorMapSerializer> NextBatch() override;
 
 private:
   Iterator* iter_;
@@ -72,7 +72,7 @@ class RandomNodeBatchGenerator : public NodeBatchGenerator {
 public:
   RandomNodeBatchGenerator(const std::string& type, unsigned batch_size);
   ~RandomNodeBatchGenerator() override = default;
-  seastar::future<TensorMap> NextBatch() override;
+  seastar::future<TensorMapSerializer> NextBatch() override;
 
 private:
   io::IdArray        ids_;
@@ -86,7 +86,7 @@ class EdgeBatchGenerator {
 public:
   EdgeBatchGenerator() = default;
   virtual ~EdgeBatchGenerator() = default;
-  virtual seastar::future<TensorMap> NextBatch() = 0;
+  virtual seastar::future<TensorMapSerializer> NextBatch() = 0;
 
 protected:
   static ShardDataInfoVecT GetSortedDataInfos(const std::string& type);
@@ -102,7 +102,7 @@ public:
   TraverseEdgeBatchGenerator(const std::string& type, unsigned batch_size,
     const OpActorParams* params, const std::string& strategy);
   ~TraverseEdgeBatchGenerator() override;
-  seastar::future<TensorMap> NextBatch() override;
+  seastar::future<TensorMapSerializer> NextBatch() override;
 
 private:
   Iterator* iter_;
@@ -112,7 +112,7 @@ class RandomEdgeBatchGenerator : public EdgeBatchGenerator {
 public:
   RandomEdgeBatchGenerator(const std::string& type, unsigned batch_size);
   ~RandomEdgeBatchGenerator() override = default;
-  seastar::future<TensorMap> NextBatch() override;
+  seastar::future<TensorMapSerializer> NextBatch() override;
 
 private:
   const unsigned                  batch_size_;

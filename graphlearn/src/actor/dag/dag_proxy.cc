@@ -42,10 +42,13 @@ NodeProxy::NodeProxy(const DagNode* n, ActorIdType actor_id)
     upstreams_.emplace_back(edge);
   }
   InitActorRef(hiactor::global_shard_count());
+
+  shard_key_ = RequestFactory::GetInstance()->NewRequest(node_->OpName())->ShardKey();
 }
 
 NodeProxy::NodeProxy(NodeProxy&& other) noexcept
   : node_(other.node_),
+    shard_key_(other.shard_key_),
     actor_id_(other.actor_id_),
     upstreams_(std::move(other.upstreams_)),
     actor_refs_(std::move(other.actor_refs_)) {

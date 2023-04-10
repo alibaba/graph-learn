@@ -133,7 +133,9 @@ class NeighborSampler(object):
 
     sampler = strategy2op(self._strategy[index], "Sampler")
     req = pywrap.new_sampling_request(
-        self._meta_path[index], sampler, self._expand_factor[index], 0)
+        self._meta_path[index], sampler, self._expand_factor[index],
+        pywrap.FilterType.OPERATOR_UNSPECIFIED,
+        pywrap.FilterField.FIELD_UNSPECIFIED)
     pywrap.set_sampling_request(req, src_ids)
     return req
 

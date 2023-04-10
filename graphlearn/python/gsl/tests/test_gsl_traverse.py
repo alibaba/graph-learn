@@ -28,7 +28,7 @@ import graphlearn as gl
 
 class GSLTraverseTestCase(SamplingTestCase):
   def test_iterate_edge_with_each(self):
-    q = self.g.E(self._edge1_type).batch(4).alias('a') \
+    q = self.g.E(self._edge1_type).batch(7).alias('a') \
               .each(
                 lambda x: (
                   x.outV().alias('b').outV(self._edge1_type).sample(2).by('random').alias('d'),
@@ -40,10 +40,26 @@ class GSLTraverseTestCase(SamplingTestCase):
     dataset = gl.Dataset(q)
     while True:
       try:
-        dataset.next()
+        self.assertLessEqual(dataset.next()[0].size, 14)
       except gl.OutOfRangeError:
         break
 
+  def test_iterate_edge_with_each_drop_last(self):
+    q = self.g.E(self._edge1_type).batch(7).alias('a') \
+              .each(
+                lambda x: (
+                  x.outV().alias('b').outV(self._edge1_type).sample(2).by('random').alias('d'),
+                  x.inV().alias('c').outV(self._edge2_type).sample(2).by('random').alias('e')
+                )) \
+              .values(
+                lambda x: (x['a'].int_attrs, x['d'].weights, x['e'].ids)
+              )
+    dataset = gl.Dataset(q, drop_last=True)
+    while True:
+      try:
+        self.assertEqual(dataset.next()[0].size, 14)
+      except gl.OutOfRangeError:
+        break
 
 if __name__ == "__main__":
   unittest.main()

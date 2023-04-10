@@ -24,29 +24,25 @@ int32_t kReservedSize = 64;
 }  // anonymous namespace
 
 SamplingRequest::SamplingRequest()
-    : OpRequest(),
-      neighbor_count_(0),
-      filter_type_(0),
-      src_ids_(nullptr),
-      filter_ids_(nullptr) {
+  : OpRequest(kSrcIds),
+    neighbor_count_(0),
+    src_ids_(nullptr),
+    filter_() {
 }
 
 SamplingRequest::SamplingRequest(const std::string& type,
                                  const std::string& strategy,
                                  int32_t neighbor_count,
-                                 int32_t filter_type)
-    : OpRequest(),
+                                 FilterType filter_type,
+                                 FilterField filter_field)
+    : OpRequest(kSrcIds),
       neighbor_count_(neighbor_count),
-      filter_type_(filter_type),
       src_ids_(nullptr),
-      filter_ids_(nullptr) {
+      filter_(filter_field, filter_type) {
   params_.reserve(kReservedSize);
 
   ADD_TENSOR(params_, kType, kString, 1);
   params_[kType].AddString(type);
-
-  ADD_TENSOR(params_, kPartitionKey, kString, 1);
-  params_[kPartitionKey].AddString(kSrcIds);
 
   ADD_TENSOR(params_, kOpName, kString, 1);
   params_[kOpName].AddString(strategy);
@@ -54,31 +50,37 @@ SamplingRequest::SamplingRequest(const std::string& type,
   ADD_TENSOR(params_, kNeighborCount, kInt32, 1);
   params_[kNeighborCount].AddInt32(neighbor_count);
 
-  ADD_TENSOR(params_, kFilterType, kInt32, 1);
-  params_[kFilterType].AddInt32(filter_type);
-
   ADD_TENSOR(tensors_, kSrcIds, kInt64, kReservedSize);
   src_ids_ = &(tensors_[kSrcIds]);
 
-  if (filter_type > 0) {
-    // If other filter types to be supported, extend here.
-    ADD_TENSOR(tensors_, kFilterIds, kInt64, kReservedSize);
-    filter_ids_ = &(tensors_[kFilterIds]);
+  ADD_TENSOR(params_, kFilterType, kInt32, 1);
+  params_[kFilterType].AddInt32(filter_type);
+
+  ADD_TENSOR(params_, kFilterField, kInt32, 1);
+  params_[kFilterField].AddInt32(filter_field);
+
+  if (filter_) {
+    ADD_TENSOR(tensors_, kFilterValues, kInt64, kReservedSize);
+    filter_.InitValues(&tensors_[kFilterValues]);
   }
 }
 
 OpRequest* SamplingRequest::Clone() const {
   SamplingRequest* req = new SamplingRequest(
-    Type(), Strategy(), neighbor_count_);
+    Type(), Strategy(), neighbor_count_, filter_.GetType(), filter_.GetField());
   return req;
 }
 
-void SamplingRequest::SetMembers() {
+void SamplingRequest::Finalize() {
   neighbor_count_ = params_[kNeighborCount].GetInt32(0);
-  filter_type_ = params_[kFilterType].GetInt32(0);
   src_ids_ = &(tensors_[kSrcIds]);
-  if (filter_type_ > 0) {
-    filter_ids_ = &(tensors_[kFilterIds]);
+
+  // Set for filters
+  op::Filter filter(static_cast<FilterField>(params_[kFilterField].GetInt32(0)),
+                    static_cast<FilterType>(params_[kFilterType].GetInt32(0)));
+  filter_ = std::move(filter);
+  if (filter_) {
+    filter_.InitValues(&(tensors_[kFilterValues]));
   }
 }
 
@@ -86,12 +88,14 @@ void SamplingRequest::Init(const Tensor::Map& params) {
   params_.reserve(kReservedSize);
   ADD_TENSOR(params_, kType, kString, 1);
   params_[kType].AddString(params.at(kEdgeType).GetString(0));
-  ADD_TENSOR(params_, kPartitionKey, kString, 1);
-  params_[kPartitionKey].AddString(kSrcIds);
   ADD_TENSOR(params_, kOpName, kString, 1);
   params_[kOpName].AddString(params.at(kStrategy).GetString(0));
   ADD_TENSOR(params_, kNeighborCount, kInt32, 1);
   params_[kNeighborCount].AddInt32(params.at(kNeighborCount).GetInt32(0));
+
+  neighbor_count_ = params_[kNeighborCount].GetInt32(0);
+  ADD_TENSOR(tensors_, kSrcIds, kInt64, kReservedSize);
+  src_ids_ = &(tensors_[kSrcIds]);
 
   ADD_TENSOR(params_, kFilterType, kInt32, 1);
   if (params.find(kFilterType) != params.end()) {
@@ -99,16 +103,20 @@ void SamplingRequest::Init(const Tensor::Map& params) {
   } else {
     params_[kFilterType].AddInt32(0);
   }
+  ADD_TENSOR(params_, kFilterField, kInt32, 1);
+  if (params.find(kFilterField) != params.end()) {
+    params_[kFilterField].AddInt32(params.at(kFilterField).GetInt32(0));
+  } else {
+    params_[kFilterField].AddInt32(0);
+  }
 
-  neighbor_count_ = params_[kNeighborCount].GetInt32(0);
-  filter_type_ = params_[kFilterType].GetInt32(0);
+  op::Filter filter(static_cast<FilterField>(params_[kFilterField].GetInt32(0)),
+                    static_cast<FilterType>(params_[kFilterType].GetInt32(0)));
+  filter_ = std::move(filter);
 
-  ADD_TENSOR(tensors_, kSrcIds, kInt64, kReservedSize);
-  src_ids_ = &(tensors_[kSrcIds]);
-
-  if (filter_type_ > 0) {
-    ADD_TENSOR(tensors_, kFilterIds, kInt64, kReservedSize);
-    filter_ids_ = &(tensors_[kFilterIds]);
+  if (filter_) {
+    ADD_TENSOR(tensors_, kFilterValues, kInt64, kReservedSize);
+    filter_.InitValues(&(tensors_[kFilterValues]));
   }
 }
 
@@ -117,20 +125,13 @@ void SamplingRequest::Set(const int64_t* src_ids,
   src_ids_->AddInt64(src_ids, src_ids + batch_size);
 }
 
-void SamplingRequest::SetFilters(const int64_t* filter_ids,
-                                 int32_t batch_size) {
-  filter_ids_->AddInt64(filter_ids, filter_ids + batch_size);
-}
-
-void SamplingRequest::Set(const Tensor::Map& tensors) {
+void SamplingRequest::Set(const Tensor::Map& tensors, const SparseTensor::Map& sparse_tensors) {
   const int64_t* src_ids = tensors.at(kSrcIds).GetInt64();
   int32_t batch_size = tensors.at(kSrcIds).Size();
   src_ids_->AddInt64(src_ids, src_ids + batch_size);
 
-  if (filter_type_ > 0) {
-    const int64_t* filter_ids = tensors.at(kFilterIds).GetInt64();
-    batch_size = tensors.at(kFilterIds).Size();
-    filter_ids_->AddInt64(filter_ids, filter_ids + batch_size);
+  if (filter_) {
+    filter_.FillValues(tensors.at(kFilterValues), batch_size);
   }
 }
 
@@ -154,121 +155,127 @@ const int64_t* SamplingRequest::GetSrcIds() const {
   }
 }
 
-const int64_t* SamplingRequest::GetFilters() const {
-  if (filter_ids_) {
-    return filter_ids_->GetInt64();
-  } else {
-    return nullptr;
-  }
+const op::Filter* SamplingRequest::GetFilter() const {
+  return &filter_;
 }
 
 SamplingResponse::SamplingResponse()
     : OpResponse(),
-      neighbor_count_(0),
-      total_neighbor_count_(0),
+      shape_(),
       neighbors_(nullptr),
-      edges_(nullptr),
-      degrees_(nullptr) {
+      edges_(nullptr) {
 }
 
 void SamplingResponse::Swap(OpResponse& right) {
   OpResponse::Swap(right);
   SamplingResponse& res = static_cast<SamplingResponse&>(right);
-  std::swap(total_neighbor_count_, res.total_neighbor_count_);
-  std::swap(neighbor_count_, res.neighbor_count_);
+  shape_.Swap(res.shape_);
   std::swap(neighbors_, res.neighbors_);
   std::swap(edges_, res.edges_);
-  std::swap(degrees_, res.degrees_);
 }
 
-void SamplingResponse::SerializeTo(void* response) {
-  params_[kNeighborCount].SetInt32(1, total_neighbor_count_);
-  OpResponse::SerializeTo(response);
-}
-
-void SamplingResponse::SetMembers() {
-  auto cnt = &(params_[kNeighborCount]);
-  if (cnt->Size() > 1) {
-    neighbor_count_ = cnt->GetInt32(0);
-    total_neighbor_count_ = cnt->GetInt32(1);
+void SamplingResponse::Finalize() {
+  auto dim2 = params_[kNeighborCount].GetInt32(0);
+  auto iter = tensors_.find(kNodeIds);
+  if (iter != tensors_.end()) {
+    neighbors_ = &(iter->second);
+    shape_ = Shape(batch_size_, dim2);
+  } else {
+    neighbors_ = sparse_tensors_[kNodeIds].MutableValues();
+    auto& segment = sparse_tensors_[kNodeIds].Segments();
+    shape_ = Shape(batch_size_, dim2,
+       std::vector<int32_t>(segment.GetInt32(), segment.GetInt32() + segment.Size()));
   }
 
-  neighbors_ = &(tensors_[kNodeIds]);
-  edges_ = &(tensors_[kEdgeIds]);
-  if (tensors_.find(kDegreeKey) != tensors_.end()) {
-    degrees_ = &(tensors_[kDegreeKey]);
+  iter = tensors_.find(kEdgeIds);
+  if (iter != tensors_.end()) {
+    edges_ = &(iter->second);
+  } else {
+    edges_ = sparse_tensors_[kEdgeIds].MutableValues();
   }
 }
 
-void SamplingResponse::Stitch(ShardsPtr<OpResponse> shards) {
-  int32_t total_neighbor_count = 0;
-
-  int32_t shard_id = 0;
-  OpResponse* tmp = nullptr;
-  while (shards->Next(&shard_id, &tmp)) {
-    total_neighbor_count +=
-      static_cast<SamplingResponse*>(tmp)->TotalNeighborCount();
+void SamplingResponse::InitNeighborIds() {
+  if (!shape_.sparse) {
+    Tensor values(kInt64, shape_.size);
+    tensors_.emplace(kNodeIds, std::move(values));
+    neighbors_ = &(tensors_[kNodeIds]);
+  } else {
+    Tensor values(kInt64, shape_.size);
+    Tensor segments(kInt32, shape_.dim1);
+    segments.AddInt32(shape_.segments.data(), shape_.segments.data() + shape_.segments.size());
+    sparse_tensors_.emplace(kNodeIds, std::move(SparseTensor{std::move(segments), std::move(values)}));
+    neighbors_ = sparse_tensors_[kNodeIds].MutableValues();
   }
-
-  shards->ResetNext();
-  OpResponse::Stitch(shards);
-
-  params_[kNeighborCount].SetInt32(1, total_neighbor_count);
-  this->SetMembers();
 }
 
-void SamplingResponse::InitNeighborIds(int32_t count) {
-  ADD_TENSOR(tensors_, kNodeIds, kInt64, count);
-  neighbors_ = &(tensors_[kNodeIds]);
+void SamplingResponse::InitEdgeIds() {
+  if (!shape_.sparse) {
+    Tensor values(kInt64, shape_.size);
+    tensors_.emplace(kEdgeIds, std::move(values));
+    edges_ = &(tensors_[kEdgeIds]);
+  } else {
+    Tensor values(kInt64, shape_.size);
+    Tensor segments(kInt32, shape_.dim1);
+    segments.AddInt32(shape_.segments.data(), shape_.segments.data() + shape_.segments.size());
+    sparse_tensors_.emplace(kEdgeIds, std::move(SparseTensor{std::move(segments), std::move(values)}));
+    edges_ = sparse_tensors_[kEdgeIds].MutableValues();
+  }
 }
 
-void SamplingResponse::InitEdgeIds(int32_t count) {
-  ADD_TENSOR(tensors_, kEdgeIds, kInt64, count);
-  edges_ = &(tensors_[kEdgeIds]);
+void SamplingResponse::SetShape(size_t dim1, size_t dim2) {
+  // batch_size_ and neighbor_count are stored in params_
+  batch_size_ = dim1;
+
+  ADD_TENSOR(params_, kNeighborCount, kInt32, 1);
+  params_[kNeighborCount].AddInt32(dim2);
+
+  shape_ = Shape(dim1, dim2);
 }
 
-void SamplingResponse::InitDegrees(int32_t count) {
-  ADD_TENSOR(tensors_, kDegreeKey, kInt32, count);
-  degrees_ = &(tensors_[kDegreeKey]);
+void SamplingResponse::SetShape(size_t dim1, size_t dim2, const std::vector<int32_t>& segments) {
+  // batch_size_ and neighbor_count are stored in params_
+  batch_size_ = dim1;
+
+  ADD_TENSOR(params_, kNeighborCount, kInt32, 1);
+  params_[kNeighborCount].AddInt32(dim2);
+
+  shape_ = Shape(dim1, dim2, segments);
 }
 
-void SamplingResponse::SetBatchSize(int32_t batch_size) {
-  batch_size_ = batch_size;
-}
+void SamplingResponse::SetShape(size_t dim1, size_t dim2, std::vector<int32_t>&& segments) {
+  // batch_size_ and neighbor_count are stored in params_
+  batch_size_ = dim1;
 
-void SamplingResponse::SetNeighborCount(int32_t neighbor_count) {
-  ADD_TENSOR(params_, kNeighborCount, kInt32, 2);
-  params_[kNeighborCount].Resize(2);
-  params_[kNeighborCount].SetInt32(0, neighbor_count);
-  neighbor_count_ = neighbor_count;
+  ADD_TENSOR(params_, kNeighborCount, kInt32, 1);
+  params_[kNeighborCount].AddInt32(dim2);
+
+  shape_ = Shape(dim1, dim2, segments);
 }
 
 void SamplingResponse::AppendNeighborId(int64_t id) {
   neighbors_->AddInt64(id);
-  ++total_neighbor_count_;
 }
 
 void SamplingResponse::AppendEdgeId(int64_t id) {
   edges_->AddInt64(id);
 }
 
-void SamplingResponse::AppendDegree(int32_t degree) {
-  degrees_->AddInt32(degree);
-}
-
 void SamplingResponse::FillWith(int64_t neighbor_id, int64_t edge_id) {
-  for (int32_t i = 0; i < neighbor_count_; ++i) {
+  for (int32_t i = 0; i < shape_.dim2; ++i) {
     neighbors_->AddInt64(neighbor_id);
   }
 
   // edges is optional
   if (edges_ != nullptr) {
-    for (int32_t i = 0; i < neighbor_count_; ++i) {
+    for (int32_t i = 0; i < shape_.dim2; ++i) {
       edges_->AddInt64(edge_id);
     }
   }
+}
 
-  total_neighbor_count_ += neighbor_count_;
+const Shape SamplingResponse::GetShape() const {
+  return shape_;
 }
 
 int64_t* SamplingResponse::GetNeighborIds() {
@@ -287,14 +294,6 @@ int64_t* SamplingResponse::GetEdgeIds() {
   }
 }
 
-int32_t* SamplingResponse::GetDegrees() {
-  if (degrees_) {
-    return const_cast<int32_t*>(degrees_->GetInt32());
-  } else {
-    return nullptr;
-  }
-}
-
 const int64_t* SamplingResponse::GetNeighborIds() const {
   if (neighbors_) {
     return neighbors_->GetInt64();
@@ -306,14 +305,6 @@ const int64_t* SamplingResponse::GetNeighborIds() const {
 const int64_t* SamplingResponse::GetEdgeIds() const {
   if (edges_) {
     return edges_->GetInt64();
-  } else {
-    return nullptr;
-  }
-}
-
-const int32_t* SamplingResponse::GetDegrees() const {
-  if (degrees_) {
-    return degrees_->GetInt32();
   } else {
     return nullptr;
   }

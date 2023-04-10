@@ -44,7 +44,7 @@ private:
 
 class NodeProxy {
 public:
-  NodeProxy() : node_(nullptr), actor_id_(0) {}
+  NodeProxy() : node_(nullptr), actor_id_(0), shard_key_("") {}
   explicit NodeProxy(const DagNode* n, ActorIdType actor_id);
   NodeProxy(NodeProxy&& other) noexcept;
   ~NodeProxy();
@@ -59,6 +59,10 @@ public:
 
   const Tensor::Map& Params() const {
     return node_->Params();
+  }
+
+  const std::string& ShardKey() const {
+    return shard_key_;
   }
 
   const std::vector<EdgeProxy>& Upstreams() const {
@@ -78,6 +82,7 @@ private:
 
 private:
   const DagNode* node_;
+  std::string shard_key_;
   std::vector<EdgeProxy> upstreams_;
   ActorIdType actor_id_;
   /// Actor ref for each shard

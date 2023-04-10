@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include <numeric>
 #include <vector>
 #include "common/base/errors.h"
 #include "common/base/log.h"
@@ -31,10 +32,7 @@ public:
     int32_t batch_size = req->BatchSize();
     int32_t max_limit_size = req->NeighborCount();
 
-    res->SetSparseFlag();
-    res->SetBatchSize(batch_size);
-    res->SetNeighborCount(0);
-    res->InitDegrees(batch_size);
+    std::vector<int32_t> degrees(batch_size, max_limit_size);
 
     const std::string& edge_type = req->Type();
     Graph* graph = graph_store_->GetGraph(edge_type);
@@ -46,38 +44,42 @@ public:
       int64_t src_id = src_ids[i];
       auto neighbor_ids = storage->GetNeighbors(src_id);
       auto edge_ids = storage->GetOutEdges(src_id);
-      if (neighbor_ids && edge_ids) {
+      if (neighbor_ids) {
         if (neighbor_ids.Size() != edge_ids.Size()) {
           LOG(FATAL) << "Inconsistent size of neighbors and edges.";
           return ::graphlearn::error::Internal("Storage error");
         } else {
           int32_t truncated_size =
             GetTruncatedSize(max_limit_size, neighbor_ids.Size());
-          res->AppendDegree(truncated_size);
+          degrees[i] = truncated_size;
           sum_degree += truncated_size;
         }
       } else {
-        res->AppendDegree(0);
+        degrees[i] = 0;
       }
     }
 
-    res->InitNeighborIds(sum_degree);
-    res->InitEdgeIds(sum_degree);
+    res->SetShape(batch_size, max_limit_size, std::move(degrees));
+    res->InitNeighborIds();
+    res->InitEdgeIds();
 
     Status s;
-    const int64_t* filters = req->GetFilters();
+    auto filter = req->GetFilter();
     for (int32_t i = 0; i < batch_size; ++i) {
       int64_t src_id = src_ids[i];
       auto neighbor_ids = storage->GetNeighbors(src_id);
-      auto edge_ids = storage->GetOutEdges(src_id);
-      if (neighbor_ids && edge_ids) {
-        int32_t neighbor_size = neighbor_ids.Size();
-        auto padder = GetPadder(neighbor_ids, edge_ids);
-        if (filters) {
-          padder->SetFilter(filters[i]);
+      if (neighbor_ids) {
+        auto edge_ids = storage->GetOutEdges(src_id);
+        std::vector<int32_t> indices(neighbor_ids.Size());
+        std::iota(indices.begin(), indices.end(), 0);
+
+        if (*filter) {
+          filter->ActOn(i, neighbor_ids, edge_ids, storage, &indices);
         }
+        auto padder = GetPadder(neighbor_ids, edge_ids);
         int32_t truncated_size =
           GetTruncatedSize(max_limit_size, neighbor_ids.Size());
+        padder->SetIndex(indices);
         s = padder->Pad(res, truncated_size);
         if (!s.ok()) {
           return s;

@@ -12,3 +12,9 @@ message TensorValue {
   repeated double double_values = 7;
   repeated string string_values = 8;
 }
+
+message SparseTensorValue {
+  string name = 1;
+  TensorValue segments = 2;
+  TensorValue values = 3;
+}

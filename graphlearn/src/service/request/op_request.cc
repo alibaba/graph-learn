@@ -21,8 +21,9 @@ limitations under the License.
 
 namespace graphlearn {
 
-OpRequest::OpRequest()
-    : is_parse_from_(false) {
+OpRequest::OpRequest(const std::string& shard_key)
+    : ShardableRequest(shard_key),
+      is_parse_from_(false) {
 }
 
 std::string OpRequest::Name() const {
@@ -34,21 +35,8 @@ std::string OpRequest::Name() const {
   }
 }
 
-bool OpRequest::HasPartitionKey() const {
-  auto it = params_.find(kPartitionKey);
-  return it != params_.end();
-}
-
-const std::string& OpRequest::PartitionKey() const {
-  return params_.at(kPartitionKey).GetString(0);
-}
-
-int32_t OpRequest::PartitionId() const {
-  return GLOBAL_FLAG(ServerId);
-}
-
 OpRequest* OpRequest::Clone() const {
-  OpRequest* req = new OpRequest;
+  OpRequest* req = new OpRequest(shard_key_);
   req->params_ = params_;
   return req;
 }
@@ -77,6 +65,13 @@ void OpRequest::SerializeTo(void* request) {
     t->SwapWithProto(v);
   }
 
+  for (auto& tensor : sparse_tensors_) {
+    SparseTensor* t = &(tensor.second);
+    SparseTensorValue* v = pb->add_sparse_tensors();
+    v->set_name(tensor.first);
+    t->SwapWithProto(v);
+  }
+
   is_parse_from_ = false;
 }
 
@@ -99,9 +94,25 @@ bool OpRequest::ParseFrom(const void* request) {
     t->SwapWithProto(v);
   }
 
+  for (int32_t i = 0; i < pb->sparse_tensors_size(); ++i) {
+    SparseTensorValue* v = pb->mutable_sparse_tensors(i);
+    TensorValue* segments = v->mutable_segments();
+    DataType type = static_cast<DataType>(segments->dtype());
+    Tensor ind(type, segments->length());
+    ind.SwapWithProto(segments);
+
+    TensorValue* values = v->mutable_values();
+    type = static_cast<DataType>(values->dtype());
+    Tensor val(type, values->length());
+    val.SwapWithProto(values);
+
+    sparse_tensors_.emplace(v->name(),
+      std::move(SparseTensor{std::move(ind), std::move(val)}));
+  }
+
   shardable_ = pb->shardable();
   is_parse_from_ = true;
-  this->SetMembers();
+  this->Finalize();
   return true;
 }
 
@@ -111,15 +122,14 @@ ShardsPtr<OpRequest> OpRequest::Partition() const {
 }
 
 OpResponse::OpResponse()
-    : batch_size_(0), is_sparse_(false), is_parse_from_(false) {
+    : batch_size_(0), is_parse_from_(false) {
 }
 
 void OpResponse::SerializeTo(void* response) {
-  ADD_TENSOR(params_, kBatchSize, kInt32, 2);
+  ADD_TENSOR(params_, kBatchSize, kInt32, 1);
   Tensor* bs  = &(params_[kBatchSize]);
-  bs->Resize(2);
+  bs->Resize(1);
   bs->SetInt32(0, batch_size_);
-  bs->SetInt32(1, static_cast<int32_t>(is_sparse_));
 
   OpResponsePb* pb = static_cast<OpResponsePb*>(response);
   for (auto& param : params_) {
@@ -137,6 +147,13 @@ void OpResponse::SerializeTo(void* response) {
     v->set_name(tensor.first);
     v->set_length(t->Size());
     v->set_dtype(static_cast<int32_t>(t->DType()));
+    t->SwapWithProto(v);
+  }
+
+  for (auto& tensor : sparse_tensors_) {
+    SparseTensor* t = &(tensor.second);
+    SparseTensorValue* v = pb->add_sparse_tensors();
+    v->set_name(tensor.first);
     t->SwapWithProto(v);
   }
 
@@ -162,25 +179,40 @@ bool OpResponse::ParseFrom(const void* response) {
     t->SwapWithProto(v);
   }
 
+  for (int32_t i = 0; i < pb->sparse_tensors_size(); ++i) {
+    SparseTensorValue* v = pb->mutable_sparse_tensors(i);
+    TensorValue* indices = v->mutable_segments();
+    DataType type = static_cast<DataType>(indices->dtype());
+    Tensor ind(type, indices->length());
+    ind.SwapWithProto(indices);
+
+    TensorValue* values = v->mutable_values();
+    type = static_cast<DataType>(values->dtype());
+    Tensor val(type, values->length());
+    val.SwapWithProto(values);
+
+    sparse_tensors_.emplace(v->name(),
+      std::move(SparseTensor{std::move(ind), std::move(val)}));
+  }
+
   batch_size_ = params_[kBatchSize].GetInt32(0);
-  is_sparse_ = params_[kBatchSize].GetInt32(1) != 0;
   is_parse_from_ = true;
-  this->SetMembers();
+  this->Finalize();
   return true;
 }
 
 void OpResponse::Swap(OpResponse& right) {
   std::swap(batch_size_, right.batch_size_);
-  std::swap(is_sparse_, right.is_sparse_);
   std::swap(is_parse_from_, right.is_parse_from_);
   params_.swap(right.params_);
   tensors_.swap(right.tensors_);
+  sparse_tensors_.swap(right.sparse_tensors_);
 }
 
 void OpResponse::Stitch(ShardsPtr<OpResponse> shards) {
   auto stitcher = GetStitcher(this);
   stitcher->Stitch(shards, this);
-  this->SetMembers();
+  this->Finalize();
 }
 
 void RequestFactory::Register(const std::string& name,

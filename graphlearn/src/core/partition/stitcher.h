@@ -1,4 +1,4 @@
-/* Copyright 2020 Alibaba Group Holding Limited. All Rights Reserved.
+/* Copyright 2020-2023 Alibaba Group Holding Limited. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -39,22 +39,39 @@ public:
 
     if (shards->Size() == 1) {
       t->Swap(*tmp);
-    } else if (tmp->IsSparse()) {
-      t->SetSparseFlag();
-      StitchSparse(shards, t);
     } else {
-      StitchDense(shards, t);
+      DoStitch(shards, t);
     }
   }
 
 private:
-  void StitchDense(ShardsPtr<T> shards, T* t) {
-    InitDense(shards, t);
+  void DoStitch(ShardsPtr<T> shards, T*t) {
+    // Init tensors and sparse tensors, while sparse tensor
+    // has been filled with segments.
+    Init(shards, t);
 
     int32_t shard_id = 0;
     T* tmp = nullptr;
-    // while loop each shard
+
+    shards->Next(&shard_id, &tmp);
+    std::unordered_map<std::string, std::vector<int32_t>> to_offsets;
+    for (auto& it : t->sparse_tensors_) {
+      to_offsets.emplace(it.first, std::vector<int32_t>{0});
+      for (int32_t i = 0; i < t->batch_size_; ++i) {
+        to_offsets[it.first].push_back(
+          to_offsets[it.first].back() + it.second.Segments().GetInt32(i));
+      }
+    }
+
+    shards->ResetNext();
     while (shards->Next(&shard_id, &tmp)) {
+      // init for sparse tensors in each shard
+      // key: sparse tensor name, value: copy value from offset
+      std::unordered_map<std::string, int32_t> from_offsets;
+      for (auto& it : tmp->sparse_tensors_) {
+        from_offsets.emplace(it.first, 0);
+      }
+
       auto sticker = shards->StickerPtr()->At(shard_id);
       int32_t bs = tmp->batch_size_;
       if (bs == -1) {
@@ -63,24 +80,34 @@ private:
 
       // for loop all the data in this shard
       for (int32_t i = 0; i < bs; ++i) {
-        // for loop all the tensors
         for (auto& it : tmp->tensors_) {
-          if (it.first != kDegreeKey) {
-            int32_t dim = it.second.Size() / bs;
-            int32_t from_offset = i * dim;
-            int32_t to_offset = sticker[i] * dim;
-            CopyToResponse(&(it.second),
-                           from_offset,
-                           &(t->tensors_[it.first]),
-                           to_offset,
-                           dim);
-          }
+          // for loop all the dense tensors
+          int32_t dim = it.second.Size() / bs;
+          int32_t from_offset = i * dim;
+          int32_t to_offset = sticker[i] * dim;
+          CopyToResponse(&(it.second),
+                          from_offset,
+                          &(t->tensors_[it.first]),
+                          to_offset,
+                          dim);
+        }
+        for (auto& it : tmp->sparse_tensors_) {
+          // for loop all the sparse tensors
+          int32_t offset = sticker[i];
+          auto& segments = it.second.Segments();
+          auto& values = it.second.Values();
+          int32_t dim = segments.GetInt32(i);
+          auto from_offset = from_offsets[it.first];
+          auto& to = t->sparse_tensors_[it.first];
+          auto to_offset = to_offsets[it.first][offset];
+          CopyToResponse(&values, from_offset, to.MutableValues(), to_offset, dim);
+          from_offsets[it.first] = from_offset + dim;
         }
       }
     }
   }
 
-  void InitDense(ShardsPtr<T> shards, T* t) {
+  void Init(ShardsPtr<T> shards, T* t) {
     int32_t shard_id = 0;
     T* tmp = nullptr;
     shards->Next(&shard_id, &tmp);
@@ -95,92 +122,57 @@ private:
     t->params_ = tmp->params_;
     t->tensors_.reserve(tmp->tensors_.size());
     for (auto& it : tmp->tensors_) {
-      if (it.first != kDegreeKey) {
-        int32_t dim = it.second.Size() / bs;
-        ADD_TENSOR(t->tensors_, it.first, it.second.DType(), batch_size * dim);
-        t->tensors_[it.first].Resize(batch_size * dim);
-      }
+      int32_t dim = it.second.Size() / bs;
+      ADD_TENSOR(t->tensors_, it.first, it.second.DType(), batch_size * dim);
+      t->tensors_[it.first].Resize(batch_size * dim);
+    }
+    shards->ResetNext();
+
+    auto sparse_tensors_num = tmp->sparse_tensors_.size();
+    if (sparse_tensors_num == 0) {
+      return;
+    }
+    t->sparse_tensors_.reserve(sparse_tensors_num);
+
+    std::unordered_map<std::string, int32_t> value_size_map;
+    std::unordered_map<std::string, Tensor> to_segments_map;
+    std::unordered_map<std::string, Tensor> to_values_map;
+
+    for (auto& from : tmp->sparse_tensors_) {
+      auto& from_segments = from.second.Segments();
+      auto& from_values = from.second.Values();
+      value_size_map.emplace(from.first, 0);
+      Tensor to_segments(from_segments.DType(), batch_size);
+      to_segments.Resize(batch_size);
+      to_segments_map.emplace(from.first, std::move(to_segments));
+      Tensor to_values(from_values.DType());
+      to_values_map.emplace(from.first, std::move(to_values));
+      // to_values size is not set now.
     }
 
-    shards->ResetNext();
-  }
-
-  void StitchSparse(ShardsPtr<T> shards, T* t) {
-    std::vector<int32_t> incremental_degrees;
-    int32_t batch_degree = InitSparse(shards, t, &incremental_degrees);
-    Tensor& degrees_tensor = t->tensors_[kDegreeKey];
-    auto degrees = degrees_tensor.GetInt32();
-
-    int32_t shard_id = 0;
-    T* tmp = nullptr;
-    while (shards->Next(&shard_id, &tmp)) {
-      int32_t from_offset = 0;
-      auto sticker = shards->StickerPtr()->At(shard_id);
-      for (int32_t i = 0; i < tmp->batch_size_; ++i) {
-        int32_t offset = sticker[i];
-        int32_t dim = degrees[offset];
-        int32_t to_offset = incremental_degrees[offset];
-        for (auto& it : tmp->tensors_) {
-          if (it.first != kDegreeKey) {
-            CopyToResponse(&(it.second),
-                           from_offset,
-                           &(t->tensors_[it.first]),
-                           to_offset,
-                           dim);
-          }
-        }
-        from_offset += dim;
-      }
-    }
-  }
-
-  int32_t InitSparse(ShardsPtr<T> shards, T* t,
-                     std::vector<int32_t>* incremental_degrees) {
-    int32_t batch_size = shards->StickerPtr()->Size();
-
-    int32_t shard_id = 0;
-    T* tmp = nullptr;
-    shards->Next(&shard_id, &tmp);
-    t->params_ = tmp->params_;
-    t->tensors_.reserve(tmp->tensors_.size());
-    ADD_TENSOR(t->tensors_, kDegreeKey, kInt32, batch_size);
-    t->tensors_[kDegreeKey].Resize(batch_size);
-    Tensor& to_degrees_tensor = t->tensors_[kDegreeKey];
-    shards->ResetNext();
-    int32_t batch_degree = 0;
     while (shards->Next(&shard_id, &tmp)) {
       auto stickers = shards->StickerPtr()->At(shard_id);
-      Tensor& from_degrees_tensor = tmp->tensors_[kDegreeKey];
-      auto from_degrees = from_degrees_tensor.GetInt32();
-      for (int32_t i = 0; i < tmp->batch_size_; ++i) {
-        int32_t offset = stickers[i];
-        to_degrees_tensor.SetInt32(offset, from_degrees[i]);
+      for (auto& from : tmp->sparse_tensors_) {
+        for (int32_t i = 0; i < tmp->batch_size_; ++i) {
+          int32_t offset = stickers[i];
+          auto& from_segments = from.second.Segments();
+          to_segments_map[from.first].SetInt32(offset, from_segments.GetInt32(i));
+          value_size_map[from.first] += from_segments.GetInt32(i);
+        }
       }
     }
 
-    auto to_degrees = to_degrees_tensor.GetInt32();
-    incremental_degrees->resize(batch_size, 0);
-    for (int32_t idx = 1; idx < batch_size; ++idx) {
-      (*incremental_degrees)[idx] =
-        (*incremental_degrees)[idx - 1] + to_degrees[idx - 1];
-    }
-    batch_degree =
-      incremental_degrees->back() + to_degrees[batch_size - 1];
-
-    t->batch_size_ = batch_size;
-
-    for (auto& it : tmp->tensors_) {
-      if (it.first != kDegreeKey) {
-        ADD_TENSOR(t->tensors_, it.first, it.second.DType(), batch_degree);
-        t->tensors_[it.first].Resize(batch_degree);
-      }
+    for (auto& iter : to_values_map) {
+      iter.second.Resize(value_size_map[iter.first]);
+      t->sparse_tensors_.emplace(iter.first,
+        std::move(SparseTensor{
+          std::move(to_segments_map[iter.first]), std::move(to_values_map[iter.first])}));
     }
 
     shards->ResetNext();
-    return batch_degree;
   }
 
-  void CopyToResponse(Tensor* from, int32_t from_offset,
+  void CopyToResponse(const Tensor* from, int32_t from_offset,
                       Tensor* to, int32_t to_offset,
                       int32_t dim) {
 #define CASE_COPY(type, from, from_offset, to, to_offset, dim)        \

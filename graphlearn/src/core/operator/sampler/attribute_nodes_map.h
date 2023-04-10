@@ -101,7 +101,7 @@ void AttributeNodesMap<AttrType>::Sample(
     bool unique,
     SamplingResponse* res) {
   std::unique_ptr<int32_t[]> indices(new int32_t[num]);
-  int32_t retry_times = GLOBAL_FLAG(NegativeSamplingRetryTimes);
+  int32_t retry_times = GLOBAL_FLAG(SamplingRetryTimes);
   auto iter = attr_am_.find(attr);
   // when there is no this attr at all, just skip
   if (iter == attr_am_.end()) return;

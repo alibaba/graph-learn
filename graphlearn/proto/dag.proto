@@ -26,4 +26,5 @@ message DagDef {
 message DagNodeValue {
   int32 id = 1;
   repeated TensorValue tensors = 2;
+  repeated SparseTensorValue sparse_tensors = 3;
 }

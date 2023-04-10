@@ -35,8 +35,8 @@ struct AttributeValue;
 
 class UpdateRequest : public OpRequest {
 public:
-  UpdateRequest();
-  UpdateRequest(const io::SideInfo* info, int32_t batch_size);
+  UpdateRequest(const std::string& shard_key);
+  UpdateRequest(const std::string& shard_key, const io::SideInfo* info, int32_t batch_size);
   virtual ~UpdateRequest();
 
   void Append(const io::AttributeValue* value);
@@ -45,7 +45,7 @@ public:
   void Next(io::AttributeValue* value);
 
 protected:
-  void SetMembers() override;
+  void Finalize() override;
 
 protected:
   io::SideInfo* info_;
@@ -54,6 +54,7 @@ protected:
   Tensor* infos_;
   Tensor* weights_;
   Tensor* labels_;
+  Tensor* timestamps_;
   Tensor* i_attrs_;
   Tensor* f_attrs_;
   Tensor* s_attrs_;
@@ -73,7 +74,7 @@ public:
   bool Next(io::EdgeValue* value);
 
 protected:
-  void SetMembers() override;
+  void Finalize() override;
 
 private:
   Tensor* src_ids_;
@@ -105,7 +106,7 @@ public:
   bool Next(io::NodeValue* value);
 
 protected:
-  void SetMembers() override;
+  void Finalize() override;
 
 private:
   Tensor* ids_;
@@ -158,7 +159,7 @@ public:
   const int64_t* EdgeIds() const;
 
 protected:
-  void SetMembers() override;
+  void Finalize() override;
 
 private:
   Tensor* src_ids_;
@@ -202,7 +203,7 @@ public:
   const int64_t* NodeIds() const;
 
 protected:
-  void SetMembers() override;
+  void Finalize() override;
 
 private:
   Tensor* node_ids_;
@@ -217,7 +218,7 @@ public:
   OpRequest* Clone() const override;
 
   void Init(const Tensor::Map& params) override;
-  void Set(const Tensor::Map& tensors) override;
+  void Set(const Tensor::Map& tensors, const SparseTensor::Map& sparse_tensors={}) override;
 
   void Set(const int64_t* edge_ids,
            const int64_t* src_ids,
@@ -228,7 +229,7 @@ public:
   bool Next(int64_t* edge_id, int64_t* src_id);
 
 protected:
-  void SetMembers() override;
+  void Finalize() override;
 
 private:
   int32_t cursor_;
@@ -245,19 +246,19 @@ public:
   OpRequest* Clone() const override;
 
   void Init(const Tensor::Map& params) override;
-  void Set(const Tensor::Map& tensors) override;
+  void Set(const Tensor::Map& tensors, const SparseTensor::Map& sparse_tensors={}) override;
 
   void Set(const int64_t* node_ids, int32_t batch_size);
 
   const std::string& NodeType() const;
   int32_t Size() const;
-  bool Next(int64_t* node_id);
+  bool Next(int64_t* node_id) const;
 
 protected:
-  void SetMembers() override;
+  void Finalize() override;
 
 private:
-  int32_t cursor_;
+  mutable int32_t cursor_;
   Tensor* node_ids_;
 };
 
@@ -271,6 +272,7 @@ public:
   void SetSideInfo(const io::SideInfo* info, int32_t batch_size);
   void AppendWeight(float weight);
   void AppendLabel(int32_t label);
+  void AppendTimestamp(int64_t timestamp);
   void AppendAttribute(const io::AttributeValue* value);
 
   int32_t Size() const { return batch_size_; }
@@ -280,18 +282,20 @@ public:
   int32_t StringAttrNum() const;
   const float* Weights() const;
   const int32_t* Labels() const;
+  const int64_t* Timestamps() const;
   const int64_t* IntAttrs() const;
   const float* FloatAttrs() const;
   const std::string* const* StringAttrs() const;
 
 protected:
-  void SetMembers() override;
+  void Finalize() override;
 
 protected:
   io::SideInfo* info_;
   Tensor* infos_;
   Tensor* weights_;
   Tensor* labels_;
+  Tensor* timestamps_;
   Tensor* i_attrs_;
   Tensor* f_attrs_;
   Tensor* s_attrs_;
@@ -338,7 +342,7 @@ public:
   const int32_t* Count() const;
 
 protected:
-  void SetMembers() override;
+  void Finalize() override;
 
 private:
   Tensor* count_;
@@ -354,7 +358,7 @@ public:
   OpRequest* Clone() const override;
 
   void Init(const Tensor::Map& params) override;
-  void Set(const Tensor::Map& tensors) override;
+  void Set(const Tensor::Map& tensors, const SparseTensor::Map& sparse_tensors={}) override;
   void Set(const int64_t* node_ids, int32_t batch_size);
 
   const std::string& EdgeType() const;
@@ -363,7 +367,7 @@ public:
   int32_t BatchSize() const;
 
 protected:
-  void SetMembers() override;
+  void Finalize() override;
 
 private:
   Tensor* node_ids_;
@@ -387,7 +391,7 @@ public:
   int32_t* GetDegrees();
 
 protected:
-  void SetMembers() override;
+  void Finalize() override;
 
 private:
   Tensor* degrees_;

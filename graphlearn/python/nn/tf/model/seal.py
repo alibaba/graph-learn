@@ -35,6 +35,7 @@ class SEAL(Module):
                depth=2,
                drop_rate=0.0,
                agg_type='mean',
+               max_dist=100,
                **kwargs):
     self.depth = depth
     self.drop_rate = drop_rate
@@ -47,8 +48,8 @@ class SEAL(Module):
       self.layers.append(SAGEConv(input_dim, output_dim,
                                   agg_type=agg_type, name='conv' + str(i)))
     with tf.variable_scope('dist_emb', reuse=tf.AUTO_REUSE):
-      self._emb_table = tf.get_variable('emb_lookup_table', 
-                                        [batch_size, self.input_dim])
+      self._emb_table = tf.get_variable('emb_lookup_table',
+                                        [max_dist, self.input_dim])
 
   def forward(self, batchgraph):
     x = batchgraph.transform().nodes

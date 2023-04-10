@@ -145,4 +145,5 @@ class GSLSamplingTestCase(SamplingTestCase):
 
 
 if __name__ == "__main__":
+  gl.set_sampler_retry_times(500)
   unittest.main()

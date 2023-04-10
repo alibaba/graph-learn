@@ -21,8 +21,8 @@ limitations under the License.
 
 namespace graphlearn {
 
-UpdateRequest::UpdateRequest()
-    : OpRequest(),
+UpdateRequest::UpdateRequest(const std::string& shard_key)
+    : OpRequest(shard_key),
       info_(nullptr),
       cursor_(0) {
 }
@@ -33,8 +33,10 @@ UpdateRequest::~UpdateRequest() {
   }
 }
 
-UpdateRequest::UpdateRequest(const io::SideInfo* info, int32_t batch_size)
-    : OpRequest(),
+UpdateRequest::UpdateRequest(const std::string& shard_key,
+                             const io::SideInfo* info,
+                             int32_t batch_size)
+    : OpRequest(shard_key),
       info_(const_cast<io::SideInfo*>(info)),
       cursor_(0) {
   ADD_TENSOR(params_, kSideInfo, kInt32, 4);
@@ -52,6 +54,10 @@ UpdateRequest::UpdateRequest(const io::SideInfo* info, int32_t batch_size)
     ADD_TENSOR(tensors_, kLabelKey, kInt32, batch_size);
     labels_ = &(tensors_[kLabelKey]);
   }
+  if (info_->IsTimestamped()) {
+    ADD_TENSOR(tensors_, kTimestampKey, kInt64, batch_size);
+    timestamps_ = &(tensors_[kTimestampKey]);
+  }
   if (info_->i_num > 0) {
     ADD_TENSOR(tensors_, kIntAttrKey, kInt64, batch_size * info_->i_num);
     i_attrs_ = &(tensors_[kIntAttrKey]);
@@ -66,7 +72,7 @@ UpdateRequest::UpdateRequest(const io::SideInfo* info, int32_t batch_size)
   }
 }
 
-void UpdateRequest::SetMembers() {
+void UpdateRequest::Finalize() {
   infos_ = &(params_[kSideInfo]);
 
   info_ = new io::SideInfo();
@@ -80,6 +86,9 @@ void UpdateRequest::SetMembers() {
   }
   if (info_->IsLabeled()) {
     labels_ = &(tensors_[kLabelKey]);
+  }
+  if (info_->IsTimestamped()) {
+    timestamps_ = &(tensors_[kTimestampKey]);
   }
   if (info_->i_num > 0) {
     i_attrs_ = &(tensors_[kIntAttrKey]);
@@ -139,17 +148,14 @@ void UpdateRequest::Next(io::AttributeValue* value) {
   }
 }
 
-UpdateEdgesRequest::UpdateEdgesRequest() : UpdateRequest() {
+UpdateEdgesRequest::UpdateEdgesRequest() : UpdateRequest(kSrcIds) {
 }
 
 UpdateEdgesRequest::UpdateEdgesRequest(const io::SideInfo* info,
                                        int32_t batch_size)
-    : UpdateRequest(info, batch_size) {
+    : UpdateRequest(kSrcIds, info, batch_size) {
   ADD_TENSOR(params_, kOpName, kString, 1);
   params_[kOpName].AddString("UpdateEdges");
-
-  ADD_TENSOR(params_, kPartitionKey, kString, 1);
-  params_[kPartitionKey].AddString(kSrcIds);
 
   ADD_TENSOR(params_, kEdgeType, kString, 3);
   params_[kEdgeType].AddString(info_->type);
@@ -176,8 +182,8 @@ void UpdateEdgesRequest::SerializeTo(void* request) {
   pb->set_need_server_ready(false);
 }
 
-void UpdateEdgesRequest::SetMembers() {
-  UpdateRequest::SetMembers();
+void UpdateEdgesRequest::Finalize() {
+  UpdateRequest::Finalize();
   info_->type = params_[kEdgeType].GetString(0);
   info_->src_type = params_[kEdgeType].GetString(1);
   info_->dst_type = params_[kEdgeType].GetString(2);
@@ -198,6 +204,9 @@ void UpdateEdgesRequest::Append(const io::EdgeValue* value) {
   if (info_->IsLabeled()) {
     labels_->AddInt32(value->label);
   }
+  if (info_->IsTimestamped()) {
+    timestamps_->AddInt64(value->timestamp);
+  }
   UpdateRequest::Append(value->attrs);
 }
 
@@ -214,22 +223,22 @@ bool UpdateEdgesRequest::Next(io::EdgeValue* value) {
   if (info_->IsLabeled()) {
     value->label = labels_->GetInt32(cursor_);
   }
+  if (info_->IsTimestamped()) {
+    value->timestamp = timestamps_->GetInt64(cursor_);
+  }
   UpdateRequest::Next(value->attrs);
   ++cursor_;
   return true;
 }
 
-UpdateNodesRequest::UpdateNodesRequest() : UpdateRequest() {
+UpdateNodesRequest::UpdateNodesRequest() : UpdateRequest(kNodeIds) {
 }
 
 UpdateNodesRequest::UpdateNodesRequest(const io::SideInfo* info,
                                        int32_t batch_size)
-    : UpdateRequest(info, batch_size) {
+    : UpdateRequest(kNodeIds, info, batch_size) {
   ADD_TENSOR(params_, kOpName, kString, 1);
   params_[kOpName].AddString("UpdateNodes");
-
-  ADD_TENSOR(params_, kPartitionKey, kString, 1);
-  params_[kPartitionKey].AddString(kNodeIds);
 
   ADD_TENSOR(params_, kNodeType, kString, 1);
   params_[kNodeType].AddString(info_->type);
@@ -248,8 +257,8 @@ void UpdateNodesRequest::SerializeTo(void* request) {
   pb->set_need_server_ready(false);
 }
 
-void UpdateNodesRequest::SetMembers() {
-  UpdateRequest::SetMembers();
+void UpdateNodesRequest::Finalize() {
+  UpdateRequest::Finalize();
   info_->type = params_[kNodeType].GetString(0);
   ids_ = &(tensors_[kNodeIds]);
 }
@@ -266,6 +275,9 @@ void UpdateNodesRequest::Append(const io::NodeValue* value) {
   if (info_->IsLabeled()) {
     labels_->AddInt32(value->label);
   }
+  if (info_->IsTimestamped()) {
+    timestamps_->AddInt64(value->timestamp);
+  }
   UpdateRequest::Append(value->attrs);
 }
 
@@ -280,6 +292,9 @@ bool UpdateNodesRequest::Next(io::NodeValue* value) {
   }
   if (info_->IsLabeled()) {
     value->label = labels_->GetInt32(cursor_);
+  }
+  if (info_->IsTimestamped()) {
+    value->timestamp = timestamps_->GetInt64(cursor_);
   }
   UpdateRequest::Next(value->attrs);
   ++cursor_;

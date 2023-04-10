@@ -32,10 +32,9 @@ public:
     int32_t count = req->NeighborCount();
     int32_t batch_size = req->BatchSize();
 
-    res->SetBatchSize(batch_size);
-    res->SetNeighborCount(count);
-    res->InitEdgeIds(batch_size * count);
-    res->InitNeighborIds(batch_size * count);
+    res->SetShape(batch_size, count);
+    res->InitEdgeIds();
+    res->InitNeighborIds();
 
     const std::string& edge_type = req->Type();
     Graph* graph = graph_store_->GetGraph(edge_type);

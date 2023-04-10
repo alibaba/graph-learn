@@ -98,6 +98,9 @@ public:
     if (current_->IsLabeled()) {
       types.push_back(kInt32);
     }
+    if (current_->IsTimestamped()) {
+      types.push_back(kInt64);
+    }
     if (current_->IsAttributed()) {
       types.push_back(kString);
     }

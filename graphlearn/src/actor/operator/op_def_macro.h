@@ -30,13 +30,15 @@ namespace act {
       SetOp(#name);  \
     }  \
     ~name##Actor() override = default;  \
-    seastar::future<TensorMap> ANNOTATION(actor:method) Process(TensorMap&& tensors) override { \
+    seastar::future<TensorMapSerializer> ANNOTATION(actor:method) Process(TensorMapSerializer&& tensors) override { \
       request req;  \
       req.Init(*params_);  \
-      req.Set(tensors.tensors_);  \
+      req.Set(std::move(tensors.tensors_), std::move(tensors.sparse_tensors_));  \
       response res;  \
       impl_->Process(&req, &res);  \
-      return seastar::make_ready_future<TensorMap>(std::move(res.tensors_));  \
+      return seastar::make_ready_future<TensorMapSerializer>(  \
+        std::move(res.tensors_), std::move(res.sparse_tensors_)  \
+      );  \
     }  \
     ACTOR_DO_WORK()  \
   };

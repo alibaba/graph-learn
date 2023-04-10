@@ -36,7 +36,7 @@ void DagNodeRunner::Run(const DagNode* node, Tape* tape) {
     return;
   }
 
-  Tensor::Map tensors;
+  TensorMap tensors;
   if (!BuildInput(node, tape, &tensors)) {
     tape->Fake();
     LOG(ERROR) << "Runner occurs error, and fake the tape.";
@@ -54,23 +54,16 @@ void DagNodeRunner::Run(const DagNode* node, Tape* tape) {
 
 bool DagNodeRunner::BuildInput(
     const DagNode* node, Tape* tape,
-    Tensor::Map* tensors) {
-  for (auto& edge : node->InEdges()) {
+    TensorMap* tensors) {
+    for (auto& edge : node->InEdges()) {
     auto src_node = edge->Src();
-    auto record = tape->Retrieval(src_node->Id());
-    if (record.size() == 0) {
+    auto& record = tape->Retrieval(src_node->Id());
+    auto ret = record.Find(edge->SrcOutput());
+    auto values = std::get<0>(ret);
+    auto segments = std::get<1>(ret);
+    if (!tensors->Add(edge->DstInput(), values, segments)) {
       LOG(ERROR) << "DagEdge has no src node: " << src_node->Id();
       return false;
-    }
-
-    auto it = record.find(edge->SrcOutput());
-    if (it == record.end()) {
-      LOG(ERROR) << "Invalid upstream: " << edge->SrcOutput();
-      return false;
-    } else {
-      // Copy tensor instead of move, because one DagNode could have
-      // multiple downstream DagNodes.
-      tensors->emplace(edge->DstInput(), it->second);
     }
   }
   return true;
@@ -78,7 +71,7 @@ bool DagNodeRunner::BuildInput(
 
 std::unique_ptr<OpResponse> DagNodeRunner::RunOp(
     const DagNode* node,
-    const Tensor::Map& tensors) {
+    const TensorMap& tensors) {
   auto op_name = node->OpName();
   op::Operator* op = op_factory_->Create(op_name);
   if (op == nullptr) {
@@ -87,7 +80,7 @@ std::unique_ptr<OpResponse> DagNodeRunner::RunOp(
   }
 
   auto req = MakeOpRequest(
-    op_name, node->Params(), tensors);
+    op_name, node->Params(), tensors.tensors_, tensors.sparse_tensors_);
   auto res = std::unique_ptr<OpResponse>(
     req_factory_->NewResponse(op_name));
   std::unique_ptr<OpRunner> runner = GetOpRunner(env_, op);
@@ -107,10 +100,11 @@ std::unique_ptr<OpResponse> DagNodeRunner::RunOp(
 std::unique_ptr<OpRequest> DagNodeRunner::MakeOpRequest(
     const std::string& op_name,
     const Tensor::Map& params,
-    const Tensor::Map& tensors) {
+    const Tensor::Map& tensors,
+    const SparseTensor::Map& sparse_tensors) {
   OpRequest* req = req_factory_->NewRequest(op_name);
   req->Init(params);
-  req->Set(tensors);
+  req->Set(tensors, sparse_tensors);
   return std::unique_ptr<OpRequest>(req);
 }
 

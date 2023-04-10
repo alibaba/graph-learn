@@ -257,7 +257,7 @@ void TestRandomSampleNeighbors(Client* client) {
   std::cout << "RandomSampleNeighbors: " << s.ToString() << std::endl;
 
   const int64_t* nbrs = res.GetNeighborIds();
-  int32_t size = res.TotalNeighborCount();
+  int32_t size = res.GetShape().size;
   std::cout << "TotalNeighborCount: " << size << std::endl;
   for (int32_t i = 0; i < size; ++i) {
     std::cout << nbrs[i] << std::endl;
@@ -274,7 +274,7 @@ void TestRandomWithoutReplacementSampleNeighbors(Client* client) {
   std::cout << "RandomWithoutReplacementSampleNeighbors: " << s.ToString() << std::endl;
 
   const int64_t* nbrs = res.GetNeighborIds();
-  int32_t size = res.TotalNeighborCount();
+  int32_t size = res.GetShape().size;
   std::cout << "TotalNeighborCount: " << size << std::endl;
   for (int32_t i = 0; i < size; ++i) {
     std::cout << nbrs[i] << std::endl;
@@ -291,7 +291,7 @@ void TestTopkSampleNeighbors(Client* client) {
   std::cout << "SampleTopkNeighbors: " << s.ToString() << std::endl;
 
   const int64_t* nbrs = res.GetNeighborIds();
-  int32_t size = res.TotalNeighborCount();
+  int32_t size = res.GetShape().size;
   std::cout << "TotalNeighborCount: " << size << std::endl;
   for (int32_t i = 0; i < size; ++i) {
     std::cout << nbrs[i] << std::endl;
@@ -308,15 +308,14 @@ void TestFullSampleNeighbors(Client* client) {
   std::cout << "FullSampleNeighbors: " << s.ToString() << std::endl;
 
   const int64_t* nbrs = res.GetNeighborIds();
-  int32_t size = res.TotalNeighborCount();
+  int32_t size = res.GetShape().size;
   std::cout << "TotalNeighborCount: " << size << std::endl;
   for (int32_t i = 0; i < size; ++i) {
     std::cout << nbrs[i] << std::endl;
   }
 
-  int32_t batch_size = res.BatchSize();
-  const int32_t* degrees = res.GetDegrees();
-  for (int32_t i = 0; i < batch_size; ++i) {
+  auto& degrees = res.GetShape().segments;
+  for (int32_t i = 0; i < degrees.size(); ++i) {
     std::cout << degrees[i] << std::endl;
   }
 }
@@ -331,59 +330,88 @@ void TestNodeWeightNegativeSample(Client* client) {
   std::cout << "NodeWeightNegativeSample: " << s.ToString() << std::endl;
 
   const int64_t* nbrs = res.GetNeighborIds();
-  int32_t size = res.TotalNeighborCount();
+  int32_t size = res.GetShape().size;
   std::cout << "TotalNeighborCount: " << size << std::endl;
   for (int32_t i = 0; i < size; ++i) {
     std::cout << nbrs[i] << std::endl;
   }
 }
 
-void TestRandomNodeSampleSubGraph(Client* client) {
-  SubGraphRequest req("e", "r", "RandomNodeSubGraphSampler", 8);
+void TestNodeSubGraph(Client* client) {
+  SubGraphRequest req("r");
+  int64_t nodes[8];
+  for (int32_t i = 0; i < 8; ++i) {
+    nodes[i] = i;
+  }
+  req.Set(nodes, 8);
   SubGraphResponse res;
   Status s = client->SubGraph(&req, &res);
-  std::cout << "RandomNodeSubGraphSample: " << s.ToString() << std::endl;
-
+  std::cout << "TestNodeSubGraph: " << s.ToString() << std::endl;
   const int64_t* node_ids = res.NodeIds();
   const int32_t* rows = res.RowIndices();
   const int32_t* cols = res.ColIndices();
   const int64_t* edge_ids = res.EdgeIds();
-  std::cout << "Total node count: " << res.NodeCount() << std::endl;
+  std::cout << "Node count: " << res.NodeCount() << std::endl;
   for (int32_t i = 0; i < res.NodeCount(); ++i) {
     std::cout << node_ids[i] << std::endl;
   }
 
-  std::cout << "Total edge count: " << res.EdgeCount() << std::endl;
+  std::cout << "Edge count: " << res.EdgeCount() << std::endl;
   for (int32_t i = 0; i < res.EdgeCount(); ++i) {
     std::cout << rows[i] << "\t" << cols[i] << "\t" << edge_ids[i] << std::endl;
   }
 }
 
-void TestInOrderNodeSampleSubGraph(Client* client) {
-  for (int32_t epoch = 0; epoch < 3; ++epoch) {
-    for (int32_t iter = 0; iter < 10; ++iter) {
-      SubGraphRequest req("e", "r", "InOrderNodeSubGraphSampler", 8, epoch);
-      SubGraphResponse res;
-      Status s = client->SubGraph(&req, &res);
-      std::cout << "InOrderNodeSubGraphSample: " << s.ToString() << std::endl;
-      if (!s.ok()) {
-        std::cout << "OutOfRange, epoch:" << epoch << std::endl;
-        break;
-      }
-      const int64_t* node_ids = res.NodeIds();
-      const int32_t* rows = res.RowIndices();
-      const int32_t* cols = res.ColIndices();
-      const int64_t* edge_ids = res.EdgeIds();
-      std::cout << "Node count: " << res.NodeCount() << std::endl;
-      for (int32_t i = 0; i < res.NodeCount(); ++i) {
-        std::cout << node_ids[i] << std::endl;
-      }
+void TestEdgeSubGraph(Client* client) {
+  SubGraphRequest req("r");
+  int64_t src[8];
+  int64_t dst[8];
+  for (int32_t i = 0; i < 8; ++i) {
+    src[i] = i;
+    dst[i] = i + 2;
+  }
+  req.Set(src, dst, 8);
+  SubGraphResponse res;
+  Status s = client->SubGraph(&req, &res);
+  std::cout << "TestEdgeSubGraph: " << s.ToString() << std::endl;
+  const int64_t* node_ids = res.NodeIds();
+  const int32_t* rows = res.RowIndices();
+  const int32_t* cols = res.ColIndices();
+  const int64_t* edge_ids = res.EdgeIds();
+  std::cout << "Node count: " << res.NodeCount() << std::endl;
+  for (int32_t i = 0; i < res.NodeCount(); ++i) {
+    std::cout << node_ids[i] << std::endl;
+  }
 
-      std::cout << "Edge count: " << res.EdgeCount() << std::endl;
-      for (int32_t i = 0; i < res.EdgeCount(); ++i) {
-        std::cout << rows[i] << "\t" << cols[i] << "\t" << edge_ids[i] << std::endl;
-      }
-    }
+  std::cout << "Edge count: " << res.EdgeCount() << std::endl;
+  for (int32_t i = 0; i < res.EdgeCount(); ++i) {
+    std::cout << rows[i] << "\t" << cols[i] << "\t" << edge_ids[i] << std::endl;
+  }
+}
+
+void TestKHopSubGraph(Client* client) {
+  int64_t nodes[8];
+  for (int32_t i = 0; i < 8; ++i) {
+    nodes[i] = i;
+  }
+  std::vector<int32_t> num_nbrs{2};
+  SubGraphRequest req("r", num_nbrs);
+  req.Set(nodes, 8);
+  SubGraphResponse res;
+  Status s = client->SubGraph(&req, &res);
+  std::cout << "TestKHopSubGraph: " << s.ToString() << std::endl;
+  const int64_t* node_ids = res.NodeIds();
+  const int32_t* rows = res.RowIndices();
+  const int32_t* cols = res.ColIndices();
+  const int64_t* edge_ids = res.EdgeIds();
+  std::cout << "Node count: " << res.NodeCount() << std::endl;
+  for (int32_t i = 0; i < res.NodeCount(); ++i) {
+    std::cout << node_ids[i] << std::endl;
+  }
+
+  std::cout << "Edge count: " << res.EdgeCount() << std::endl;
+  for (int32_t i = 0; i < res.EdgeCount(); ++i) {
+    std::cout << rows[i] << "\t" << cols[i] << "\t" << edge_ids[i] << std::endl;
   }
 }
 
@@ -440,7 +468,7 @@ void TestConditionalNegativeSample(Client* client) {
   std::cout << "ConditionalNegativeSample: " << s.ToString() << std::endl;
 
   const int64_t* nbrs = res.GetNeighborIds();
-  int32_t size = res.TotalNeighborCount();
+  int32_t size = res.GetShape().size;
   std::cout << "TotalNeighborCount: " << size << std::endl;
   for (int32_t i = 0; i < size; ++i) {
     std::cout << nbrs[i] << std::endl;
@@ -464,14 +492,10 @@ int main(int argc, char** argv) {
     client_count = argv[2][0] - '0';
     server_count = argv[3][0] - '0';
     SetGlobalFlagTrackerMode(kFileSystem);
-    if (::system("mkdir -p ./tracker") != 0) {
-      std::cerr << "cannot create tracker directory!" << ::std::endl;
-    }
+    ::system("mkdir -p ./tracker");
     SetGlobalFlagTracker("./tracker");
   } else if (argc == 1) {
-    if (::system("mkdir -p ./tracker") != 0) {
-      std::cerr << "cannot create tracker directory!" << ::std::endl;
-    }
+    ::system("mkdir -p ./tracker");
     SetGlobalFlagTracker("./tracker");
   } else {
     std::cout << "./client_test [client_id] [client_count] [server_count] [hosts]" << std::endl;
@@ -501,11 +525,12 @@ int main(int argc, char** argv) {
   TestTopkSampleNeighbors(client);
   TestFullSampleNeighbors(client);
   TestNodeWeightNegativeSample(client);
-  TestRandomNodeSampleSubGraph(client);
-  TestInOrderNodeSampleSubGraph(client);
   TestGetCount(client);
   TestConditionalNegativeSample(client);
   TestGetStats(client);
+  TestNodeSubGraph(client);
+  TestEdgeSubGraph(client);
+  TestKHopSubGraph(client);
 
   Status s = client->Stop();
   std::cout << client_id << " in " << client_count << " client stop " << s.ToString() << std::endl;

@@ -39,16 +39,18 @@ public:
   /// Get the total node count after data fixed.
   virtual IdType Size() const = 0;
 
-  /// A NODE is made up of [ id, attributes, weight, label ].
+  /// A NODE is made up of [ id, weight, label, timestamp, attributes ].
   /// Insert a node. If a node with the same id existed, just ignore.
   virtual void Add(NodeValue* value) = 0;
 
   /// Lookup node infos by node_id, including
   ///    node weight,
   ///    node label,
+  ///    node timestamp,
   ///    node attributes
   virtual float GetWeight(IdType node_id) const = 0;
   virtual int32_t GetLabel(IdType node_id) const = 0;
+  virtual int64_t GetTimestamp(IdType node_id) const = 0;
   virtual Attribute GetAttribute(IdType node_id) const = 0;
 
   /// For the needs of traversal and sampling, the data distribution is
@@ -61,6 +63,8 @@ public:
   virtual const Array<float> GetWeights() const = 0;
   /// Get all labels if existed, the count of which is the same with Size().
   virtual const Array<int32_t> GetLabels() const = 0;
+  /// Get all timestamps if existed, the count of which is the same with Size().
+  virtual const Array<int64_t> GetTimestamps() const = 0;
   /// Get all attributes if existed, the count of which is the same with Size().
   virtual const std::vector<Attribute>* GetAttributes() const = 0;
 };

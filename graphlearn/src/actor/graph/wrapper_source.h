@@ -82,6 +82,10 @@ public:
     return impl_->IsLabeled();
   }
 
+  bool IsTimestamped() const {
+    return impl_->IsTimestamped();
+  }
+
   bool IsAttributed() const {
     return impl_->IsAttributed();
   }

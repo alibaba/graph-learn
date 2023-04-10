@@ -31,24 +31,19 @@ public:
   BasePadder(const IdArray& neighbors, const IdArray& edges)
     : neighbors_(neighbors),
       edges_(edges),
-      filter_(-1),
       indices_(nullptr) {
   }
 
   virtual ~BasePadder() = default;
 
-  void SetFilter(int64_t filter);
   void SetIndex(const std::vector<int32_t>& indices);
 
   virtual Status Pad(SamplingResponse* res, int32_t target_size) = 0;
 
-protected:
-  bool HitFilter(int64_t value);
 
 protected:
   const IdArray& neighbors_;
   const IdArray& edges_;
-  int64_t filter_;
   const std::vector<int32_t>* indices_;
 };
 

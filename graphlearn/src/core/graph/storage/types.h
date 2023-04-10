@@ -86,6 +86,15 @@ public:
     return value_;
   }
 
+  virtual bool Find(const T& value) const {
+    for (size_t i = 0; i < size_; ++i) {
+      if (*(value_ +i) == value) {
+        return true;
+      }
+    }
+    return false;
+  }
+
 private:
   const T* value_;
   int32_t size_;

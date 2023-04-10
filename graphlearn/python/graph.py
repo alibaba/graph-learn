@@ -33,7 +33,7 @@ import graphlearn.python.gsl as gsl
 import graphlearn.python.operator as ops
 import graphlearn.python.sampler as samplers
 import graphlearn.python.utils as utils
-
+from graphlearn.python.sampler.subgraph_sampler import SubGraphSampler
 
 class Graph(object):
   """ Entry of graph data operations, such as cluster initialization, data
@@ -222,8 +222,11 @@ class Graph(object):
 
     node_type = utils.get_mask_type(node_type, mask)
     self._node_decoders[node_type] = decoder
-    node_source = self._construct_node_source(source, node_type, decoder, option)
-    self._node_sources.append(node_source)
+    sources = [x.strip() for x in source.split(',')]
+    for src_file in sources:
+      node_source = self._construct_node_source(
+          src_file, node_type, decoder, option)
+      self._node_sources.append(node_source)
     return self
 
   def _copy_node_source(self, node):
@@ -306,12 +309,14 @@ class Graph(object):
     self._edge_decoders[masked_edge_type] = decoder
 
     self._topology.add(masked_edge_type, edge_type[0], edge_type[1])
-    edge_source = self._construct_edge_source(
-        source, (edge_type[0], edge_type[1], masked_edge_type),
-        decoder,
-        direction=pywrap.Direction.ORIGIN,
-        option=option)
-    self._edge_sources.append(edge_source)
+    sources = [x.strip() for x in source.split(',')]
+    for src_file in sources:
+      edge_source = self._construct_edge_source(
+          src_file, (edge_type[0], edge_type[1], masked_edge_type),
+          decoder,
+          direction=pywrap.Direction.ORIGIN,
+          option=option)
+      self._edge_sources.append(edge_source)
 
     if not directed:
       self.add_reverse_edges(edge_type, source, decoder, option)
@@ -351,27 +356,29 @@ class Graph(object):
 
   def add_reverse_edges(self, edge_type, source, decoder, option):
     self._undirected_edges.append(edge_type[2])
+    sources = [x.strip() for x in source.split(',')]
 
     if (edge_type[0] != edge_type[1]):  # pylint: disable=superfluous-parens
       reversed_edge_type = edge_type[2] + '_reverse'
-      edge_source_reverse = self._construct_edge_source(
-          source,
-          (edge_type[1], edge_type[0], reversed_edge_type),
-          decoder,
-          direction=pywrap.Direction.REVERSED,
-          option=option)
-      self._edge_sources.append(edge_source_reverse)
       self._edge_decoders[reversed_edge_type] = decoder
       self._topology.add(reversed_edge_type, edge_type[1], edge_type[0])
+      for src_file in sources:
+        edge_source_reverse = self._construct_edge_source(
+            src_file,
+            (edge_type[1], edge_type[0], reversed_edge_type),
+            decoder,
+            direction=pywrap.Direction.REVERSED,
+            option=option)
+        self._edge_sources.append(edge_source_reverse)
     else:
-      edge_source_reverse = self._construct_edge_source(
-          source,
-          edge_type,
-          decoder,
-          direction=pywrap.Direction.REVERSED,
-          option=option)
-      self._edge_sources.append(edge_source_reverse)
-
+      for src_file in sources:
+        edge_source_reverse = self._construct_edge_source(
+            src_file,
+            edge_type,
+            decoder,
+            direction=pywrap.Direction.REVERSED,
+            option=option)
+        self._edge_sources.append(edge_source_reverse)
   def init(self, task_index=0, task_count=1,
            cluster="", job_name="", **kwargs):
     """ Initialize the graph object in local mode or distributed mode.
@@ -578,6 +585,7 @@ class Graph(object):
       dag, op_name="GetNodes", params=params)
     source_node.set_output_field(pywrap.kNodeIds)
     source_node.set_path(t, node_from)
+    dag.root = source_node
 
     # Add sink node to dag
     gsl.SinkNode(dag)
@@ -613,6 +621,46 @@ class Graph(object):
     source_node.set_output_field(pywrap.kEdgeIds)
     source_node.set_path(edge_type, pywrap.NodeFrom.NODE)
 
+    # Add sink node to dag
+    gsl.SinkNode(dag)
+    return source_node
+
+  def SubGraph(self,
+               seed_type,
+               nbr_type,
+               batch_size=64,
+               strategy="random_node",
+               num_nbrs=[0],
+               feed=None):
+    """ SubGraph Sampling in GSL.
+ 
+    Args:
+      seed_type (string): Sample seed type, either node type or edge type.
+      nbr_type (string): Neighbor type of seeds nodes/edges.
+      batch_size (int): How many nodes will be returned each iter.
+      strategy (string, Optional): Sampling strategy. "random_node/edge" and
+        "in_order_node/edge" are supported.
+      num_nbrs (int, Optional): number of neighbors for each hop.
+    """
+    if feed is not None:
+      raise NotImplementedError("`feed` is not supported for now.")
+    dag = gsl.Dag(self)
+    assert strategy in \
+      ["random_node", "random_edge", "in_order_node", "in_order_edge"]
+    op_name = utils.strategy2op(strategy, "SubGraphSampler")
+    params = {pywrap.kSeedType: seed_type,
+              pywrap.kNbrType: nbr_type,
+              pywrap.kBatchSize: batch_size,
+              pywrap.kEpoch: sys.maxsize >> 32,
+              pywrap.kStrategy: op_name,
+              pywrap.kNeighborCount: num_nbrs}
+    source_node = gsl.SubGraphDagNode(
+      dag, op_name=op_name, params=params)
+    source_node.set_output_field(pywrap.kNodeIds)
+    source_node.set_path(nbr_type, pywrap.NodeFrom.EDGE_SRC) #homo graph.
+ 
+    dag.root = source_node
+ 
     # Add sink node to dag
     gsl.SinkNode(dag)
     return source_node
@@ -662,8 +710,8 @@ class Graph(object):
       node_type (string): Type of nodes, which should has been added by
         `Graph.node()`.
       ids (numpy.ndarray): ids of nodes. In sparse case, it must be 1D.
-      offsets: (list): To get `SparseNodes`, whose dense shape is 2D,
-        `offsets` indicates the number of nodes for each line.
+      offsets: (list): To get `SparseNodes`, whose dense
+        shape is 2D, `offsets` indicates the number of nodes for each line.
         Default None means it is a dense `Nodes`.
       shape (tuple, Optional): Indicates the shape of nodes ids, attrs, etc.
         For dense case, default None means ids.shape. For sparse case, it
@@ -675,6 +723,10 @@ class Graph(object):
     if offsets is None:
       nodes = data.Nodes(ids, node_type, shape=shape, graph=self)
     else:
+      # Specially, for case where there is no dense shape,
+      # such as sampling full neighbors,
+      # reset the shape as [batch_size, max(neighbor_counts)].
+      shape = (len(offsets), shape[1] if shape[1] and shape[1] > 0 else max(offsets))
       nodes = data.SparseNodes(ids, offsets, shape, node_type, graph=self)
     return nodes
 
@@ -713,6 +765,7 @@ class Graph(object):
                          shape=shape,
                          graph=self)
     else:
+      shape = (len(offsets), shape[1] if shape[1] and shape[1] > 0 else max(offsets))
       edges = data.SparseEdges(src_ids, src_type,
                                dst_ids, dst_type,
                                edge_type,
@@ -1005,26 +1058,26 @@ class Graph(object):
   def subgraph_sampler(self,
                        seed_type,
                        nbr_type,
-                       batch_size=64,
-                       strategy="random_node"):
+                       num_nbrs=[0],
+                       need_dist=False):
     """Sampler for sample SubGraph.
 
     Args:
       graph (`Graph` object): The graph which sample from.
-      seed_type (string): Sample seed type, either node type or edge type.
       nbr_type (string): Neighbor type of seeds nodes/edges.
-      batch_size (int): How many nodes will be returned for `get()`.
-      strategy (string, Optional): Sampling strategy. "random_node".
+      num_nbrs (int, Optional): number of neighbors for each hop.
+      need_dist: Whether need return the distance from each node in subgraph
+        to src and dst. Note that this arg is valid only when `dst_ids` in
+        `get()` is not None and size of `dst_ids` is 1.
     Return:
       An `SubGraphSampler` object.
 
     """
-    sampler = utils.strategy2op(strategy, "SubGraphSampler")
-    return getattr(samplers, sampler)(self,
-                                      seed_type,
-                                      nbr_type,
-                                      batch_size=batch_size,
-                                      strategy=strategy)
+    return SubGraphSampler(self,
+                           seed_type,
+                           nbr_type,
+                           num_nbrs=num_nbrs,
+                           need_dist=need_dist)
 
   def get_stats(self):
     req = pywrap.new_get_stats_request()
