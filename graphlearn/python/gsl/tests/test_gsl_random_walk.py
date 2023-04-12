@@ -1,37 +1,47 @@
+# Copyright 2021 Alibaba Group Holding Limited. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =============================================================================
+""" Local UT test, run with `sh test_python_ut.sh`.
+"""
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import unittest
+import time
+
+from graphlearn.python.sampler.tests.test_sampling import SamplingTestCase
+import graphlearn.python.tests.utils as utils
 
 import graphlearn as gl
 
-gl.set_timeout(600)
-gl.set_inter_threadnum(4)
-gl.set_intra_threadnum(4)
-# gl.set_tape_capacity(1)
+class GSLRandomWalkTestCase(SamplingTestCase):
+  def test_random_walk(self):
+    # gl.set_default_full_nbr_num(4)
+    src = self.g.V(self._node2_type).batch(4).alias('src')
+    walks = src.random_walk(self._edge3_type, 10, 1.0, 1.0).alias('walks')
 
-g = gl.Graph().node('random_walk_i', 'i' , decoder=gl.Decoder()) \
-      .edge('random_walk_i_i', ('i', 'i', 'i-i'), decoder=gl.Decoder(weighted=True), directed=False) \
-      .init()
+    query = src.values()
+    dataset = gl.Dataset(query)
+    while True:
+      try:
+        res = dataset.next()
+        print(res['src'].ids)
+        print(res['walks'].ids)
+      except gl.OutOfRangeError:
+        break
 
-query = g.V('i').batch(1).alias('src') \
-         .random_walk('i-i', walk_len=3, p=1.1, q=1.1).alias('walks') \
-         .values()
 
-zero = 0
-two = 0
-three = 0
-ds = gl.Dataset(query)
-for i in range(10):
-  while True:
-    try:
-      res = ds.next()
-      print(res['walks'].ids, res['walks'].weights)
-      if ret == 0:
-        zero += 1
-      elif ret == 2:
-        two += 1
-      elif ret == 3:
-        three += 1
-      else:
-        print("unexpected ret...")
-    except gl.OutOfRangeError:
-      break
-
-print(zero/5000.0, two/5000.0, three/5000.0)
+if __name__ == "__main__":
+  unittest.main()
