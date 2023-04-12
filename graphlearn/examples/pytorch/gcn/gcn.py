@@ -22,10 +22,7 @@ try:
 except ImportError:
   pass
 
-try:
-  import torch
-except ImportError:
-  pass.nn.functional as F
+import torch.nn.functional as F
 from torch_geometric.nn import GCNConv
 
 
