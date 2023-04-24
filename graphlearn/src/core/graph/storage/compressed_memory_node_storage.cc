@@ -59,6 +59,7 @@ public:
     ids_.shrink_to_fit();
     labels_.shrink_to_fit();
     weights_.shrink_to_fit();
+    timestamps_.shrink_to_fit();
     if (attributes_) {
       attributes_->Shrink();
     }
@@ -87,6 +88,9 @@ public:
     if (side_info_.IsLabeled()) {
       labels_.push_back(value->label);
     }
+    if (side_info_.IsTimestamped()) {
+      timestamps_.push_back(value->timestamp);
+    }
     if (side_info_.IsAttributed()) {
       auto ints = value->attrs->GetInts(nullptr);
       for (int32_t i = 0; i < side_info_.i_num; ++i) {
@@ -110,7 +114,7 @@ public:
 
     auto it = id_to_index_.find(node_id);
     if (it == id_to_index_.end()) {
-      return 0.0;
+      return GLOBAL_FLAG(DefaultWeight);
     } else {
       return weights_[it->second];
     }
@@ -123,9 +127,22 @@ public:
 
     auto it = id_to_index_.find(node_id);
     if (it == id_to_index_.end()) {
-      return -1;
+      return GLOBAL_FLAG(DefaultLabel);
     } else {
       return labels_[it->second];
+    }
+  }
+
+  int64_t GetTimestamp(IdType node_id) const override {
+    if (!side_info_.IsTimestamped()) {
+      return -1;
+    }
+
+    auto it = id_to_index_.find(node_id);
+    if (it == id_to_index_.end()) {
+      return GLOBAL_FLAG(DefaultTimestamp);
+    } else {
+      return timestamps_[it->second];
     }
   }
 
@@ -170,6 +187,10 @@ public:
     return Array<int32_t>(labels_);
   }
 
+  const Array<int64_t> GetTimestamps() const override {
+    return Array<int64_t>(timestamps_);
+  }
+
   const std::vector<Attribute>* GetAttributes() const override {
     return nullptr;
   }
@@ -205,6 +226,7 @@ private:
   IdList     ids_;
   std::vector<float>   weights_;
   std::vector<int32_t> labels_;
+  std::vector<int64_t> timestamps_;
   AttributeValue*      attributes_;
   SideInfo             side_info_;
 };

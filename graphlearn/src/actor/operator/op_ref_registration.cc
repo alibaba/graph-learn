@@ -40,7 +40,8 @@ OpRefRegistration<RandomSamplerActor_ref> _random_sampler_("RandomSampler");
 OpRefRegistration<RandomWithoutReplacementSamplerActor_ref> _random_without_replacement_sampler_("RandomWithoutReplacementSampler");
 OpRefRegistration<SoftInDegreeNegativeSamplerActor_ref> _soft_in_degree_negative_sampler_("SoftInDegreeNegativeSampler");
 OpRefRegistration<TopkSamplerActor_ref> _topk_sampler_("TopkSampler");
-
+OpRefRegistration<RandomWalkActor_ref> _random_walk_("RandomWalk");
+OpRefRegistration<SubGraphSamplerActor_ref> _sub_graph_sampler_("SubGraphSampler");
 }  // namespace op_ref_registration
 }  // namespace act
 }  // namespace graphlearn

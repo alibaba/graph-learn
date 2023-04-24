@@ -20,6 +20,7 @@ limitations under the License.
 #include <string>
 #include <unordered_map>
 #include "core/dag/dag_node.h"
+#include "core/dag/tape.h"
 #include "core/operator/op_factory.h"
 #include "platform/env.h"
 
@@ -37,16 +38,17 @@ public:
 private:
   bool BuildInput(
     const DagNode* node, Tape* tape,
-    Tensor::Map* tensors);
+    TensorMap* tensors);
 
   std::unique_ptr<OpResponse> RunOp(
     const DagNode* node,
-    const Tensor::Map& tensors);
+    const TensorMap& tensors);
 
   std::unique_ptr<OpRequest> MakeOpRequest(
     const std::string& op_name,
     const Tensor::Map& params,
-    const Tensor::Map& tensors);
+    const Tensor::Map& tensors,
+    const SparseTensor::Map& sparse_tensors);
 
 private:
   Env*            env_;

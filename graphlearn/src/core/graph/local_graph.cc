@@ -78,6 +78,7 @@ public:
     while (request->Next(&edge_id, &src_id)) {
       res->AppendWeight(storage_->GetEdgeWeight(edge_id));
       res->AppendLabel(storage_->GetEdgeLabel(edge_id));
+      res->AppendTimestamp(storage_->GetEdgeTimestamp(edge_id));
       res->AppendAttribute(storage_->GetEdgeAttribute(edge_id).get());
     }
     return Status::OK();

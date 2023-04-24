@@ -88,9 +88,9 @@ GenerateDelegateRefs(const OpActorParams* params) {
   return actor_refs;
 }
 
-seastar::future<TensorMap> RemotePieceRequest(
+seastar::future<TensorMapSerializer> RemotePieceRequest(
     const BatchLocation& loc, BaseOperatorActor_ref* ref) {
-  TensorMap tm;
+  TensorMapSerializer tm;
   ADD_TENSOR(tm.tensors_, DelegateFetchFlag, kInt64, 2);
   tm.tensors_[DelegateFetchFlag].AddInt64(loc.offset);
   tm.tensors_[DelegateFetchFlag].AddInt64(loc.length);
@@ -113,7 +113,7 @@ public:
   }
 
   seastar::future<> LoadPieceCache() {
-    std::vector<seastar::future<TensorMap>> futs;
+    std::vector<seastar::future<TensorMapSerializer>> futs;
     for (auto &loc : loc_list_) {
       if (loc.shard_id == hiactor::local_shard_id()) {
         auto begin = local_id_array_ + loc.offset;
@@ -122,10 +122,10 @@ public:
         futs.emplace_back(RemotePieceRequest(loc, refs_[loc.shard_id]));
       }
     }
-    return seastar::when_all_succeed(futs.begin(), futs.end()).then(
-        [this] (const std::vector<TensorMap>& results) {
+    return seastar::when_all(futs.begin(), futs.end()).then(
+        [this] (std::vector<seastar::future<TensorMapSerializer>> results) {
       for (auto& result : results) {
-        for (auto& tn : result.tensors_) {
+        for (auto& tn : result.get0().tensors_) {
           auto size = tn.second.Size();
           const int64_t* begin = tn.second.GetInt64();
           piece_cache_.insert(piece_cache_.end(), begin, begin + size);
@@ -176,7 +176,7 @@ public:
   }
 
   seastar::future<> LoadPieceCache() {
-    std::vector<seastar::future<TensorMap>> futs;
+    std::vector<seastar::future<TensorMapSerializer>> futs;
     for (auto &loc : loc_list_) {
       if (loc.shard_id == hiactor::local_shard_id()) {
         for (io::IdType id = loc.offset; id < loc.offset + loc.length; id++) {
@@ -188,10 +188,11 @@ public:
         futs.emplace_back(RemotePieceRequest(loc, refs_[loc.shard_id]));
       }
     }
-    return seastar::when_all_succeed(futs.begin(), futs.end()).then(
-        [this] (std::vector<TensorMap> results) {
+    return seastar::when_all(futs.begin(), futs.end()).then(
+        [this] (std::vector<seastar::future<TensorMapSerializer>> results) {
       for (auto& result : results) {
-        CachePieceTensorMap(&result);
+        auto tm = result.get0();
+        CachePieceTensorMap(&tm);
       }
       cached_ = true;
       return seastar::make_ready_future<>();
@@ -219,7 +220,7 @@ public:
   }
 
 private:
-  void CachePieceTensorMap(TensorMap* tm) {
+  void CachePieceTensorMap(TensorMapSerializer* tm) {
     auto* src_ptr = tm->tensors_[kSrcIds].GetInt64();
     auto src_len = tm->tensors_[kSrcIds].Size();
     src_cache_.insert(src_cache_.end(), src_ptr, src_ptr + src_len);
@@ -270,10 +271,10 @@ public:
 
   virtual ~Iterator() = default;
 
-  virtual seastar::future<TensorMap> Next() = 0;
+  virtual seastar::future<TensorMapSerializer> Next() = 0;
 
 protected:
-  void AddTensorByOffset(TensorMap* tm, unsigned offset) {
+  void AddTensorByOffset(TensorMapSerializer* tm, unsigned offset) {
     if (offset < intact_size_) {
       tm->tensors_[kNodeIds].AddInt64(id_array_[offset]);
     } else {
@@ -300,7 +301,7 @@ public:
 
   ~OrderedIterator() override = default;
 
-  seastar::future<TensorMap> Next() override {
+  seastar::future<TensorMapSerializer> Next() override {
     if (cursor_ < intact_size_ || !piece_ || piece_->Cached()) {
       return InCacheNext();
     }
@@ -310,9 +311,9 @@ public:
   }
 
 private:
-  seastar::future<TensorMap> InCacheNext() {
+  seastar::future<TensorMapSerializer> InCacheNext() {
     auto len = std::min(total_size_ - cursor_, batch_size_);
-    TensorMap tm;
+    TensorMapSerializer tm;
     ADD_TENSOR(tm.tensors_, kNodeIds, kInt64, len);
     for (size_t i = 0; i < len; ++i) {
       AddTensorByOffset(&tm, cursor_);
@@ -320,7 +321,7 @@ private:
         cursor_ = 0;
       }
     }
-    return seastar::make_ready_future<TensorMap>(std::move(tm));
+    return seastar::make_ready_future<TensorMapSerializer>(std::move(tm));
   }
 
 private:
@@ -340,7 +341,7 @@ public:
 
   ~ShuffledIterator() override = default;
 
-  seastar::future<TensorMap> Next() override {
+  seastar::future<TensorMapSerializer> Next() override {
     if (!piece_ || piece_->Cached()) {
       return InCacheShuffleNext();
     }
@@ -350,9 +351,9 @@ public:
   }
 
 private:
-  seastar::future<TensorMap> InCacheShuffleNext() {
+  seastar::future<TensorMapSerializer> InCacheShuffleNext() {
     auto len = std::min(shuffle_buffer_.size() - shuffle_offset_, batch_size_);
-    TensorMap tm;
+    TensorMapSerializer tm;
     ADD_TENSOR(tm.tensors_, kNodeIds, kInt64, len);
     for (size_t i = 0; i < len; ++i) {
       AddTensorByOffset(&tm, shuffle_buffer_[shuffle_offset_]);
@@ -361,7 +362,7 @@ private:
         UpdateShuffleBuffer();
       }
     }
-    return seastar::make_ready_future<TensorMap>(std::move(tm));
+    return seastar::make_ready_future<TensorMapSerializer>(std::move(tm));
   }
 
   void UpdateShuffleBuffer() {
@@ -419,7 +420,7 @@ TraverseNodeBatchGenerator::~TraverseNodeBatchGenerator() {
   delete iter_;
 }
 
-seastar::future<TensorMap> TraverseNodeBatchGenerator::NextBatch() {
+seastar::future<TensorMapSerializer> TraverseNodeBatchGenerator::NextBatch() {
   return iter_->Next();
 }
 
@@ -435,15 +436,15 @@ RandomNodeBatchGenerator::RandomNodeBatchGenerator(
   dist_ = std::uniform_int_distribution<int32_t>(0, ids_.Size() - 1);
 }
 
-seastar::future<TensorMap> RandomNodeBatchGenerator::NextBatch() {
-  TensorMap tm;
+seastar::future<TensorMapSerializer> RandomNodeBatchGenerator::NextBatch() {
+  TensorMapSerializer tm;
   ADD_TENSOR(tm.tensors_, kNodeIds, kInt64, batch_size_);
 
   for (unsigned i = 0; i < batch_size_; ++i) {
     int32_t rand = dist_(engine_);
     tm.tensors_[kNodeIds].AddInt64(ids_[rand]);
   }
-  return seastar::make_ready_future<TensorMap>(std::move(tm));
+  return seastar::make_ready_future<TensorMapSerializer>(std::move(tm));
 }
 
 // Edge Batch Generator Basic Utils
@@ -473,10 +474,10 @@ public:
 
   virtual ~Iterator() = default;
 
-  virtual seastar::future<TensorMap> Next() = 0;
+  virtual seastar::future<TensorMapSerializer> Next() = 0;
 
 protected:
-  void AddTensorsByOffset(TensorMap* tm, unsigned offset) {
+  void AddTensorsByOffset(TensorMapSerializer* tm, unsigned offset) {
     if (offset < intact_size_) {
       io::IdType edge_id = offset;
       tm->tensors_[kEdgeIds].AddInt64(edge_id);
@@ -511,7 +512,7 @@ public:
 
   ~OrderedIterator() override = default;
 
-  seastar::future<TensorMap> Next() override {
+  seastar::future<TensorMapSerializer> Next() override {
     if (cursor_ < intact_size_ || !piece_ || piece_->Cached()) {
       return InCacheNext();
     }
@@ -521,9 +522,9 @@ public:
   }
 
 private:
-  seastar::future<TensorMap> InCacheNext() {
+  seastar::future<TensorMapSerializer> InCacheNext() {
     auto len = std::min(total_size_ - cursor_, batch_size_);
-    TensorMap tm;
+    TensorMapSerializer tm;
     ADD_TENSOR(tm.tensors_, kEdgeIds, kInt64, len);
     ADD_TENSOR(tm.tensors_, kSrcIds, kInt64, len);
     ADD_TENSOR(tm.tensors_, kDstIds, kInt64, len);
@@ -533,7 +534,7 @@ private:
         cursor_ = 0;
       }
     }
-    return seastar::make_ready_future<TensorMap>(std::move(tm));
+    return seastar::make_ready_future<TensorMapSerializer>(std::move(tm));
   }
 
 private:
@@ -553,7 +554,7 @@ public:
 
   ~ShuffledIterator() override = default;
 
-  seastar::future<TensorMap> Next() override {
+  seastar::future<TensorMapSerializer> Next() override {
     if (!piece_ || piece_->Cached()) {
       return InCacheShuffleNext();
     }
@@ -563,9 +564,9 @@ public:
   }
 
 private:
-  seastar::future<TensorMap> InCacheShuffleNext() {
+  seastar::future<TensorMapSerializer> InCacheShuffleNext() {
     auto len = std::min(shuffle_buffer_.size() - shuffle_offset_, batch_size_);
-    TensorMap tm;
+    TensorMapSerializer tm;
     ADD_TENSOR(tm.tensors_, kEdgeIds, kInt64, len);
     ADD_TENSOR(tm.tensors_, kSrcIds, kInt64, len);
     ADD_TENSOR(tm.tensors_, kDstIds, kInt64, len);
@@ -576,7 +577,7 @@ private:
         UpdateShuffleBuffer();
       }
     }
-    return seastar::make_ready_future<TensorMap>(std::move(tm));
+    return seastar::make_ready_future<TensorMapSerializer>(std::move(tm));
   }
 
   void UpdateShuffleBuffer() {
@@ -633,7 +634,7 @@ TraverseEdgeBatchGenerator::~TraverseEdgeBatchGenerator() {
   delete iter_;
 }
 
-seastar::future<TensorMap> TraverseEdgeBatchGenerator::NextBatch() {
+seastar::future<TensorMapSerializer> TraverseEdgeBatchGenerator::NextBatch() {
   return iter_->Next();
 }
 
@@ -650,8 +651,8 @@ RandomEdgeBatchGenerator::RandomEdgeBatchGenerator(
     0, edge_count_ - 1);
 }
 
-seastar::future<TensorMap> RandomEdgeBatchGenerator::NextBatch() {
-  TensorMap tm;
+seastar::future<TensorMapSerializer> RandomEdgeBatchGenerator::NextBatch() {
+  TensorMapSerializer tm;
   ADD_TENSOR(tm.tensors_, kEdgeIds, kInt64, batch_size_);
   ADD_TENSOR(tm.tensors_, kSrcIds, kInt64, batch_size_);
   ADD_TENSOR(tm.tensors_, kDstIds, kInt64, batch_size_);
@@ -663,7 +664,7 @@ seastar::future<TensorMap> RandomEdgeBatchGenerator::NextBatch() {
     tm.tensors_[kDstIds].AddInt64(storage_->GetDstId(edge_id));
   }
 
-  return seastar::make_ready_future<TensorMap>(std::move(tm));
+  return seastar::make_ready_future<TensorMapSerializer>(std::move(tm));
 }
 
 }  // namespace act

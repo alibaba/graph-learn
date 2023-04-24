@@ -36,7 +36,7 @@ public:
   /// Get the total edge count after data fixed.
   virtual IdType Size() const = 0;
 
-  /// An EDGE is made up of [ src_id, dst_id, weight, label, attributes ].
+  /// An EDGE is made up of [ src_id, dst_id, weight, label, timestamp, attributes ].
   /// Insert the value to get an unique id.
   /// If the value is invalid, return -1.
   virtual IdType Add(EdgeValue* value) = 0;
@@ -46,11 +46,13 @@ public:
   ///    destination node id,
   ///    edge weight,
   ///    edge label,
+  ///    edge timestamp,
   ///    edge attributes
   virtual IdType GetSrcId(IdType edge_id) const = 0;
   virtual IdType GetDstId(IdType edge_id) const = 0;
   virtual float GetWeight(IdType edge_id) const = 0;
   virtual int32_t GetLabel(IdType edge_id) const = 0;
+  virtual int64_t GetTimestamp(IdType edge_id) const = 0;
   virtual Attribute GetAttribute(IdType edge_id) const = 0;
 
   /// For the needs of traversal and sampling, the data distribution is
@@ -66,6 +68,8 @@ public:
   virtual const Array<float> GetWeights() const = 0;
   /// Get all labels if existed, the count of which is the same with Size().
   virtual const Array<int32_t> GetLabels() const = 0;
+  /// Get all timestamps if existed, the count of which is the same with Size().
+  virtual const Array<int64_t> GetTimestamps() const = 0;
   /// Get all attributes if existed, the count of which is the same with Size().
   virtual const std::vector<Attribute>* GetAttributes() const = 0;
 };

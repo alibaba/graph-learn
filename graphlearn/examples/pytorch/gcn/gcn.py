@@ -17,7 +17,10 @@ from __future__ import division
 from __future__ import print_function
 """GCN model based on PyG."""
 
-import torch
+try:
+  import torch
+except ImportError:
+  pass
 
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv

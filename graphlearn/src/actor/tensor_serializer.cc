@@ -104,5 +104,53 @@ Tensor TensorSerializer::load_from(hiactor::serializable_queue &qu) {
   return tensor;
 }
 
+void TensorMapSerializer::dump_to(hiactor::serializable_queue &qu) {
+  for (auto& it : tensors_) {
+    // write key
+    // FIXME(xiaoming.qxm): zero-copy.
+    auto length = it.first.size();
+    auto buf = seastar::temporary_buffer<char>(length);
+    memcpy(buf.get_write(), it.first.data(), length);
+    qu.push(std::move(buf));
+
+    // write value
+    TensorSerializer value_serializer(it.second);
+    value_serializer.dump_to(qu);
+  }
+
+  for (auto& it : sparse_tensors_) {
+    auto length = it.first.size();
+    auto buf = seastar::temporary_buffer<char>(length);
+    memcpy(buf.get_write(), it.first.data(), length);
+    qu.push(std::move(buf));
+
+    // write valus
+    TensorSerializer value_serializer(it.second.Values());
+    value_serializer.dump_to(qu);
+
+    // write segments
+    TensorSerializer segment_serializer(it.second.Segments());
+    segment_serializer.dump_to(qu);
+
+  }
+}
+
+TensorMapSerializer TensorMapSerializer::load_from(hiactor::serializable_queue &qu) {
+  TensorMapSerializer tm;
+  while (!qu.empty()) {
+    // get key
+    auto buf = qu.pop();
+    // FIXME(xiaoming.qxm): zero-copy.
+    char *key_ptr = buf.get_write();
+    auto key = std::string(buf.get_write(), buf.size());
+    // get value
+    auto value = TensorSerializer::load_from(qu);
+    // try get segment
+    auto segment = TensorSerializer::load_from(qu);
+    tm.Add(key, std::move(segment), std::move(value));
+  }
+  return tm;
+}
+
 }  // namespace act
 }  // namespace graphlearn

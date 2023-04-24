@@ -39,8 +39,7 @@ ConditionalSamplingRequest::ConditionalSamplingRequest(
   bool unique)
     : SamplingRequest(type,
                       "ConditionalNegativeSampler",
-                      neighbor_count,
-                      0),
+                      neighbor_count),
       dst_ids_(nullptr),
       int_cols_(nullptr), int_props_(nullptr),
       float_cols_(nullptr), float_props_(nullptr),
@@ -84,7 +83,7 @@ OpRequest* ConditionalSamplingRequest::Clone() const {
   return req;
 }
 
-void ConditionalSamplingRequest::SetMembers() {
+void ConditionalSamplingRequest::Finalize() {
   neighbor_count_ = params_[kNeighborCount].GetInt32(0);
   int_cols_ = &(params_[kIntCols]);
   int_props_ = &(params_[kIntProps]);
@@ -101,8 +100,6 @@ void ConditionalSamplingRequest::Init(const Tensor::Map& params) {
   params_.reserve(kReservedSize);
   ADD_TENSOR(params_, kType, kString, 1);
   params_[kType].AddString(params.at(kEdgeType).GetString(0));
-  ADD_TENSOR(params_, kPartitionKey, kString, 1);
-  params_[kPartitionKey].AddString(kSrcIds);
   ADD_TENSOR(params_, kOpName, kString, 1);
   params_[kOpName].AddString("ConditionalNegativeSampler");
   ADD_TENSOR(params_, kStrategy, kString, 1);
@@ -175,7 +172,7 @@ void ConditionalSamplingRequest::Init(const Tensor::Map& params) {
   }
 }
 
-void ConditionalSamplingRequest::Set(const Tensor::Map& tensors) {
+void ConditionalSamplingRequest::Set(const Tensor::Map& tensors, const SparseTensor::Map& sparse_tensors) {
   const int64_t* src_ids = tensors.at(kSrcIds).GetInt64();
   int32_t batch_size = tensors.at(kSrcIds).Size();
   src_ids_->AddInt64(src_ids, src_ids + batch_size);

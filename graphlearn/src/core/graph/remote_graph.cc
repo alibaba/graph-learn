@@ -46,10 +46,10 @@ public:
     return local_->UpdateEdges(req, res);
   }
 
-  Status UpdateEdges(int32_t remote_id,
+  Status UpdateEdges(int32_t remote_server_id,
                      const UpdateEdgesRequest* req,
                      UpdateEdgesResponse* res) override {
-    std::unique_ptr<Client> client(NewRpcClient(remote_id));
+    std::unique_ptr<Client> client(NewRpcClient(remote_server_id));
     return client->UpdateEdges(req, res);
   }
 
@@ -58,10 +58,10 @@ public:
     return local_->LookupEdges(req, res);
   }
 
-  Status LookupEdges(int32_t remote_id,
+  Status LookupEdges(int32_t remote_server_id,
                      const LookupEdgesRequest* req,
                      LookupEdgesResponse* res) override {
-    std::unique_ptr<Client> client(NewRpcClient(remote_id));
+    std::unique_ptr<Client> client(NewRpcClient(remote_server_id));
     return client->LookupEdges(req, res);
   }
 

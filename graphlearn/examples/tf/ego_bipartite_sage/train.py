@@ -18,7 +18,6 @@ from __future__ import print_function
 
 import argparse
 import datetime
-from xmlrpc.client import Boolean
 import numpy as np
 import os, sys
 
@@ -236,7 +235,7 @@ if __name__ == "__main__":
   argparser.add_argument('--sampler', type=str, default="random")
   argparser.add_argument('--neg_sampler', type=str, default="random")
   argparser.add_argument('--temperature', type=float, default=0.07)
-  argparser.add_argument('--edge_weighted', type=Boolean, default=False)
+  argparser.add_argument('--edge_weighted', action="store_true")
   args = argparser.parse_args()
 
   def parse_attr_type(value):

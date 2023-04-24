@@ -45,14 +45,15 @@ Tape::~Tape() {
 }
 
 void Tape::Record(int32_t key, std::unique_ptr<OpResponse>& response) {
-  recordings_[key - 1] = std::move(response->tensors_);
+  recordings_[key - 1] = {
+    std::move(response->tensors_), std::move(response->sparse_tensors_)};
 }
 
-void Tape::Record(int32_t key, Tensor::Map&& tensors) {
+void Tape::Record(int32_t key, TensorMap&& tensors) {
   recordings_[key - 1] = std::move(tensors);
 }
 
-const Tensor::Map& Tape::Retrieval(int32_t key) {
+TensorMap& Tape::Retrieval(int32_t key) {
   assert(key > 0 && key <= size_);
   return recordings_[key - 1];
 }

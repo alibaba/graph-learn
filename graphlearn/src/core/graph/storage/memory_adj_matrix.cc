@@ -58,7 +58,9 @@ public:
   }
 
   void Build(EdgeStorage* edges) override {
-    if (edges->GetSideInfo()->IsWeighted()) {
+    if (edges->GetSideInfo()->IsTimestamped()) {
+      SortByTimestamp(edges);
+    } else if (edges->GetSideInfo()->IsWeighted()) {
       Sort(edges);
     }
   }
@@ -119,6 +121,30 @@ private:
               return a.second > b.second;
           });
       unzip3(zipped, &dst_ids, &edge_ids, &weights);
+    }
+  }
+
+  /// This is for speeding up neighbor sampling in temporal graph.
+  /// Sort by timestamp incrementally.
+  void SortByTimestamp(EdgeStorage* edges) {
+    for (IndexType i = 0; i < adj_nodes_.size(); ++i) {
+      auto& dst_ids = adj_nodes_[i];
+      auto& edge_ids = adj_edges_[i];
+
+      std::vector<int64_t> ts;
+      ts.reserve(edge_ids.size());
+      for (auto edge_id : edge_ids) {
+        ts.push_back(edges->GetTimestamp(edge_id));
+      }
+
+      std::vector<std::pair<std::pair<IdType, IdType>, int64_t>> zipped;
+      zip3(dst_ids, edge_ids, ts, &zipped);
+      std::sort(std::begin(zipped), std::end(zipped),
+          [&](const std::pair<std::pair<IdType, IdType>, int64_t>& a,
+              const std::pair<std::pair<IdType, IdType>, int64_t>& b) {
+              return a.second < b.second;
+          });
+      unzip3(zipped, &dst_ids, &edge_ids, &ts);
     }
   }
 

@@ -224,6 +224,7 @@ int main(int argc, char** argv) {
     server_count = argv[2][0] - '0';
     SetGlobalFlagTrackerMode(kRpc);
     SetGlobalFlagServerHosts(argv[3]);
+    SetGlobalFlagLocalNodeCacheCapacity(100);
 
     LiteString s(argv[3]);
     host = strings::Split(s, ",")[server_id];
@@ -235,6 +236,7 @@ int main(int argc, char** argv) {
     }
     SetGlobalFlagTracker("./tracker");
     SetGlobalFlagTrackerMode(kFileSystem);
+    SetGlobalFlagLocalNodeCacheCapacity(100);
   } else if (argc == 1) {
     if (::system("mkdir -p ./tracker") != 0) {
       std::cerr << "cannot create tracker directory!" << ::std::endl;

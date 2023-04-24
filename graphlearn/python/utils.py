@@ -50,7 +50,7 @@ class Mask(Enum):
 def get_mask_type(raw_type, mask=Mask.NONE):
   """ Get the masked type for raw node_type or edge_type.
   For NONE mask, return the raw_type.
-  TRAIN mask for raw_type of "user", return "MASK*user". 
+  TRAIN mask for raw_type of "user", return "MASK*user".
   TEST mask for raw_type of "user, return "MASK**user".
   VAL mask for raw_type of "user, return "MASK***user".
   """

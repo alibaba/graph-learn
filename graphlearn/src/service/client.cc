@@ -46,6 +46,7 @@ DEFINE_METHOD(GetNodes);
 DEFINE_METHOD(LookupNodes);
 DEFINE_METHOD(Sampling);
 DEFINE_METHOD(Aggregating);
+DEFINE_METHOD(RandomWalk);
 DEFINE_METHOD(SubGraph);
 DEFINE_METHOD(GetCount);
 DEFINE_METHOD(GetDegree);

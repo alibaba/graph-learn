@@ -185,7 +185,7 @@ GraphStore* GraphStore::GetInstance() {
 Status GraphStore::Init(
     const std::vector<io::EdgeSource>& edges,
     const std::vector<io::NodeSource>& nodes) {
-  
+
   for (const auto& e : edges) {
     std::string decorated_edge_view = e.src_id_type + "|" + e.dst_id_type;
     if (!e.view_type.empty()) {
@@ -279,7 +279,7 @@ Status GraphStore::BuildStatistics() {
   Status s;
   for (int32_t i = 0; i < env_->GetServerCount(); ++i) {
     if (i == env_->GetServerId()) {
-      FillCounts(local_count_.data());       
+      FillCounts(local_count_.data());
     } else {
       std::unique_ptr<Client> client(NewRpcClient(i));
       std::unique_ptr<GetCountRequest> req(new GetCountRequest());

@@ -191,7 +191,7 @@ void DefaultServerImpl::Init(const std::vector<io::EdgeSource>& edges,
     USER_LOG(s.ToString());
     LOG(FATAL) << "Server build statistics failed: " << s.ToString();
     ::exit(-1);
-  }  
+  }
 }
 
 void DefaultServerImpl::Stop() {

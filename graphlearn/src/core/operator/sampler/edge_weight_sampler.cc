@@ -14,6 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include <memory>
+#include <numeric>
 #include <vector>
 #include "core/operator/sampler/alias_method.h"
 #include "core/operator/sampler/padder/padder.h"
@@ -32,19 +33,18 @@ public:
     int32_t count = req->NeighborCount();
     int32_t batch_size = req->BatchSize();
 
-    res->SetBatchSize(batch_size);
-    res->SetNeighborCount(count);
-    res->InitNeighborIds(batch_size * count);
-    res->InitEdgeIds(batch_size * count);
+    res->SetShape(batch_size, count);
+    res->InitNeighborIds();
+    res->InitEdgeIds();
 
     const std::string& edge_type = req->Type();
     Graph* graph = graph_store_->GetGraph(edge_type);
     auto storage = graph->GetLocalStorage();
 
-    std::vector<int32_t> indices(count);
-
     const int64_t* src_ids = req->GetSrcIds();
-    const int64_t* filters = req->GetFilters();
+    auto filter = req->GetFilter();
+
+    std::vector<int32_t> indices(count);
     Status s;
     for (int32_t i = 0; i < batch_size; ++i) {
       int64_t src_id = src_ids[i];
@@ -52,13 +52,19 @@ public:
       if (!neighbor_ids) {
         res->FillWith(GLOBAL_FLAG(DefaultNeighborId), -1);
       } else {
+        auto neighbor_size = neighbor_ids.Size();
         auto edge_ids = storage->GetOutEdges(src_id);
-        SampleFrom(edge_ids, storage, count, indices.data());
+
+        if (*filter) {
+          indices.resize(neighbor_size);
+          std::iota(indices.begin(), indices.end(), 0);
+          filter->ActOn(i, neighbor_ids, edge_ids, storage, &indices);
+          SampleFromIndices(edge_ids, storage, count, &indices);
+        } else {
+          SampleFrom(edge_ids, storage, count, indices.data());
+        }
         auto padder = GetPadder(neighbor_ids, edge_ids);
         padder->SetIndex(indices);
-        if (filters) {
-          padder->SetFilter(filters[i]);
-        }
         s = padder->Pad(res, count);
         if (!s.ok()) {
           return s;
@@ -73,14 +79,37 @@ private:
                   ::graphlearn::io::GraphStorage* storage,
                   int32_t n, int32_t* indices) {
     std::vector<float> edge_weights;
-    edge_weights.reserve(edge_ids.Size());
-    for (size_t i = 0; i < edge_ids.Size(); ++i) {
+    auto size = edge_ids.Size();
+    edge_weights.reserve(size);
+
+    for (size_t i = 0; i < size; ++i) {
       ::graphlearn::io::IdType edge_id = edge_ids[i];
       edge_weights.push_back(storage->GetEdgeWeight(edge_id));
     }
-
     AliasMethod am(&edge_weights);
     am.Sample(n, indices);
+
+  }
+
+  void SampleFromIndices(const ::graphlearn::io::IdArray& edge_ids,
+                         ::graphlearn::io::GraphStorage* storage,
+                         int32_t n, std::vector<int32_t>* indices) {
+    if (indices->size() > 0) {
+      std::vector<float> edge_weights;
+      edge_weights.reserve(indices->size());
+
+      for (size_t i = 0; i < indices->size(); ++i) {
+        ::graphlearn::io::IdType edge_id = edge_ids[indices->at(i)];
+        edge_weights.push_back(storage->GetEdgeWeight(edge_id));
+      }
+      AliasMethod am(&edge_weights);
+      std::vector<int32_t> ret(n);
+      am.Sample(n, ret.data());
+      for (size_t i = 0; i < n; ++i) {
+        ret[i] = indices->at(ret[i]);
+      }
+      indices->swap(ret);
+    }
   }
 };
 

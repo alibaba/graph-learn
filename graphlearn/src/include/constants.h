@@ -18,7 +18,7 @@ limitations under the License.
 
 namespace graphlearn {
 
-extern const char* kPartitionKey;
+extern const char* kUnspecified;
 extern const char* kOpName;
 extern const char* kNodeType;
 extern const char* kEdgeType;
@@ -37,6 +37,7 @@ extern const char* kStrategy;
 extern const char* kDegreeKey;
 extern const char* kWeightKey;
 extern const char* kLabelKey;
+extern const char* kTimestampKey;
 extern const char* kIntAttrKey;
 extern const char* kFloatAttrKey;
 extern const char* kStringAttrKey;
@@ -60,10 +61,15 @@ extern const char* kFloatProps;
 extern const char* kStrCols;
 extern const char* kStrProps;
 extern const char* kFilterType;
-extern const char* kFilterIds;
+extern const char* kFilterField;
+extern const char* kFilterValues;
 extern const char* kDegrees;
 extern const char* kEpoch;
 extern const char* kNodeFrom;
+extern const char* kNeedDist;
+extern const char* kDistToSrc;
+extern const char* kDistToDst;
+extern const char* kSparseIds;
 
 enum SystemState {
   kBlank = 0,
@@ -79,7 +85,8 @@ enum DataFormat {
   kDefault = 1,
   kWeighted = 2,
   kLabeled = 4,
-  kAttributed = 8
+  kTimestamped = 8,
+  kAttributed = 16,
 };
 
 enum Direction {
@@ -124,6 +131,19 @@ enum NodeFrom {
   kEdgeDst,
   kNode
 };
+
+enum FilterType {
+  kOperatorUnspecified,
+  kEqual,
+  kLargerThan
+};
+
+enum FilterField {
+  kFieldUnspecified,
+  kId,
+  kTimestamp
+};
+
 
 }  // namespace graphlearn
 

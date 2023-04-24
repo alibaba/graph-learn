@@ -18,6 +18,7 @@ limitations under the License.
 
 #include <string>
 #include "include/shardable.h"
+#include "include/config.h"
 
 namespace graphlearn {
 
@@ -49,7 +50,14 @@ public:
 template <class T>
 class ShardableRequest : public BaseRequest, Shardable<T> {
 public:
-  ShardableRequest() : BaseRequest(true) {}
+  explicit ShardableRequest(const std::string& shard_key)
+    : BaseRequest(true),
+      shard_key_(shard_key) {}
+
+  virtual const std::string& ShardKey() const { return shard_key_; }
+  virtual int32_t ShardId() const { return GLOBAL_FLAG(ServerId); }
+protected:
+  const std::string shard_key_;
   virtual ~ShardableRequest() = default;
 };
 

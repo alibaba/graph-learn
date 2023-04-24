@@ -17,6 +17,9 @@ from graphlearn.python.nn.pytorch.data.dataset import Dataset
 from graphlearn.python.nn.pytorch.data.utils import get_cluster_spec, \
 get_counts, launch_server, set_client_num
 from graphlearn.python.nn.pytorch.data.pyg_dataloader import PyGDataLoader
+from graphlearn.python.nn.pytorch.data.temporal_dataset import TemporalDataset
+from graphlearn.python.nn.pytorch.data.temporal_dataloader import TemporalDataLoader
+
 
 # Special dunders that we choose to export:
 _exported_dunders = set([

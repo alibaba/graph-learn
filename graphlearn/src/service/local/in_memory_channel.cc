@@ -15,6 +15,7 @@ limitations under the License.
 
 #include "service/local/in_memory_channel.h"
 
+#include "include/config.h"
 #include "service/local/event_queue.h"
 
 namespace graphlearn {
@@ -25,7 +26,7 @@ void InMemoryChannel::CallMethod(uint16_t method_id,
                                  StatusWrapper* status) {
   Call call(method_id, request, response, status);
   queue_->Push(&call);
-  status->Wait();
+  status->Wait(GLOBAL_FLAG(Timeout) * 1000);
 }
 
 }  // namespace graphlearn

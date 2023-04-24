@@ -247,7 +247,7 @@ TEST_F(ThreadDagSchedulerTest, GetNodes) {
     // Get Response of DagNode id 1.
     auto& record = tape->Retrieval(1);
     // GetNodes with batch_size 2.
-    EXPECT_EQ(record.at("nid").Size(), 2);
+    EXPECT_EQ(record.tensors_.at("nid").Size(), 2);
     delete tape;
   }
 
@@ -266,9 +266,9 @@ TEST_F(ThreadDagSchedulerTest, GetNodes) {
     // Tape record response of 1 DagNode (except SinkNode).
     EXPECT_EQ(tape->Size(), 2);
     // Get Response of DagNode id 1.
-    auto record = tape->Retrieval(1);
+    auto& record = tape->Retrieval(1);
     // GetNodes with batch_size 2.
-    EXPECT_EQ(record.at("nid").Size(), 2);
+    EXPECT_EQ(record.tensors_.at("nid").Size(), 2);
     delete tape;
   }
 

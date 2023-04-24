@@ -18,6 +18,8 @@ limitations under the License.
 
 #include "actor/operator/op_def_macro.h"
 #include "include/sampling_request.h"
+#include "include/random_walk_request.h"
+#include "include/subgraph_request.h"
 
 namespace graphlearn {
 namespace act {
@@ -32,6 +34,8 @@ DEFINE_OP_ACTOR(RandomSampler, SamplingRequest, SamplingResponse)
 DEFINE_OP_ACTOR(RandomWithoutReplacementSampler, SamplingRequest, SamplingResponse)
 DEFINE_OP_ACTOR(SoftInDegreeNegativeSampler, SamplingRequest, SamplingResponse)
 DEFINE_OP_ACTOR(TopkSampler, SamplingRequest, SamplingResponse)
+DEFINE_OP_ACTOR(RandomWalk, RandomWalkRequest, RandomWalkResponse)
+DEFINE_OP_ACTOR(SubGraphSampler, SubGraphRequest, SubGraphResponse)
 
 }  // namespace act
 }  // namespace graphlearn

@@ -13,6 +13,7 @@
 # limitations under the License.
 # =============================================================================
 from graphlearn.python.gsl.dag import Dag
+from graphlearn.python.gsl.dag_node import SubGraphDagNode
 from graphlearn.python.gsl.dag_node import TraverseVertexDagNode
 from graphlearn.python.gsl.dag_node import TraverseSourceEdgeDagNode
 from graphlearn.python.gsl.dag_node import SinkNode
@@ -20,6 +21,7 @@ from graphlearn.python.gsl.dag_dataset import Dataset
 
 __all__ = [
     "Dag",
+    "SubGraphDagNode",
     "TraverseVertexDagNode",
     "TraverseSourceEdgeDagNode",
     "SinkNode",

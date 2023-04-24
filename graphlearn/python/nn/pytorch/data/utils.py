@@ -21,7 +21,10 @@ import socket
 import warnings
 import multiprocessing as mp
 
-import torch
+try:
+  import torch
+except ImportError:
+  pass
 import torch.distributed as dist
 
 

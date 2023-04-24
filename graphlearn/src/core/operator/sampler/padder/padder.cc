@@ -36,19 +36,8 @@ public:
   }
 };
 
-void BasePadder::SetFilter(int64_t filter) {
-  filter_ = filter;
-}
-
 void BasePadder::SetIndex(const std::vector<int32_t>& indices) {
   indices_ = &indices;
-}
-
-bool BasePadder::HitFilter(int64_t value) {
-  if (filter_ == -1) {
-    return false;
-  }
-  return filter_ == value;
 }
 
 PadderPtr GetPadder(const IdArray& neighbors, const IdArray& edges) {

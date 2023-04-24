@@ -1,4 +1,4 @@
-/* Copyright 2020 Alibaba Group Holding Limited. All Rights Reserved.
+/* Copyright 2023 Alibaba Group Holding Limited. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,62 +16,85 @@ limitations under the License.
 #include <unordered_map>
 
 #include "core/operator/subgraph/subgraph_sampler.h"
+#include "core/operator/subgraph/subgraph_utils.h"
 
-#include "include/client.h"
-#include "include/config.h"
+#include "core/operator/op_factory.h"
+#include "core/runner/op_runner.h"
+#include "platform/env.h"
 
 namespace graphlearn {
 namespace op {
 
-Status SampleNeighors(const SamplingRequest* req,
-                      SamplingResponse* res) {
-  std::unique_ptr<Client> client;
-  if (GLOBAL_FLAG(DeployMode) != kLocal) {
-    client.reset(NewRpcClient());
-  } else {
-    client.reset(NewInMemoryClient());
-  }
-  return client->Sampling(req, res);
+Status SubGraphSampler::SampleNeighors(const SamplingRequest* req,
+    SamplingResponse* res) {
+  Operator* op = OpFactory::GetInstance()->Create("FullSampler");
+  std::unique_ptr<OpRunner> runner = GetOpRunner(Env::Default(), op);
+  return runner->Run(req, res);
 }
 
 Status SubGraphSampler::InduceSubGraph(
-    const std::set<int64_t>& nodes_set,
+    const std::vector<int64_t>& nodes_vec,
     const SubGraphRequest* request,
     SubGraphResponse* response) {
-  std::vector<int64_t> nodes(nodes_set.begin(), nodes_set.end());
-
-  int32_t node_size = nodes.size();
-  SamplingRequest req(request->NbrType(), "FullSampler", node_size);
-  req.Set(nodes.data(), node_size);
+  int32_t node_size = nodes_vec.size();
+  SamplingRequest req(request->NbrType(), "FullSampler",
+                      GLOBAL_FLAG(DefaultFullNbrNum));
+  req.Set(nodes_vec.data(), node_size);
   SamplingResponse res;
   Status s = SampleNeighors(&req, &res);
   RETURN_IF_NOT_OK(s);
 
-  const int64_t* nbrs = res.GetNeighborIds();
-  const int32_t* degrees = res.GetDegrees();
-  const int64_t* edge_ids = res.GetEdgeIds();
+  const auto nbrs = res.GetNeighborIds();
+  auto& degrees = res.GetShape().segments;
+  const auto edge_ids = res.GetEdgeIds();
 
   response->Init(node_size);
-  response->SetNodeIds(nodes.data(), nodes.size());
+  response->SetNodeIds(nodes_vec.data(), nodes_vec.size());
+
+  int32_t src = 0;
+  int32_t dst = 1;
+  auto adj_wo_src = subgraph::Graph(node_size);
+  auto adj_wo_dst = subgraph::Graph(node_size);
 
   int32_t offset = 0;
   for (int32_t i = 0; i < node_size; ++i) {
-    std::unordered_map<int64_t, int64_t> nbr_node_edge_map;
+    std::unordered_map<int64_t, int64_t> node2edge;
+    node2edge.clear();
     for (int32_t k = offset; k < offset + degrees[i]; ++k) {
-      nbr_node_edge_map[nbrs[k]] = edge_ids[k];
+      node2edge[nbrs[k]] = edge_ids[k];
     }
     offset += degrees[i];
 
     for (int32_t j = 0; j < node_size; ++j) {
-      auto iter = nbr_node_edge_map.find(nodes[j]);
-      if (iter != nbr_node_edge_map.end()) {
+      auto iter = node2edge.find(nodes_vec[j]);
+      if (iter != node2edge.end()) {
         response->AppendEdge(i, j, iter->second);
+        response->AppendEdge(j, i, iter->second);
+        if (request->NeedDist()) {
+          if (i != src && j != src) {
+            adj_wo_src.AddEdge(i, j);
+            adj_wo_src.AddEdge(j, i);
+          }
+          if (i != dst && j != dst) {
+            adj_wo_dst.AddEdge(i, j);
+            adj_wo_dst.AddEdge(j, i);
+          }
+        }
       }
     }
   }
-
+  if (request->NeedDist()) {
+    auto dist_to_dst = adj_wo_src.BFSShortestPath(dst);
+    auto dist_to_src = adj_wo_dst.BFSShortestPath(src);
+    dist_to_dst[src] = 0;
+    dist_to_src[dst] = 0;
+    response->SetDistToSrc(dist_to_src.data(), dist_to_src.size());
+    response->SetDistToDst(dist_to_dst.data(), dist_to_dst.size());
+  }
   return Status::OK();
 }
+
+REGISTER_OPERATOR("SubGraphSampler", SubGraphSampler);
 
 }  // namespace op
 }  // namespace graphlearn

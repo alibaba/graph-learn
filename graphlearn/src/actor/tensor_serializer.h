@@ -18,6 +18,7 @@ limitations under the License.
 
 #include "hiactor/net/serializable_queue.hh"
 
+#include "core/dag/tape.h"
 #include "include/tensor.h"
 
 namespace graphlearn {
@@ -30,6 +31,29 @@ public:
 
   void dump_to(hiactor::serializable_queue& qu);
   static Tensor load_from(hiactor::serializable_queue& qu);
+};
+
+class TensorMapSerializer : public TensorMap {
+public:
+  TensorMapSerializer() : TensorMap() {}
+  TensorMapSerializer(Tensor::Map&& tensor, SparseTensor::Map&& sparse_tensor)
+    : TensorMap(std::move(tensor), std::move(sparse_tensor)) {}
+  void dump_to(hiactor::serializable_queue &qu);  // NOLINT [runtime/references]
+  static TensorMapSerializer load_from(hiactor::serializable_queue &qu);  // NOLINT [runtime/references]
+};
+
+struct TapeHolder {
+  Tape* tape;
+
+  explicit TapeHolder(Tape* t) : tape(t) {}
+  ~TapeHolder() = default;
+
+  // TapeHolder doesn't need (de-)serialization.
+  void dump_to(hiactor::serializable_queue &qu) {}  // NOLINT [runtime/references]
+
+  static TapeHolder load_from(hiactor::serializable_queue &qu) {  // NOLINT [runtime/references]
+    return TapeHolder{nullptr};
+  }
 };
 
 }  // namespace act

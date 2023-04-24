@@ -461,6 +461,8 @@ def check_subgraph_edge_indices(nodes, row_indices, col_indices):
           and (abs(nodes.ids[i] - nodes.ids[j]) in [2, 3, 5])):
         true_row_idx.append(i)
         true_col_idx.append(j)
+        true_row_idx.append(j)
+        true_col_idx.append(i)
   npt.assert_equal(row_indices, np.array(true_row_idx))
   npt.assert_equal(col_indices, np.array(true_col_idx))
 

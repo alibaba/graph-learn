@@ -33,17 +33,16 @@ public:
     int32_t count = req->NeighborCount();
     int32_t batch_size = req->BatchSize();
 
-    res->SetBatchSize(batch_size);
-    res->SetNeighborCount(count);
-    res->InitNeighborIds(batch_size * count);
-    res->InitEdgeIds(batch_size * count);
+    res->SetShape(batch_size, count);
+    res->InitNeighborIds();
+    res->InitEdgeIds();
 
     const std::string& edge_type = req->Type();
     Graph* graph = graph_store_->GetGraph(edge_type);
     auto storage = graph->GetLocalStorage();
 
     const int64_t* src_ids = req->GetSrcIds();
-    const int64_t* filters = req->GetFilters();
+    auto filter = req->GetFilter();
     Status s;
     for (int32_t i = 0; i < batch_size; ++i) {
       int64_t src_id = src_ids[i];
@@ -59,13 +58,13 @@ public:
 
         std::vector<int32_t> indices(neighbor_size);
         std::iota(indices.begin(), indices.end(), 0);
+        if (*filter) {
+          filter->ActOn(i, neighbor_ids, edge_ids, storage, &indices);
+        }
         std::shuffle(indices.begin(), indices.end(), engine);
 
         auto padder = GetPadder(neighbor_ids, edge_ids);
         padder->SetIndex(indices);
-        if (filters) {
-          padder->SetFilter(filters[i]);
-        }
         s = padder->Pad(res, count);
         if (!s.ok()) {
           return s;

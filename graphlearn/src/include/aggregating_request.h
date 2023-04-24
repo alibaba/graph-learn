@@ -44,7 +44,7 @@ public:
   int32_t NumSegments() const { return num_segments_; }
 
 protected:
-  void SetMembers() override;
+  void Finalize() override;
 
 private:
   int32_t cursor_;
@@ -81,7 +81,7 @@ public:
   void Stitch(ShardsPtr<OpResponse> shards) override;
 
 protected:
-  void SetMembers() override;
+  void Finalize() override;
 
 private:
   std::string name_;

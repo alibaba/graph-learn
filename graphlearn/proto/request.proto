@@ -11,11 +11,13 @@ message OpRequestPb {
   bool need_server_ready = 3;
   repeated TensorValue params = 4;
   repeated TensorValue tensors = 5;
+  repeated SparseTensorValue sparse_tensors = 6;
 }
 
 message OpResponsePb {
   repeated TensorValue params = 1;
   repeated TensorValue tensors = 2;
+  repeated SparseTensorValue sparse_tensors = 3;
 }
 
 message StopRequestPb {

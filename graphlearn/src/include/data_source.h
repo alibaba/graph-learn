@@ -108,6 +108,10 @@ struct NodeSource {
     return format & kLabeled;
   }
 
+  bool IsTimestamped() const {
+    return format & kTimestamped;
+  }
+
   bool IsAttributed() const {
     return format & kAttributed;
   }
@@ -161,6 +165,10 @@ struct EdgeSource {
 
   inline bool IsLabeled() const {
     return format & kLabeled;
+  }
+
+  inline bool IsTimestamped() const {
+    return format & kTimestamped;
   }
 
   inline bool IsAttributed() const {

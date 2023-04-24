@@ -398,13 +398,13 @@ private:
   FetchAllNodeBatch(const std::vector<BaseOperatorActor_ref*>& op_refs,
                     const std::vector<uint32_t>& batch_to_shard,
                     int64_t total_data_size) {
-    std::vector<seastar::future<TensorMap>> futs;
+    std::vector<seastar::future<TensorMapSerializer>> futs;
     futs.reserve(batch_to_shard.size());
     for (auto dest_shard : batch_to_shard) {
-      futs.emplace_back(op_refs[dest_shard]->Process(TensorMap{}));
+      futs.emplace_back(op_refs[dest_shard]->Process(TensorMapSerializer{}));
     }
     return seastar::when_all(futs.begin(), futs.end()).then(
-        [total_data_size] (std::vector<seastar::future<TensorMap>> results) {
+        [total_data_size] (std::vector<seastar::future<TensorMapSerializer>> results) {
       std::vector<io::IdType> data;
       data.reserve(total_data_size);
       for (auto& result : results) {
@@ -424,13 +424,13 @@ private:
   FetchAllEdgeBatch(const std::vector<BaseOperatorActor_ref*>& op_refs,
                     const std::vector<uint32_t>& batch_to_shard,
                     int64_t total_data_size) {
-    std::vector<seastar::future<TensorMap>> futs;
+    std::vector<seastar::future<TensorMapSerializer>> futs;
     futs.reserve(batch_to_shard.size());
     for (auto dest_shard : batch_to_shard) {
-      futs.emplace_back(op_refs[dest_shard]->Process(TensorMap{}));
+      futs.emplace_back(op_refs[dest_shard]->Process(TensorMapSerializer{}));
     }
     return seastar::when_all(futs.begin(), futs.end()).then(
-        [total_data_size] (std::vector<seastar::future<TensorMap>> results) {
+        [total_data_size] (std::vector<seastar::future<TensorMapSerializer>> results) {
       std::vector<edge_record> data;
       data.reserve(total_data_size);
       for (auto& result : results) {

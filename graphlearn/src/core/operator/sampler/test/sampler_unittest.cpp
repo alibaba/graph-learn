@@ -110,9 +110,8 @@ TEST_F(SamplerTest, Random) {
   Status s = op->Process(req, res);
   EXPECT_TRUE(s.ok());
 
-  EXPECT_EQ(res->BatchSize(), batch_size);
-  EXPECT_EQ(res->NeighborCount(), nbr_count);
-  EXPECT_EQ(res->IsSparse(), false);
+  EXPECT_EQ(res->GetShape().dim1, batch_size);
+  EXPECT_EQ(res->GetShape().dim2, nbr_count);
 
   std::unordered_set<int64_t> nbr_set({11, 21});
   const int64_t* neighbor_ids = res->GetNeighborIds();
@@ -148,9 +147,9 @@ TEST_F(SamplerTest, RandomWithoutReplacement) {
   Status s = op->Process(req, res);
   EXPECT_TRUE(s.ok());
 
-  EXPECT_EQ(res->BatchSize(), batch_size);
-  EXPECT_EQ(res->NeighborCount(), nbr_count);
-  EXPECT_EQ(res->IsSparse(), false);
+  EXPECT_EQ(res->GetShape().dim1, batch_size);
+  EXPECT_EQ(res->GetShape().dim2, nbr_count);
+
 
   std::unordered_set<int64_t> nbr_set({11, 21});
   const int64_t* neighbor_ids = res->GetNeighborIds();
@@ -185,9 +184,8 @@ TEST_F(SamplerTest, Topk) {
   Status s = op->Process(req, res);
   EXPECT_TRUE(s.ok());
 
-  EXPECT_EQ(res->BatchSize(), batch_size);
-  EXPECT_EQ(res->NeighborCount(), nbr_count);
-  EXPECT_EQ(res->IsSparse(), false);
+  EXPECT_EQ(res->GetShape().dim1, batch_size);
+  EXPECT_EQ(res->GetShape().dim2, nbr_count);
 
   // expected results will be ordered by edge_weight
   int64_t result[4] = {20, 10, 21, 11};
@@ -216,9 +214,8 @@ TEST_F(SamplerTest, EdgeWeight) {
   Status s = op->Process(req, res);
   EXPECT_TRUE(s.ok());
 
-  EXPECT_EQ(res->BatchSize(), batch_size);
-  EXPECT_EQ(res->NeighborCount(), nbr_count);
-  EXPECT_EQ(res->IsSparse(), false);
+  EXPECT_EQ(res->GetShape().dim1, batch_size);
+  EXPECT_EQ(res->GetShape().dim2, nbr_count);
 
   const int64_t* neighbor_ids = res->GetNeighborIds();
 
@@ -254,9 +251,8 @@ TEST_F(SamplerTest, InDegree) {
   Status s = op->Process(req, res);
   EXPECT_TRUE(s.ok());
 
-  EXPECT_EQ(res->BatchSize(), batch_size);
-  EXPECT_EQ(res->NeighborCount(), nbr_count);
-  EXPECT_EQ(res->IsSparse(), false);
+  EXPECT_EQ(res->GetShape().dim1, batch_size);
+  EXPECT_EQ(res->GetShape().dim2, nbr_count);
 
   const int64_t* neighbor_ids = res->GetNeighborIds();
 
@@ -292,10 +288,9 @@ TEST_F(SamplerTest, Full) {
   Status s = op->Process(req, res);
   EXPECT_TRUE(s.ok());
 
-  EXPECT_EQ(res->BatchSize(), batch_size);
-  EXPECT_EQ(res->IsSparse(), true);
+  EXPECT_EQ(res->GetShape().dim1, batch_size);
 
-  const int32_t* degrees = res->GetDegrees();
+  auto& degrees = res->GetShape().segments;
   EXPECT_EQ(degrees[0], 2);
   EXPECT_EQ(degrees[1], 2);
 
@@ -333,9 +328,8 @@ TEST_F(SamplerTest, DISABLED_NodeWeightNegative) {
   Status s = op->Process(req, res);
   EXPECT_TRUE(s.ok());
 
-  EXPECT_EQ(res->BatchSize(), batch_size);
-  EXPECT_EQ(res->NeighborCount(), nbr_count);
-  EXPECT_EQ(res->IsSparse(), false);
+  EXPECT_EQ(res->GetShape().dim1, batch_size);
+  EXPECT_EQ(res->GetShape().dim2, nbr_count);
 
   const int64_t* neighbor_ids = res->GetNeighborIds();
 

@@ -17,6 +17,7 @@ limitations under the License.
 
 #include "common/base/errors.h"
 #include "core/graph/storage/node_storage.h"
+#include "core/graph/storage/remote_node_storage.h"
 #include "include/client.h"
 
 namespace graphlearn {
@@ -27,13 +28,16 @@ public:
               const std::string& view_type,
               const std::string& use_attrs) {
     local_ = CreateLocalNoder(type, view_type, use_attrs);
+    remote_storage_ = new io::RemoteNodeStorage();
   }
 
   virtual ~RemoteNoder() {
     delete local_;
+    delete remote_storage_;
   }
 
   Status Build(const IndexOption& option) override {
+    remote_storage_->SetSideInfo(local_->GetLocalStorage()->GetSideInfo());
     return local_->Build(option);
   }
 
@@ -58,15 +62,15 @@ public:
     return local_->LookupNodes(req, res);
   }
 
-  Status LookupNodes(int32_t remote_id,
+  Status LookupNodes(int32_t remote_server_id,
                      const LookupNodesRequest* req,
                      LookupNodesResponse* res) override {
-    std::unique_ptr<Client> client(NewRpcClient(remote_id));
-    return client->LookupNodes(req, res);
+    return remote_storage_->LookupNodes(remote_server_id, req, res);
   }
 
 private:
   Noder* local_;
+  io::RemoteNodeStorage* remote_storage_;
 };
 
 Noder* CreateRemoteNoder(const std::string& type,

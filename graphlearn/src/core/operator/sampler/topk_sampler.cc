@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include <numeric>
 #include <vector>
 #include "core/operator/sampler/padder/padder.h"
 #include "core/operator/sampler/sampler.h"
@@ -30,10 +31,9 @@ public:
     int32_t count = req->NeighborCount();
     int32_t batch_size = req->BatchSize();
 
-    res->SetBatchSize(batch_size);
-    res->SetNeighborCount(count);
-    res->InitNeighborIds(batch_size * count);
-    res->InitEdgeIds(batch_size * count);
+    res->SetShape(batch_size, count);
+    res->InitNeighborIds();
+    res->InitEdgeIds();
 
     const std::string& edge_type = req->Type();
     Graph* graph = graph_store_->GetGraph(edge_type);
@@ -41,19 +41,23 @@ public:
 
     Status s;
     const int64_t* src_ids = req->GetSrcIds();
-    const int64_t* filters = req->GetFilters();
+    auto filter = req->GetFilter();
     for (int32_t i = 0; i < batch_size; ++i) {
       int64_t src_id = src_ids[i];
       auto neighbor_ids = storage->GetNeighbors(src_id);
       if (!neighbor_ids) {
         res->FillWith(GLOBAL_FLAG(DefaultNeighborId), -1);
       } else {
-        int32_t neighbor_size = neighbor_ids.Size();
+        auto neighbor_size = neighbor_ids.Size();
         auto edge_ids = storage->GetOutEdges(src_id);
-        auto padder = GetPadder(neighbor_ids, edge_ids);
-        if (filters) {
-          padder->SetFilter(filters[i]);
+        std::vector<int32_t> indices(neighbor_size);
+        std::iota(indices.begin(), indices.end(), 0);
+        if (*filter) {
+          filter->ActOn(i, neighbor_ids, edge_ids, storage, &indices);
         }
+
+        auto padder = GetPadder(neighbor_ids, edge_ids);
+        padder->SetIndex(indices);
         s = padder->Pad(res, count);
         if (!s.ok()) {
           return s;

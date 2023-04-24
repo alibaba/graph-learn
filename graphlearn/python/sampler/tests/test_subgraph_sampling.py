@@ -30,15 +30,14 @@ import graphlearn.python.tests.utils as utils
 
 class InOrderNodeSubGraphSamplingTestCase(SamplingTestCase):
   def test_in_order_node_sampling(self):
-    subgraph_sampler = self.g.subgraph_sampler(seed_type="entity",
-                                               nbr_type="relation",
-                                               batch_size=8,
-                                               strategy="in_order_node")
+    node_sampler = self.g.node_sampler("entity", batch_size=8)
+    subgraph_sampler = self.g.subgraph_sampler(nbr_type="relation")
 
     max_iter = 100
     for i in range(max_iter):
       try:
-        subgraph = subgraph_sampler.get()
+        nodes = node_sampler.get()
+        subgraph = subgraph_sampler.get(nodes.ids)
         row_indices = subgraph.edge_index[0]
         col_indices = subgraph.edge_index[1]
 

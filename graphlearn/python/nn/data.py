@@ -26,18 +26,19 @@ class Data(object):
                strings=None,
                labels=None,
                weights=None,
+               timestamps=None,
                dst_ids=None,
                offsets=None,
                indices=None,
                dense_shape=None,
                **kwargs):
-    """ ints, floats and strings are attributes in numpy or Tensor format 
+    """ ints, floats and strings are attributes in numpy or Tensor format
       with the shape
       [batch_size, int_attr_num],
       [batch_size, float_attr_num],
       [batch_size, string_attr_num].
 
-      labels and weights are in numpy or Tensor format with the shape 
+      labels and weights are in numpy or Tensor format with the shape
       [batch_size], [batch_size].
 
       dst_ids is used for Edges/SparseEdges.
@@ -52,7 +53,8 @@ class Data(object):
     self.string_attrs = strings
     self.labels = labels
     self.weights = weights
-    self.dst_ids = dst_ids    
+    self.timestamps = timestamps
+    self.dst_ids = dst_ids
     self.offsets = offsets
     self.indices = indices
     self.dense_shape = dense_shape

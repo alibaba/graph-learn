@@ -98,6 +98,7 @@ public:
   };
   virtual bool Next(::graphlearn::io::IdType* ret) = 0;
   virtual void Reset() {}
+  virtual void IncEpoch() {}
   virtual int32_t Epoch() {
     return 0;
   }

@@ -16,12 +16,69 @@ limitations under the License.
 #ifndef GRAPHLEARN_INCLUDE_SAMPLING_REQUEST_H_
 #define GRAPHLEARN_INCLUDE_SAMPLING_REQUEST_H_
 
+#include <numeric>
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include "include/constants.h"
 #include "include/op_request.h"
+#include "core/operator/sampler/filter.h"
 
 namespace graphlearn {
+
+///  This struct is for unified expression of dense shape and spase shape
+///  for neighbor sampling.
+struct Shape {
+  size_t dim1; // batch size
+  size_t dim2; // max neighbor count
+  size_t size; // total neighbor count
+  std::vector<int32_t> segments; // true neighbor count for each in batch
+  bool sparse; // is sparse or not
+
+  Shape()
+    : dim1(0), dim2(0), size(0), segments(), sparse(false) {}
+  Shape(size_t x, size_t y) : dim1(x), dim2(y), size(x * y), segments(x, y), sparse(false) {}
+  Shape(size_t x, size_t y, const std::vector<int32_t> inds)
+      : dim1(x), dim2(y),
+        size(std::accumulate(inds.begin(), inds.end(), 0)),
+        segments(inds),
+        sparse(true) {
+  }
+
+  Shape(const Shape& other)
+    : dim1(other.dim1), dim2(other.dim2),
+      size(other.size), segments(other.segments), sparse(other.sparse) {}
+
+  Shape(Shape&& other)
+    : dim1(other.dim1), dim2(other.dim2),
+      size(other.size), segments(std::move(other.segments)), sparse(other.sparse) {}
+
+  Shape& operator=(const Shape& other) {
+    dim1 = other.dim1;
+    dim2 = other.dim2;
+    size = other.size;
+    segments = other.segments;
+    sparse = other.sparse;
+    return *this;
+  }
+
+  Shape& operator=(Shape&& other) {
+    dim1 = other.dim1;
+    dim2 = other.dim2;
+    size = other.size;
+    segments = std::move(other.segments);
+    sparse = other.sparse;
+    return *this;
+  }
+
+  void Swap(Shape& other) {
+    std::swap(dim1, other.dim1);
+    std::swap(dim2, other.dim2);
+    std::swap(size, other.size);
+    segments.swap(other.segments);
+    std::swap(sparse, other.sparse);
+  }
+};
 
 class SamplingRequest : public OpRequest {
 public:
@@ -29,29 +86,29 @@ public:
   SamplingRequest(const std::string& type,
                   const std::string& strategy,
                   int32_t neighbor_count,
-                  int32_t filter_type = 0);
+                  FilterType filter_type = FilterType::kOperatorUnspecified,
+                  FilterField filter_field = FilterField::kFieldUnspecified);
   ~SamplingRequest() = default;
 
   OpRequest* Clone() const override;
 
   void Init(const Tensor::Map& params) override;
-  void Set(const Tensor::Map& tensors) override;
+  void Set(const Tensor::Map& tensors, const SparseTensor::Map& sparse_tensors={}) override;
   void Set(const int64_t* src_ids, int32_t batch_size);
-  void SetFilters(const int64_t* filter_ids, int32_t batch_size);
 
   const std::string& Type() const;
   const std::string& Strategy() const;
   int32_t BatchSize() const;
   int32_t NeighborCount() const { return neighbor_count_; }
   const int64_t* GetSrcIds() const;
-  const int64_t* GetFilters() const;
+
+  const op::Filter* GetFilter() const;
 
 protected:
-  void SetMembers() override;
+  void Finalize() override;
   int32_t neighbor_count_;
-  int32_t filter_type_;
   Tensor* src_ids_;
-  Tensor* filter_ids_;
+  op::Filter  filter_;
 };
 
 class SamplingResponse : public OpResponse {
@@ -64,39 +121,31 @@ public:
   }
 
   void Swap(OpResponse& right) override;
-  void SerializeTo(void* response) override;
-  void Stitch(ShardsPtr<OpResponse> shards) override;
 
-  void InitNeighborIds(int32_t count);
-  void InitEdgeIds(int32_t count);
-  void InitDegrees(int32_t count);
+  void SetShape(size_t dim1, size_t dim2);
+  void SetShape(size_t dim1, size_t dim2, const std::vector<int32_t>& segments);
+  void SetShape(size_t dim1, size_t dim2, std::vector<int32_t>&& segments);
+  void InitNeighborIds();
+  void InitEdgeIds();
 
-  void SetBatchSize(int32_t batch_size);
-  void SetNeighborCount(int32_t neighbor_count);
   void AppendNeighborId(int64_t id);
   void AppendEdgeId(int64_t id);
   void AppendDegree(int32_t degree);
   void FillWith(int64_t neighbor_id, int64_t edge_id = -1);
 
-  int32_t BatchSize() const { return batch_size_; }
-  int32_t NeighborCount() const { return neighbor_count_; }
-  int32_t TotalNeighborCount() const { return total_neighbor_count_; }
+  const Shape GetShape() const;
   int64_t* GetNeighborIds();
   int64_t* GetEdgeIds();
-  int32_t* GetDegrees();
   const int64_t* GetNeighborIds() const;
   const int64_t* GetEdgeIds() const;
-  const int32_t* GetDegrees() const;
 
 protected:
-  void SetMembers() override;
+  void Finalize() override;
 
 private:
-  int32_t neighbor_count_;
-  int32_t total_neighbor_count_;
+  Shape shape_; // Get degrees for SparseTensor from shape
   Tensor* neighbors_;
   Tensor* edges_;
-  Tensor* degrees_;
 };
 
 
@@ -115,7 +164,7 @@ public:
 
   // For DagNodeRunner.
   void Init(const Tensor::Map& params) override;
-  void Set(const Tensor::Map& tensors) override;
+  void Set(const Tensor::Map& tensors, const SparseTensor::Map& sparse_tensors={}) override;
 
   void SetIds(const int64_t* src_ids,
               const int64_t* dst_ids,
@@ -140,7 +189,7 @@ public:
   const std::vector<float> StrProps() const;
 
 protected:
-  void SetMembers() override;
+  void Finalize() override;
 
 private:
   Tensor* dst_ids_;

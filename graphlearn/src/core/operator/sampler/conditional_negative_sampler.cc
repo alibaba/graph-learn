@@ -45,10 +45,9 @@ public:
     const std::string& type = request->Type();
     const std::string& dst_node_type = request->DstNodeType();
     const std::string& strategy = request->Strategy();
-    res->SetBatchSize(batch_size);
-    res->SetNeighborCount(count);
-    res->InitEdgeIds(batch_size * count);
-    res->InitNeighborIds(batch_size * count);
+    res->SetShape(batch_size, count);
+    res->InitEdgeIds();
+    res->InitNeighborIds();
 
     SelectedColumns selected_cols(
         request->IntCols(), request->IntProps(),
@@ -128,9 +127,9 @@ private:
       }
       ct->Sample(attr_wrapper, &nbr_set, num, unique, res);
 
-      int32_t count = res->TotalNeighborCount() - idx * num;
+      int32_t count = res->GetShape().size - idx * num;
       int32_t cursor = 0;
-      int32_t retry_times = GLOBAL_FLAG(NegativeSamplingRetryTimes) + 1;
+      int32_t retry_times = GLOBAL_FLAG(SamplingRetryTimes) + 1;
       while (count < num && retry_times >= 0) {   // default sampling.
         cursor %= num;
         if (cursor == 0) {

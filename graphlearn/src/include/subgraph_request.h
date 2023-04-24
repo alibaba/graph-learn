@@ -1,4 +1,4 @@
-/* Copyright 2020 Alibaba Group Holding Limited. All Rights Reserved.
+/* Copyright 2023 Alibaba Group Holding Limited. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,18 +25,28 @@ namespace graphlearn {
 class SubGraphRequest : public OpRequest {
 public:
   SubGraphRequest();
-  SubGraphRequest(const std::string& seed_type,
-                  const std::string& nbr_type,
-                  const std::string& strategy,
-                  int32_t batch_size,
-                  int32_t epoch = 0);
+  SubGraphRequest(const std::string& nbr_type,
+                  const std::vector<int32_t>& num_nbrs=std::vector<int32_t>(1),
+                  bool need_dist=false);
   virtual ~SubGraphRequest() = default;
 
-  const std::string& SeedType() const;
+  OpRequest* Clone() const override;
+
+  void Init(const Tensor::Map& params) override;
+  void Set(const Tensor::Map& tensors, const SparseTensor::Map& sparse_tensors={}) override;
+  void Set(const int64_t* src_id, int32_t batch_size);
+  void Set(const int64_t* src_id, const int64_t* dst_id, int32_t batch_size);
+
   const std::string& NbrType() const;
-  const std::string& Strategy() const;
-  int32_t BatchSize() const;
-  int32_t Epoch() const;
+  std::vector<int32_t> GetNumNbrs() const;
+  bool NeedDist() const;
+  const int64_t* GetSrcIds() const;
+  const int32_t BatchSize() const;
+
+protected:
+  void Finalize() override;
+  Tensor* src_ids_;
+  int32_t batch_size_;
 };
 
 class SubGraphResponse : public OpResponse {
@@ -53,21 +63,28 @@ public:
   void Init(int32_t batch_size);
   void SetNodeIds(const int64_t* begin, int32_t size);
   void AppendEdge(int32_t row_idx, int32_t col_idx, int64_t e_id);
+  void SetDistToSrc(const int32_t* begin, int32_t size);
+  void SetDistToDst(const int32_t* begin, int32_t size);
+
   int32_t NodeCount() const { return batch_size_; }
   int32_t EdgeCount() const;
   const int64_t* NodeIds() const;
   const int32_t* RowIndices() const;
   const int32_t* ColIndices() const;
   const int64_t* EdgeIds() const;
+  const int32_t* DistToSrc() const;
+  const int32_t* DistToDst() const;
 
 protected:
-  void SetMembers() override;
+  void Finalize() override;
 
 private:
   Tensor* node_ids_;
   Tensor* row_indices_;
   Tensor* col_indices_;
   Tensor* edge_ids_;
+  Tensor* dist_to_src_;
+  Tensor* dist_to_dst_;
 };
 
 

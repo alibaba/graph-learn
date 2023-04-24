@@ -42,6 +42,9 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
   m.def("set_default_int_attr", &SetGlobalFlagDefaultIntAttribute);
   m.def("set_default_float_attr", &SetGlobalFlagDefaultFloatAttribute);
   m.def("set_default_string_attr", &SetGlobalFlagDefaultStringAttribute);
+  m.def("set_default_weight", &SetGlobalFlagDefaultWeight);
+  m.def("set_default_label", &SetGlobalFlagDefaultLabel);
+  m.def("set_default_timestamp", &SetGlobalFlagDefaultTimestamp);
   m.def("set_retry_times", &SetGlobalFlagRetryTimes);
   m.def("set_timeout", &SetGlobalFlagTimeout);
   m.def("set_inmemory_queuesize", &SetGlobalFlagInMemoryQueueSize);
@@ -61,14 +64,15 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
   m.def("set_tape_capacity", &SetGlobalFlagTapeCapacity);
   m.def("set_dataset_capacity", &SetGlobalFlagDatasetCapacity);
   m.def("set_ignore_invalid", &SetGlobalFlagIgnoreInvalid);
-  m.def("set_neg_sampler_retry_times", &SetGlobalFlagNegativeSamplingRetryTimes);
+  m.def("set_sampler_retry_times", &SetGlobalFlagSamplingRetryTimes);
   m.def("set_field_delimiter", &SetGlobalFlagFieldDelimiter);
+  m.def("set_default_full_nbr_num", &SetGlobalFlagDefaultFullNbrNum);
+  m.def("set_local_node_cache_capacity", &SetGlobalFlagLocalNodeCacheCapacity);
   // For Actor
   m.def("set_enable_actor", &SetGlobalFlagEnableActor);
   m.def("set_actor_local_shard_count", &SetGlobalFlagActorLocalShardCount);
 
   // Constants
-  m.attr("kPartitionKey") = kPartitionKey;
   m.attr("kOpName") = kOpName;
   m.attr("kNodeType") = kNodeType;
   m.attr("kEdgeType") = kEdgeType;
@@ -110,10 +114,14 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
   m.attr("kStrCols") = kStrCols;
   m.attr("kStrProps") = kStrProps;
   m.attr("kFilterType") = kFilterType;
-  m.attr("kFilterIds") = kFilterIds;
+  m.attr("kFilterField") = kFilterField;
+  m.attr("kFilterValues") = kFilterValues;
   m.attr("kDegrees") = kDegrees;
   m.attr("kEpoch") = kEpoch;
   m.attr("kNodeFrom") = kNodeFrom;
+  m.attr("kNeedDist") = kNeedDist;
+  m.attr("kDistToSrc") = kDistToSrc;
+  m.attr("kDistToDst") = kDistToDst;
 
   // getters
   m.def("get_tracker_mode", &GetGlobalFlagTrackerMode);
@@ -179,11 +187,22 @@ PYBIND11_MODULE(pywrap_graphlearn, m) {
     .value("EDGE_DST", NodeFrom::kEdgeDst)
     .value("NODE", NodeFrom::kNode);
 
+  py::enum_<FilterType>(m, "FilterType")
+    .value("OPERATOR_UNSPECIFIED", FilterType::kOperatorUnspecified)
+    .value("EQUAL", FilterType::kEqual)
+    .value("LARGER_THAN", FilterType::kLargerThan);
+
+  py::enum_<FilterField>(m, "FilterField")
+    .value("FIELD_UNSPECIFIED", FilterField::kFieldUnspecified)
+    .value("ID", FilterField::kId)
+    .value("TIMESTAMP", FilterField::kTimestamp);
+
   py::enum_<io::DataFormat>(m, "DataFormat")
     .value("DEFAULT", io::DataFormat::kDefault)
     .value("WEIGHTED", io::DataFormat::kWeighted)
     .value("LABELED", io::DataFormat::kLabeled)
-    .value("ATTRIBUTED", io::DataFormat::kAttributed);
+    .value("ATTRIBUTED", io::DataFormat::kAttributed)
+    .value("TIMESTAMPED", io::DataFormat::kTimestamped);
 
   py::enum_<io::Direction>(m, "Direction")
     .value("ORIGIN", io::Direction::kOrigin)

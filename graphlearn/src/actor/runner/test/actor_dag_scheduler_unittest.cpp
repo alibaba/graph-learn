@@ -113,7 +113,7 @@ TEST_F(ActorDagSchedulerTest, GetNodes) {
     EXPECT_TRUE(tape->IsReady());
     EXPECT_EQ(tape->Size(), 2);
     auto& record = tape->Retrieval(1);
-    EXPECT_EQ(record.at("nid").Size(), 20);
+    EXPECT_EQ(record.tensors_.at("nid").Size(), 20);
     delete tape;
   }
 
@@ -124,7 +124,7 @@ TEST_F(ActorDagSchedulerTest, GetNodes) {
   EXPECT_TRUE(tape->IsReady());
   EXPECT_EQ(tape->Size(), 2);
   auto& record1 = tape->Retrieval(1);
-  EXPECT_EQ(record1.at("nid").Size(), 15);
+  EXPECT_EQ(record1.tensors_.at("nid").Size(), 15);
   delete tape;
 
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -142,7 +142,7 @@ TEST_F(ActorDagSchedulerTest, GetNodes) {
     EXPECT_TRUE(tape->IsReady());
     EXPECT_EQ(tape->Size(), 2);
     auto& record = tape->Retrieval(1);
-    EXPECT_EQ(record.at("nid").Size(), 20);
+    EXPECT_EQ(record.tensors_.at("nid").Size(), 20);
     delete tape;
   }
 
@@ -153,7 +153,7 @@ TEST_F(ActorDagSchedulerTest, GetNodes) {
   EXPECT_TRUE(tape->IsReady());
   EXPECT_EQ(tape->Size(), 2);
   auto& record2 = tape->Retrieval(1);
-  EXPECT_EQ(record2.at("nid").Size(), 15);
+  EXPECT_EQ(record2.tensors_.at("nid").Size(), 15);
   delete tape;
 
   std::this_thread::sleep_for(std::chrono::milliseconds(10));

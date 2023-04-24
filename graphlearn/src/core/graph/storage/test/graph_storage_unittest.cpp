@@ -116,6 +116,9 @@ protected:
     if (info_.IsLabeled()) {
       value->label = edge_index;
     }
+    if (info_.IsTimestamped()) {
+      value->timestamp = edge_index;
+    }
     if (info_.IsAttributed()) {
       for (int32_t i = 0; i < info_.i_num; ++i) {
         value->attrs->Add(int64_t(edge_index + i));
@@ -148,14 +151,21 @@ protected:
       if (info_.IsLabeled()) {
         EXPECT_EQ(label, IndexType(edge_id));
       } else {
-        EXPECT_EQ(label, -1);
+        EXPECT_EQ(label, GLOBAL_FLAG(DefaultLabel));
       }
 
       float weight = storage->GetEdgeWeight(edge_id);
       if (info_.IsWeighted()) {
         EXPECT_FLOAT_EQ(weight, float(edge_id));
       } else {
-        EXPECT_FLOAT_EQ(weight, 0.0);
+        EXPECT_FLOAT_EQ(weight, GLOBAL_FLAG(DefaultWeight));
+      }
+
+      int64_t timestamp = storage->GetEdgeTimestamp(edge_id);
+      if (info_.IsTimestamped()) {
+        EXPECT_EQ(timestamp, int64_t(edge_id));
+      } else {
+        EXPECT_EQ(timestamp, -1);
       }
 
       Attribute attr = storage->GetEdgeAttribute(edge_id);
@@ -187,7 +197,7 @@ protected:
     IdType src_id_count = 100;
     IdType dst_id_count = 100 + dst_offset;
 
-    const IdArray src_ids = storage->GetAllSrcIds();
+    auto& src_ids = storage->GetAllSrcIds();
     EXPECT_EQ(src_ids.Size(), src_id_count);
     for (IdType i = 0; i < src_id_count; ++i) {
       IdType src_id = src_ids.at(i);
@@ -214,20 +224,20 @@ protected:
       }
     }
 
-    const IndexArray out_degrees = storage->GetAllOutDegrees();
+    auto& out_degrees = storage->GetAllOutDegrees();
     EXPECT_EQ(out_degrees.Size(), src_id_count);
     for (IdType i = 0; i < src_id_count; ++i) {
       EXPECT_EQ(out_degrees.at(i), 1 + dst_offset / src_id_count);
     }
 
-    const IdArray dst_ids = storage->GetAllDstIds();
+    auto& dst_ids = storage->GetAllDstIds();
     EXPECT_EQ(dst_ids.Size(), dst_id_count);
     for (IdType i = 0; i < dst_id_count; ++i) {
       EXPECT_EQ(dst_ids.at(i), i);
       EXPECT_EQ(storage->GetInDegree(i), 1);
     }
 
-    const IndexArray in_degrees = storage->GetAllInDegrees();
+    auto& in_degrees = storage->GetAllInDegrees();
     EXPECT_EQ(in_degrees.Size(), dst_id_count);
     for (IdType i = 0; i < dst_id_count; ++i) {
       EXPECT_EQ(in_degrees.at(i), 1);

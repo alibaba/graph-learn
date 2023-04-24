@@ -47,6 +47,7 @@ public:
     labels_.shrink_to_fit();
     weights_.shrink_to_fit();
     attributes_.shrink_to_fit();
+    timestamps_.shrink_to_fit();
   }
 
   IdType Add(EdgeValue* value) override {
@@ -60,6 +61,9 @@ public:
     }
     if (side_info_.IsLabeled()) {
       labels_.push_back(value->label);
+    }
+    if (side_info_.IsTimestamped()) {
+      timestamps_.push_back(value->timestamp);
     }
     if (side_info_.IsAttributed()) {
       AttributeValue* attr = NewDataHeldAttributeValue();
@@ -94,7 +98,7 @@ public:
     if (edge_id < weights_.size()) {
       return weights_[edge_id];
     } else {
-      return 0.0;
+      return GLOBAL_FLAG(DefaultWeight);
     }
   }
 
@@ -102,7 +106,15 @@ public:
     if (edge_id < labels_.size()) {
       return labels_[edge_id];
     } else {
-      return -1;
+      return GLOBAL_FLAG(DefaultLabel);
+    }
+  }
+
+  int64_t GetTimestamp(IdType edge_id) const override {
+    if (edge_id < timestamps_.size()) {
+      return timestamps_[edge_id];
+    } else {
+      return GLOBAL_FLAG(DefaultTimestamp);
     }
   }
 
@@ -134,15 +146,20 @@ public:
     return Array<int32_t>(labels_);
   }
 
+  const Array<int64_t> GetTimestamps() const override {
+    return Array<int64_t>(timestamps_);
+  }
+
   const std::vector<Attribute>* GetAttributes() const override {
     return &attributes_;
   }
 
 private:
-  IdList     src_ids_;
-  IdList     dst_ids_;
+  IdList src_ids_;
+  IdList dst_ids_;
   std::vector<int32_t>   labels_;
   std::vector<float>     weights_;
+  std::vector<int64_t>   timestamps_;
   std::vector<Attribute> attributes_;
   SideInfo               side_info_;
 };

@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include <algorithm>
 #include "core/graph/storage/adj_matrix.h"
 #include "core/graph/storage/storage_mode.h"
 #include "core/graph/storage/topo_statics.h"
@@ -20,6 +21,29 @@ limitations under the License.
 
 namespace graphlearn {
 namespace io {
+
+namespace {
+
+template <typename A, typename B>
+void zip(const std::vector<A> &a,
+         const std::vector<B> &b,
+         std::vector<std::pair<A, B>>* zipped) {
+  for (size_t i = 0; i < a.size(); ++i) {
+    zipped->push_back(std::make_pair(a[i], b[i]));
+  }
+}
+
+template <typename A, typename B>
+void unzip(const std::vector<std::pair<A, B>> &zipped,
+            std::vector<A>* a,
+            std::vector<B>* b) {
+  for (size_t i = 0; i < a->size(); i++) {
+    (*a)[i] = zipped[i].first;
+    (*b)[i] = zipped[i].second;
+  }
+}
+
+}  // anonymous namespace
 
 class MemoryTopoStorage : public TopoStorage {
 public:
@@ -48,6 +72,16 @@ public:
     if (IsDataDistributionEnabled()) {
       statics_->Build();
     }
+    if (edges->GetSideInfo()->IsTimestamped()) {
+      BuildEdgeIndexing(edges);
+    }
+  }
+
+  IdType GetEdgeId(IdType edge_index) const override {
+    if (edge_indexing_.size() > 0 && edge_index < edge_indexing_.size()) {
+      return edge_indexing_[edge_index];
+    }
+    return edge_index;
   }
 
   Array<IdType> GetNeighbors(IdType src_id) const override {
@@ -107,9 +141,31 @@ public:
   }
 
 private:
-  AutoIndex src_indexing_;
-  AutoIndex dst_indexing_;
-  AdjMatrix* adj_matrix_;
+  /// Build edge_indexing with time-order.
+  void BuildEdgeIndexing(EdgeStorage* edges) {
+    auto& timestamps = edges->GetTimestamps();
+    edge_indexing_.reserve(edges->Size());
+    std::vector<int64_t> ts;
+    ts.reserve(edges->Size());
+    for (IdType idx = 0; idx < edges->Size(); ++idx) {
+      edge_indexing_.push_back(idx);
+      ts.push_back(timestamps.at(idx));
+    }
+    std::vector<std::pair<IdType, int64_t>> zipped;
+    zip(edge_indexing_, ts, &zipped);
+    std::sort(std::begin(zipped), std::end(zipped),
+        [&](const std::pair<IdType, int64_t>& a,
+            const std::pair<IdType, int64_t>& b) {
+            return a.second < b.second;
+        });
+    unzip(zipped, &edge_indexing_, &ts);
+  }
+
+private:
+  AutoIndex    src_indexing_;
+  AutoIndex    dst_indexing_;
+  IdList       edge_indexing_;
+  AdjMatrix*   adj_matrix_;
   TopoStatics* statics_;
 
   friend TopoStorage* NewMemoryTopoStorage();

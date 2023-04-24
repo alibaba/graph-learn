@@ -59,10 +59,10 @@ GetDagValuesResponse* Dataset::Next(int32_t epoch) {
   // Allowed lateness: 100s.
   struct timespec ts;
   clock_gettime(CLOCK_REALTIME, &ts);
-  ts.tv_sec += 100;
+  ts.tv_sec += GLOBAL_FLAG(Timeout);
   if (sem_timedwait(&(occupied_[cursor_]), &ts) == -1) {
-    LOG(ERROR) << "Drop a batch of data because it's not ready in 100s.";
-    USER_LOG("Drop a batch of data because it's not ready in 100s.");
+    LOG(ERROR) << "Query timeout. Try to increase timeout with `gl.set_timeout()`.";
+    USER_LOG("Query timeout.");
     PrefetchAsync();
     ++cursor_ %= cap_;
     return Next(epoch);

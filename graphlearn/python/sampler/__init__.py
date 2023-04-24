@@ -28,8 +28,7 @@ from graphlearn.python.sampler.negative_sampler import RandomNegativeSampler
 from graphlearn.python.sampler.negative_sampler import InDegreeNegativeSampler
 from graphlearn.python.sampler.negative_sampler import NodeWeightNegativeSampler
 from graphlearn.python.sampler.negative_sampler import ConditionalNegativeSampler
-from graphlearn.python.sampler.subgraph_sampler import RandomNodeSubGraphSampler
-from graphlearn.python.sampler.subgraph_sampler import InOrderNodeSubGraphSampler
+from graphlearn.python.sampler.subgraph_sampler import SubGraphSampler
 
 __all__ = [
     "RandomNodeSampler",
@@ -48,6 +47,5 @@ __all__ = [
     "InDegreeNegativeSampler",
     "NodeWeightNegativeSampler",
     "ConditionalNegativeSampler",
-    "RandomNodeSubGraphSampler",
-    "InOrderNodeSubGraphSampler"
+    "SubGraphSampler"
 ]

@@ -19,7 +19,10 @@ from __future__ import print_function
 import atexit
 import os
 
-import torch as th
+try:
+  import torch as th
+except ImportError:
+  pass
 
 from graphlearn.python.errors import OutOfRangeError
 from graphlearn.python.nn.dataset import Dataset as RawDataset

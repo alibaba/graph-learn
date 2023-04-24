@@ -22,7 +22,10 @@ import numpy as np
 import random
 import time
 
-import torch
+try:
+  import torch
+except ImportError:
+  pass
 import graphlearn as gl
 import graphlearn.python.nn.pytorch as thg
 

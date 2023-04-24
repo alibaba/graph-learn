@@ -37,6 +37,11 @@ public:
   /// EdgeStorage to get an unique id. And then use the id and value here.
   virtual void Add(IdType edge_id, EdgeValue* value) = 0;
 
+  /// The original edge_id and edge_index are consistent.
+  /// In temporal graph, the edge_indexes are re-organized according to the
+  /// time-order in `Build(EdgeStorage* edges)`.
+  virtual IdType GetEdgeId(IdType edge_index) const = 0;
+
   /// Get all the neighbor node ids of a given id.
   virtual Array<IdType> GetNeighbors(IdType src_id) const = 0;
   /// Get all the neighbor edge ids of a given id.

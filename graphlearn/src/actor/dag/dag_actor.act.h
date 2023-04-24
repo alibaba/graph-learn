@@ -25,8 +25,9 @@ limitations under the License.
 #include "hiactor/util/data_type.hh"
 
 #include "actor/dag/dag_proxy.h"
-#include "actor/tensor_map.h"
-#include "core/dag/tape.h"
+#include "actor/tensor_partitioner.h"
+#include "actor/tensor_serializer.h"
+#include "core/dag/tensor_map.h"
 #include "platform/env.h"
 
 namespace graphlearn {

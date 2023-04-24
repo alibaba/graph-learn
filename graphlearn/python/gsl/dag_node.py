@@ -25,7 +25,7 @@ import numpy as np
 import warnings
 
 from graphlearn import pywrap_graphlearn as pywrap
-from graphlearn.python.data.values import Nodes
+from graphlearn.python.data.values import Nodes, Edges, SubGraph
 from graphlearn.python.gsl.dag_edge import get_dag_edge, get_eid
 from graphlearn.python.utils import strategy2op
 
@@ -44,6 +44,7 @@ class DagNode(object):
     self._path = None  # Upstream edge type
     self._type = None  # Edge type or node type of current DagNode
     self._strategy = "random"
+    self._remove_property = False
 
     # Add by GSL.
     # All the DagEdges expect link to sink node are mapped to DagEdgeDef.
@@ -74,8 +75,7 @@ class DagNode(object):
     node =  DegreeDagNode(
       "GetDegree", self, [edge],
       {pywrap.kEdgeType: edge_type,
-       pywrap.kNodeFrom: int(node_from),
-       pywrap.kPartitionKey: pywrap.kNodeIds})
+       pywrap.kNodeFrom: int(node_from)})
     self._degree_nodes.append(node)
 
   @property
@@ -169,6 +169,7 @@ class DagNode(object):
   def batch(self, batch_size):
     assert isinstance(batch_size, int) and batch_size > 0
     self._shape = (batch_size,)
+    self._dag.batch_size = batch_size
     self._add_param(pywrap.kBatchSize, batch_size)
     self._add_param(pywrap.kEpoch, sys.maxsize >> 32)
     self._add_param(pywrap.kStrategy, "by_order")
@@ -190,7 +191,6 @@ class DagNode(object):
     """
     assert isinstance(count, int)
     self._add_param(pywrap.kNeighborCount, count)
-    self._add_param(pywrap.kPartitionKey, pywrap.kSrcIds)
     self._shape = (np.prod(self._shape), count)
     return self
 
@@ -200,7 +200,7 @@ class DagNode(object):
       assert strategy in ["random", "in_degree", "conditional", "node_weight"]
     elif self._op_name == "Sampler":
       assert strategy in \
-        ["random", "topk", "in_degree", "edge_weight", "full"]
+        ["random", "topk", "in_degree", "edge_weight", "full", "random_without_replacement"]
     else:
       raise ValueError("`by(strategy)` can only be used after`sample(count)`")
 
@@ -210,7 +210,7 @@ class DagNode(object):
     return self
 
   def filter(self, target):
-    """Filter the samples that are not equal to target ids.
+    """Filter the samples that are equal to target ids.
 
     Args:
       target (string): Alias of upstream TraverseVertexDagNode.
@@ -223,10 +223,11 @@ class DagNode(object):
     if not isinstance(target, TraverseVertexDagNode):
       raise ValueError("filter only accepts upstream Nodes.")
     edge = self._new_edge(src_output=target.output_field,
-                          dst_input=pywrap.kFilterIds)
+                          dst_input=pywrap.kFilterValues)
     target._add_out_edge(edge)
     self._add_in_edge(edge)
-    self._add_param(pywrap.kFilterType, 1)
+    self._add_param(pywrap.kFilterType, int(pywrap.FilterType.EQUAL))
+    self._add_param(pywrap.kFilterField, int(pywrap.FilterField.ID))
     return self
 
   def where(self, target, condition={}):
@@ -294,6 +295,10 @@ class DagNode(object):
     func(self)
     return self
 
+  def remove_property(self):
+    self._remove_property = True
+    return self
+
   def values(self, func=lambda x: x):
     self._dag.set_ready(func)
     return self._dag
@@ -308,18 +313,11 @@ class DagNode(object):
     self._alias = alias
     self._dag.add_node(alias, self, temp=temp)
 
-    self._lookup_node = self._lookup()
+    if self._remove_property:
+      self._lookup_node = None
+    else:
+      self._lookup_node = self._lookup()
     self._link_to_sink()
-
-  def _get_shape_and_degrees(self, dag_values):
-    shape = self._shape
-    degrees = None
-    if self._sparse:
-      assert isinstance(shape, tuple) and len(shape) == 2
-      degrees = pywrap.get_dag_value(dag_values, self._nid, pywrap.kDegreeKey)
-      shape = (degrees.size, shape[1] if shape[1] and shape[1] > 0 \
-          else max(degrees))
-    return shape, degrees
 
   def feed_values(self, dag_values):
     pass
@@ -355,22 +353,43 @@ class DagNode(object):
 
     next_node.set_path(edge_type, pywrap.NodeFrom.NODE)
     next_node.set_output_field(pywrap.kEdgeIds)
+
+    # Add timestamp constraint for sampling on temporal data.
+    root = self._dag.root
+    if root.decoder.timestamped:
+      ts_edge = self._new_edge(src_output="ts", dst_input="filt")
+      root._lookup_node._add_out_edge(ts_edge)
+      next_node._add_param(pywrap.kFilterType, int(pywrap.FilterType.LARGER_THAN))
+      next_node._add_param(pywrap.kFilterField, int(pywrap.FilterField.TIMESTAMP))
+      next_node._add_in_edge(ts_edge)
+
     return next_node
 
   def _new_vertex_node(self, op_name, edge_type, in_edge,
                        node_from=pywrap.NodeFrom.EDGE_DST):
     assert edge_type is not None and isinstance(edge_type, str)
 
-    self._add_out_edge(in_edge)
+    if not isinstance(in_edge, list):
+      in_edge = [in_edge]
+    for e in in_edge:
+      self._add_out_edge(e)
     shape = self._shape
 
     next_node = TraverseVertexDagNode(self._dag, op_name=op_name)
     next_node._shape = shape
     next_node._add_param(pywrap.kEdgeType, edge_type)
-    next_node._add_in_edge(in_edge)
+    for e in in_edge:
+      next_node._add_in_edge(e)
 
     next_node.set_path(edge_type, node_from)
     next_node.set_output_field(pywrap.kNodeIds)
+
+    # Add timestamp constraint for sampling on temporal data.
+    root = self._dag.root
+    if root.decoder.timestamped and op_name != "NegativeSampler":
+      ts_edge = root._new_edge(src_output="ts", dst_input="filt")
+      next_node._add_param(pywrap.kFilterType, int(pywrap.FilterType.LARGER_THAN))
+      next_node._add_in_edge(ts_edge)
     return next_node
 
   def set_ready(self, node_id):
@@ -495,20 +514,61 @@ class TraverseVertexDagNode(DagNode):
     self._neg_downstreams.append(next_node)
     return next_node
 
+  def random_walk(self, edge_type, walk_len=1, p=1.0, q=1.0):
+    walk_len = int(walk_len)
+    assert(walk_len > 0)
+    self._set_alias()
+    in_edge_src = self._new_edge(dst_input=pywrap.kSrcIds)
+    in_edge_parent = self._new_edge(dst_input=pywrap.kNodeIds)
+    next_node = self._new_vertex_node("RandomWalk", edge_type,
+                                      [in_edge_src, in_edge_parent])
+    next_node._add_param(pywrap.kSideInfo, [float(p), float(q)])
+    next_node._add_param(pywrap.kDistances, int(walk_len))
+    next_node._shape = (np.prod(self._shape), walk_len)
+    next_node._remove_property = True
+    self._pos_downstreams.append(next_node)
+    return next_node
+
+  def SubGraph(self,
+               nbr_type,
+               num_nbrs=[0],
+               need_dist=False):
+    """ SubGraph Sampling in GSL.
+
+    Args:
+      nbr_type (string): Neighbor type of seeds nodes/edges.
+      num_nbrs (int, Optional): number of neighbors for each hop.
+      need_dist: Whether need return the distance from each node in subgraph
+        to src and dst. Note that this arg is valid only when `dst_ids` in
+        `get()` is not None and size of `dst_ids` is 1.
+    """
+    self._set_alias()
+    params = {pywrap.kOpName: 'SubGraphSampler',
+              pywrap.kNbrType: nbr_type,
+              pywrap.kNeighborCount: num_nbrs,
+              pywrap.kNeedDist: need_dist}
+    next_node = SubGraphDagNode(self._dag,  params=params)
+    next_node.set_output_field(pywrap.kNodeIds)
+    next_node.set_path(nbr_type, pywrap.NodeFrom.EDGE_SRC) #homo graph.
+    in_edge_src = self._new_edge(dst_input=pywrap.kSrcIds)
+    self._add_out_edge(in_edge_src)
+    next_node._add_in_edge(in_edge_src)
+    return next_node
+
   def _lookup(self):
     # Override
     # Generate an edge from traverse node to it's lookup node.
     edge = self._new_edge(dst_input=pywrap.kNodeIds)
     self._add_out_edge(edge)
     return LookupDagNode("LookupNodes", self, [edge],
-                         {pywrap.kNodeType: self._type,
-                          pywrap.kPartitionKey: pywrap.kNodeIds})
+                         {pywrap.kNodeType: self._type})
 
   def feed_values(self, dag_values):
-    shape, degrees = self._get_shape_and_degrees(dag_values)
-    return self._graph.get_nodes(
-      self._type, pywrap.get_dag_value(
-        dag_values, self._nid, pywrap.kNodeIds), degrees, shape)
+    values = pywrap.get_dag_value(dag_values, self._nid, pywrap.kNodeIds)
+    degrees = pywrap.get_dag_value_indice(dag_values, self._nid, pywrap.kNodeIds)
+    if degrees is not None:
+      degrees = list(degrees)
+    return self._graph.get_nodes(self._type, values, degrees, self._shape)
 
 
 class TraverseNegVertexDagNode(TraverseVertexDagNode):
@@ -541,24 +601,18 @@ class TraverseEdgeDagNode(DagNode):
     extra_edge = self._new_edge(
       src_output=self._upstream.output_field, dst_input=pywrap.kSrcIds)
     edges = [edge, extra_edge]
-    if self._sparse:
-      degree_edge = self._new_edge(src_output=pywrap.kDegreeKey,
-                                   dst_input=pywrap.kDegreeKey)
-      edges.append(degree_edge)
-      self._add_out_edge(degree_edge)
     self._add_out_edge(edge)
     self._upstream._add_out_edge(extra_edge)
 
     return LookupDagNode(
         "LookupEdges", self, edges,
         {pywrap.kEdgeType: self._type,
-         pywrap.kPartitionKey: pywrap.kSrcIds,
          pywrap.kNeighborCount: nbr_count})
 
   def feed_values(self, dag_values):
-    shape, degrees = self._get_shape_and_degrees(dag_values)
+    shape = self._shape
     edge_ids = pywrap.get_dag_value(dag_values, self._nid, pywrap.kEdgeIds)
-    assert isinstance(shape, tuple) and len(shape) == 2
+    degrees = pywrap.get_dag_value_indice(dag_values, self._nid, pywrap.kEdgeIds)
     src_ids = pywrap.get_dag_value(dag_values,
                                    self._upstream.nid,
                                    self._upstream.output_field)
@@ -590,6 +644,35 @@ class TraverseSourceEdgeDagNode(TraverseEdgeDagNode):
     next_node.set_output_field(pywrap.kDstIds)
     return next_node
 
+  def SubGraph(self,
+               nbr_type,
+               num_nbrs=[0],
+               need_dist=False):
+    """ SubGraph Sampling in GSL.
+
+    Args:
+      nbr_type (string): Neighbor type of seeds nodes/edges.
+      num_nbrs (int, Optional): number of neighbors for each hop.
+      need_dist: Whether need return the distance from each node in subgraph
+        to src and dst. Note that this arg is valid only when `dst_ids` in
+        `get()` is not None and size of `dst_ids` is 1.
+    """
+    self._set_alias()
+    params = {pywrap.kOpName: 'SubGraphSampler',
+              pywrap.kNbrType: nbr_type,
+              pywrap.kNeighborCount: num_nbrs,
+              pywrap.kNeedDist: need_dist}
+    next_node = SubGraphDagNode(self._dag,  params=params)
+    next_node.set_output_field(pywrap.kNodeIds)
+    next_node.set_path(nbr_type, pywrap.NodeFrom.EDGE_SRC) #homo graph.
+    in_edge_src = self._new_edge(src_output=pywrap.kSrcIds, dst_input=pywrap.kSrcIds)
+    in_edge_dst = self._new_edge(src_output=pywrap.kDstIds, dst_input=pywrap.kDstIds)
+    self._add_out_edge(in_edge_src)
+    self._add_out_edge(in_edge_dst)
+    next_node._add_in_edge(in_edge_src)
+    next_node._add_in_edge(in_edge_dst)
+    return next_node
+
   def _lookup(self):
     # Override
     edge = self._new_edge(dst_input=pywrap.kEdgeIds)
@@ -600,17 +683,50 @@ class TraverseSourceEdgeDagNode(TraverseEdgeDagNode):
 
     return LookupDagNode(
         "LookupEdges", self, [edge, extra_edge],
-        {pywrap.kEdgeType: self._type,
-         pywrap.kPartitionKey: pywrap.kSrcIds})
+        {pywrap.kEdgeType: self._type})
 
   def feed_values(self, dag_values):
-    shape, degrees = self._get_shape_and_degrees(dag_values)
     edge_ids = pywrap.get_dag_value(dag_values, self._nid, pywrap.kEdgeIds)
+    degrees = pywrap.get_dag_value_indice(dag_values, self._nid, pywrap.kEdgeIds)
     src_ids = pywrap.get_dag_value(dag_values, self._nid, pywrap.kSrcIds)
     dst_ids = pywrap.get_dag_value(dag_values, self._nid, pywrap.kDstIds)
+    if degrees is not None:
+      degrees = list(degrees)
     return self._graph.get_edges(
-        self._type, src_ids, dst_ids, edge_ids, degrees, shape)
+        self._type, src_ids, dst_ids, edge_ids, degrees, self._shape)
 
+
+class SubGraphDagNode(DagNode):
+  def __init__(self, dag, op_name="SubGraphSampler", params={}):
+    super(SubGraphDagNode, self).__init__(
+      dag, op_name=op_name, params=params)
+
+  def _lookup(self):
+    # Override
+    # Generate an edge from traverse node to it's lookup node.
+    edge = self._new_edge(dst_input=pywrap.kNodeIds)
+    self._add_out_edge(edge)
+    return LookupDagNode("LookupNodes", self, [edge],
+                         {pywrap.kNodeType: self._type})
+
+  def feed_values(self, dag_values):
+    row_idx = pywrap.get_dag_value(dag_values, self._nid, pywrap.kRowIndices)
+    col_idx = pywrap.get_dag_value(dag_values, self._nid, pywrap.kColIndices)
+    edge_ids = pywrap.get_dag_value(dag_values, self._nid, pywrap.kEdgeIds)
+    nodes = self._graph.get_nodes(self._type, pywrap.get_dag_value(
+        dag_values, self._nid, pywrap.kNodeIds))
+    subgraph = SubGraph(np.stack([row_idx, col_idx], axis=0),
+                        nodes,
+                        Edges(edge_ids=edge_ids))
+    if self._params[pywrap.kNeedDist]:
+      subgraph.dist_to_src = pywrap.get_dag_value(dag_values,
+          self._nid, pywrap.kDistToSrc)
+      subgraph.dist_to_dst = pywrap.get_dag_value(dag_values,
+          self._nid, pywrap.kDistToDst)
+    else:
+      subgraph.dist_to_src = None
+      subgraph.dist_to_dst = None
+    return subgraph
 
 class LookupDagNode(DagNode):
   def __init__(self, op_name="", upstream=None, in_edges=[], params={}):
