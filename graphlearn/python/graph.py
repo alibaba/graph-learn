@@ -160,7 +160,7 @@ class Graph(object):
       self.node(source='',
                 node_type=node_type,
                 decoder=self._make_vineyard_decoder(
-                  weighted, labeled, n_int, n_float, n_string))
+                  weighted, labeled, False, n_int, n_float, n_string))
 
     for edge_info in handle['edge_schema']:
       confs = edge_info.split(':')
@@ -182,12 +182,12 @@ class Graph(object):
       self.edge(source='',
                 edge_type=(src_node_type, dst_node_type, edge_type),
                 decoder=self._make_vineyard_decoder(
-                  weighted, labeled, n_int, n_float, n_string))
+                  weighted, labeled, False, n_int, n_float, n_string))
 
     return self
 
   def _make_vineyard_decoder(self,
-      weighted, labeled, n_int, n_float, n_string):
+      weighted, labeled, timestamped, n_int, n_float, n_string):
     attr_types = []
     if n_int == 0 and n_float == 0 and n_string == 0:
       attr_types = None
@@ -195,7 +195,7 @@ class Graph(object):
       attr_types.extend(["int"] * n_int)
       attr_types.extend(["float"] * n_float)
       attr_types.extend(["string"] * n_string)
-    return data.Decoder(weighted, labeled, attr_types)
+    return data.Decoder(weighted, labeled, timestamped, attr_types)
 
   def node(self,
            source,
@@ -273,7 +273,7 @@ class Graph(object):
     node_source.use_attrs = ';'.join(attrs)
     decoder = self._node_decoders[node_type]
     self._node_decoders[node_type] = self._make_vineyard_decoder(
-      decoder.weighted, decoder.labeled, n_int, n_float, n_string)
+      decoder.weighted, decoder.labeled, decoder.timestamped, n_int, n_float, n_string)
     return self
 
   def edge(self,
@@ -347,7 +347,7 @@ class Graph(object):
     edge_source.use_attrs = ';'.join(attrs)
     decoder = self._edge_decoders[edge_type]
     self._edge_decoders[edge_type] = self._make_vineyard_decoder(
-      decoder.weighted, decoder.labeled, n_int, n_float, n_string)
+      decoder.weighted, decoder.labeled, decoder.timestamped, n_int, n_float, n_string)
     return self
 
   @property
