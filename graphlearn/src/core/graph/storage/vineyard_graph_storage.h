@@ -160,6 +160,10 @@ public:
   virtual IdType GetDstId(IdType edge_id) const override {
     return get_edge_dst_id(frag_, edge_label_, dst_lists_, edge_id);
   }
+  virtual IdType GetEdgeId(IdType edge_index) const override {
+    // TODO: @LiSu, check what edge index is in vineyard store
+    return edge_index;
+  }
   virtual float GetEdgeWeight(IdType edge_id) const override {
     if (!side_info_->IsWeighted() || edge_id >= edge_lists_.size()) {
       return -1;
@@ -171,6 +175,12 @@ public:
       return -1;
     }
     return get_edge_label(frag_, edge_label_, edge_lists_[edge_id]);
+  }
+  virtual int64_t GetEdgeTimestamp(IdType edge_id) const override {
+    if (!side_info_->IsTimestamped() || edge_id >= edge_lists_.size()) {
+      return -1;
+    }
+    return get_edge_timestamp(frag_, edge_label_, edge_lists_[edge_id]);
   }
   virtual Attribute GetEdgeAttribute(IdType edge_id) const override {
     if (!side_info_->IsAttributed()) {
@@ -265,7 +275,7 @@ private:
   std::vector<int> i32_indexes_, i64_indexes_, f32_indexes_, f64_indexes_,
       s_indexes_, ls_indexes_;
   std::vector<const void *> edge_table_accessors_;
-  int index_for_label_ = -1, index_for_weight_ = -1;
+  int index_for_label_ = -1, index_for_weight_ = -1, index_for_timestamp_ = -1;
 
   std::vector<IdType> src_lists_;
   std::vector<IdType> dst_lists_;

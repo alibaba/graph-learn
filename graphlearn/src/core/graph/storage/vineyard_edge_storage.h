@@ -65,6 +65,7 @@ public:
   ///    destination node id,
   ///    edge weight,
   ///    edge label,
+  ///    edge timestamp,
   ///    edge attributes
   virtual IdType GetSrcId(IdType edge_id) const override {
     return graph_->GetSrcId(edge_id);
@@ -77,6 +78,9 @@ public:
   }
   virtual int32_t GetLabel(IdType edge_id) const override {
     return graph_->GetEdgeLabel(edge_id);
+  }
+  virtual int64_t GetTimestamp(IdType edge_id) const override {
+    return graph_->GetEdgeTimestamp(edge_id);
   }
   virtual Attribute GetAttribute(IdType edge_id) const override {
     return graph_->GetEdgeAttribute(edge_id);
@@ -124,6 +128,21 @@ public:
         typename vineyard::ConvertToArrowType<int32_t>::ArrayType>(
         table->column(graph_->index_for_label_)->chunk(0));
     return Array<int32_t>(label_array->raw_values(), label_array->length());
+  }
+
+  /// Get all timestamps if existed, the count of which is the same with Size().
+  virtual const Array<int64_t> GetTimestamps() const override {
+    if (!graph_->side_info_->IsTimestamped()) {
+      return Array<int64_t>();
+    }
+    auto table = graph_->frag_->edge_data_table(graph_->edge_label_);
+    if (table->num_rows() == 0 || graph_->index_for_timestamp_ == -1) {
+      return Array<int64_t>();
+    }
+    auto timestamp_array = std::dynamic_pointer_cast<
+        typename vineyard::ConvertToArrowType<int64_t>::ArrayType>(
+        table->column(graph_->index_for_timestamp_)->chunk(0));
+    return Array<int64_t>(timestamp_array->raw_values(), timestamp_array->length());
   }
 
   /// Get all attributes if existed, the count of which is the same with Size().

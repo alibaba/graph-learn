@@ -311,6 +311,18 @@ int32_t get_edge_label(const std::shared_ptr<gl_frag_t>& frag,
       std::dynamic_pointer_cast<arrow::Int64Array>(array)->GetView(edge_offset));
 }
 
+int64_t get_edge_timestamp(const std::shared_ptr<gl_frag_t>& frag,
+                       const label_id_t edge_label, IdType edge_offset) {
+  auto table = frag->edge_data_table(edge_label);
+  int index = find_index_of_name(table->schema(), "timestamp");
+  if (index == -1) {
+    return  -1;
+  }
+  const auto& array = frag->edge_data_table(edge_label)->column(index)->chunk(0);
+  return static_cast<int64_t>(
+      std::dynamic_pointer_cast<arrow::Int64Array>(array)->GetView(edge_offset));
+}
+
 void init_src_dst_list(const std::shared_ptr<gl_frag_t>& frag,
                        const label_id_t edge_label,
                        const label_id_t src_node_label,
