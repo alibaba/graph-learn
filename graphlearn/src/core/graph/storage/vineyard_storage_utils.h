@@ -124,6 +124,9 @@ float get_edge_weight(const std::shared_ptr<gl_frag_t>& frag,
 int32_t get_edge_label(const std::shared_ptr<gl_frag_t>& frag,
                        label_id_t const edge_label, IdType edge_offset);
 
+int64_t get_edge_timestamp(const std::shared_ptr<gl_frag_t>& frag,
+                       const label_id_t edge_label, IdType edge_offset);
+
 void init_src_dst_list(const std::shared_ptr<gl_frag_t>& frag,
                        label_id_t const edge_label,
                        label_id_t const src_node_label,

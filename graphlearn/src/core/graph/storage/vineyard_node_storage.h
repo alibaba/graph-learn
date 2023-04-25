@@ -94,6 +94,7 @@ public:
                          ls_indexes_, vertex_table_accessors_);
     index_for_label_ = find_index_of_name(vtable->schema(), "label");
     index_for_weight_ = find_index_of_name(vtable->schema(), "weight");
+    index_for_timestamp_ = find_index_of_name(vtable->schema(), "timestamp");
 
     oid_array_ = vertex_map_->GetOidArray(frag_->fid(), node_label_);
 
@@ -246,6 +247,35 @@ public:
 #endif
   }
 
+  /// Lookup node infos by node_id, including
+  ///    node weight,
+  ///    node label,
+  ///    node attributes
+  ///    node timestamp
+  virtual int64_t GetTimestamp(IdType node_id) const override {
+    if (!side_info_->IsTimestamped()) {
+      return -1;
+    }
+#if defined(VINEYARD_USE_OID)
+    vineyard_vid_t node_gid;
+    if (!vertex_map_->GetGid(frag_->fid(), node_label_, node_id, node_gid)) {
+      return -1;
+    }
+#else
+    vineyard_vid_t node_gid = static_cast<vineyard_vid_t>(node_id);
+#endif
+    auto v = vertex_t{node_gid};
+    auto label = frag_->vertex_label(v);
+    if (label != node_label_) {
+      return -1;
+    }
+    if (index_for_timestamp_ == -1) {
+      return -1;
+    }
+    auto table = frag_->vertex_data_table(node_label_);
+    return static_cast<int64_t>(frag_->GetData<int64_t>(v, index_for_timestamp_));
+  }
+
   /// For the needs of traversal and sampling, the data distribution is
   /// helpful. The interface should make it convenient to get the global data.
   ///
@@ -283,6 +313,21 @@ public:
         typename vineyard::ConvertToArrowType<int32_t>::ArrayType>(
         table->column(index_for_label_)->chunk(0));
     return Array<int32_t>(label_array->raw_values(), label_array->length());
+  }
+
+  /// Get all timestamps if existed, the count of which is the same with Size().
+  virtual const Array<int64_t> GetTimestamps() const override {
+    if (!side_info_->IsTimestamped()) {
+      return Array<int64_t>();
+    }
+    auto table = frag_->vertex_data_table(node_label_);
+    if (table->num_rows() == 0 || index_for_timestamp_ == -1) {
+      return Array<int64_t>();
+    }
+    auto timestamp_array = std::dynamic_pointer_cast<
+        typename vineyard::ConvertToArrowType<int64_t>::ArrayType>(
+        table->column(index_for_timestamp_)->chunk(0));
+    return Array<int64_t>(timestamp_array->raw_values(), timestamp_array->length());
   }
 
   /// Get all attributes if existed, the count of which is the same with Size().
@@ -330,7 +375,7 @@ private:
   std::vector<int> i32_indexes_, i64_indexes_, f32_indexes_, f64_indexes_,
       s_indexes_, ls_indexes_;
   std::vector<const void *> vertex_table_accessors_;
-  int index_for_label_ = -1, index_for_weight_ = -1;
+  int index_for_label_ = -1, index_for_weight_ = -1, index_for_timestamp_ = -1;
 
   std::set<std::string> attrs_;
   std::shared_ptr<gl_frag_t::vertex_map_t> vertex_map_;
