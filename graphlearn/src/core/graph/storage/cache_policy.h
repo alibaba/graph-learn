@@ -14,7 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #ifndef GRAPHLEARN_CORE_GRAPH_STORAGE_CACHE_POLICY_H_
-#define GRAPHLEARN_CORE_GRAPH_STORAGE_CACHE_PLOICY_H_
+#define GRAPHLEARN_CORE_GRAPH_STORAGE_CACHE_POLICY_H_
 
 #include <map>
 #include <unordered_map>

@@ -1,3 +1,6 @@
+#ifndef GRAPHLEARN_COMMON_THREADING_SYNC_SEMAPHORE_SHIM_H_
+#define GRAPHLEARN_COMMON_THREADING_SYNC_SEMAPHORE_SHIM_H_
+
 #include <pthread.h>
 #include <semaphore.h>
 
@@ -25,3 +28,5 @@ int sem_wait(macos_sem_t *psem);
 int sem_timedwait(macos_sem_t *psem, const struct timespec *abstim);
 
 #endif
+
+#endif  // GRAPHLEARN_COMMON_THREADING_SYNC_SEMAPHORE_SHIM_H_
