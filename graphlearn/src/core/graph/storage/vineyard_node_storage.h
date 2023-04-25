@@ -52,7 +52,7 @@ public:
     frag_ = get_vineyard_fragment(client_, GLOBAL_FLAG(VineyardGraphID));
     if (frag_ == nullptr) {
       throw std::runtime_error(
-        "Graph: failed to find the vineyard fragment: " + GLOBAL_FLAG(VineyardGraphID));
+        "Graph: failed to find the vineyard fragment: " + std::to_string(GLOBAL_FLAG(VineyardGraphID)));
     }
     vertex_map_ = frag_->GetVertexMap();
 
