@@ -319,7 +319,7 @@ class Dataset(object):
                             tf.TensorShape([None, node_decoder.string_attr_num]),
                             tf.TensorShape([None]),  # labels
                             tf.TensorShape([None]),  # weights
-                            tf.TensorShape([None])])[feat_masks] # timestamps
+                            tf.TensorShape([None])], dtype=object)[feat_masks] # timestamps
 
     id_types = np.array([tf.int64, tf.int64])[id_masks] # ids, dst_ids
     id_shapes = np.array([tf.TensorShape([None]), tf.TensorShape([None])])[id_masks]
@@ -327,7 +327,7 @@ class Dataset(object):
     sparse_types = np.array([tf.int64, tf.int64, tf.int64])[sparse_masks]
     sparse_shapes = np.array([tf.TensorShape([None]),
                               tf.TensorShape([None, 2]),
-                              tf.TensorShape([None])])[sparse_masks]
+                              tf.TensorShape([None])], dtype=object)[sparse_masks]
     return list(feat_types) + list(id_types) + list(sparse_types), \
       list(feat_shapes) + list(id_shapes) + list(sparse_shapes)
 

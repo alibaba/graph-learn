@@ -44,8 +44,8 @@ class TFTrainer(object):
 
   Args:
     ckpt_dir: checkpoint dir.
-    ckpt_freq: checkpoint frequency.
-    ckpt_steps: checkpoint steps.
+    save_checkpoint_secs: checkpoint frequency.
+    save_checkpoint_steps: checkpoint steps.
     profiling: whether write timeline for profiling, default is False.
     progress_steps: print a progress logs for given steps.
   """
@@ -53,13 +53,11 @@ class TFTrainer(object):
                ckpt_dir=None,
                save_checkpoint_secs=600,
                save_checkpoint_steps=None,
-               ckpt_steps=None,
                profiling=False,
                progress_steps=10):
     self.ckpt_dir = ckpt_dir
     self.save_checkpoint_secs = save_checkpoint_secs
     self.save_checkpoint_steps = save_checkpoint_steps
-    self.ckpt_steps = ckpt_steps
     self.profiling = profiling
     self.progress_steps = progress_steps
 
@@ -85,9 +83,9 @@ class TFTrainer(object):
     checkpoint_args = dict()
     if self.ckpt_dir is not None:
       checkpoint_args['checkpoint_dir'] = self.ckpt_dir
-    if self.ckpt_freq is not None:
+    if self.save_checkpoint_secs is not None:
       checkpoint_args['save_checkpoint_secs'] = self.save_checkpoint_secs
-    if self.ckpt_steps is not None:
+    if self.save_checkpoint_steps is not None:
       checkpoint_args['save_checkpoint_steps'] = self.save_checkpoint_steps
 
     self.sess = tf.train.MonitoredTrainingSession(
@@ -238,18 +236,18 @@ class LocalTrainer(TFTrainer):
 
   Args:
     ckpt_dir: checkpoint dir.
-    ckpt_freq: checkpoint frequency.
-    ckpt_steps: checkpoint steps.
+    save_checkpoint_freq: checkpoint frequency.
+    save_checkpoint_steps: checkpoint steps.
     profiling: whether write timeline for profiling, default is False.
     progress_steps: print a progress logs for given steps.
   """
   def __init__(self,
                ckpt_dir=None,
-               ckpt_freq=None,
-               ckpt_steps=None,
+               save_checkpoint_secs=None,
+               save_checkpoint_steps=None,
                profiling=False,
                progress_steps=10):
-    super().__init__(ckpt_dir, ckpt_freq, ckpt_steps, profiling, progress_steps)
+    super().__init__(ckpt_dir, save_checkpoint_secs, save_checkpoint_steps, profiling, progress_steps)
     self.is_local = True 
 
   if hasattr(contextlib, 'nullcontext'):
@@ -287,8 +285,8 @@ class DistTrainer(TFTrainer):
     task_index: index of this worker.
     worker_count: The number of TensorFlow worker.
     ckpt_dir: checkpoint dir.
-    ckpt_freq: checkpoint frequency.
-    ckpt_steps: checkpoint steps.
+    save_checkpoint_freq: checkpoint frequency.
+    save_checkpoint_steps: checkpoint steps.
     profiling: whether write timeline for profiling, default is False.
     progress_steps: print a progress logs for given steps.
   """
@@ -298,11 +296,11 @@ class DistTrainer(TFTrainer):
                task_index,
                worker_count,
                ckpt_dir=None,
-               ckpt_freq=None,
-               ckpt_steps=None,
+               save_checkpoint_secs=None,
+               save_checkpoint_steps=None,
                profiling=False,
                progress_steps=10):
-    super().__init__(ckpt_dir, ckpt_freq, ckpt_steps, profiling, progress_steps)
+    super().__init__(ckpt_dir, save_checkpoint_secs, save_checkpoint_steps, profiling, progress_steps)
     self.is_local = False
     self.cluster_spec = cluster_spec
     self.job_name = job_name
