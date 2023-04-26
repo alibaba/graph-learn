@@ -104,7 +104,7 @@ class Dataset(object):
         values.extend([value.dense_shape])
       else:
         values.extend([None, None, None])
-      return list(np.array(values)[feat_masks + id_masks + sparse_masks])
+      return list(np.array(values, dtype=object)[feat_masks + id_masks + sparse_masks])
 
     try:
       values = self._ds.next()
