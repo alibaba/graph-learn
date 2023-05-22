@@ -437,7 +437,7 @@ endif ()
 
 if (WITH_VINEYARD)
   target_include_directories (graphlearn_shared PUBLIC ${VINEYARD_INCLUDE_DIRS})
-  target_link_libraries (graphlearn_shared PUBLIC ${VINEYARD_LIBRARIES})
+  target_link_libraries (graphlearn_shared PUBLIC vineyard_graph vineyard_io vineyard_basic vineyard_client)
 endif ()
 
 if (GPU)
