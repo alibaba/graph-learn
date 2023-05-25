@@ -1,0 +1,23 @@
+{
+    "vertices": [
+        {
+            "data_path": "$GSTEST/ogbn_mag_small/paper.csv",
+            "label": "paper",
+            "options": "header_row=true&delimiter=,"
+        }
+    ],
+    "edges": [
+        {
+            "data_path": "$GSTEST/ogbn_mag_small/paper_cites_paper.csv",
+            "label": "cites",
+            "src_label": "paper",
+            "dst_label": "paper",
+            "options": "header_row=true&delimiter=,"
+        }
+    ],
+    "progressive": "none",
+    "directed": 1,
+    "generate_eid": 1,
+    "retain_oid": 1,
+    "oid_type": "int64"
+}
