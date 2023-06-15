@@ -29,8 +29,8 @@ _VERSION = '1.2.0'
 
 ROOT_PATH = os.path.abspath(os.path.join(os.getcwd()))
 CUT_PATH = sys.path[0]
-OPEN_KNN = os.getenv('OPEN_KNN')
-
+OPEN_KNN = os.getenv('OPEN_KNN', 'CLOSE')
+CXX_DIALECT = os.getenv('CXX_DIALECT', 'c++11')
 
 extensions = []
 include_dirs = []
@@ -53,7 +53,7 @@ library_dirs.append(ROOT_PATH + '/built/lib')
 if OPEN_KNN == 'OPEN':
   extra_compile_args.append('-DOPEN_KNN')
 extra_compile_args.append('-D__USE_XOPEN2K8')
-extra_compile_args.append('-std=c++11')
+extra_compile_args.append('-std=%s' % CXX_DIALECT)
 extra_compile_args.append('-fvisibility=hidden')
 if sys.platform == 'linux' or sys.platform == 'linux2':
   extra_link_args.append('-Wl,-rpath=$ORIGIN/python/lib/')

@@ -340,16 +340,16 @@ else()
 endif()
 
 if (WITH_VINEYARD)
-  CHECK_CXX_COMPILER_FLAG("-std=gnu++17" HAS_STDCXX_17)
+  CHECK_CXX_COMPILER_FLAG("-std=c++17" HAS_STDCXX_17)
   if (HAS_STDCXX_17)
-    set (GL_CXX_DIALECT "gnu++17")
+    set (GL_CXX_DIALECT "c++17")
   else()
-    set (GL_CXX_DIALECT "gnu++14")
+    set (GL_CXX_DIALECT "c++14")
   endif()
 endif()
 
 if (WITH_HIACTOR)
-  set (GL_CXX_DIALECT "gnu++17")
+  set (GL_CXX_DIALECT "c++17")
 endif()
 
 set (GL_CXX_FLAGS
@@ -553,8 +553,8 @@ add_custom_command (TARGET python
   COMMAND cp -f ${GL_SETUP_DIR}/version.py ${GL_PYTHON_DIR}/python/version.py
   COMMAND echo "__version__ = ${VERSION}" >> ${GL_PYTHON_DIR}/python/version.py
   COMMAND echo "__git_version__ = '${GIT_BRANCH}-${GIT_VERSION}'" >> ${GL_PYTHON_DIR}/python/version.py
-  COMMAND OPEN_KNN=${KNN_FLAG} ${GL_PYTHON_BIN} ${GL_SETUP_DIR}/setup.py build_ext --inplace
-  COMMAND OPEN_KNN=${KNN_FLAG} ${GL_PYTHON_BIN} ${GL_SETUP_DIR}/setup.py bdist_wheel
+  COMMAND OPEN_KNN=${KNN_FLAG} CXX_DIALECT=${GL_CXX_DIALECT} ${GL_PYTHON_BIN} ${GL_SETUP_DIR}/setup.py build_ext --inplace
+  COMMAND OPEN_KNN=${KNN_FLAG} CXX_DIALECT=${GL_CXX_DIALECT} ${GL_PYTHON_BIN} ${GL_SETUP_DIR}/setup.py bdist_wheel
   COMMAND ${CMAKE_COMMAND} -E make_directory "${GL_BUILT_BIN_DIR}/ge_data/data"
   COMMAND ${CMAKE_COMMAND} -E make_directory "${GL_BUILT_BIN_DIR}/ge_data/ckpt"
   WORKING_DIRECTORY ${GL_ROOT}
