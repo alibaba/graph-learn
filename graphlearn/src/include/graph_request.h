@@ -30,7 +30,7 @@ namespace io {
 struct SideInfo;
 struct EdgeValue;
 struct NodeValue;
-struct AttributeValue;
+class AttributeValue;
 }  // namespace io
 
 class UpdateRequest : public OpRequest {

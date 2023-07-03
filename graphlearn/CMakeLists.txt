@@ -553,8 +553,8 @@ add_custom_command (TARGET python
   COMMAND cp -f ${GL_SETUP_DIR}/version.py ${GL_PYTHON_DIR}/python/version.py
   COMMAND echo "__version__ = ${VERSION}" >> ${GL_PYTHON_DIR}/python/version.py
   COMMAND echo "__git_version__ = '${GIT_BRANCH}-${GIT_VERSION}'" >> ${GL_PYTHON_DIR}/python/version.py
-  COMMAND OPEN_KNN=${KNN_FLAG} CXX_DIALECT=${GL_CXX_DIALECT} ${GL_PYTHON_BIN} ${GL_SETUP_DIR}/setup.py build_ext --inplace
-  COMMAND OPEN_KNN=${KNN_FLAG} CXX_DIALECT=${GL_CXX_DIALECT} ${GL_PYTHON_BIN} ${GL_SETUP_DIR}/setup.py bdist_wheel
+  COMMAND OPEN_KNN=${KNN_FLAG} CXX_DIALECT=${GL_CXX_DIALECT} Protobuf_LIBRARIES=${Protobuf_LIBRARIES} ${GL_PYTHON_BIN} ${GL_SETUP_DIR}/setup.py build_ext --inplace
+  COMMAND OPEN_KNN=${KNN_FLAG} CXX_DIALECT=${GL_CXX_DIALECT} Protobuf_LIBRARIES=${Protobuf_LIBRARIES} ${GL_PYTHON_BIN} ${GL_SETUP_DIR}/setup.py bdist_wheel
   COMMAND ${CMAKE_COMMAND} -E make_directory "${GL_BUILT_BIN_DIR}/ge_data/data"
   COMMAND ${CMAKE_COMMAND} -E make_directory "${GL_BUILT_BIN_DIR}/ge_data/ckpt"
   WORKING_DIRECTORY ${GL_ROOT}
