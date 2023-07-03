@@ -31,6 +31,7 @@ ROOT_PATH = os.path.abspath(os.path.join(os.getcwd()))
 CUT_PATH = sys.path[0]
 OPEN_KNN = os.getenv('OPEN_KNN', 'CLOSE')
 CXX_DIALECT = os.getenv('CXX_DIALECT', 'c++11')
+Protobuf_LIBRARIES = os.getenv('Protobuf_LIBRARIES', '')
 
 extensions = []
 include_dirs = []
@@ -61,6 +62,12 @@ if sys.platform == 'linux' or sys.platform == 'linux2':
 libraries.append('graphlearn_shared')
 # if OPEN_KNN == 'OPEN':
 #   libraries.append('knn_shared')
+
+# explicitly link against protobuf to avoid the error
+# "illegal thread local variable reference to regular symbol"
+if sys.platform == 'darwin':
+  if Protobuf_LIBRARIES:
+    extra_link_args.append(Protobuf_LIBRARIES)
 
 sources = [ROOT_PATH + '/python/c/py_export.cc',
            ROOT_PATH + '/python/c/py_client.cc']
