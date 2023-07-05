@@ -620,6 +620,7 @@ class Graph(object):
       dag, op_name="GetEdges", params=params)
     source_node.set_output_field(pywrap.kEdgeIds)
     source_node.set_path(edge_type, pywrap.NodeFrom.NODE)
+    dag.root = source_node
 
     # Add sink node to dag
     gsl.SinkNode(dag)
