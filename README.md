@@ -4,6 +4,11 @@
 [![graph-learn CI](https://github.com/alibaba/graph-learn/workflows/graph-learn%20CI/badge.svg)](https://github.com/alibaba/graph-learn/actions)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/alibaba/graph-learn/blob/master/LICENSE)
 
+**News**
+
+Our GNN acceleration library for PyTorch is now available. https://github.com/alibaba/graphlearn-for-pytorch
+
+
 [**Documentation**](https://graph-learn.readthedocs.io/en/latest/)
 
 [简体中文](README_cn.md) | English
