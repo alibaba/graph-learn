@@ -678,6 +678,7 @@ PyObject* get_dag_value(GetDagValuesResponse* res,
   auto t = res->GetValue(node_id, key);
   auto values = std::get<0>(t);
   if (values == nullptr) {
+    Py_INCREF(Py_None); // 增加None的引用计数，以防止Python回收它
     return Py_None;
   }
   int32_t size = values->Size();
@@ -713,10 +714,12 @@ PyObject* get_dag_value_indice(GetDagValuesResponse* res,
   auto t = res->GetValue(node_id, key);
   auto indices = std::get<1>(t);
   if (indices == nullptr) {
+    Py_INCREF(Py_None); // 增加None的引用计数，以防止Python回收它
     return Py_None;
   }
   int32_t size = indices->Size();
   if (size == 0) {
+    Py_INCREF(Py_None); // 增加None的引用计数，以防止Python回收它
     return Py_None;
   }
   npy_intp shape[1];
