@@ -678,7 +678,7 @@ PyObject* get_dag_value(GetDagValuesResponse* res,
   auto t = res->GetValue(node_id, key);
   auto values = std::get<0>(t);
   if (values == nullptr) {
-    return Py_None;
+    Py_RETURN_NONE;
   }
   int32_t size = values->Size();
   npy_intp shape[1];
@@ -713,11 +713,11 @@ PyObject* get_dag_value_indice(GetDagValuesResponse* res,
   auto t = res->GetValue(node_id, key);
   auto indices = std::get<1>(t);
   if (indices == nullptr) {
-    return Py_None;
+    Py_RETURN_NONE;
   }
   int32_t size = indices->Size();
   if (size == 0) {
-    return Py_None;
+    Py_RETURN_NONE;
   }
   npy_intp shape[1];
   shape[0] = size;
