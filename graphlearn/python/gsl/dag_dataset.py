@@ -82,11 +82,18 @@ class Dataset(object):
         return self.next()
       return result
     else:
-      global_dag_state.inc(self._dag.name)
       if res:
         self._last_responses.append(res)
       self.del_last_responses()
-      raise OutOfRangeError("OutOfRange")
+
+      if self._current_index < len(self._dag_datasets) - 1:
+        self._current_index = self._current_index + 1
+        return self.next()
+      else:
+        self._current_index = 0
+        # start the next epoch
+        global_dag_state.inc(self._dag.name)
+        raise OutOfRangeError("OutOfRange: end of epoch")
 
   def close(self):
     for dataset in self._dag_datasets:
