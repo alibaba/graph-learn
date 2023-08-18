@@ -28,6 +28,7 @@ import numpy as np
 import graphlearn as gl
 import graphlearn.python.nn.tf as tfg
 
+
 try:
   # https://www.tensorflow.org/guide/migrate
   import tensorflow.compat.v1 as tf
@@ -38,6 +39,95 @@ except ImportError:
 from tensorflow.python.client import timeline
 run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
 run_metadata = tf.RunMetadata()
+
+
+def meta_path_sample(ego, node_type, edge_type, ego_name, nbrs_num, sampler):
+    """ creates the meta-math sampler of the input ego.
+    Args:
+    ego: A query object, the input centric nodes/edges
+    ego_type: A string, the type of `ego`, node_type such as 'paper' or 'user'.
+    ego_name: A string, the name of `ego`.
+    nbrs_num: A list, the number of neighbors for each hop.
+    sampler: A string, the strategy of neighbor sampling.
+    """
+    meta_path = []
+    hops = range(len(nbrs_num))
+    meta_path = ['outV' for i in hops]
+    alias_list = [ego_name + '_hop_' + str(i + 1) for i in hops]
+    mata_path_string = ""
+    for path, nbr_count, alias in zip(meta_path, nbrs_num, alias_list):
+        mata_path_string += path + '(' + edge_type + ').'
+        ego = getattr(ego, path)(edge_type).sample(nbr_count).by(sampler).alias(alias)
+    print("Sampling meta path for {} is {}.".format(node_type, mata_path_string))
+    return ego
+
+def node_embedding(graph, model, node_type, edge_type, **kwargs):
+    """ save node embedding.
+
+    Args:
+    node_type: such as 'paper' or 'user'. 
+    edge_type: such as 'node_type' or 'edge_type'.
+    Return:
+    iterator, ids, embedding.
+    """
+    tfg.conf.training = False
+    ego_name = 'save_node_' + node_type
+    seed = graph.V(node_type).batch(kwargs.get('batch_size', 64)).alias(ego_name)
+    query_save = meta_path_sample(seed, node_type, edge_type, ego_name, kwargs.get('nbrs_num', [10, 5]), kwargs.get('sampler', 'random_without_replacement')).values()
+    dataset = tfg.Dataset(query_save, window=kwargs.get('window', 10))
+    ego_graph = dataset.get_egograph(ego_name)
+    emb = model.forward(ego_graph)
+    return dataset.iterator, ego_graph.src.ids, emb
+
+def dump_embedding(sess, save_iter, save_ids, save_emb, save_file, block_max_lines):
+    # assume block_max_lines >> batch_size
+    assert block_max_lines >= 10000, 'block_max_lines must >= 10000, it is {} now'.format(block_max_lines)
+    sess.run(save_iter.initializer)
+    total_line = 0
+    local_line = 0
+    block_id = 0
+    if save_file.endswith('.txt'):
+        save_file = save_file[:-4]
+    while True:
+        try:
+            outs = sess.run([save_ids, save_emb])
+            i_feat = ['%d\t'%i + ','.join(str(x) for x in arr) + '\n' for i, arr in zip(outs[0], outs[1])]
+            total_line += len(i_feat)
+            local_line += len(i_feat)
+            if local_line <= block_max_lines:
+                save_file_i = save_file +'_%d'%block_id + '.txt'
+                if not os.path.exists(save_file_i):
+                    with open(save_file_i, 'w') as f:
+                        f.write('id:int64\temb:string\n')  
+                with open(save_file_i, 'a') as f:
+                    f.writelines(i_feat)
+            elif block_max_lines < local_line < block_max_lines + len(i_feat):
+                save_file_i = save_file +'_%d'%block_id + '.txt'
+                with open(save_file_i, 'a') as f:
+                    f.writelines(i_feat[0: len(i_feat) - (local_line - block_max_lines)])
+                block_id += 1
+                save_file_i = save_file +'_%d'%block_id + '.txt' 
+                with open(save_file_i, 'a') as f:
+                    f.write('id:int64\temb:string\n')
+                    f.writelines(i_feat[len(i_feat) - (local_line - block_max_lines):])
+                local_line = local_line - block_max_lines
+            elif local_line == block_max_lines + len(i_feat):
+                block_id += 1
+                save_file_i = save_file +'_%d'%block_id + '.txt'
+                with open(save_file_i, 'a') as f:
+                    f.write('id:int64\temb:string\n')
+                    f.writelines(i_feat)
+                local_line = local_line - block_max_lines                
+            else:
+                assert local_line <= block_max_lines + len(i_feat), 'must local_line <= block_max_lines + len(i_feat)' 
+                
+        except tf.errors.OutOfRangeError:
+            print('Save node embeddings done.')
+            break
+    print("#################################################")
+    print("total lines save = {} , number blocks = {} ".format(total_line, block_id + 1))
+    print("#################################################")
+
 
 class TFTrainer(object):
   """Class for local or distributed training and evaluation.
@@ -101,6 +191,75 @@ class TFTrainer(object):
 
   def run_step(self, train_ops, local_step):
     raise NotImplementedError('Use LocalTrainer or DistTrainer instead.')
+
+
+  def train_and_save(self, iterator, loss, optimizer=None, learning_rate=None,
+            epochs=10, hooks=[], save_file=None, save_ids=None, save_emb=None, **kwargs):
+    with self.context():
+      self.global_step = tf.train.get_or_create_global_step()
+      #   
+      save_iter, save_ids, save_emb = node_embedding(kwargs.get('graph'), kwargs.get('model'), kwargs.get('node_type'), kwargs.get('edge_type'))
+      print("Finisha get save_iter, save_ids, save_emb...")
+      if optimizer is None:
+        try:
+          optimizer = tf.train.AdamAsyncOptimizer(learning_rate=learning_rate)
+        except AttributeError:
+          optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+      train_op = optimizer.minimize(loss, global_step=self.global_step)
+      
+      train_ops = [train_op, loss, self.global_step]
+      tf.add_to_collection(tf.GraphKeys.TABLE_INITIALIZERS, iterator.initializer)
+      print("Init session...")
+      self.init_session(hooks=hooks)
+
+      print('Start training...')
+      local_step = 0
+      last_local_step = 0
+      last_global_step = 0
+      t = time.time()
+      epoch = 0
+      outs = None
+      while (not self.sess.should_stop()) and (epoch < epochs):
+        try:
+          outs = self.run_step(train_ops, local_step)
+        except tf.errors.OutOfRangeError:
+          print('End of the epoch %d.' % (epoch,))
+          print("local_step = {}".format(local_step))
+          epoch += 1
+          local_step = 0
+          self.sess._tf_sess().run(iterator.initializer)  # reinitialize dataset.
+        if outs is not None:
+          train_loss = outs[1]
+          global_step = outs[-1]
+          # Print results
+          local_step += 1
+          if local_step % self.progress_steps == 0:
+            if self.is_local:
+              print(datetime.datetime.now(),
+                    'Epoch {}, Iter {}, LocalStep/sec {:.2f}, Time(s) {:.4f}, '
+                    'Loss {:.5f}'
+                    .format(epoch, local_step,
+                            (local_step - last_local_step) * 1.0 / (time.time() - t),
+                            (time.time() - t) * 1.0 / 10, train_loss))
+            else:
+              print(datetime.datetime.now(),
+                    'Epoch {}, Iter {}, GlobalStep/sec {:.2f}, Time(s) {:.4f}, '
+                    'Loss {:.5f}, Global_step {}'
+                    .format(epoch, local_step,
+                            (global_step - last_global_step) * 1.0 / (time.time() - t),
+                            (time.time() - t) * 1.0 / 10, train_loss, global_step))
+            t = time.time()
+            last_local_step = local_step
+            last_global_step = global_step
+      # save embedding
+      if os.path.exists(save_file):
+          os.remove(save_file)
+          print(save_file + " is removed")
+      dump_embedding(self.sess, save_iter, save_ids, save_emb, save_file, kwargs.get('block_max_lines', 100000000))
+      #
+      if self.sync_barrier is not None:
+        self.sync_barrier.end(self.sess)
+
 
   def train(self, iterator, loss, optimizer=None, learning_rate=None,
             epochs=10, hooks=[], **kwargs):
