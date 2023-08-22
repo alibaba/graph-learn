@@ -161,7 +161,7 @@ class TFTrainer(object):
             last_local_step = local_step
             last_global_step = global_step
       # save embedding
-      self.save_node_embedding_bigdata(self.sess, save_iter, save_ids, save_emb, save_file, 
+      self.save_node_embedding_bigdata(save_iter, save_ids, save_emb, save_file, 
                                        kwargs.get('block_max_lines', 100000000))
       #
       if self.sync_barrier is not None:
@@ -275,11 +275,11 @@ class TFTrainer(object):
     self.train(train_iterator, loss, optimizer, learning_rate, epochs, hooks, **kwargs)
     self.test(test_iterator, test_acc, hooks, **kwargs)
 
-  def save_node_embedding_bigdata(self, sess, save_iter, save_ids, save_emb, save_file, block_max_lines):
+  def save_node_embedding_bigdata(self, save_iter, save_ids, save_emb, save_file, block_max_lines):
       print('Start saving embeddings...')
       # assume block_max_lines >> batch_size
       assert block_max_lines >= 10000, 'block_max_lines must >= 10000, it is {} now'.format(block_max_lines)
-      sess.run(save_iter.initializer)
+      self.sess.run(save_iter.initializer)
       total_line = 0
       local_line = 0
       block_id = 0
@@ -287,7 +287,7 @@ class TFTrainer(object):
           save_file = save_file[:-4]
       while True:
           try:
-              outs = sess.run([save_ids, save_emb])
+              outs = self.sess.run([save_ids, save_emb])
               i_feat = ['%d\t'%i + ','.join(str(x) for x in arr) + '\n' for i, arr in zip(outs[0], outs[1])]
               total_line += len(i_feat)
               local_line += len(i_feat)
