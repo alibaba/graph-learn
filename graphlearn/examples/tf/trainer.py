@@ -162,7 +162,7 @@ class TFTrainer(object):
             last_global_step = global_step
       # save embedding
       self.save_node_embedding_bigdata(save_iter, save_ids, save_emb, save_file, 
-                                       kwargs.get('block_max_lines', 100000000))
+                                       kwargs.get('block_max_lines', 10000000))
       #
       if self.sync_barrier is not None:
         self.sync_barrier.end(self.sess)

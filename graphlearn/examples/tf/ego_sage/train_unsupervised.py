@@ -121,7 +121,7 @@ def run(args):
                                              node_type='i', edge_type='train', nbrs_num=args.nbrs_num)
 
   ## uncomment below line will save the embeddings
-  # save_iter, save_ids, save_emb = node_embedding(graph=lg, model=model, node_type=node_type, edge_type=edge_type)
+  # save_iter, save_ids, save_emb = node_embedding(graph=lg, model=model, node_type=node_type, edge_type=edge_type, nbrs_num=args.nbr_num)
 
   src_emb = model.forward(train_data.src_ego)
   dst_emb = model.forward(train_data.dst_ego)
