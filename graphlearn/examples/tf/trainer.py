@@ -162,7 +162,8 @@ class TFTrainer(object):
             last_global_step = global_step
       # save embedding
       self.save_node_embedding_bigdata(save_iter, save_ids, save_emb, save_file, 
-                                       kwargs.get('block_max_lines', 10000000))
+                                       kwargs.get('block_max_lines', 10000000), 
+                                       kwargs.get('batch_size', 128))
       #
       if self.sync_barrier is not None:
         self.sync_barrier.end(self.sess)
@@ -275,55 +276,47 @@ class TFTrainer(object):
     self.train(train_iterator, loss, optimizer, learning_rate, epochs, hooks, **kwargs)
     self.test(test_iterator, test_acc, hooks, **kwargs)
 
-  def save_node_embedding_bigdata(self, save_iter, save_ids, save_emb, save_file, block_max_lines):
-      print('Start saving embeddings...')
-      # assume block_max_lines >> batch_size
-      assert block_max_lines >= 10000, 'block_max_lines must >= 10000, it is {} now'.format(block_max_lines)
-      self.sess.run(save_iter.initializer)
-      total_line = 0
-      local_line = 0
-      block_id = 0
-      if save_file.endswith('.txt'):
-          save_file = save_file[:-4]
-      while True:
+  def save_node_embedding_bigdata(self, save_iter, save_ids, save_emb, save_file, block_max_lines, batch_size):
+      if batch_size >= block_max_lines:
+        emb_writer = open(save_file, 'w')
+        emb_writer.write('id:int64\temb:string\n')
+        self.save_node_embedding(emb_writer, save_iter, save_ids, save_emb, batch_size)
+      else:
+        print('Start saving embeddings...')
+        self.sess.run(save_iter.initializer)
+        total_line = 0
+        block_id = 0
+        save_file = save_file[0:-4] if save_file.endswith('.txt') else save_file
+        current_file = save_file + '_%d.txt' % block_id
+        with open(current_file, 'a') as f:
+          f.write('id:int64\temb:string\n')        
+        while True:
           try:
-              outs = self.sess.run([save_ids, save_emb])
-              i_feat = ['%d\t'%i + ','.join(str(x) for x in arr) + '\n' for i, arr in zip(outs[0], outs[1])]
-              total_line += len(i_feat)
-              local_line += len(i_feat)
-              if local_line <= block_max_lines:
-                  save_file_i = save_file +'_%d'%block_id + '.txt'
-                  if not os.path.exists(save_file_i):
-                      with open(save_file_i, 'w') as f:
-                          f.write('id:int64\temb:string\n')  
-                  with open(save_file_i, 'a') as f:
-                      f.writelines(i_feat)
-              elif block_max_lines < local_line < block_max_lines + len(i_feat):
-                  save_file_i = save_file +'_%d'%block_id + '.txt'
-                  with open(save_file_i, 'a') as f:
-                      f.writelines(i_feat[0: len(i_feat) - (local_line - block_max_lines)])
-                  block_id += 1
-                  save_file_i = save_file +'_%d'%block_id + '.txt' 
-                  with open(save_file_i, 'a') as f:
-                      f.write('id:int64\temb:string\n')
-                      f.writelines(i_feat[len(i_feat) - (local_line - block_max_lines):])
-                  local_line = local_line - block_max_lines
-              elif local_line == block_max_lines + len(i_feat):
-                  block_id += 1
-                  save_file_i = save_file +'_%d'%block_id + '.txt'
-                  with open(save_file_i, 'a') as f:
-                      f.write('id:int64\temb:string\n')
-                      f.writelines(i_feat)
-                  local_line = local_line - block_max_lines                
-              else:
-                  assert local_line <= block_max_lines + len(i_feat), 'must local_line <= block_max_lines + len(i_feat)' 
-                  
+            outs = self.sess.run([save_ids, save_emb])
+            id_feat = ['%d\t'%i + ','.join(str(x) for x in arr) + '\n' for i, arr in zip(outs[0], outs[1])]
+            if total_line + len(id_feat) <= (block_id + 1) * block_max_lines:
+              with open(current_file, 'a') as f:
+                f.writelines(id_feat)
+              if total_line + len(id_feat) == (block_id + 1) * block_max_lines:
+                current_file = save_file + '_%d.txt' % (block_id + 1)
+                with open(current_file, 'a') as f:
+                  f.write('id:int64\temb:string\n')
+                block_id += 1
+            elif (block_id + 1) * block_max_lines < total_line + len(id_feat):
+              with open(current_file, 'a') as f:
+                f.writelines(id_feat[0: (block_id + 1) * block_max_lines - total_line])
+              current_file = save_file + '_%d.txt' % (block_id + 1)
+              with open(current_file, 'a') as f:
+                f.write('id:int64\temb:string\n')
+                f.writelines(id_feat[(block_id + 1) * block_max_lines - total_line:])
+              block_id += 1
+            total_line += len(id_feat)
           except tf.errors.OutOfRangeError:
-              print('Save node embeddings done.')
-              break
-      print("#################################################")
-      print("total lines save = {} , number blocks = {} ".format(total_line, block_id + 1))
-      print("#################################################")
+            print('Save node embeddings done.')
+            break
+        print("#################################################")
+        print("total lines saved = {} , number blocks = {} ".format(total_line, block_id + 1))
+        print("#################################################")
 
   def save_node_embedding(self, emb_writer, iterator, ids, emb, batch_size):
     print('Start saving embeddings...')
@@ -338,8 +331,8 @@ class TFTrainer(object):
           t = time.time()
           outs = self.sess._tf_sess().run([ids, emb])
           # [B,], [B,dim]
-          feat = [','.join(str(x) for x in arr) for arr in outs[1]]
-          emb_writer.write(list(zip(outs[0], feat)), indices=[0, 1])  # id,emb
+          id_feat = ['%d\t'%i + ','.join(str(x) for x in arr) + '\n' for i, arr in zip(outs[0], outs[1])]
+          emb_writer.writelines(id_feat)  # id,emb
           local_step += 1
           if local_step % self.progress_steps == 0:
             print('Saved {} node embeddings, Time(s) {:.4f}'.format(local_step * batch_size, time.time() - t))

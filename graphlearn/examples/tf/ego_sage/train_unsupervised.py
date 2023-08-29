@@ -136,8 +136,9 @@ def run(args):
   ## uncomment below lines will save the embeddings
   # save_file = './car_emb.txt'
   # trainer.train_and_save(train_data.iterator, loss, optimizer, epochs=epochs, save_file=save_file, hooks=[], 
-  #                      save_iter=save_iter, save_ids=save_ids, save_emb=save_emb,
-  #                      graph=g, model=model, node_type=node_type, edge_type=edge_type, block_max_lines=200000)
+  #                        save_iter=save_iter, save_ids=save_ids, save_emb=save_emb,
+  #                        graph=g, model=model, node_type=node_type, edge_type=edge_type, 
+  #                        block_max_lines=200000, batch_size=batch_size)
 
   # finish
   g.close()
