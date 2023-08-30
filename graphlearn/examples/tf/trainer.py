@@ -28,6 +28,7 @@ import numpy as np
 import graphlearn as gl
 import graphlearn.python.nn.tf as tfg
 
+
 try:
   # https://www.tensorflow.org/guide/migrate
   import tensorflow.compat.v1 as tf
@@ -38,6 +39,7 @@ except ImportError:
 from tensorflow.python.client import timeline
 run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
 run_metadata = tf.RunMetadata()
+
 
 class TFTrainer(object):
   """Class for local or distributed training and evaluation.
@@ -209,6 +211,52 @@ class TFTrainer(object):
     self.train(train_iterator, loss, optimizer, learning_rate, epochs, hooks, **kwargs)
     self.test(test_iterator, test_acc, hooks, **kwargs)
 
+  def save_node_embedding_bigdata(self, save_iter, save_ids, save_emb, save_file, block_max_lines, batch_size):
+    if batch_size >= block_max_lines:
+      emb_writer = open(save_file, 'w')
+      emb_writer.write('id:int64\temb:string\n')
+      self.save_node_embedding(emb_writer, save_iter, save_ids, save_emb, batch_size)
+    else:
+      print('Start saving embeddings...')
+      with self.context():
+        self.global_step = tf.train.get_or_create_global_step()
+        if self.sess is None:
+          self.init_session()
+        self.sess._tf_sess().run(save_iter.initializer)
+        total_line = 0
+        block_id = 0
+        save_file = save_file[0:-4] if save_file.endswith('.txt') else save_file
+        current_file = save_file + '_%d.txt' % block_id
+        with open(current_file, 'a') as f:
+          f.write('id:int64\temb:string\n')        
+        while True:
+          try:
+            outs = self.sess._tf_sess().run([save_ids, save_emb])
+            id_feat = ['%d\t'%i + ','.join(str(x) for x in arr) + '\n' for i, arr in zip(outs[0], outs[1])]
+            if total_line + len(id_feat) <= (block_id + 1) * block_max_lines:
+              with open(current_file, 'a') as f:
+                f.writelines(id_feat)
+              if total_line + len(id_feat) == (block_id + 1) * block_max_lines:
+                current_file = save_file + '_%d.txt' % (block_id + 1)
+                with open(current_file, 'a') as f:
+                  f.write('id:int64\temb:string\n')
+                block_id += 1
+            elif (block_id + 1) * block_max_lines < total_line + len(id_feat):
+              with open(current_file, 'a') as f:
+                f.writelines(id_feat[0: (block_id + 1) * block_max_lines - total_line])
+              current_file = save_file + '_%d.txt' % (block_id + 1)
+              with open(current_file, 'a') as f:
+                f.write('id:int64\temb:string\n')
+                f.writelines(id_feat[(block_id + 1) * block_max_lines - total_line:])
+              block_id += 1
+            total_line += len(id_feat)
+          except tf.errors.OutOfRangeError:
+            print('Save node embeddings done.')
+            break
+        print("#################################################")
+        print("total lines saved = {} , number blocks = {} ".format(total_line, block_id + 1))
+        print("#################################################")
+
   def save_node_embedding(self, emb_writer, iterator, ids, emb, batch_size):
     print('Start saving embeddings...')
     with self.context():
@@ -222,8 +270,8 @@ class TFTrainer(object):
           t = time.time()
           outs = self.sess._tf_sess().run([ids, emb])
           # [B,], [B,dim]
-          feat = [','.join(str(x) for x in arr) for arr in outs[1]]
-          emb_writer.write(list(zip(outs[0], feat)), indices=[0, 1])  # id,emb
+          id_feat = ['%d\t'%i + ','.join(str(x) for x in arr) + '\n' for i, arr in zip(outs[0], outs[1])]
+          emb_writer.writelines(id_feat)  # id,emb
           local_step += 1
           if local_step % self.progress_steps == 0:
             print('Saved {} node embeddings, Time(s) {:.4f}'.format(local_step * batch_size, time.time() - t))
