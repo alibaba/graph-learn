@@ -134,11 +134,9 @@ def run(args):
   trainer = LocalTrainer()
   trainer.train(train_data.iterator, loss, optimizer, epochs=args.epochs)
   ## uncomment below lines will save the embeddings
-  # save_file = './car_emb.txt'
-  # trainer.train_and_save(train_data.iterator, loss, optimizer, epochs=epochs, save_file=save_file, hooks=[], 
-  #                        save_iter=save_iter, save_ids=save_ids, save_emb=save_emb,
-  #                        graph=g, model=model, node_type=node_type, edge_type=edge_type, 
-  #                        block_max_lines=200000, batch_size=batch_size)
+  # save_file = './emb.txt'
+  # trainer.save_node_embedding_bigdata(save_iter=save_iter, save_ids=save_ids, save_emb=save_emb, 
+  #                                     save_file=save_file, block_max_lines=100000, batch_size=batch_size)
 
   # finish
   g.close()

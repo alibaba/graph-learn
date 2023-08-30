@@ -104,71 +104,6 @@ class TFTrainer(object):
   def run_step(self, train_ops, local_step):
     raise NotImplementedError('Use LocalTrainer or DistTrainer instead.')
 
-
-  def train_and_save(self, iterator, loss, optimizer=None, learning_rate=None,
-            epochs=10, hooks=[], save_file=None, save_iter=None, save_ids=None, save_emb=None, **kwargs):
-    with self.context():
-      self.global_step = tf.train.get_or_create_global_step()
-      if optimizer is None:
-        try:
-          optimizer = tf.train.AdamAsyncOptimizer(learning_rate=learning_rate)
-        except AttributeError:
-          optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
-      train_op = optimizer.minimize(loss, global_step=self.global_step)
-      
-      train_ops = [train_op, loss, self.global_step]
-      tf.add_to_collection(tf.GraphKeys.TABLE_INITIALIZERS, iterator.initializer)
-      print("Init session...")
-      self.init_session(hooks=hooks)
-
-      print('Start training...')
-      local_step = 0
-      last_local_step = 0
-      last_global_step = 0
-      t = time.time()
-      epoch = 0
-      outs = None
-      while (not self.sess.should_stop()) and (epoch < epochs):
-        try:
-          outs = self.run_step(train_ops, local_step)
-        except tf.errors.OutOfRangeError:
-          print('End of the epoch %d.' % (epoch,))
-          print("local_step = {}".format(local_step))
-          epoch += 1
-          local_step = 0
-          self.sess._tf_sess().run(iterator.initializer)  # reinitialize dataset.
-        if outs is not None:
-          train_loss = outs[1]
-          global_step = outs[-1]
-          # Print results
-          local_step += 1
-          if local_step % self.progress_steps == 0:
-            if self.is_local:
-              print(datetime.datetime.now(),
-                    'Epoch {}, Iter {}, LocalStep/sec {:.2f}, Time(s) {:.4f}, '
-                    'Loss {:.5f}'
-                    .format(epoch, local_step,
-                            (local_step - last_local_step) * 1.0 / (time.time() - t),
-                            (time.time() - t) * 1.0 / 10, train_loss))
-            else:
-              print(datetime.datetime.now(),
-                    'Epoch {}, Iter {}, GlobalStep/sec {:.2f}, Time(s) {:.4f}, '
-                    'Loss {:.5f}, Global_step {}'
-                    .format(epoch, local_step,
-                            (global_step - last_global_step) * 1.0 / (time.time() - t),
-                            (time.time() - t) * 1.0 / 10, train_loss, global_step))
-            t = time.time()
-            last_local_step = local_step
-            last_global_step = global_step
-      # save embedding
-      self.save_node_embedding_bigdata(save_iter, save_ids, save_emb, save_file, 
-                                       kwargs.get('block_max_lines', 10000000), 
-                                       kwargs.get('batch_size', 128))
-      #
-      if self.sync_barrier is not None:
-        self.sync_barrier.end(self.sess)
-
-
   def train(self, iterator, loss, optimizer=None, learning_rate=None,
             epochs=10, hooks=[], **kwargs):
     with self.context():
@@ -277,13 +212,17 @@ class TFTrainer(object):
     self.test(test_iterator, test_acc, hooks, **kwargs)
 
   def save_node_embedding_bigdata(self, save_iter, save_ids, save_emb, save_file, block_max_lines, batch_size):
-      if batch_size >= block_max_lines:
-        emb_writer = open(save_file, 'w')
-        emb_writer.write('id:int64\temb:string\n')
-        self.save_node_embedding(emb_writer, save_iter, save_ids, save_emb, batch_size)
-      else:
-        print('Start saving embeddings...')
-        self.sess.run(save_iter.initializer)
+    if batch_size >= block_max_lines:
+      emb_writer = open(save_file, 'w')
+      emb_writer.write('id:int64\temb:string\n')
+      self.save_node_embedding(emb_writer, save_iter, save_ids, save_emb, batch_size)
+    else:
+      print('Start saving embeddings...')
+      with self.context():
+        self.global_step = tf.train.get_or_create_global_step()
+        if self.sess is None:
+          self.init_session()
+        self.sess._tf_sess().run(save_iter.initializer)
         total_line = 0
         block_id = 0
         save_file = save_file[0:-4] if save_file.endswith('.txt') else save_file
@@ -292,7 +231,7 @@ class TFTrainer(object):
           f.write('id:int64\temb:string\n')        
         while True:
           try:
-            outs = self.sess.run([save_ids, save_emb])
+            outs = self.sess._tf_sess().run([save_ids, save_emb])
             id_feat = ['%d\t'%i + ','.join(str(x) for x in arr) + '\n' for i, arr in zip(outs[0], outs[1])]
             if total_line + len(id_feat) <= (block_id + 1) * block_max_lines:
               with open(current_file, 'a') as f:
