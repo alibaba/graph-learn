@@ -123,6 +123,17 @@ if (WITH_HIACTOR)
   endif ()
 endif ()
 
+## contrib vineyard
+if (WITH_VINEYARD)
+  message("Graph-learn is built with vineyard support.")
+  find_package (vineyard)
+  include_directories (SYSTEM ${VINEYARD_INCLUDE_DIRS})
+  add_definitions (-DWITH_VINEYARD)
+  if (VINEYARD_USE_OID)
+    add_definitions (-DVINEYARD_USE_OID)
+  endif ()
+endif ()
+
 ## protobuf and gRPC package
 find_package (Protobuf QUIET)
 if (NOT Protobuf_FOUND)
@@ -290,17 +301,6 @@ if (KNN)
     ${GL_KNN_DIR}/*.h)
 else ()
   set (GL_KNN_FILES)
-endif ()
-
-## contrib vineyard
-if (WITH_VINEYARD)
-  message("Graph-learn is built with vineyard support.")
-  find_package (vineyard)
-  include_directories (SYSTEM ${VINEYARD_INCLUDE_DIRS})
-  add_definitions (-DWITH_VINEYARD)
-  if (VINEYARD_USE_OID)
-    add_definitions (-DVINEYARD_USE_OID)
-  endif ()
 endif ()
 
 ## cxx flags
