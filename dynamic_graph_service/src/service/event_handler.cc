@@ -67,7 +67,7 @@ public:
     assert(vid_it != req->query_parameters.end());
 
     QueryId qid = std::stoi(qid_it->second);
-    VertexId vid = std::stoi(vid_it->second);
+    VertexId vid = std::stoll(vid_it->second);
     start_time_ = CurrentTimeInMs();
     auto dst_shard_id = GetDestShardId();
     return actor_refs_[dst_shard_id].RunQuery(RunQueryRequest(qid, vid)).then(
