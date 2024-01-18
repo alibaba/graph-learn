@@ -10,28 +10,28 @@ Welcome to GraphLearn's documentation!
    :maxdepth: 2
    :caption: Introduction
 
-   en/intro
+   zh_CN/intro
 
 .. toctree::
    :maxdepth: 3
    :caption: GraphLearn-Training
 
-   en/gl/intro
-   en/gl/install
-   en/gl/quick_start
-   en/gl/graph/index
-   en/gl/algo/index
-   en/gl/developer/index
+   zh_CN/gl/intro
+   zh_CN/gl/install
+   zh_CN/gl/quick_start
+   zh_CN/gl/graph/index
+   zh_CN/gl/algo/index
+   zh_CN/gl/developer/index
 
 
 .. toctree::
    :maxdepth: 2
    :caption: Dynamic-Graph-Service
 
-   en/dgs/intro
-   en/dgs/deploy
-   en/dgs/dataloader
-   en/dgs/tutorial
+   zh_CN/dgs/intro
+   zh_CN/dgs/deploy
+   zh_CN/dgs/dataloader
+   zh_CN/dgs/tutorial
    apis/index
 
 
