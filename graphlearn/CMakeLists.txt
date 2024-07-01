@@ -135,7 +135,7 @@ if (WITH_VINEYARD)
 endif ()
 
 ## protobuf and gRPC package
-find_package (Protobuf QUIET)
+find_package (Protobuf CONFIG QUIET)
 if (NOT Protobuf_FOUND)
   set (gRPC_INSTALL_DIR ${THIRD_PARTY_DIR}/grpc/build)
   list (APPEND CMAKE_PREFIX_PATH ${gRPC_INSTALL_DIR})
