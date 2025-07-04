@@ -21,7 +21,7 @@ def get_topology()
 
 ![topology](../../../../images/topology.png)
 
-<br /> 图1 图的拓扑信息 </div>
+<br /> 图1 图的拓扑信息
 
 ```python
 g = Graph(...)
